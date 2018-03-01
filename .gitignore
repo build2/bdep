@@ -1,0 +1,19 @@
+# Compiler/linker output.
+#
+*.d
+*.ii
+*.o
+*.obj
+*.so
+*.dll
+*.a
+*.lib
+*.exp
+*.exe
+*.exe.dlls/
+*.exe.manifest
+*.pc
+
+# Generated version.
+#
+version
