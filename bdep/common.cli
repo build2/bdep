@@ -1,0 +1,148 @@
+// file      : bdep/common.cli
+// copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
+// license   : MIT; see accompanying LICENSE file
+
+// @@ TODO
+//include <bdep/types.hxx>;
+
+"\section=1"
+"\name=bdep-common-options"
+"\summary=details on common options"
+
+namespace bdep
+{
+  {
+    "<common-options>",
+
+    "\h|SYNOPSIS|
+
+     \c{\b{bdep} [<common-options>] ...}
+
+     \h|DESCRIPTION|
+
+     The common options control behavior that is common to all or most of the
+     \cb{bdep} commands. They can be specified either before the command or
+     after, together with the command-specific options."
+  }
+
+  class common_options = 0
+  {
+    "\h|COMMON OPTIONS|"
+
+    // Retain this note only in the summary.
+    //
+    {
+      "",
+      "The common options are summarized below with a more detailed description
+       available in \l{bdep-common-options(1)}.",
+      ""
+    }
+
+    bool -v
+    {
+      "Print essential underlying commands being executed. This is equivalent
+       to \cb{--verbose 2}."
+    }
+
+    bool -V
+    {
+      "Print all underlying commands being executed. This is equivalent to
+       \cb{--verbose 3}."
+    }
+
+    bool --quiet|-q
+    {
+      "Run quietly, only printing error messages. This is equivalent
+       to \cb{--verbose 0}."
+    }
+
+    uint16_t --verbose = 1
+    {
+      "<level>",
+      "Set the diagnostics verbosity to <level> between 0 and 6. Level 0
+       disables any non-error messages while level 6 produces lots of
+       information, with level 1 being the default. The following additional
+       types of diagnostics are produced at each level:
+
+       \ol|
+
+       \li|High-level information messages.|
+
+       \li|Essential underlying commands being executed.|
+
+       \li|All underlying commands being executed.|
+
+       \li|Information that could be helpful to the user.|
+
+       \li|Information that could be helpful to the developer.|
+
+       \li|Even more detailed information.||"
+    }
+
+    path --build
+    {
+      "<path>",
+      "The build program to be used to build packages. This should be the path
+       to the build2 \cb{b} executable. You can also specify additional options
+       that should be passed to the build program with \cb{--build-option}.
+
+       If the build program is not explicitly specified, then \cb{bdep} will
+       by default use \cb{b} plus an executable suffix if one was specified
+       when building \cb{bdep}. So, for example, if \cb{bdep} name was set
+       to \cb{bdep-1.0}, then it will look for \cb{b-1.0}."
+    }
+
+    strings --build-option
+    {
+      "<opt>",
+      "Additional option to be passed to the build program. See \cb{--build}
+       for more information on the build program. Repeat this option to specify
+       multiple build options."
+    }
+
+    //@@ TODO: add --bpkg and --bpkg-option
+
+    string --pager // String to allow empty value.
+    {
+      "<path>",
+      "The pager program to be used to show long text. Commonly used pager
+       programs are \cb{less} and \cb{more}. You can also specify additional
+       options that should be passed to the pager program with
+       \cb{--pager-option}. If an empty string is specified as the pager
+       program, then no pager will be used. If the pager program is not
+       explicitly specified, then \cb{bdep} will try to use \cb{less}. If it
+       is not available, then no pager will be used."
+    }
+
+    strings --pager-option
+    {
+      "<opt>",
+      "Additional option to be passed to the pager program. See \cb{--pager}
+       for more information on the pager program. Repeat this option to
+       specify multiple pager options."
+    }
+
+    // The following option is "fake" in that it is actually handled by
+    // argv_file_scanner. We have it here for documentation.
+    //
+    string --options-file
+    {
+      "<file>",
+      "Read additional options from <file>. Each option should appearing on a
+       separate line optionally followed by space and an option value. Empty
+       lines and lines starting with \cb{#} are ignored. Option values can
+       be enclosed in double (\cb{\"}) or single (\cb{'}) quotes to preserve
+       leading and trailing whitespaces as well as to specify empty values.
+       If the value itself contains trailing or leading quotes, enclose it
+       with an extra pair of quotes, for example \cb{'\"x\"'}. Non-leading
+       and non-trailing quotes are interpreted as being part of the option
+       value.
+
+       The semantics of providing options in a file is equivalent to providing
+       the same set of options in the same order on the command line at the
+       point where the \cb{--options-file} option is specified except that
+       the shell escaping and quoting is not required. You can repeat this
+       option to specify more than one options file."
+    }
+  };
+}

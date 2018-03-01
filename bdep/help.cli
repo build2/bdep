@@ -1,0 +1,30 @@
+// file      : bdep/help.cli
+// copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
+// license   : MIT; see accompanying LICENSE file
+
+include <bdep/common.cli>;
+
+"\section=1"
+"\name=bdep-help"
+"\summary=show help for a command or help topic"
+
+namespace bdep
+{
+  {
+    "<command> <topic>",
+
+    "\h|SYNOPSIS|
+
+     \c{\b{bdep help} [<command> | <topic>]}
+
+     \h|DESCRIPTION|
+
+     Show the detailed help for <command> or help <topic> or a summary of
+     available commands and topics if none was specified."
+  }
+
+  class help_options: common_options
+  {
+    //"\h|HELP OPTIONS|"
+  };
+}

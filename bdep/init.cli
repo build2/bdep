@@ -1,0 +1,29 @@
+// file      : bdep/init.cli
+// copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
+// license   : MIT; see accompanying LICENSE file
+
+include <bdep/common.cli>;
+
+"\section=1"
+"\name=bdep-init"
+"\summary=@@ TODO"
+
+namespace bdep
+{
+  {
+    "<options>",
+
+    "\h|SYNOPSIS|
+
+     \c{\b{bdep init} [<options>] @@ TODO}
+
+     \h|DESCRIPTION|
+
+     The \cb{init} command..."
+  }
+
+  class init_options: common_options
+  {
+    //"\h|INIT OPTIONS|"
+  };
+}

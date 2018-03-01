@@ -1,0 +1,90 @@
+// file      : bdep/bdep.cli
+// copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
+// license   : MIT; see accompanying LICENSE file
+
+include <bdep/common.cli>;
+
+"\section=1"
+"\name=bdep"
+"\summary=project dependency manager"
+
+namespace bdep
+{
+  {
+    "<command> <topic> <common-options> <command-options> <command-args>",
+
+    "\h|SYNOPSIS|
+
+     \cb{bdep --help}\n
+     \cb{bdep --version}\n
+     \c{\b{bdep help} [<command> | <topic>]}\n
+     \c{\b{bdep} [<common-options>] <command> [<command-options>] <command-args>}
+
+     \h|DESCRIPTION|
+
+     The \cb{build2} project dependency manager is used to @@ TODO.
+
+     For a detailed description of any command or help topic, use the
+     \cb{help} command or see the corresponding man page (the man pages have
+     the \cb{bdep-} prefix, for example \l{bdep-help(1)}). Note also that
+     <command-options> and <command-args> can be specified in any order and
+     <common-options> can be specified as part of <command-options>."
+  }
+
+  // For usage it's nice to see the list of commands on the first page. So
+  // let's not put this "extended" description into usage.
+  //
+  {
+    "",
+    "",
+
+    //@@ TODO
+    "Description...
+    "
+  }
+
+  class commands
+  {
+    "\h|COMMANDS|"
+
+    //
+    // NOTE: Use the same sentence as in the page's \summary and make
+    // sure it is short enough to fit in one line in usage.
+    //
+
+    bool help
+    {
+      "[<topic>]",
+      "\l{bdep-help(1)} \- show help for a command or help topic",
+      ""
+    }
+
+    bool init
+    {
+      "\l{bdep-init(1)} \- @@ TODO"
+    }
+  };
+
+  // Make sure these don't conflict with command names above.
+  //
+  class topics
+  {
+    "\h|HELP TOPICS|"
+
+    bool common-options
+    {
+      "\l{bdep-common-options(1)} \- details on common options"
+    }
+  };
+
+  class options: common_options
+  {
+    bool --help;
+    bool --version;
+  };
+
+  "\h|EXIT STATUS|
+
+  Non-zero exit status is returned in case of an error.
+  "
+}
