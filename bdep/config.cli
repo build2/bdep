@@ -1,0 +1,44 @@
+// file      : bdep/config.cli
+// copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
+// license   : MIT; see accompanying LICENSE file
+
+include <bdep/common.cli>;
+
+"\section=1"
+"\name=bdep-config"
+"\summary=manage project build configurations"
+
+namespace bdep
+{
+  {
+    "<options>
+     <cfg-spec> <cfg-name> <cfg-dir>
+     <prj-spec> <prj-dir>
+     <cfg-args> <cfg-var> <module>",
+
+    "\h|SYNOPSIS|
+
+     \c{\b{bdep config add} \ \ \ [<options>] [<prj-spec>] [\b{@}<cfg-name>] <cfg-dir>\n
+        \b{bdep config create} [<options>] [<prj-spec>] [\b{@}<cfg-name>] <cfg-dir> [<cfg-args>]\n
+        \b{bdep config remove} [<options>] [<prj-spec>] <cfg-spec>}
+
+     \c{<prj-spec> = \b{--directory}|\b{-d} <prj-dir>\n
+        <cfg-args> = (<module> | <cfg-var>)...\n
+        <cfg-spec> = (\b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>)... | \b{--all}|\b{-a}}
+
+     \h|DESCRIPTION|
+
+     The \cb{config} command..."
+  }
+
+  class config_options: common_options
+  {
+    "\h|CONFIG OPTIONS|"
+
+    bool --default|-d
+    {
+      //@@ Need to explain what it means.
+      "Make the added or created configuration default."
+    }
+  };
+}

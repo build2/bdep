@@ -56,7 +56,7 @@ o="--output-prefix bdep- --class-doc bdep::common_options=short"
 compile "common" $o --output-suffix "-options" --class-doc bdep::common_options=long
 compile "bdep" $o --output-prefix "" --suppress-undocumented --class-doc bdep::commands=short --class-doc bdep::topics=short
 
-pages="bdep common help init"
+pages="config help init"
 
 for p in $pages; do
   compile $p $o
