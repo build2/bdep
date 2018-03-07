@@ -2,7 +2,7 @@
 // copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
 // license   : MIT; see accompanying LICENSE file
 
-include <bdep/common.cli>;
+include <bdep/configuration.cli>;
 
 "\section=1"
 "\name=bdep-config"
@@ -31,11 +31,14 @@ namespace bdep
      The \cb{config} command..."
   }
 
-  class config_options: common_options
+  // Note that not all project/configuration options are valid for all
+  // subcommands.
+  //
+  class cmd_config_options: configuration_options
   {
     "\h|CONFIG OPTIONS|"
 
-    bool --default|-d
+    bool --default
     {
       //@@ Need to explain what it means.
       "Make the added or created configuration default."

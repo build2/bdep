@@ -1,0 +1,20 @@
+# file      : doc/buildfile
+# copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
+# license   : MIT; see accompanying LICENSE file
+
+cmds =             \
+bdep-help          \
+bdep-init          \
+bdep-config
+
+define css: file
+css{*}: extension = css
+
+define xhtml: doc
+xhtml{*}: extension = xhtml
+
+./: {man1 xhtml}{bdep bdep-common-options $cmds} \
+    css{common pre-box man} 	                 \
+    file{man-*}
+
+./: file{cli.sh}

@@ -1,0 +1,35 @@
+// file      : bdep/configuration.cli
+// copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
+// license   : MIT; see accompanying LICENSE file
+
+include <bdep/project.cli>;
+
+"\name=configuration" // Not a man page.
+
+namespace bdep
+{
+  // Common options for commands that operate on configurations (cfg-spec).
+  // Note that all of them also operate on project/packages thus inheritance
+  // from project_options.
+  //
+  class configuration_options: project_options
+  {
+    dir_paths --config|-c
+    {
+      "<cfg-dir>",
+      "Specify the build configuration to use as a directory."
+    }
+
+    bool --all|-a
+    {
+      "Use all build configurations."
+    }
+
+    // Storage for configuration names specified as @<cfg-name>.
+    //
+    // Note that we leave it undocumented so that it's not mentioned in
+    // documentation.
+    //
+    strings --config-name;
+  };
+}

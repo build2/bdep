@@ -1,0 +1,10 @@
+# file      : build/export.build
+# copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
+# license   : MIT; see accompanying LICENSE file
+
+$out_root/:
+{
+  include bdep/
+}
+
+export $out_root/bdep/exe{bdep}

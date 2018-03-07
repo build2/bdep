@@ -1,0 +1,20 @@
+: 1
+name: bdep
+version: 0.7.0-a.0.z
+summary: build2 project dependency manager
+license: MIT
+tags: build2, c++, project, dependency, manager
+description-file: README
+changes-file: NEWS
+url: https://build2.org
+doc-url: https://build2.org/doc.xhtml
+src-url: https://git.build2.org/cgit/bdep/tree/
+email: users@build2.org
+build-email: builds@build2.org
+requires: c++14
+depends: * build2 >= 0.7.0-
+depends: * bpkg >= 0.7.0-
+# @@ Should probably become conditional dependency.
+requires: ? cli ; Only required if changing .cli files.
+depends: libbutl [0.7.0-a.0.1 0.7.0-a.1)
+depends: libbpkg [0.7.0-a.0.1 0.7.0-a.1)

@@ -1,0 +1,23 @@
+// file      : bdep/project.cli
+// copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
+// license   : MIT; see accompanying LICENSE file
+
+include <bdep/common.cli>;
+
+"\name=project" // Not a man page.
+
+namespace bdep
+{
+  // Common options for commands that operate on project/packages (prj-spec
+  // and pkg-spec).
+  //
+  class project_options: common_options
+  {
+    dir_paths --directory|-d
+    {
+      "<dir>",
+      "Assume project/package is in the specified directory rather than in the
+       current working directory."
+    }
+  };
+}

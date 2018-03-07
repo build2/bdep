@@ -1,0 +1,48 @@
+// file      : bdep/version.hxx.in -*- C++ -*-
+// copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
+// license   : MIT; see accompanying LICENSE file
+
+#ifndef BDEP_VERSION // Note: using the version macro itself.
+
+// Note: using build2 standard versioning scheme. The numeric version format
+// is AAABBBCCCDDDE where:
+//
+// AAA - major version number
+// BBB - minor version number
+// CCC - bugfix version number
+// DDD - alpha / beta (DDD + 500) version number
+// E   - final (0) / snapshot (1)
+//
+// When DDDE is not 0, 1 is subtracted from AAABBBCCC. For example:
+//
+// Version      AAABBBCCCDDDE
+//
+// 0.1.0        0000010000000
+// 0.1.2        0000010010000
+// 1.2.3        0010020030000
+// 2.2.0-a.1    0020019990010
+// 3.0.0-b.2    0029999995020
+// 2.2.0-a.1.z  0020019990011
+//
+#define BDEP_VERSION       $bdep.version.project_number$ULL
+#define BDEP_VERSION_STR   "$bdep.version.project$"
+#define BDEP_VERSION_ID    "$bdep.version.project_id$"
+
+#define BDEP_VERSION_MAJOR $bdep.version.major$
+#define BDEP_VERSION_MINOR $bdep.version.minor$
+#define BDEP_VERSION_PATCH $bdep.version.patch$
+
+#define BDEP_PRE_RELEASE   $bdep.version.pre_release$
+
+#define BDEP_SNAPSHOT      $bdep.version.snapshot_sn$ULL
+#define BDEP_SNAPSHOT_ID   "$bdep.version.snapshot_id$"
+
+#include <libbutl/version.hxx>
+
+$libbutl.check(LIBBUTL_VERSION, LIBBUTL_SNAPSHOT)$
+
+#include <libbpkg/version.hxx>
+
+$libbpkg.check(LIBBPKG_VERSION, LIBBPKG_SNAPSHOT)$
+
+#endif // BDEP_VERSION

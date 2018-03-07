@@ -49,12 +49,12 @@ man-prologue.1 --man-epilogue-file man-epilogue.1 --man-suffix .1 \
 ../bdep/$n.cli
 }
 
-o="--output-prefix bdep- --class-doc bdep::common_options=short"
+o="--suppress-undocumented --output-prefix bdep- --class-doc bdep::common_options=short"
 
 # A few special cases.
 #
 compile "common" $o --output-suffix "-options" --class-doc bdep::common_options=long
-compile "bdep" $o --output-prefix "" --suppress-undocumented --class-doc bdep::commands=short --class-doc bdep::topics=short
+compile "bdep" $o --output-prefix "" --class-doc bdep::commands=short --class-doc bdep::topics=short
 
 pages="config help init"
 

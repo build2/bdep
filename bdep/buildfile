@@ -1,0 +1,60 @@
+# file      : bdep/buildfile
+# copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
+# license   : MIT; see accompanying LICENSE file
+
+import libs  = libbpkg%lib{bpkg}
+import libs += libbutl%lib{butl}
+
+options_topics =      \
+bdep-options          \
+common-options        \
+project-options       \
+configuration-options \
+help-options          \
+config-options        \
+init-options
+
+exe{bdep}: {hxx ixx txx cxx}{** -{$options_topics} -version}   \
+           {hxx ixx cxx}{$options_topics} {hxx}{version} $libs
+
+hxx{version}: in{version} $src_root/file{manifest}
+
+obj{utility}: cxx.poptions += -DBDEP_EXE_SUFFIX='"'$bin.exe.suffix'"'
+
+if $cli.configured
+{
+  # General topics and common options.
+  #
+  cli.cxx{common-options}:         cli{common}
+  cli.cxx{project-options}:        cli{project}
+  cli.cxx{configuration-options}:  cli{configuration}
+  cli.cxx{bdep-options}:           cli{bdep}
+
+  # Command.
+  #
+  cli.cxx{help-options}: cli{help}
+
+  cli.cxx{config-options}: cli{config}
+  cli.cxx{init-options}:   cli{init}
+
+  # Option length must be the same to get commands/topics/options aligned.
+  #
+  cli.options += -I $src_root --include-with-brackets --include-prefix bdep \
+--guard-prefix BDEP --cxx-prologue "#include <bdep/types-parsers.hxx>" \
+--cli-namespace bdep::cli --generate-vector-scanner --generate-file-scanner \
+--generate-specifier --generate-modifier --generate-parse \
+--page-usage 'bdep::print_$name$_' --ansi-color --include-base-last \
+--suppress-undocumented --option-length 23
+
+  cli.cxx{common-options}: cli.options += --short-usage --long-usage # Both.
+  cli.cxx{bdep-options}: cli.options += --short-usage
+
+  cli.options += --long-usage # All other pages -- long usage.
+
+  # Include the generated cli files into the distribution and don't remove
+  # them when cleaning in src (so that clean results in a state identical to
+  # distributed).
+  #
+  cli.cxx{*}: dist  = true
+  cli.cxx{*}: clean = ($src_root != $out_root)
+}
