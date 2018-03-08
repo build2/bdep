@@ -16,7 +16,7 @@ namespace bdep
   {
     dir_paths --config|-c
     {
-      "<cfg-dir>",
+      "<dir>",
       "Specify the build configuration to use as a directory."
     }
 

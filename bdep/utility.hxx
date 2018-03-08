@@ -5,11 +5,12 @@
 #ifndef BDEP_UTILITY_HXX
 #define BDEP_UTILITY_HXX
 
-#include <memory>   // make_shared()
-#include <string>   // to_string()
-#include <utility>  // move(), forward(), declval(), make_pair()
-#include <cassert>  // assert()
-#include <iterator> // make_move_iterator()
+#include <memory>    // make_shared()
+#include <string>    // to_string()
+#include <utility>   // move(), forward(), declval(), make_pair()
+#include <cassert>   // assert()
+#include <iterator>  // make_move_iterator()
+#include <algorithm> // find(), find_if()
 
 #include <libbutl/ft/lang.hxx>
 
@@ -31,6 +32,9 @@ namespace bdep
   using std::make_move_iterator;
   using std::to_string;
 
+  using std::find;
+  using std::find_if;
+
   // <libbutl/utility.mxx>
   //
   using butl::casecmp;
@@ -46,9 +50,20 @@ namespace bdep
 
   // Empty string and path.
   //
-  extern const string empty_string;
-  extern const path empty_path;
+  extern const string   empty_string;
+  extern const path     empty_path;
   extern const dir_path empty_dir_path;
+
+  // Widely-used paths.
+  //
+  extern const path manifest_file;       // manifest
+  extern const path packages_file;       // packages.manifest
+  extern const path configurations_file; // configurations.manifest
+
+  // Directory extracted from argv[0] (i.e., this process' recall directory)
+  // or empty if there is none. Can be used as a search fallback.
+  //
+  extern dir_path exec_dir;
 
   // Filesystem.
   //
@@ -70,10 +85,35 @@ namespace bdep
   void
   rm (const path&, uint16_t verbosity = 3);
 
-  // Directory extracted from argv[0] (i.e., this process' recall directory)
-  // or empty if there is none. Can be used as a search fallback.
+  // Manifest parsing and serialization.
   //
-  extern dir_path exec_dir;
+  // For parsing, if path is '-', then read from stdin.
+  //
+  template <typename T>
+  T
+  parse_manifest (const path&,
+                  const char* what,
+                  bool ignore_unknown = false);
+
+  template <typename T>
+  T
+  parse_manifest (istream&,
+                  const string& name,
+                  const char* what,
+                  bool ignore_unknown = false);
+
+  template <typename T>
+  void
+  serialize_manifest (const T&, const path&, const char* what);
+
+  template <typename T>
+  void
+  serialize_manifest (const T&,
+                      ostream&,
+                      const string& name,
+                      const char* what);
 }
+
+#include <bdep/utility.txx>
 
 #endif // BDEP_UTILITY_HXX

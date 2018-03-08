@@ -7,6 +7,8 @@
 #include <libbutl/process.mxx>
 #include <libbutl/process-io.mxx> // operator<<(ostream, process_arg)
 
+#include <bdep/utility.hxx>
+
 using namespace std;
 using namespace butl;
 

@@ -7,8 +7,7 @@
 
 #include <libbutl/diagnostics.mxx>
 
-#include <bdep/types.hxx>
-#include <bdep/utility.hxx>
+#include <bdep/types.hxx> // Note: not <bdep/utility.hxx>
 
 namespace bdep
 {
@@ -157,7 +156,9 @@ namespace bdep
         epilogue_,
         type_,
         name_,
-        location (forward<F> (f), forward<L> (l), forward<C> (c)));
+        location (std::forward<F> (f),
+                  std::forward<L> (l),
+                  std::forward<C> (c)));
     }
 
   protected:

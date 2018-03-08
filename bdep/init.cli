@@ -60,5 +60,22 @@ namespace bdep
   class cmd_init_options: configuration_options
   {
     "\h|INIT OPTIONS|"
+
+    bool --empty|-E
+    {
+      "Initialize an empty build configuration set."
+    }
+
+    dir_path --config-add|-A
+    {
+      "<dir>",
+      "Add an existing build configuration <dir>."
+    }
+
+    dir_path --config-create|-C
+    {
+      "<dir>",
+      "Create a new build configuration in <dir>."
+    }
   };
 }

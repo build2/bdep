@@ -16,9 +16,13 @@ using namespace butl;
 
 namespace bdep
 {
-  const string empty_string;
-  const path empty_path;
+  const string   empty_string;
+  const path     empty_path;
   const dir_path empty_dir_path;
+
+  const path manifest_file       ("manifest");
+  const path packages_file       ("packages.manifest");
+  const path configurations_file ("configurations.manifest");
 
   bool
   exists (const path& f, bool ignore_error)

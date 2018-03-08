@@ -4,6 +4,7 @@
 
 #include <bdep/init.hxx>
 
+#include <bdep/project.hxx>
 #include <bdep/diagnostics.hxx>
 
 using namespace std;
@@ -15,10 +16,17 @@ namespace bdep
   {
     tracer trace ("init");
 
-    //@@ TODO: validate project/config options for subcommands.
+    //@@ TODO: validate project/config options for sub-modes.
+    //@@ TODO: print project/package(s) being initialized.
 
-    for (const string& n: o.config_name ())
-      text << n;
+    project_packages pp (
+      find_project_packages (o,
+                             o.empty () /* ignore_packages */));
+
+    text << pp.project;
+
+    for (const dir_path& d: pp.packages)
+      text << "  " << (pp.project / d);
 
     return 0;
   }
