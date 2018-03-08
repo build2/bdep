@@ -2,7 +2,7 @@
 // copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
 // license   : MIT; see accompanying LICENSE file
 
-include <bdep/configuration.cli>;
+include <bdep/project.cli>;
 
 "\section=1"
 "\name=bdep-init"
@@ -57,7 +57,7 @@ namespace bdep
      "
   }
 
-  class cmd_init_options: configuration_options
+  class cmd_init_options: project_options
   {
     "\h|INIT OPTIONS|"
 

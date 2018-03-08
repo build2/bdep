@@ -2,24 +2,40 @@
 # copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
 # license   : MIT; see accompanying LICENSE file
 
+# @@ ODB: these are ODB changelogs that are both generated and stored in the
+#         repository (what if src != out?). Will need to think how to handle
+#         them properly (always generate in src_base?).
+#
+define xml: file
+xml{*}: extension = xml
+
 import libs  = libbpkg%lib{bpkg}
 import libs += libbutl%lib{butl}
+import libs += libodb%lib{odb}
+import libs += libodb-sqlite%lib{odb-sqlite}
 
-options_topics =      \
-bdep-options          \
-common-options        \
-project-options       \
-configuration-options \
-help-options          \
-config-options        \
+options_topics = \
+bdep-options     \
+common-options   \
+project-options  \
+help-options     \
+config-options   \
 init-options
 
-exe{bdep}: {hxx ixx txx cxx}{** -{$options_topics} -version}   \
-           {hxx ixx cxx}{$options_topics} {hxx}{version} $libs
+exe{bdep}: {hxx ixx txx cxx}{** -{$options_topics} -*-odb -version}  \
+           {hxx ixx cxx}{$options_topics} {hxx ixx cxx}{project-odb} \
+           {hxx}{version} $libs
 
 hxx{version}: in{version} $src_root/file{manifest}
 
 obj{utility}: cxx.poptions += -DBDEP_EXE_SUFFIX='"'$bin.exe.suffix'"'
+
+# Disable "unknown pragma" warnings.
+#
+if ($cxx.class == 'msvc')
+  cxx.coptions += /wd4068
+elif ($cxx.class == 'gcc')
+  cxx.coptions += -Wno-unknown-pragmas
 
 if $cli.configured
 {

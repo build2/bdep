@@ -9,10 +9,28 @@ include <bdep/common.cli>;
 namespace bdep
 {
   // Common options for commands that operate on project/packages (prj-spec
-  // and pkg-spec).
+  // and pkg-spec) and configurations (cfg-spec).
   //
   class project_options: common_options
   {
+    dir_paths --config|-c
+    {
+      "<dir>",
+      "Specify the build configuration to use as a directory."
+    }
+
+    bool --all|-a
+    {
+      "Use all build configurations."
+    }
+
+    // Storage for configuration names specified as @<cfg-name>.
+    //
+    // Note that we leave it undocumented so that it's not mentioned in
+    // documentation.
+    //
+    strings --config-name;
+
     dir_paths --directory|-d
     {
       "<dir>",

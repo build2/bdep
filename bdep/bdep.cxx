@@ -16,7 +16,7 @@
 
 #include <bdep/diagnostics.hxx>
 #include <bdep/bdep-options.hxx>
-#include <bdep/config-options.hxx>
+#include <bdep/project-options.hxx>
 
 // Commands.
 //
@@ -33,11 +33,11 @@ using namespace bdep;
 // Once this is done, use the "final" values of the common options to do
 // global initializations (verbosity level, etc).
 //
-// If O is-a configuration_options, then also handle the @<cfg-name> arguments
-// and place them into configuration_options::config_name.
+// If O is-a project_options, then also handle the @<cfg-name> arguments and
+// place them into project_options::config_name.
 //
 static inline bool
-cfg_name (configuration_options* o, const char* a)
+cfg_name (project_options* o, const char* a)
 {
   string n (a);
 

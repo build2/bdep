@@ -2,7 +2,7 @@
 // copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
 // license   : MIT; see accompanying LICENSE file
 
-include <bdep/configuration.cli>;
+include <bdep/project.cli>;
 
 "\section=1"
 "\name=bdep-config"
@@ -34,7 +34,7 @@ namespace bdep
   // Note that not all project/configuration options are valid for all
   // subcommands.
   //
-  class cmd_config_options: configuration_options
+  class cmd_config_options: project_options
   {
     "\h|CONFIG OPTIONS|"
 

@@ -5,6 +5,8 @@
 #ifndef BDEP_DIAGNOSTICS_HXX
 #define BDEP_DIAGNOSTICS_HXX
 
+#include <odb/tracer.hxx>
+
 #include <libbutl/diagnostics.mxx>
 
 #include <bdep/types.hxx> // Note: not <bdep/utility.hxx>
@@ -176,11 +178,25 @@ namespace bdep
 
   // trace
   //
-  struct trace_mark_base: basic_mark_base
+  // Also implement the ODB tracer interface so that we can use it to trace
+  // database statement execution.
+  //
+  struct trace_mark_base: basic_mark_base, odb::tracer
   {
     explicit
     trace_mark_base (const char* name, const void* data = nullptr)
         : basic_mark_base ("trace", name, data) {}
+
+    // odb::tracer interface.
+    //
+    virtual void
+    prepare (odb::connection&, const odb::statement&);
+
+    virtual void
+    execute (odb::connection&, const char* statement);
+
+    virtual void
+    deallocate (odb::connection&, const odb::statement&);
   };
   using trace_mark = butl::diag_mark<trace_mark_base>;
 

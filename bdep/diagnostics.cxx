@@ -4,6 +4,8 @@
 
 #include <bdep/diagnostics.hxx>
 
+#include <odb/statement.hxx>
+
 #include <libbutl/process.mxx>
 #include <libbutl/process-io.mxx> // operator<<(ostream, process_arg)
 
@@ -56,6 +58,29 @@ namespace bdep
 
     if (name_ != nullptr)
       r << name_ << ": ";
+  }
+
+  // trace
+  //
+  void trace_mark_base::
+  prepare (odb::connection&, const odb::statement& s)
+  {
+    if (verb >= 6)
+      static_cast<trace_mark&> (*this) << "PREPARE " << s.text ();
+  }
+
+  void trace_mark_base::
+  execute (odb::connection&, const char* stmt)
+  {
+    if (verb >= 5)
+      static_cast<trace_mark&> (*this) << stmt;
+  }
+
+  void trace_mark_base::
+  deallocate (odb::connection&, const odb::statement& s)
+  {
+    if (verb >= 6)
+      static_cast<trace_mark&> (*this) << "DEALLOCATE " << s.text ();
   }
 
   // tracer

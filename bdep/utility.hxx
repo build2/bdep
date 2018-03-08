@@ -56,6 +56,8 @@ namespace bdep
 
   // Widely-used paths.
   //
+  extern const dir_path bdep_dir; // .bdep/
+
   extern const path manifest_file;       // manifest
   extern const path packages_file;       // packages.manifest
   extern const path configurations_file; // configurations.manifest

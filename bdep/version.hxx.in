@@ -45,4 +45,12 @@ $libbutl.check(LIBBUTL_VERSION, LIBBUTL_SNAPSHOT)$
 
 $libbpkg.check(LIBBPKG_VERSION, LIBBPKG_SNAPSHOT)$
 
+#include <odb/version.hxx>
+
+$libodb.check(LIBODB_VERSION, LIBODB_SNAPSHOT)$
+
+#include <odb/sqlite/version.hxx>
+
+$libodb-sqlite.check(LIBODB_SQLITE_VERSION, LIBODB_SQLITE_SNAPSHOT)$
+
 #endif // BDEP_VERSION
