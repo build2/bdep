@@ -4,15 +4,83 @@
 
 #include <iostream> // cin
 
-#include <libbutl/fdstream.mxx>
-
 #include <libbutl/manifest-parser.mxx>
 #include <libbutl/manifest-serializer.mxx>
 
 #include <bdep/diagnostics.hxx>
+#include <bdep/common-options.hxx>
 
 namespace bdep
 {
+  // *_bpkg()
+  //
+  template <typename O, typename E, typename... A>
+  process
+  start_bpkg (const common_options& co,
+              O&& out,
+              E&& err,
+              A&&... args)
+  {
+    const char* bpkg (name_bpkg (co));
+
+    try
+    {
+      process_path pp (process::path_search (bpkg, exec_dir));
+
+      // Forward our --build* options.
+      //
+      cstrings ops;
+
+      if (co.build_specified ())
+      {
+        ops.push_back ("--build");
+        ops.push_back (co.build ().string ().c_str ());
+      }
+
+      for (const string& o: co.build_option ())
+      {
+        ops.push_back ("--build-option");
+        ops.push_back (o.c_str ());
+      }
+
+      return process_start_callback (
+        [] (const char* const args[], size_t n)
+        {
+          if (verb >= 2)
+            print_process (args, n);
+        },
+        0 /* stdin */,
+        forward<O> (out),
+        forward<E> (err),
+        pp,
+        ops,
+        co.bpkg_option (),
+        forward<A> (args)...);
+    }
+    catch (const process_error& e)
+    {
+      fail << "unable to execute " << bpkg << ": " << e << endf;
+    }
+  }
+
+  template <typename... A>
+  process_exit
+  run_bpkg (const common_options& co, A&&... args)
+  {
+    process pr (start_bpkg (co,
+                            1 /* stdout */,
+                            2 /* stderr */,
+                            forward<A> (args)...));
+    pr.wait ();
+
+    const process_exit& e (*pr.exit);
+
+    if (!e.normal ())
+      fail << "process " << name_bpkg (co) << " " << e;
+
+    return e;
+  }
+
   // *_manifest()
   //
   template <typename T>

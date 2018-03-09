@@ -114,6 +114,7 @@ namespace bdep
     //@@ TODO: print project/package(s) being initialized.
 
     t.commit ();
+
     return 0;
   }
 }

@@ -2,8 +2,7 @@
 // copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
 // license   : MIT; see accompanying LICENSE file
 
-// @@ TODO
-//include <bdep/types.hxx>;
+include <bdep/types.hxx>;
 
 "\section=1"
 "\name=bdep-common-options"
@@ -79,6 +78,29 @@ namespace bdep
        \li|Even more detailed information.||"
     }
 
+    path --bpkg
+    {
+      "<path>",
+      "The package manager program to be used for build configuration
+       management. This should be the path to the \cb{bpkg} executable. You
+       can also specify additional options that should be passed to the
+       package manager program with \cb{--bpkg-option}.
+
+       If the package manager program is not explicitly specified, then
+       \cb{bdep} will by default use \cb{bpkg} plus an executable suffix if
+       one was specified when building \cb{bdep}. So, for example, if
+       \cb{bdep} name was set to \cb{bdep-1.0}, then it will look for
+       \cb{bpkg-1.0}."
+    }
+
+    strings --bpkg-option
+    {
+      "<opt>",
+      "Additional option to be passed to the package manager program. See
+       \cb{--bpkg} for more information on the package manager program.
+       Repeat this option to specify multiple package manager options."
+    }
+
     path --build
     {
       "<path>",
@@ -99,8 +121,6 @@ namespace bdep
        for more information on the build program. Repeat this option to specify
        multiple build options."
     }
-
-    //@@ TODO: add --bpkg and --bpkg-option
 
     string --pager // String to allow empty value.
     {

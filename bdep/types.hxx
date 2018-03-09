@@ -23,6 +23,7 @@
 #include <odb/sqlite/forward.hxx>
 
 #include <libbutl/path.mxx>
+#include <libbutl/process.mxx>
 #include <libbutl/optional.mxx>
 #include <libbutl/fdstream.mxx>
 
@@ -85,6 +86,13 @@ namespace bdep
 
   using paths = std::vector<path>;
   using dir_paths = std::vector<dir_path>;
+
+  // <libbutl/process.mxx>
+  //
+  using butl::process;
+  using butl::process_path;
+  using butl::process_exit;
+  using butl::process_error;
 
   // <libbutl/fdstream.mxx>
   //

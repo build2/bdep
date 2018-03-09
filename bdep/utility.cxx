@@ -26,6 +26,8 @@ namespace bdep
   const path repositories_file   ("repositories.manifest");
   const path configurations_file ("configurations.manifest");
 
+  dir_path exec_dir;
+
   bool
   exists (const path& f, bool ignore_error)
   {
@@ -98,5 +100,11 @@ namespace bdep
     }
   }
 
-  dir_path exec_dir;
+  const char*
+  name_bpkg (const common_options& co)
+  {
+    return co.bpkg_specified ()
+      ? co.bpkg ().string ().c_str ()
+      : "bpkg" BDEP_EXE_SUFFIX;
+  }
 }

@@ -14,8 +14,7 @@
 
 #include <libbutl/ft/lang.hxx>
 
-#include <libbutl/utility.mxx> // casecmp(), reverse_iterate(), etc
-
+#include <libbutl/utility.mxx>    // casecmp(), reverse_iterate(), etc
 #include <libbutl/filesystem.mxx>
 
 #include <bdep/types.hxx>
@@ -88,6 +87,21 @@ namespace bdep
 
   void
   rm (const path&, uint16_t verbosity = 3);
+
+  // Run the bpkg process.
+  //
+  class common_options;
+
+  const char*
+  name_bpkg (const common_options&);
+
+  template <typename O, typename E, typename... A>
+  process
+  start_bpkg (const common_options&, O&& out, E&& err, A&&... args);
+
+  template <typename... A>
+  process_exit
+  run_bpkg (const common_options&, A&&... args);
 
   // Manifest parsing and serialization.
   //
