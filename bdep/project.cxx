@@ -3,15 +3,113 @@
 // license   : MIT; see accompanying LICENSE file
 
 #include <bdep/project.hxx>
+#include <bdep/project-odb.hxx>
 
 #include <libbpkg/manifest.hxx>
 
+#include <bdep/database.hxx>
 #include <bdep/diagnostics.hxx>
 
 using namespace std;
 
 namespace bdep
 {
+  configurations
+  find_configurations (const dir_path& prj,
+                       transaction& t,
+                       const project_options& po)
+  {
+    configurations r;
+
+    // Weed out duplicates.
+    //
+    auto add = [&r] (shared_ptr<configuration> c)
+    {
+      if (find_if (r.begin (),
+                   r.end (),
+                   [&c] (const shared_ptr<configuration>& e)
+                   {
+                     return *c->id == *e->id;
+                   }) == r.end ())
+        r.push_back (move (c));
+    };
+
+    database& db (t.database ());
+    using query = bdep::query<configuration>;
+
+    // @<cfg-name>
+    //
+    if (po.config_name_specified ())
+    {
+      for (const string& n: po.config_name ())
+      {
+        if (auto c = db.query_one<configuration> (query::name == n))
+          add (c);
+        else
+          fail << "no configuration name '" << n << "' in project " << prj;
+      }
+    }
+
+    // --config <cfg-dir>
+    //
+    if (po.config_specified ())
+    {
+      for (dir_path d: po.config ())
+      {
+        d.complete ();
+        d.normalize ();
+
+        if (auto c = db.query_one<configuration> (query::path == d.string ()))
+          add (c);
+        else
+          fail << "no configuration directory " << d << " in project " << prj;
+      }
+    }
+
+    // --config-id <cfg-num>
+    //
+    if (po.config_id_specified ())
+    {
+      for (uint64_t id: po.config_id ())
+      {
+        if (auto c = db.find<configuration> (id))
+          add (c);
+        else
+          fail << "no configuration id " << id << " in project " << prj;
+      }
+    }
+
+    // --all
+    //
+    if (po.all ())
+    {
+      for (auto c: pointer_result (db.query<configuration> ()))
+        add (c);
+    }
+
+    // default
+    //
+    if (r.empty ())
+    {
+      if (auto c = db.query_one<configuration> (query::default_))
+        add (c);
+      else
+        fail << "no default configuration in project " << prj <<
+          info << "use (@<cfg-name> | --config|-c <cfg-dir> | --all|-a) to "
+             << "specify configuration explicitly";
+    }
+
+    // Validate all the returned configuration directories are still there.
+    //
+    for (const shared_ptr<configuration>& c: r)
+    {
+      if (!exists (c->path))
+        fail << "configuration directory " << c->path << " no longer exists";
+    }
+
+    return r;
+  }
+
   // Given a directory which can a project root, a package root, or one of
   // their subdirectories, return the absolute project (first) and relative
   // package (second) directories. The package directory may be absent if the
@@ -53,11 +151,13 @@ namespace bdep
         // Fall through (can also be the project root).
       }
 
-      // Check for configurations.manifest first since a simple project will
-      // have no packages.manifest
+      // Check for the database file first since an (initialized) simple
+      // project mosl likely won't have any *.manifest files.
       //
-      if (exists (d / configurations_file, true) ||
-          exists (d / packages_file, true))
+      if (exists (d / bdep_file, true)         ||
+          exists (d / packages_file, true)     ||
+          exists (d / repositories_file, true) ||
+          exists (d / configurations_file, true))
       {
         prj = move (d);
         break;

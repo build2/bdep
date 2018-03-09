@@ -24,9 +24,6 @@ namespace bdep
   using odb::result;
   using odb::session;
 
-  using odb::sqlite::database;
-  using odb::sqlite::transaction;
-
   database
   open (const dir_path& project, tracer&, bool create = false);
 

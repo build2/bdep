@@ -56,10 +56,12 @@ namespace bdep
 
   // Widely-used paths.
   //
-  extern const dir_path bdep_dir; // .bdep/
+  extern const dir_path bdep_dir;  // .bdep/
+  extern const path     bdep_file; // .bdep/bdep.sqlite3
 
   extern const path manifest_file;       // manifest
   extern const path packages_file;       // packages.manifest
+  extern const path repositories_file;   // repositories.manifest
   extern const path configurations_file; // configurations.manifest
 
   // Directory extracted from argv[0] (i.e., this process' recall directory)

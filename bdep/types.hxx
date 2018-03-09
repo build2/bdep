@@ -20,6 +20,8 @@
 #include <stdexcept>     // logic_error, invalid_argument, runtime_error
 #include <system_error>
 
+#include <odb/sqlite/forward.hxx>
+
 #include <libbutl/path.mxx>
 #include <libbutl/optional.mxx>
 #include <libbutl/fdstream.mxx>
@@ -61,6 +63,11 @@ namespace bdep
   using std::runtime_error;
   using std::system_error;
   using io_error = std::ios_base::failure;
+
+  // <odb/sqlite/forward.hxx>
+  //
+  using odb::sqlite::database;
+  using odb::sqlite::transaction;
 
   // <libbutl/optional.mxx>
   //

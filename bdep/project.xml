@@ -1,11 +1,20 @@
 <changelog xmlns="http://www.codesynthesis.com/xmlns/odb/changelog" database="sqlite" version="1">
   <model version="1">
     <table name="configuration" kind="object">
-      <column name="path" type="TEXT" null="true"/>
+      <column name="id" type="INTEGER" null="true"/>
       <column name="name" type="TEXT" null="true"/>
-      <primary-key>
-        <column name="name"/>
+      <column name="path" type="TEXT" null="true"/>
+      <column name="relative_path" type="TEXT" null="true"/>
+      <column name="default" type="INTEGER" null="true"/>
+      <primary-key auto="true">
+        <column name="id"/>
       </primary-key>
+      <index name="configuration_name_i" type="UNIQUE">
+        <column name="name"/>
+      </index>
+      <index name="configuration_path_i" type="UNIQUE">
+        <column name="path"/>
+      </index>
     </table>
   </model>
 </changelog>

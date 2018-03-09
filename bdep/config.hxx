@@ -8,10 +8,19 @@
 #include <bdep/types.hxx>
 #include <bdep/utility.hxx>
 
+#include <bdep/project.hxx>
 #include <bdep/config-options.hxx>
 
 namespace bdep
 {
+  shared_ptr<configuration>
+  cmd_config_add (const dir_path& prj,
+                  database&,
+                  dir_path           path,
+                  optional<string>   name,
+                  optional<bool>     default_ = nullopt,
+                  optional<uint64_t> id = nullopt);
+
   int
   cmd_config (const cmd_config_options&, cli::scanner& args);
 }

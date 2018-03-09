@@ -4,8 +4,6 @@
 
 #include <bdep/utility.hxx>
 
-#include <iostream>     // cout, cin
-
 #include <libbutl/process.mxx>
 #include <libbutl/fdstream.mxx>
 
@@ -20,10 +18,12 @@ namespace bdep
   const path     empty_path;
   const dir_path empty_dir_path;
 
-  const dir_path bdep_dir (".bdep");
+  const dir_path bdep_dir  (".bdep");
+  const path     bdep_file (bdep_dir / "bdep.sqlite3");
 
   const path manifest_file       ("manifest");
   const path packages_file       ("packages.manifest");
+  const path repositories_file   ("repositories.manifest");
   const path configurations_file ("configurations.manifest");
 
   bool

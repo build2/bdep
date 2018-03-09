@@ -23,7 +23,8 @@ config-options   \
 init-options
 
 exe{bdep}: {hxx ixx txx cxx}{** -{$options_topics} -*-odb -version}  \
-           {hxx ixx cxx}{$options_topics} {hxx ixx cxx}{project-odb} \
+           {hxx ixx cxx}{$options_topics}                            \
+           {hxx ixx cxx}{project-odb database-views-odb}             \
            {hxx}{version} $libs
 
 hxx{version}: in{version} $src_root/file{manifest}

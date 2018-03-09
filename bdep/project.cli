@@ -13,16 +13,22 @@ namespace bdep
   //
   class project_options: common_options
   {
+    bool --all|-a
+    {
+      "Use all build configurations."
+    }
+
     dir_paths --config|-c
     {
       "<dir>",
       "Specify the build configuration to use as a directory."
     }
 
-    bool --all|-a
+    vector<uint64_t> --config-id
     {
-      "Use all build configurations."
-    }
+      "<num>",
+      "Specify the build configuration to use as an id."
+    };
 
     // Storage for configuration names specified as @<cfg-name>.
     //

@@ -9,6 +9,9 @@
 
 #include <bdep/diagnostics.hxx>
 
+#include <bdep/database-views.hxx>
+#include <bdep/database-views-odb.hxx>
+
 using namespace std;
 
 namespace bdep
@@ -21,9 +24,11 @@ namespace bdep
   {
     tracer trace ("open");
 
-    path f (d / bdep_dir / "bdep.sqlite3");
+    path f (d / bdep_file);
 
-    if (!create && !exists (f))
+    if (exists (f))
+      create = false;
+    else if (!create)
       fail << d << " does not look like an initialized project directory" <<
         info << "run 'bdep init' to initialize";
 
@@ -51,8 +56,9 @@ namespace bdep
       //
       try
       {
-        db.connection ()->execute ("PRAGMA locking_mode = EXCLUSIVE");
-        transaction t (db.begin_exclusive ());
+        connection_ptr c (db.connection ());
+        c->execute ("PRAGMA locking_mode = EXCLUSIVE");
+        transaction t (c->begin_exclusive ());
 
         if (create)
         {
@@ -62,6 +68,41 @@ namespace bdep
             fail << f << ": already has database schema";
 
           schema_catalog::create_schema (db);
+
+          // Make path comparison case-insensitive for certain platforms.
+          //
+          // For details on this technique see the SQLite's ALTER TABLE
+          // documentation. Note that here we don't increment SQLite's
+          // schema_version since we are in the same transaction as where we
+          // have created the schema.
+          //
+#ifdef _WIN32
+          db.execute ("PRAGMA writable_schema = ON");
+
+          const char* where ("type == 'table' AND name == 'configuration'");
+
+          sqlite_master t (db.query_value<sqlite_master> (where));
+
+          auto set_nocase = [&t] (const char* name)
+          {
+            string n ('\"' + string (name) + '\"');
+            size_t p (t.sql.find (n));
+            assert (p != string::npos);
+            p = t.sql.find_first_of (",)", p);
+            assert (p != string::npos);
+            t.sql.insert (p, " COLLATE NOCASE");
+          };
+
+          set_nocase ("path");
+          set_nocase ("relative_path");
+
+          db.execute ("UPDATE sqlite_master"
+                      " SET sql = '" + t.sql + "'"
+                      " WHERE " + where);
+
+          db.execute ("PRAGMA writable_schema = OFF");
+          db.execute ("PRAGMA integrity_check");
+#endif
         }
         else
         {
