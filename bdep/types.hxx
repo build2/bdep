@@ -26,6 +26,7 @@
 #include <libbutl/process.mxx>
 #include <libbutl/optional.mxx>
 #include <libbutl/fdstream.mxx>
+#include <libbutl/small-vector.mxx>
 
 namespace bdep
 {
@@ -49,6 +50,7 @@ namespace bdep
   using std::weak_ptr;
 
   using std::vector;
+  using butl::small_vector; // <libbutl/small-vector.mxx>
 
   using strings = vector<string>;
   using cstrings = vector<const char*>;
