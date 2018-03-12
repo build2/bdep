@@ -181,7 +181,9 @@ namespace bdep
   }
 
   project_packages
-  find_project_packages (const project_options& po, bool ignore_packages)
+  find_project_packages (const project_options& po,
+                         bool ignore_packages,
+                         bool load_packages)
   {
     project_packages r;
 
@@ -268,14 +270,7 @@ namespace bdep
           return d;
         };
 
-        if (r.packages.empty ())
-        {
-          // Name is to be extracted later.
-          //
-          for (package_manifest& m: ms)
-            r.packages.push_back (package_location {"", location (m)});
-        }
-        else
+        if (!r.packages.empty ())
         {
           // It could be costly to normalize the location for each
           // comparison. We, however, do not expect more than a handful of
@@ -295,6 +290,13 @@ namespace bdep
               fail << "package directory " << p << " is not listed in " << f;
             }
           }
+        }
+        else if (load_packages)
+        {
+          // Name is to be extracted later.
+          //
+          for (package_manifest& m: ms)
+            r.packages.push_back (package_location {"", location (m)});
         }
       }
       else

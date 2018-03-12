@@ -20,7 +20,8 @@ common-options   \
 project-options  \
 help-options     \
 config-options   \
-init-options
+init-options     \
+sync-options
 
 exe{bdep}: {hxx ixx txx cxx}{** -{$options_topics} -*-odb -version}  \
            {hxx ixx cxx}{$options_topics}                            \
@@ -53,6 +54,7 @@ if $cli.configured
 
   cli.cxx{config-options}: cli{config}
   cli.cxx{init-options}:   cli{init}
+  cli.cxx{sync-options}:   cli{sync}
 
   # Option length must be the same to get commands/topics/options aligned.
   #

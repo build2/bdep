@@ -24,6 +24,7 @@
 
 #include <bdep/config.hxx>
 #include <bdep/init.hxx>
+#include <bdep/sync.hxx>
 
 using namespace std;
 using namespace bdep;
@@ -264,8 +265,9 @@ try
     }
 
     //COMMAND_IMPL (new_, new,  "new");
-    COMMAND_IMPL (init,   init,   "init");
     COMMAND_IMPL (config, config, "config");
+    COMMAND_IMPL (init,   init,   "init");
+    COMMAND_IMPL (sync,   sync,   "sync");
 
     assert (false);
     fail << "unhandled command";

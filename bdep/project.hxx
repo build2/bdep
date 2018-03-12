@@ -142,8 +142,12 @@ namespace bdep
 
   // Given the project options (and CWD) locate the packages and their
   // project. The result is an absolute and normalized project directory and a
-  // vector of relative (to the project directory) package locations (which
-  // will be empty if ignore_packages is true).
+  // vector of relative (to the project directory) package locations.
+  //
+  // If ignore_packages is true then ignore packages in case the resulting
+  // vector will be empty. Otherwise, if load_packages is false, then don't
+  // load all the available packages from packages.manifest if none were
+  // found/specified.
   //
   // Note that if the package directory is the same as project, then the
   // package path will be empty (and not ./).
@@ -163,7 +167,9 @@ namespace bdep
   };
 
   project_packages
-  find_project_packages (const project_options&, bool ignore_packages = false);
+  find_project_packages (const project_options&,
+                         bool ignore_packages = false,
+                         bool load_packages = true);
 }
 
 #endif // BDEP_PROJECT_HXX

@@ -4,18 +4,20 @@
 
 #include <bdep/init.hxx>
 
-#include <bdep/config.hxx>
 #include <bdep/project.hxx>
 #include <bdep/project-odb.hxx>
 #include <bdep/database.hxx>
 #include <bdep/diagnostics.hxx>
+
+#include <bdep/sync.hxx>
+#include <bdep/config.hxx>
 
 using namespace std;
 
 namespace bdep
 {
   int
-  cmd_init (const cmd_init_options& o, cli::scanner& args)
+  cmd_init (const cmd_init_options& o, cli::scanner&)
   {
     tracer trace ("init");
 
@@ -39,7 +41,7 @@ namespace bdep
 
     // Open the database creating it if necessary.
     //
-    database db (open (pp.project, trace, true /* create */));
+    database db (open (prj, trace, true /* create */));
 
     // --empty
     //
@@ -117,6 +119,7 @@ namespace bdep
     // Initialize each package in each configuration skipping those that are
     // already initialized. Do each configuration in a separate transaction so
     // that our state reflects the bpkg configuration as closely as possible.
+    // Then synchronize each configuration.
     //
     for (const shared_ptr<configuration>& c: cfgs)
     {
@@ -127,7 +130,7 @@ namespace bdep
       //
       run_bpkg (o,
                 "add",
-                "-d",     c->path,
+                "-d", c->path,
                 "--type", "dir",
                 prj);
 
@@ -140,8 +143,10 @@ namespace bdep
                        return p.name == s.name;
                      }) != c->packages.end ())
         {
-          info << "package " << p.name << " is already initialized "
-               << "in configuration " << *c;
+          if (verb)
+            info << "package " << p.name << " is already initialized "
+                 << "in configuration " << *c;
+
           continue;
         }
 
@@ -150,6 +155,10 @@ namespace bdep
 
       db.update (c);
       t.commit ();
+
+      //@@ --no-sync for some reason?
+      //
+      cmd_sync (o, prj, c);
     }
 
     //@@ TODO: print project/package(s) being initialized.
