@@ -208,11 +208,16 @@ namespace bdep
         {
           // Suppress duplicate packages.
           //
-          if (find (r.packages.begin (),
-                    r.packages.end (),
-                    *p.package) == r.packages.end ())
+          if (find_if (r.packages.begin (),
+                       r.packages.end (),
+                       [&p] (const package_location& pl)
+                       {
+                         return *p.package == pl.path;
+                       }) == r.packages.end ())
           {
-            r.packages.push_back (move (*p.package));
+            // Name is to be extracted later.
+            //
+            r.packages.push_back (package_location {"", move (*p.package)});
           }
         }
       }
@@ -225,7 +230,9 @@ namespace bdep
 
       if (!ignore_packages && p.package)
       {
-        r.packages.push_back (move (*p.package));
+        // Name is to be extracted later.
+        //
+        r.packages.push_back (move (package_location {"", *p.package}));
       }
     }
 
@@ -263,8 +270,10 @@ namespace bdep
 
         if (r.packages.empty ())
         {
+          // Name is to be extracted later.
+          //
           for (package_manifest& m: ms)
-            r.packages.push_back (location (m));
+            r.packages.push_back (package_location {"", location (m)});
         }
         else
         {
@@ -272,16 +281,18 @@ namespace bdep
           // comparison. We, however, do not expect more than a handful of
           // packages so we are probably ok.
           //
-          for (const dir_path& pd: r.packages)
+          for (const package_location& pl: r.packages)
           {
+            const dir_path& p (pl.path);
+
             if (find_if (ms.begin (),
                          ms.end (),
-                         [&pd, &location] (const package_manifest& m)
+                         [&p, &location] (const package_manifest& m)
                          {
-                           return pd == location (m);
+                           return p == location (m);
                          }) == ms.end ())
             {
-              fail << "package directory " << pd << " not listed in " << f;
+              fail << "package directory " << p << " is not listed in " << f;
             }
           }
         }
@@ -291,7 +302,17 @@ namespace bdep
         // If packages.manifest does not exist, then this must be a simple
         // project.
         //
-        assert (r.packages.size () == 1 && r.packages[0].empty ());
+        assert (r.packages.size () == 1 && r.packages[0].path.empty ());
+      }
+
+      // Load each package's manifest and obtain its name (name is normally
+      // the first value so we could optimize this, if necessary).
+      //
+      for (package_location& pl: r.packages)
+      {
+        path f (r.project / pl.path / manifest_file);
+        auto m (parse_manifest<bpkg::package_manifest> (f, "package"));
+        pl.name = move (m.name);
       }
     }
 

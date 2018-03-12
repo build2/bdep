@@ -100,7 +100,7 @@ namespace bdep
   start_bpkg (const common_options&, O&& out, E&& err, A&&... args);
 
   template <typename... A>
-  process_exit
+  void
   run_bpkg (const common_options&, A&&... args);
 
   // Manifest parsing and serialization.

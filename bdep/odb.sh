@@ -11,7 +11,7 @@ lib="\
 
 $odb $lib -I.. -I../../libbpkg -I../../libbutl                        \
     -DLIBODB_BUILD2 -DLIBODB_SQLITE_BUILD2 --generate-schema          \
-    -d sqlite --std c++11 --generate-query                            \
+    -d sqlite --std c++14 --generate-query                            \
     --odb-epilogue '#include <bdep/wrapper-traits.hxx>'               \
     --hxx-prologue '#include <bdep/wrapper-traits.hxx>'               \
     --include-with-brackets --include-prefix bdep --guard-prefix BDEP \
@@ -19,7 +19,7 @@ $odb $lib -I.. -I../../libbpkg -I../../libbutl                        \
 
 $odb $lib -I.. -I../../libbpkg -I../../libbutl                        \
     -DLIBODB_BUILD2 -DLIBODB_SQLITE_BUILD2                            \
-    -d sqlite --std c++11 --generate-query                            \
+    -d sqlite --std c++14 --generate-query                            \
     --odb-epilogue '#include <bdep/wrapper-traits.hxx>'               \
     --hxx-prologue '#include <bdep/wrapper-traits.hxx>'               \
     --include-with-brackets --include-prefix bdep --guard-prefix BDEP \

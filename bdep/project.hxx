@@ -36,13 +36,28 @@ namespace bdep
     to((?) ? (?)->string () : bdep::optional_string ())            \
     from((?) ? bdep::dir_path (*(?)) : bdep::optional_dir_path ())
 
-  //@@ TODO: do we need session/shared_ptr?
+  // State of a package in a configuration.
+  //
+  // Pretty much everything about the package can change (including location
+  // within the project) with the only immutable data being its name (even the
+  // version in the manifest could be bogus without the fix-up). As a result,
+  // that't the only thing we store in the database with everything else (like
+  // location) always loaded from the manifest on each run. We may, however,
+  // need to store some additional state (like manifest hash to speed up noop
+  // syncs) in the future.
+  //
+  #pragma db value
+  struct package_state
+  {
+    string name;
+  };
 
+  // Configuration associated with a project.
+  //
   #pragma db object pointer(shared_ptr) session
   class configuration
   {
   public:
-
     // The configuration stores an absolute and normalized path to the bpkg
     // configuration. It may also have a name. A configuration can be moved or
     // renamed so we also have the id (it is NULL'able so that we can assign
@@ -62,11 +77,18 @@ namespace bdep
 
     bool default_;
 
+    // We made it a vector instead of set/map since we are unlikely to have
+    // more than a handful of packages. We may, however, want to use a change-
+    // tracking vector later (e.g., to optimize updates).
+    //
+    vector<package_state> packages;
+
     // Database mapping.
     //
     #pragma db member(id) id auto
     #pragma db member(name) unique
     #pragma db member(path) unique
+    #pragma db member(packages) value_column("")
 
     // Make path comparison case-insensitive for certain platforms.
     //
@@ -84,6 +106,19 @@ namespace bdep
     friend class odb::access;
     configuration () = default;
   };
+
+  // Print configuration name if available and path otherwise.
+  //
+  inline ostream&
+  operator<< (ostream& os, const configuration& c)
+  {
+    if (c.name)
+      os << '@' << *c.name;
+    else
+      os << c.path;
+
+    return os;
+  }
 
   #pragma db view object(configuration)
   struct configuration_count
@@ -106,17 +141,25 @@ namespace bdep
                        const project_options&);
 
   // Given the project options (and CWD) locate the packages and their
-  // project. The result is the absolute and normalized project directory and
-  // a vector of relative (to the project directory) package directories
-  // (which will be empty if ignore_packages is true).
+  // project. The result is an absolute and normalized project directory and a
+  // vector of relative (to the project directory) package locations (which
+  // will be empty if ignore_packages is true).
   //
   // Note that if the package directory is the same as project, then the
-  // package directory will be empty (and not ./).
+  // package path will be empty (and not ./).
   //
+  struct package_location
+  {
+    string   name;
+    dir_path path;
+  };
+
+  using package_locations = vector<package_location>;
+
   struct project_packages
   {
-    dir_path  project;
-    dir_paths packages;
+    dir_path          project;
+    package_locations packages;
   };
 
   project_packages

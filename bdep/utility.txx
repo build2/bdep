@@ -32,7 +32,7 @@ namespace bdep
       // Map verbosity level. If we are running quiet or at level 1, then run
       // bpkg quiet. Otherwise, run it at the same level as us.
       //
-      bool quiet (false); // Maybe will become an argument one day.
+      bool quiet (true); // Maybe will become an argument one day.
       string vl;
       if (verb <= (quiet ? 1 : 0))
         ops.push_back ("-q");
@@ -80,21 +80,22 @@ namespace bdep
   }
 
   template <typename... A>
-  process_exit
+  void
   run_bpkg (const common_options& co, A&&... args)
   {
     process pr (start_bpkg (co,
                             1 /* stdout */,
                             2 /* stderr */,
                             forward<A> (args)...));
-    pr.wait ();
+    if (!pr.wait ())
+    {
+      const process_exit& e (*pr.exit);
 
-    const process_exit& e (*pr.exit);
+      if (e.normal ())
+        throw failed (); // Assume the child issued diagnostics.
 
-    if (!e.normal ())
       fail << "process " << name_bpkg (co) << " " << e;
-
-    return e;
+    }
   }
 
   // *_manifest()

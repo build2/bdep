@@ -48,7 +48,8 @@ namespace bdep
         name,
         path,
         move (rel_path),
-        *def});
+        *def,
+        {} /* packages */});
 
     try
     {

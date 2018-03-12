@@ -16,5 +16,22 @@
         <column name="path"/>
       </index>
     </table>
+    <table name="configuration_packages" kind="container">
+      <column name="object_id" type="INTEGER" null="true"/>
+      <column name="index" type="INTEGER" null="true"/>
+      <column name="name" type="TEXT" null="true"/>
+      <foreign-key name="object_id_fk" on-delete="CASCADE">
+        <column name="object_id"/>
+        <references table="configuration">
+          <column name="id"/>
+        </references>
+      </foreign-key>
+      <index name="configuration_packages_object_id_i">
+        <column name="object_id"/>
+      </index>
+      <index name="configuration_packages_index_i">
+        <column name="index"/>
+      </index>
+    </table>
   </model>
 </changelog>
