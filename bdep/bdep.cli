@@ -59,9 +59,9 @@ namespace bdep
       ""
     }
 
-    bool config
+    bool new
     {
-      "\l{bdep-config(1)} \- manage project's build configurations"
+      "\l{bdep-new(1)} \- create and initialize new project"
     }
 
     bool init
@@ -72,6 +72,11 @@ namespace bdep
     bool sync
     {
       "\l{bdep-sync(1)} \- synchronize project and configurations"
+    }
+
+    bool config
+    {
+      "\l{bdep-config(1)} \- manage project's build configurations"
     }
   };
 

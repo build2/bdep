@@ -21,7 +21,8 @@ project-options  \
 help-options     \
 config-options   \
 init-options     \
-sync-options
+sync-options     \
+new-options
 
 exe{bdep}: {hxx ixx txx cxx}{** -{$options_topics} -*-odb -version}  \
            {hxx ixx cxx}{$options_topics}                            \
@@ -55,6 +56,7 @@ if $cli.configured
   cli.cxx{config-options}: cli{config}
   cli.cxx{init-options}:   cli{init}
   cli.cxx{sync-options}:   cli{sync}
+  cli.cxx{new-options}:    cli{new}
 
   # Option length must be the same to get commands/topics/options aligned.
   #
@@ -67,8 +69,10 @@ if $cli.configured
 
   cli.cxx{common-options}: cli.options += --short-usage --long-usage # Both.
   cli.cxx{bdep-options}: cli.options += --short-usage
-
   cli.options += --long-usage # All other pages -- long usage.
+
+  cli.cxx{new-options}: cli.options += \
+--cxx-prologue "#include <bdep/new-parsers.hxx>"
 
   # Include the generated cli files into the distribution and don't remove
   # them when cleaning in src (so that clean results in a state identical to

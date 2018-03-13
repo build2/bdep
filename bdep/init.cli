@@ -23,7 +23,7 @@ namespace bdep
      \c{\b{bdep init} [<options>] [<pkg-spec>] [<cfg-spec>] [<pkg-args>]\n
         \b{bdep init} [<options>] [<prj-spec>] \b{--empty|-E}\n
         \b{bdep init} [<options>] [<pkg-spec>] \b{--config-add|-A} <cfg-dir> [\b{@}<cfg-name>]\n
-        \b{bdep init} [<options>] [<pkg-spec>] \b{--config-create|-C} <cfg-dir> [\b{@}<cfg-name>] \\\n
+        \b{bdep init} [<options>] [<pkg-spec>] \b{--config-create|-C} <cfg-dir> [\b{@}<cfg-name>]\n
         \ \ \ \ \ \ \ \ \ \ [<cfg-args>]}
 
      \c{<prj-spec> = \b{--directory}|\b{-d} <prj-dir>\n

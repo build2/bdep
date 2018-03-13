@@ -22,9 +22,10 @@
 //
 #include <bdep/help.hxx>
 
-#include <bdep/config.hxx>
+#include <bdep/new.hxx>
 #include <bdep/init.hxx>
 #include <bdep/sync.hxx>
+#include <bdep/config.hxx>
 
 using namespace std;
 using namespace bdep;
@@ -34,11 +35,11 @@ using namespace bdep;
 // Once this is done, use the "final" values of the common options to do
 // global initializations (verbosity level, etc).
 //
-// If O is-a project_options, then also handle the @<cfg-name> arguments and
-// place them into project_options::config_name.
+// If O is-a configuration_name_options, then also handle the @<cfg-name>
+// arguments and place them into configuration_name_options::config_name.
 //
 static inline bool
-cfg_name (project_options* o, const char* a)
+cfg_name (configuration_name_options* o, const char* a)
 {
   string n (a);
 
@@ -264,10 +265,10 @@ try
       break;                                                                \
     }
 
-    //COMMAND_IMPL (new_, new,  "new");
-    COMMAND_IMPL (config, config, "config");
+    COMMAND_IMPL (new_,   new,    "new");
     COMMAND_IMPL (init,   init,   "init");
     COMMAND_IMPL (sync,   sync,   "sync");
+    COMMAND_IMPL (config, config, "config");
 
     assert (false);
     fail << "unhandled command";

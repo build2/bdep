@@ -1,0 +1,125 @@
+// file      : bdep/new.cli
+// copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
+// license   : MIT; see accompanying LICENSE file
+
+include <bdep/project.cli>;
+include <bdep/new-types.hxx>;
+
+"\section=1"
+"\name=bdep-new"
+"\summary=create and initialize new project"
+
+namespace bdep
+{
+  {
+    "<options> <spec> <name>
+     <type> <type-opt>
+     <lang> <lang-opt>
+     <cfg-name> <cfg-dir>
+     <cfg-args> <cfg-var> <module>",
+
+    "\h|SYNOPSIS|
+
+     \c{\b{bdep new} [<options>] [\b{--no-init}] <spec> <name>\n
+        \b{bdep new} [<options>] \b{--config-add|-A} <cfg-dir> [\b{@}<cfg-name>] <spec> <name>\n
+        \b{bdep new} [<options>] \b{--config-create|-C} <cfg-dir> [\b{@}<cfg-name>] <spec> <name>\n
+        \ \ \ \ \ \ \ \ \ [<cfg-args>]}
+
+     \c{<spec> = [<type>] [<lang>]\n
+        <type> = \b{--type}|\b{-t} (\b{exe}|\b{lib}|\b{bare})[\b{,}<type-opt>...]\n
+        <lang> = \b{--lang}|\b{-l} (\b{c}|\b{c++})[\b{,}<lang-opt>...]\n
+        <cfg-args> = (<module> | <cfg-var>)...}
+
+     \h|DESCRIPTION|
+
+     The \cb{new} command...
+
+     The first variant, unless the \cb{--no-init} is specified, initializes
+     an empty configuration set, as if by performing \cb{init --empty}.
+
+     Recognized \cb{c++} language options:
+
+     \dl|
+
+     \li|\cb{cxx}
+
+         Use the \cb{.cxx}, \cb{.hxx}, \cb{.ixx}, \cb{.txx}, and \cb{.mxx}
+         source file extensions (default).|
+
+     \li|\cb{cpp}
+
+         Use the \cb{.cpp}, \cb{.hpp}, \cb{.ipp}, \cb{.tpp}, and \cb{.mpp}
+         source file extensions.||
+     "
+  }
+
+  //--type options
+  //
+  class cmd_new_exe_options
+  {
+  };
+
+  class cmd_new_lib_options
+  {
+  };
+
+  class cmd_new_bare_options
+  {
+  };
+
+  // --lang options
+  //
+  class cmd_new_c_options
+  {
+  };
+
+  class cmd_new_cxx_options
+  {
+    bool cpp;
+    bool cxx;
+  };
+
+  class cmd_new_options: configuration_name_options
+  {
+    "\h|NEW OPTIONS|"
+
+    bool --no-init
+    {
+      "Don't initialize an empty build configuration set."
+    }
+
+    dir_path --config-add|-A
+    {
+      "<dir>",
+      "Add an existing build configuration <dir>."
+    }
+
+    dir_path --config-create|-C
+    {
+      "<dir>",
+      "Create a new build configuration in <dir>."
+    }
+
+    cmd_new_type --type|-t
+    {
+      "<type>[,<opt>...]",
+      "Specify project type and options. Valid values for <type> are \cb{exe}
+       (executable project) \cb{lib} (library project), and \cb{bare} (bare
+       project without any source code, default). Valid values for <opt> are
+       type-specific."
+    }
+
+    cmd_new_lang --lang|-l
+    {
+      "<lang>[,<opt>...]",
+      "Specify language type and options. Valid values for <lang> are \cb{c},
+       and \cb{c++} (default). Valid values for <opt> are language-specific."
+    }
+
+    bool --no-git
+    {
+      "Don't initialize a \cb{git(1)} repository inside the project nor
+       generate any \cb{.gitignore} files."
+    }
+  };
+}

@@ -3,6 +3,7 @@
 // license   : MIT; see accompanying LICENSE file
 
 include <bdep/types.hxx>;
+include <bdep/options-types.hxx>;
 
 "\section=1"
 "\name=bdep-common-options"
