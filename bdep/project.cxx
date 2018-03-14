@@ -136,7 +136,8 @@ namespace bdep
       // Ignore errors when checking for file existence since we may be
       // iterating over directories past any reasonable project boundaries.
       //
-      if (exists (d / manifest_file, true))
+      bool p (exists (d / manifest_file, true));
+      if (p)
       {
         if (pkg)
         {
@@ -154,10 +155,15 @@ namespace bdep
       // Check for the database file first since an (initialized) simple
       // project mosl likely won't have any *.manifest files.
       //
-      if (exists (d / bdep_file, true)         ||
-          exists (d / packages_file, true)     ||
-          exists (d / repositories_file, true) ||
-          exists (d / configurations_file, true))
+      if (exists (d / bdep_file, true)     ||
+          exists (d / packages_file, true) ||
+          //
+          // We should only consider {repositories,configurations}.manifest if
+          // we have either packages.manifest or manifest (i.e., this is a
+          // valid project root).
+          //
+          (p && (exists (d / repositories_file, true) ||
+                 exists (d / configurations_file, true))))
       {
         prj = move (d);
         break;
