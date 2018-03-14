@@ -12,6 +12,50 @@
 
 namespace bdep
 {
+  template <typename I, typename O, typename E, typename P, typename... A>
+  process
+  start (I&& in, O&& out, E&& err, const P& prog, A&&... args)
+  {
+    try
+    {
+      return process_start_callback (
+        [] (const char* const args[], size_t n)
+        {
+          if (verb >= 2)
+            print_process (args, n);
+        },
+        forward<I> (in),
+        forward<O> (out),
+        forward<E> (err),
+        prog,
+        forward<A> (args)...);
+    }
+    catch (const process_error& e)
+    {
+      fail << "unable to execute " << prog << ": " << e << endf;
+    }
+  }
+
+  template <typename P, typename... A>
+  void
+  run (const P& prog, A&&... args)
+  {
+    process pr (start (0 /* stdin  */,
+                       1 /* stdout */,
+                       2 /* stderr */,
+                       prog,
+                       forward<A> (args)...));
+    if (!pr.wait ())
+    {
+      const process_exit& e (*pr.exit);
+
+      if (e.normal ())
+        throw failed (); // Assume the child issued diagnostics.
+
+      fail << "process " << prog << " " << e;
+    }
+  }
+
   // *_bpkg()
   //
   template <typename O, typename E, typename... A>

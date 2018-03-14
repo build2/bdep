@@ -8,10 +8,16 @@ include <bdep/common.cli>;
 
 namespace bdep
 {
-  // Common options for commands that accept @<cfg-name>.
+  // Common options for commands that accept --config-id and @<cfg-name>.
   //
   class configuration_name_options: common_options
   {
+    vector<uint64_t> --config-id
+    {
+      "<num>",
+      "Specify the build configuration as an id."
+    };
+
     // Storage for configuration names specified as @<cfg-name>.
     //
     // Note that we leave it undocumented so that it's not mentioned in
@@ -25,6 +31,13 @@ namespace bdep
   //
   class project_options: configuration_name_options
   {
+    dir_paths --directory|-d
+    {
+      "<dir>",
+      "Assume project/package is in the specified directory rather than in the
+       current working directory."
+    }
+
     bool --all|-a
     {
       "Use all build configurations."
@@ -33,20 +46,7 @@ namespace bdep
     dir_paths --config|-c
     {
       "<dir>",
-      "Specify the build configuration to use as a directory."
-    }
-
-    vector<uint64_t> --config-id
-    {
-      "<num>",
-      "Specify the build configuration to use as an id."
-    };
-
-    dir_paths --directory|-d
-    {
-      "<dir>",
-      "Assume project/package is in the specified directory rather than in the
-       current working directory."
+      "Specify the build configuration as a directory."
     }
   };
 }

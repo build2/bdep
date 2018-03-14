@@ -5,6 +5,8 @@
 #ifndef BDEP_NEW_TYPES_HXX
 #define BDEP_NEW_TYPES_HXX
 
+#include <bdep/types.hxx>
+
 namespace bdep
 {
   // We could have defined cmd_new_*_options in a separate .cli file, include
@@ -22,7 +24,7 @@ namespace bdep
             typename BARE = cmd_new_bare_options>
   struct cmd_new_type_template
   {
-    enum type_type {exe, lib, bare} type;
+    enum type_type {exe = 0, lib, bare} type; // Note: used as index.
 
     operator type_type () const {return type;}
 
@@ -36,6 +38,21 @@ namespace bdep
     // Default is bare with no options.
     //
     cmd_new_type_template (): type (bare) {bare_opt = BARE ();}
+
+    friend ostream&
+    operator<< (ostream& os, const cmd_new_type_template& t)
+    {
+      using type = cmd_new_type_template;
+
+      switch (t)
+      {
+      case type::exe:  return os << "executable";
+      case type::lib:  return os << "library";
+      case type::bare: return os << "bare";
+      }
+
+      return os;
+    }
   };
 
   using cmd_new_type = cmd_new_type_template<>;
@@ -49,7 +66,7 @@ namespace bdep
             typename CXX = cmd_new_cxx_options>
   struct cmd_new_lang_template
   {
-    enum lang_type {c, cxx} lang;
+    enum lang_type {c = 0, cxx} lang; // Note: used as index.
 
     operator lang_type () const {return lang;}
 

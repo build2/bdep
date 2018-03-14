@@ -88,6 +88,16 @@ namespace bdep
   void
   rm (const path&, uint16_t verbosity = 3);
 
+  // Run a process.
+  //
+  template <typename I, typename O, typename E, typename P, typename... A>
+  process
+  start (I&& in, O&& out, E&& err, const P& prog, A&&... args);
+
+  template <typename P, typename... A>
+  void
+  run (const P& prog, A&&... args);
+
   // Run the bpkg process.
   //
   class common_options;
