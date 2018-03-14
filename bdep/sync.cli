@@ -34,6 +34,16 @@ namespace bdep
   //
   class cmd_sync_options: project_options
   {
-    //"\h|SYNC OPTIONS|"
+    "\h|SYNC OPTIONS|"
+
+    bool --fetch|-f
+    {
+      "Perform the \cb{fetch} command prior to synchronization."
+    }
+
+    bool --fetch-full|-F
+    {
+      "Perform the \cb{fetch --full} command prior to synchronization."
+    }
   };
 }

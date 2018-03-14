@@ -13,6 +13,12 @@
 
 namespace bdep
 {
+  void
+  cmd_fetch (const common_options&,
+             const dir_path& prj,
+             const shared_ptr<configuration>&,
+             bool full);
+
   int
   cmd_fetch (const cmd_fetch_options&, cli::scanner& args);
 }

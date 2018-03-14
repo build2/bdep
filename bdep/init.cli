@@ -50,10 +50,10 @@ namespace bdep
      directories using the \cb{--config|-c} option.
 
      The second and third variants are semantically equivalent to first
-     performing \cb{config add} and \cb{config create} (\l{bdep-config(1)}),
-     respectively, followed by the first variant. In both cases the
-     \cb{--default|-d} option can be used to make the added/created
-     configuration default.
+     performing the \cb{config add} and \cb{config create} commands
+     (\l{bdep-config(1)}), respectively, followed by the first variant. In
+     both cases the \cb{--default|-d} option can be used to make the
+     added/created configuration default.
      "
   }
 

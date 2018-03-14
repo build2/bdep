@@ -7,6 +7,8 @@
 #include <bdep/database.hxx>
 #include <bdep/diagnostics.hxx>
 
+#include <bdep/fetch.hxx>
+
 using namespace std;
 
 namespace bdep
@@ -14,7 +16,8 @@ namespace bdep
   void
   cmd_sync (const common_options& co,
             const dir_path& prj,
-            const shared_ptr<configuration>& c)
+            const shared_ptr<configuration>& c,
+            bool fetch)
   {
     assert (!c->packages.empty ());
 
@@ -30,11 +33,12 @@ namespace bdep
     // We also use the repository name rather than then location as a sanity
     // check (the repository must have been added as part of init).
     //
-    run_bpkg (co,
-              "fetch",
-              "-d", c->path,
-              "--shallow",
-              "dir:" + prj.string ());
+    if (fetch)
+      run_bpkg (co,
+                "fetch",
+                "-d", c->path,
+                "--shallow",
+                "dir:" + prj.string ());
 
     // Prepare the pkg-spec.
     //
@@ -105,6 +109,7 @@ namespace bdep
 
     // Synchronize each configuration skipping empty ones.
     //
+    bool first (true);
     for (const shared_ptr<configuration>& c: cfgs)
     {
       if (c->packages.empty ())
@@ -115,7 +120,25 @@ namespace bdep
         continue;
       }
 
-      cmd_sync (o, prj, c);
+      // If we are synchronizing multiple configurations, separate them with a
+      // blank line and print the configuration name/directory.
+      //
+      if (verb && cfgs.size () > 1)
+      {
+        text << (first ? "" : "\n")
+             << "synchronizing with configuration " << *c;
+
+        first = false;
+      }
+
+      bool fetch (o.fetch () || o.fetch_full ());
+
+      if (fetch)
+        cmd_fetch (o, prj, c, o.fetch_full ());
+
+      // Don't re-fetch if we just fetched.
+      //
+      cmd_sync (o, prj, c, !fetch);
     }
 
     return 0;

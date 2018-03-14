@@ -11,6 +11,21 @@ using namespace std;
 
 namespace bdep
 {
+  void
+  cmd_fetch (const common_options& o,
+             const dir_path& prj,
+             const shared_ptr<configuration>& c,
+             bool full)
+  {
+    // Let's use the repository name rather than the location as a sanity
+    // check (the repository must have been added as part of init).
+    //
+    run_bpkg (o,
+              "fetch",
+              "-d", c->path,
+              (full ? nullptr : ("dir:" + prj.string ()).c_str ()));
+  }
+
   int
   cmd_fetch (const cmd_fetch_options& o, cli::scanner&)
   {
@@ -45,13 +60,7 @@ namespace bdep
         first = false;
       }
 
-      // Let's use the repository name rather than the location as a sanity
-      // check (the repository must have been added as part of init).
-      //
-      run_bpkg (o,
-                "fetch",
-                "-d", c->path,
-                (o.full () ? nullptr : ("dir:" + prj.string ()).c_str ()));
+      cmd_fetch (o, prj, c, o.full ());
     }
 
     return 0;

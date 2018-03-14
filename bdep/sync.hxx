@@ -13,10 +13,14 @@
 
 namespace bdep
 {
+  // If fetch is false, don't perform a (shallow) fetch of the project
+  // repository.
+  //
   void
   cmd_sync (const common_options&,
             const dir_path& prj,
-            const shared_ptr<configuration>&);
+            const shared_ptr<configuration>&,
+            bool fetch = true);
 
   int
   cmd_sync (const cmd_sync_options&, cli::scanner& args);
