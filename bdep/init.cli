@@ -6,7 +6,7 @@ include <bdep/project.cli>;
 
 "\section=1"
 "\name=bdep-init"
-"\summary=initialize project in configurations"
+"\summary=initialize project in build configurations"
 
 namespace bdep
 {

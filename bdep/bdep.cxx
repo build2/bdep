@@ -25,6 +25,7 @@
 #include <bdep/new.hxx>
 #include <bdep/init.hxx>
 #include <bdep/sync.hxx>
+#include <bdep/fetch.hxx>
 #include <bdep/config.hxx>
 
 using namespace std;
@@ -268,6 +269,7 @@ try
     COMMAND_IMPL (new_,   new,    "new");
     COMMAND_IMPL (init,   init,   "init");
     COMMAND_IMPL (sync,   sync,   "sync");
+    COMMAND_IMPL (fetch,  fetch,  "fetch");
     COMMAND_IMPL (config, config, "config");
 
     assert (false);

@@ -92,7 +92,7 @@ namespace bdep
   }
 
   int
-  cmd_config (const cmd_config_options& o, cli::scanner& args)
+  cmd_config (const cmd_config_options& o, cli::scanner&)
   {
     //@@ TODO: get subcommand and pass to tracer.
 

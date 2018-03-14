@@ -68,8 +68,20 @@ namespace bdep
     // We do each configuration in a separate transaction so that our state
     // reflects the bpkg configuration as closely as possible.
     //
+    bool first (true);
     for (const shared_ptr<configuration>& c: cfgs)
     {
+      // If we are initializing in multiple configurations, separate them with
+      // a blank line and print the configuration name/directory.
+      //
+      if (verb && cfgs.size () > 1)
+      {
+        text << (first ? "" : "\n")
+             << "initializing in configuration " << *c;
+
+        first = false;
+      }
+
       transaction t (db.begin ());
 
       // Add project repository to the configuration. Note that we don't fetch
@@ -97,6 +109,11 @@ namespace bdep
           continue;
         }
 
+        // If we are initializing multiple packages, print their names.
+        //
+        if (verb && pkgs.size () > 1)
+          text << "initializing package " << p.name;
+
         c->packages.push_back (package_state {p.name});
       }
 
@@ -119,9 +136,8 @@ namespace bdep
 
     const dir_path& prj (pp.project);
 
-    text << prj;
-    for (const package_location& pl: pp.packages)
-      text << "  " << pl.name << " " << (prj / pl.path);
+    if (verb)
+      text << "initializing project " << prj;
 
     // Create .bdep/.
     //
@@ -186,8 +202,6 @@ namespace bdep
     // Initialize each package in each configuration.
     //
     cmd_init (o, prj, db, cfgs, pp.packages);
-
-    //@@ TODO: print project/package(s) being initialized? (analog to new?)
 
     return 0;
   }

@@ -18,6 +18,24 @@ namespace bdep
   {
     assert (!c->packages.empty ());
 
+    // Do a separate fetch instead of letting pkg-build do it. This way we get
+    // better control of the diagnostics (no "fetching ..." for the project
+    // itself). We also make sure that if the user specifies a repository for
+    // a dependency to upgrade, then that repository is listed as part of the
+    // project prerequisites/complements. Or, in other words, we only want to
+    // allow specifying the location as a proxy for specifying version (i.e.,
+    // "I want this dependency upgraded to the latest version available from
+    // this repository").
+    //
+    // We also use the repository name rather than then location as a sanity
+    // check (the repository must have been added as part of init).
+    //
+    run_bpkg (co,
+              "fetch",
+              "-d", c->path,
+              "--shallow",
+              "dir:" + prj.string ());
+
     // Prepare the pkg-spec.
     //
     string spec;
@@ -35,9 +53,9 @@ namespace bdep
     run_bpkg (co,
               "build",
               "-d", c->path,
-              //"--fetch-shallow",
+              "--no-fetch",
               "--configure-only",
-              //"--keep-out",
+              "--keep-out",
               spec);
   }
 

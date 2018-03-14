@@ -56,7 +56,7 @@ o="--suppress-undocumented --output-prefix bdep- --class-doc bdep::common_option
 compile "common" $o --output-suffix "-options" --class-doc bdep::common_options=long
 compile "bdep" $o --output-prefix "" --class-doc bdep::commands=short --class-doc bdep::topics=short
 
-pages="config help init sync new"
+pages="config help init sync new fetch"
 
 for p in $pages; do
   compile $p $o

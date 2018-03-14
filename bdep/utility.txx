@@ -76,17 +76,20 @@ namespace bdep
       // Map verbosity level. If we are running quiet or at level 1, then run
       // bpkg quiet. Otherwise, run it at the same level as us.
       //
-      bool quiet (true); // Maybe will become an argument one day.
+      bool quiet (false); // Maybe will become an argument one day.
+
       string vl;
-      if (verb <= (quiet ? 1 : 0))
-        ops.push_back ("-q");
-      else if (verb == 2)
-        ops.push_back ("-v");
-      else if (verb > 2)
+      switch (verb)
       {
-        vl = to_string (verb);
-        ops.push_back ("--verbose");
-        ops.push_back (vl.c_str ());
+      case  0: ops.push_back (        "-q");                 break;
+      case  1: ops.push_back (quiet ? "-q" : "--no-result"); break;
+      case  2: ops.push_back (        "-v");                 break;
+      default:
+        {
+          vl = to_string (verb);
+          ops.push_back ("--verbose");
+          ops.push_back (vl.c_str ());
+        }
       }
 
       // Forward our --build* options.

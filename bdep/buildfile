@@ -19,10 +19,11 @@ bdep-options     \
 common-options   \
 project-options  \
 help-options     \
-config-options   \
+new-options      \
 init-options     \
 sync-options     \
-new-options
+fetch-options    \
+config-options
 
 exe{bdep}: {hxx ixx txx cxx}{** -{$options_topics} -*-odb -version}  \
            {hxx ixx cxx}{$options_topics}                            \
@@ -53,10 +54,12 @@ if $cli.configured
   #
   cli.cxx{help-options}: cli{help}
 
-  cli.cxx{config-options}: cli{config}
+  cli.cxx{new-options}:    cli{new}
   cli.cxx{init-options}:   cli{init}
   cli.cxx{sync-options}:   cli{sync}
-  cli.cxx{new-options}:    cli{new}
+  cli.cxx{fetch-options}:  cli{fetch}
+  cli.cxx{config-options}: cli{config}
+
 
   # Option length must be the same to get commands/topics/options aligned.
   #

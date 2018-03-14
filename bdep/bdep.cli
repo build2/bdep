@@ -66,12 +66,17 @@ namespace bdep
 
     bool init
     {
-      "\l{bdep-init(1)} \- initialize project in configurations"
+      "\l{bdep-init(1)} \- initialize project in build configurations"
     }
 
     bool sync
     {
-      "\l{bdep-sync(1)} \- synchronize project and configurations"
+      "\l{bdep-sync(1)} \- synchronize project and build configurations"
+    }
+
+    bool fetch
+    {
+      "\l{bdep-fetch(1)} \- fetch list of available project dependencies"
     }
 
     bool config

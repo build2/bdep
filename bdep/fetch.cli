@@ -1,0 +1,47 @@
+// file      : bdep/fetch.cli
+// copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
+// license   : MIT; see accompanying LICENSE file
+
+include <bdep/project.cli>;
+
+"\section=1"
+"\name=bdep-fetch"
+"\summary=fetch list of available project dependencies"
+
+namespace bdep
+{
+  {
+    "<options>
+     <prj-spec> <prj-dir>
+     <cfg-spec> <cfg-name> <cfg-dir>",
+
+    "\h|SYNOPSIS|
+
+     \c{\b{bdep fetch} [<options>] [\b{--full}|\b{-F}] [<prj-spec>] [<cfg-spec>]}
+
+     \c{<prj-spec> = \b{--directory}|\b{-d} <prj-dir>\n
+        <cfg-spec> = (\b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>)... | \b{--all}|\b{-a}}
+
+     \h|DESCRIPTION|
+
+     The \cb{fetch} command re-fetches the list of available packages in the
+     project's prerequisite and complement repositories, recursively.
+
+     If the \cb{--full|-F} option is specified, then instead \cb{fetch}
+     performs a full re-fetch of all the repositories added to the
+     configuration. This mode is primarily useful when a configuration (and
+     some of the prerequisite/complement repositories) are shared between
+     several projects. In this situation an incremental fetch may result in
+     an inconsistent repository state."
+  }
+
+  class cmd_fetch_options: project_options
+  {
+    "\h|FETCH OPTIONS|"
+
+    bool --full|-F
+    {
+      "Perform a full re-fetch of all the repositories."
+    }
+  };
+}

@@ -6,7 +6,7 @@ include <bdep/project.cli>;
 
 "\section=1"
 "\name=bdep-sync"
-"\summary=synchronize project and configurations"
+"\summary=synchronize project and build configurations"
 
 namespace bdep
 {
