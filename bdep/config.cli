@@ -22,9 +22,9 @@ namespace bdep
         \b{bdep config create} [<options>] [<prj-spec>] [\b{@}<cfg-name>] <cfg-dir> [<cfg-args>]\n
         \b{bdep config remove} [<options>] [<prj-spec>] <cfg-spec>}
 
-     \c{<prj-spec> = \b{--directory}|\b{-d} <prj-dir>\n
-        <cfg-args> = (<module> | <cfg-var>)...\n
-        <cfg-spec> = (\b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>)... | \b{--all}|\b{-a}}
+     \c{<cfg-args> = (<module> | <cfg-var>)...\n
+        <cfg-spec> = (\b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>)... | \b{--all}|\b{-a}\n
+        <prj-spec> = \b{--directory}|\b{-d} <prj-dir>}
 
      \h|DESCRIPTION|
 

@@ -170,6 +170,11 @@ namespace bdep
   find_project_packages (const project_options&,
                          bool ignore_packages = false,
                          bool load_packages = true);
+
+  // Verify all the packages are present in all the configurations.
+  //
+  void
+  verify_project_packages (const project_packages&, const configurations&);
 }
 
 #endif // BDEP_PROJECT_HXX

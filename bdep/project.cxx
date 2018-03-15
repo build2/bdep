@@ -326,4 +326,26 @@ namespace bdep
 
     return r;
   }
+
+  void
+  verify_project_packages (const project_packages& pp,
+                           const configurations& cfgs)
+  {
+    for (const shared_ptr<configuration>& c: cfgs)
+    {
+      for (const package_location& p: pp.packages)
+      {
+        if (find_if (c->packages.begin (),
+                     c->packages.end (),
+                     [&p] (const package_state& s)
+                     {
+                       return p.name == s.name;
+                     }) == c->packages.end ())
+        {
+          fail << "package " << p.name << " is not initialized "
+               << "in configuration " << *c;
+        }
+      }
+    }
+  }
 }

@@ -1,0 +1,70 @@
+// file      : bdep/status.cli
+// copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
+// license   : MIT; see accompanying LICENSE file
+
+include <bdep/project.cli>;
+
+"\section=1"
+"\name=bdep-status"
+"\summary=print status of project and/or its dependencies"
+
+namespace bdep
+{
+  {
+    "<options>
+     <prj-spec> <prj-dir>
+     <pkg-spec> <pkg-dir>
+     <cfg-spec> <cfg-name> <cfg-dir>
+     <dep-spec> <pkg> <ver>",
+
+    "\h|SYNOPSIS|
+
+     \c{\b{bdep status} [<options>] [<pkg-spec>] [<cfg-spec>] [<dep-spec>...]}
+
+     \c{<dep-spec> = <pkg>[\b{/}<ver>]\n
+        <cfg-spec> = (\b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>)... | \b{--all}|\b{-a}\n
+        <pkg-spec> = (\b{--directory}|\b{-d} <pkg-dir>)... | <prj-spec>\n
+        <prj-spec> = \b{--directory}|\b{-d} <prj-dir>}
+
+     \h|DESCRIPTION|
+
+     The \cb{status} command prints the status of the project and/or its
+     dependencies in build configurations. If no <dep-spec> arguments are
+     specified, then \cb{status} prints the status of the project's packages.
+     Otherwise, the status of the specified dependency packages is printed.
+     Additionally, the status of immediate or all dependencies of the above
+     packages can be printed by specifying the \c{\b{--immediate}|\b{-i}} or
+     \c{\b{--recursive}|\b{-r}} options, respectively. Note that the status is
+     written to \cb{STDOUT}, not \cb{STDERR}.
+
+     The status of each package is printed on a separate line. The semantics
+     of <dep-spec> and the format of the status line are described in
+     \l{bpkg-pkg-status(1)}.
+     "
+  }
+
+  class cmd_status_options: project_options
+  {
+    "\h|STATUS OPTIONS|"
+
+    bool --immediate|-i
+    {
+      "Also print the status of immediate dependencies."
+    }
+
+    bool --recursive|-r
+    {
+      "Also print the status of all dependencies, recursively."
+    }
+
+    bool --fetch|-f
+    {
+      "Perform the \cb{fetch} command prior to printing the status."
+    }
+
+    bool --fetch-full|-F
+    {
+      "Perform the \cb{fetch --full} command prior to printing the status."
+    }
+  };
+}

@@ -31,13 +31,6 @@ namespace bdep
   //
   class project_options: configuration_name_options
   {
-    dir_paths --directory|-d
-    {
-      "<dir>",
-      "Assume project/package is in the specified directory rather than in the
-       current working directory."
-    }
-
     bool --all|-a
     {
       "Use all build configurations."
@@ -47,6 +40,13 @@ namespace bdep
     {
       "<dir>",
       "Specify the build configuration as a directory."
+    }
+
+    dir_paths --directory|-d
+    {
+      "<dir>",
+      "Assume project/package is in the specified directory rather than in the
+       current working directory."
     }
   };
 }

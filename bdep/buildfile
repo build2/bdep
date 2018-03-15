@@ -23,6 +23,7 @@ new-options      \
 init-options     \
 sync-options     \
 fetch-options    \
+status-options   \
 config-options
 
 exe{bdep}: {hxx ixx txx cxx}{** -{$options_topics} -*-odb -version}  \
@@ -58,8 +59,8 @@ if $cli.configured
   cli.cxx{init-options}:   cli{init}
   cli.cxx{sync-options}:   cli{sync}
   cli.cxx{fetch-options}:  cli{fetch}
+  cli.cxx{status-options}: cli{status}
   cli.cxx{config-options}: cli{config}
-
 
   # Option length must be the same to get commands/topics/options aligned.
   #

@@ -20,9 +20,9 @@ namespace bdep
 
      \c{\b{bdep sync} [<options>] [<pkg-spec>] [<cfg-spec>]}
 
-     \c{<prj-spec> = \b{--directory}|\b{-d} <prj-dir>\n
+     \c{<cfg-spec> = (\b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>)... | \b{--all}|\b{-a}\n
         <pkg-spec> = (\b{--directory}|\b{-d} <pkg-dir>)... | <prj-spec>\n
-        <cfg-spec> = (\b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>)... | \b{--all}|\b{-a}}
+        <prj-spec> = \b{--directory}|\b{-d} <prj-dir>}
 
      \h|DESCRIPTION|
 

@@ -79,6 +79,11 @@ namespace bdep
       "\l{bdep-fetch(1)} \- fetch list of available project dependencies"
     }
 
+    bool status
+    {
+      "\l{bdep-status(1)} \- print status of project and/or its dependencies"
+    }
+
     bool config
     {
       "\l{bdep-config(1)} \- manage project's build configurations"

@@ -39,6 +39,7 @@ function compile ()
   cli -I .. -v project="bdep" -v version="$version" -v date="$date" \
 --include-base-last "${o[@]}" --generate-html --html-prologue-file \
 man-prologue.xhtml --html-epilogue-file man-epilogue.xhtml --html-suffix .xhtml \
+--link-regex '%bpkg([-.].+)%../../bpkg/doc/bpkg$1%' \
 --link-regex '%bdep(#.+)?%build2-project-manager-manual.xhtml$1%' \
 ../bdep/$n.cli
 
@@ -56,7 +57,7 @@ o="--suppress-undocumented --output-prefix bdep- --class-doc bdep::common_option
 compile "common" $o --output-suffix "-options" --class-doc bdep::common_options=long
 compile "bdep" $o --output-prefix "" --class-doc bdep::commands=short --class-doc bdep::topics=short
 
-pages="config help init sync new fetch"
+pages="new help init sync fetch status config"
 
 for p in $pages; do
   compile $p $o

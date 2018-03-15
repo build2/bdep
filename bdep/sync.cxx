@@ -90,22 +90,8 @@ namespace bdep
 
     // If specified, verify packages are present in each configuration.
     //
-    for (const shared_ptr<configuration>& c: cfgs)
-    {
-      for (const package_location& p: pp.packages)
-      {
-        if (find_if (c->packages.begin (),
-                     c->packages.end (),
-                     [&p] (const package_state& s)
-                     {
-                       return p.name == s.name;
-                     }) == c->packages.end ())
-        {
-          fail << "package " << p.name << " is not initialized "
-               << "in configuration " << *c;
-        }
-      }
-    }
+    if (!pp.packages.empty ())
+      verify_project_packages (pp, cfgs);
 
     // Synchronize each configuration skipping empty ones.
     //

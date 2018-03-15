@@ -19,8 +19,8 @@ namespace bdep
 
      \c{\b{bdep fetch} [<options>] [\b{--full}|\b{-F}] [<prj-spec>] [<cfg-spec>]}
 
-     \c{<prj-spec> = \b{--directory}|\b{-d} <prj-dir>\n
-        <cfg-spec> = (\b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>)... | \b{--all}|\b{-a}}
+     \c{<cfg-spec> = (\b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>)... | \b{--all}|\b{-a}\n
+        <prj-spec> = \b{--directory}|\b{-d} <prj-dir>}
 
      \h|DESCRIPTION|
 
