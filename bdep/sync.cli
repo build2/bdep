@@ -36,6 +36,11 @@ namespace bdep
   {
     "\h|SYNC OPTIONS|"
 
+    bool --yes|-y
+    {
+      "Don't prompt for confirmation when up/down-grading dependencies."
+    }
+
     bool --fetch|-f
     {
       "Perform the \cb{fetch} command prior to synchronization."

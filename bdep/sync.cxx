@@ -17,7 +17,8 @@ namespace bdep
   cmd_sync (const common_options& co,
             const dir_path& prj,
             const shared_ptr<configuration>& c,
-            bool fetch)
+            bool fetch,
+            bool yes)
   {
     assert (!c->packages.empty ());
 
@@ -54,12 +55,21 @@ namespace bdep
     spec += '@';
     spec += prj.string ();
 
+    // It feels right to drop unused dependencies without any confirmation.
+    //
+    // @@ TODO: right now it is silent. Can we print a plan without the
+    //    prompts? Probably also a good idea even if from build system
+    //    hook... Issue: drop dependents has no "drop " prefix. Also indented
+    //    stuff out of nowhere will look odd.
+    //
     run_bpkg (co,
               "build",
               "-d", c->path,
               "--no-fetch",
               "--configure-only",
+              "--drop-prerequisite",
               "--keep-out",
+              (yes ? "--yes" : nullptr),
               spec);
   }
 
@@ -125,6 +135,8 @@ namespace bdep
       // Don't re-fetch if we just fetched.
       //
       cmd_sync (o, prj, c, !fetch);
+
+      //@@ TODO: sync upgrade (see status for structure ideas). Pass o.yes().
     }
 
     return 0;
