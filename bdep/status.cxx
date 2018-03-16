@@ -34,9 +34,15 @@ namespace bdep
                 "--shallow",
                 "dir:" + prj.string ());
 
+    // Don't show the hold status since the only packages that will normally
+    // be held are the project's. But do show dependency constraints.
+    //
     run_bpkg (o,
               "status",
               "-d", cfg,
+              "--no-hold",
+              "--constraint",
+              (o.old_available () ? "--old-available" : nullptr),
               (o.immediate () ? "--immediate" :
                o.recursive () ? "--recursive" :
                nullptr),

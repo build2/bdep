@@ -57,6 +57,11 @@ namespace bdep
       "Also print the status of all dependencies, recursively."
     }
 
+    bool --old-available|-o
+    {
+      "Print old available versions."
+    }
+
     bool --fetch|-f
     {
       "Perform the \cb{fetch} command prior to printing the status."
