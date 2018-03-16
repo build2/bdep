@@ -94,6 +94,20 @@ namespace bdep
          << "depends: * bpkg >= 0.7.0-"                                << endl;
       os.close ();
 
+      // repositories.manifest
+      //
+      os.open (f = prj / "repositories.manifest");
+      os << ": 1"                                                      << endl
+         << "# To add a repository for a dependency, uncomment the"    << endl
+         << "# next four lines and specify its location."              << endl
+         << "#role: prerequisite"                                      << endl
+         << "#location: ..."                                           << endl
+         << "#"                                                        << endl
+         << "#:"                                                       << endl
+         << "role: base"                                               << endl
+         << "summary: " << n << " project repository"                  << endl;
+      os.close ();
+
       // build/
       //
       dir_path bd (dir_path (prj) /= "build");
