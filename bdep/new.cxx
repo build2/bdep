@@ -183,8 +183,12 @@ namespace bdep
       //
       if (!o.no_git ())
       {
+        // Use POSIX directory separators here.
+        //
         os.open (f = prj / ".gitignore");
-        os << "# Compiler/linker output."                              << endl
+        os << bdep_dir.string () << '/'                                << endl
+           <<                                                             endl
+           << "# Compiler/linker output."                              << endl
            << "#"                                                      << endl
            << "*.d"                                                    << endl
            << "*.t"                                                    << endl
