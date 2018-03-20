@@ -100,6 +100,11 @@ namespace bdep
     {
       "\l{bdep-common-options(1)} \- details on common options"
     }
+
+    bool projects-configs
+    {
+      "\l{bdep-projects-configs(1)} \- specifying projects and configurations"
+    }
   };
 
   class options: common_options

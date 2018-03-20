@@ -34,7 +34,7 @@ namespace bdep
 
      The \cb{new} command...
 
-     The first variant, unless the \cb{--no-init} is specified, initializes
+     The first form, unless the \cb{--no-init} is specified, initializes
      an empty configuration set, as if by performing \cb{init --empty}.
 
      Recognized \cb{c++} language options:

@@ -46,12 +46,12 @@ namespace bdep
      <cfg-args> are arguments to \cb{bpkg cfg-create}. <pkg-args> are arguments
      to \cb{bpkg pkg-build}.
 
-     In the first variant the configurations can also be specified as
+     In the first form the configurations can also be specified as
      directories using the \cb{--config|-c} option.
 
-     The second and third variants are semantically equivalent to first
+     The second and third forms are semantically equivalent to first
      performing the \cb{config add} and \cb{config create} commands
-     (\l{bdep-config(1)}), respectively, followed by the first variant. In
+     (\l{bdep-config(1)}), respectively, followed by the first form. In
      both cases the \cb{--default|-d} option can be used to make the
      added/created configuration default.
      "

@@ -26,10 +26,13 @@ fetch-options    \
 status-options   \
 config-options
 
-exe{bdep}: {hxx ixx txx cxx}{** -{$options_topics} -*-odb -version}  \
-           {hxx ixx cxx}{$options_topics}                            \
-           {hxx ixx cxx}{project-odb database-views-odb}             \
-           {hxx}{version} $libs
+help_topics = projects-configs
+
+exe{bdep}:                                                                  \
+  {hxx ixx txx cxx}{** -{$options_topics} -{$help_topics} -*-odb -version}  \
+  {hxx ixx cxx}{$options_topics} {hxx cxx}{$help_topics}                    \
+  {hxx ixx cxx}{project-odb database-views-odb}                             \
+  {hxx}{version} $libs
 
 hxx{version}: in{version} $src_root/file{manifest}
 
@@ -62,6 +65,10 @@ if $cli.configured
   cli.cxx{status-options}: cli{status}
   cli.cxx{config-options}: cli{config}
 
+  # Help topics.
+  #
+  cli.cxx{projects-configs}: cli{projects-configs}
+
   # Option length must be the same to get commands/topics/options aligned.
   #
   cli.options += -I $src_root --include-with-brackets --include-prefix bdep \
@@ -77,6 +84,10 @@ if $cli.configured
 
   cli.cxx{new-options}: cli.options += \
 --cxx-prologue "#include <bdep/new-parsers.hxx>"
+
+  # Avoid generating CLI runtime and empty inline file for help topics.
+  #
+  cli.cxx{projects-configs}: cli.options += --suppress-cli --suppress-inline
 
   # Include the generated cli files into the distribution and don't remove
   # them when cleaning in src (so that clean results in a state identical to

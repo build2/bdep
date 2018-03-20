@@ -14,19 +14,85 @@ namespace bdep
     "<options>
      <prj-spec> <prj-dir>
      <pkg-spec> <pkg-dir>
-     <cfg-spec> <cfg-name> <cfg-dir>",
+     <cfg-spec> <cfg-name> <cfg-dir>
+     <dep-spec> <pkg> <ver>",
 
     "\h|SYNOPSIS|
 
-     \c{\b{bdep sync} [<options>] [<pkg-spec>] [<cfg-spec>]}
+     \c{\b{bdep sync} [<options>] [<pkg-spec>] [<cfg-spec>]\n
+        \b{bdep sync} [<options>] [<pkg-spec>] [<cfg-spec>] \ \b{--upgrade}|\b{-u} | \b{--patch}|\b{-p}\n
+        \b{bdep sync} [<options>] [<pkg-spec>] [<cfg-spec>] [\b{--upgrade}|\b{-u} | \b{--patch}|\b{-p}]\n
+        \ \ \ \ \ \ \ \ \ \ <dep-spec>...
+        }
 
-     \c{<cfg-spec> = (\b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>)... | \b{--all}|\b{-a}\n
+     \c{<dep-spec> = <pkg>[\b{/}<ver>]\n
+        <cfg-spec> = (\b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>)... | \b{--all}|\b{-a}\n
         <pkg-spec> = (\b{--directory}|\b{-d} <pkg-dir>)... | <prj-spec>\n
         <prj-spec> = \b{--directory}|\b{-d} <prj-dir>}
 
      \h|DESCRIPTION|
 
-     The \cb{sync} command..."
+     The \cb{sync} command synchronizes a project with its build
+     configurations. The first form (no arguments nor \cb{--upgrade} or
+     \cb{--patch} specified) upgrades the project packages to the latest
+     iteration, adjusts their dependencies according to the latest manifest
+     information and updates the lockfile.
+
+     The second form (no arguments but with either \cb{--upgrade} or
+     \cb{--patch} specified), in addition to the first form's functionality,
+     also upgrades or patches immediate (by default or
+     \c{\b{--immediate}|\b{-i}} specified) or all (\c{\b{--recursive}|\b{-r}}
+     specified) dependencies of the specified project packages.
+
+     The third form (one or more arguments), in addition to the first form's
+     functionality, also upgrades (by default or \cb{--upgrade} specified) or
+     patches (\cb{--patch} specified) the specified dependencies. If
+     \c{\b{--immediate}|\b{-i}} or \c{\b{--recursive}|\b{-r}} is specified,
+     then it also upgrades or patches the immediate or all dependencies of the
+     specified dependencies, respectively. Alternative to \cb{--upgrade} and
+     \cb{--patch}, the desired upgrade (or downgrade) version can be specified
+     explicitly.
+
+     As an example, consider project \cb{proj} with two packages, \cb{test}
+     and \cb{libtest}:
+
+     \
+     proj/
+    ├── test/
+    └── libtest/
+     \
+
+     The following invocations illustrate the common \cb{sync} use cases (the
+     current working directory is shown before the shell prompt):
+
+     \
+     proj/$ bdep sync        # Synchronize test/ and libtest/ with the
+                             # default configuration.
+
+     proj/$ cd test
+     test/$ bdep sync        # The same (all packages in a project are
+                             # always synchronized together).
+
+     test/$ edit manifest    # Add 'depends: libx >= 1.0.0'
+     test/$ bdep sync        # Fetch and configure suitable libx version.
+
+     test/$ bdep sync -u     # Upgrade all immediate dependencies of test.
+     test/$ cd ../
+     proj/$ bdep sync -u -r  # Upgrade all dependencies of all packages in
+                             # a project recursively.
+
+     proj/$ bdep sync    libx  # Upgrade libx to the latest version.
+     proj/$ bdep sync -i libx  # ...and its immediate dependecies.
+
+     proj/$ bdep sync -p libx     # Upgrade libx to the latest patch.
+     proj/$ bdep sync -p -r libx  # ...and its dependecies, recursively.
+
+     proj/$ bdep sync libx/1.2.3        # Upgrade libx to version 1.2.3.
+     proj/$ bdep sync -p -r libx/1.2.3  # ...and patch its dependecies,
+                                        # recursively.
+     \
+
+     "
   }
 
   // Note that not all project/configuration options are valid for all
@@ -36,9 +102,26 @@ namespace bdep
   {
     "\h|SYNC OPTIONS|"
 
-    bool --yes|-y
+    bool --upgrade|-u
     {
-      "Don't prompt for confirmation when up/down-grading dependencies."
+      "Upgrade the dependencies to the latest available version that satisfies
+       all the constraints."
+    }
+
+    bool --patch|-p
+    {
+      "Upgrade the dependencies to the latest available patch version that
+       satisfies all the constraints."
+    }
+
+    bool --immediate|-i
+    {
+      "Also upgrade or patch immediate dependencies."
+    }
+
+    bool --recursive|-r
+    {
+      "Also upgrade or patch all dependencies, recursively."
     }
 
     bool --fetch|-f
@@ -49,6 +132,11 @@ namespace bdep
     bool --fetch-full|-F
     {
       "Perform the \cb{fetch --full} command prior to synchronization."
+    }
+
+    bool --yes|-y
+    {
+      "Don't prompt for confirmation when up/down-grading dependencies."
     }
   };
 }

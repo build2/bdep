@@ -28,17 +28,19 @@ namespace bdep
 
      \h|DESCRIPTION|
 
-     The \cb{status} command prints the status of the project and/or its
-     dependencies in build configurations. If no <dep-spec> arguments are
-     specified, then \cb{status} prints the status of the project's packages.
-     Otherwise, the status of the specified dependency packages is printed.
-     Additionally, the status of immediate or all dependencies of the above
-     packages can be printed by specifying the \c{\b{--immediate}|\b{-i}} or
-     \c{\b{--recursive}|\b{-r}} options, respectively. Note that the status is
-     written to \cb{STDOUT}, not \cb{STDERR}.
+     The \cb{status} command prints the status of project packages and/or
+     their dependencies in build configurations. If no <dep-spec> arguments
+     are specified, then \cb{status} prints the status of the project's
+     packages. Otherwise, the status of the specified dependency packages is
+     printed. Additionally, the status of immediate or all dependencies of the
+     above packages can be printed by specifying the
+     \c{\b{--immediate}|\b{-i}} or \c{\b{--recursive}|\b{-r}} options,
+     respectively. See \l{bdep-projects-configs(1)} for details on specifying
+     packages (<pkg-spec>) and configurations (<cfg-spec>).
 
-     The status of each package is printed on a separate line. The semantics
-     of <dep-spec> and the format of the status line are described in
+     The status of each package is printed on a separate line. Note that the
+     status is written to \cb{STDOUT}, not \cb{STDERR}. The semantics of
+     <dep-spec> and the format of the status line are described in
      \l{bpkg-pkg-status(1)}.
      "
   }

@@ -9,6 +9,10 @@
 #include <bdep/diagnostics.hxx>
 #include <bdep/bdep-options.hxx>
 
+// Help topics.
+//
+#include <bdep/projects-configs.hxx>
+
 using namespace std;
 using namespace butl;
 
@@ -26,6 +30,8 @@ namespace bdep
       //
       else if (t == "common-options")
         usage = &print_bdep_common_options_long_usage;
+      else if (t == "projects-configs")
+        usage = &print_bdep_projects_configs_usage;
       else
         fail << "unknown bdep command/help topic '" << t << "'" <<
           info << "run 'bdep help' for more information";
