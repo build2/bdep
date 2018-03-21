@@ -14,12 +14,12 @@ namespace bdep
     static void
     parse_path (T& x, scanner& s)
     {
-      string o (s.next ());
+      const char* o (s.next ());
 
       if (!s.more ())
         throw missing_value (o);
 
-      string v (s.next ());
+      const char* v (s.next ());
 
       try
       {
