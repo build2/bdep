@@ -78,6 +78,16 @@ namespace bdep
   {
     tracer trace ("sync");
 
+    // The --immediate or --recursive option can only be specified with
+    // an explicit --upgrade or --patch.
+    //
+    if (const char* n = (o.immediate () ? "--immediate" :
+                         o.recursive () ? "--recursive" : nullptr))
+    {
+      if (!o.upgrade () && !o.patch ())
+        fail << n << " requires explicit --upgrade|-u or --patch|-p";
+    }
+
     // We could be running from a package directory (or the user specified one
     // with -d) that has not been init'ed in this configuration. We want to
     // diagnose that since such a package will not be present in the bpkg

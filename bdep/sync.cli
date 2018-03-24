@@ -34,62 +34,66 @@ namespace bdep
 
      The \cb{sync} command synchronizes a project with its build
      configurations. The first form (no arguments nor \cb{--upgrade} or
-     \cb{--patch} specified) upgrades the project packages to the latest
+     \cb{--patch} are specified) upgrades the project packages to the latest
      iteration, adjusts their dependencies according to the latest manifest
-     information and updates the lockfile.
+     information, and updates the lockfile.
 
-     The second form (no arguments but with either \cb{--upgrade} or
-     \cb{--patch} specified), in addition to the first form's functionality,
-     also upgrades or patches immediate (by default or
-     \c{\b{--immediate}|\b{-i}} specified) or all (\c{\b{--recursive}|\b{-r}}
-     specified) dependencies of the specified project packages.
+     The second form (no arguments but either \cb{--upgrade} or \cb{--patch}
+     is specified), in addition to the first form's functionality, also
+     upgrades or patches immediate (by default or if
+     \c{\b{--immediate}|\b{-i}} is specified) or all (if
+     \c{\b{--recursive}|\b{-r}} is specified) dependencies of the specified
+     project packages.
 
-     The third form (one or more arguments), in addition to the first form's
-     functionality, also upgrades (by default or \cb{--upgrade} specified) or
-     patches (\cb{--patch} specified) the specified dependencies. If
-     \c{\b{--immediate}|\b{-i}} or \c{\b{--recursive}|\b{-r}} is specified,
-     then it also upgrades or patches the immediate or all dependencies of the
-     specified dependencies, respectively. Alternative to \cb{--upgrade} and
-     \cb{--patch}, the desired upgrade (or downgrade) version can be specified
-     explicitly.
+     The third form (one or more arguments are specified), in addition to the
+     first form's functionality, also upgrades (by default or if
+     \cb{--upgrade} is specified) or patches (if \cb{--patch} is specified)
+     the specified dependencies. If \c{\b{--immediate}|\b{-i}} or
+     \c{\b{--recursive}|\b{-r}} is specified, then it also upgrades or patches
+     the immediate or all dependencies of the specified dependencies,
+     respectively. Alternative to \cb{--upgrade} and \cb{--patch}, the desired
+     upgrade (or downgrade) version can be specified explicitly.
 
-     As an example, consider project \cb{proj} with two packages, \cb{test}
-     and \cb{libtest}:
+     Note also that \c{\b{--immediate}|\b{-i}} or \c{\b{--recursive}|\b{-r}}
+     can only be specified with an explicit \cb{--upgrade} or \cb{--patch}.
+
+     As an example, consider project \cb{prj} with two packages, \cb{foo}
+     and \cb{libfoo}:
 
      \
-     proj/
-    ├── test/
-    └── libtest/
+     prj/
+    ├── foo/
+    └── libfoo/
      \
 
      The following invocations illustrate the common \cb{sync} use cases (the
      current working directory is shown before the shell prompt):
 
      \
-     proj/$ bdep sync        # Synchronize test/ and libtest/ with the
-                             # default configuration.
+     prj/$ bdep sync        # Synchronize foo/ and libfoo/ with the
+                            # default configuration.
 
-     proj/$ cd test
-     test/$ bdep sync        # The same (all packages in a project are
-                             # always synchronized together).
+     prj/$ cd foo
+     foo/$ bdep sync        # The same (all packages in a project are
+                            # always synchronized together).
 
-     test/$ edit manifest    # Add 'depends: libx >= 1.0.0'
-     test/$ bdep sync        # Fetch and configure suitable libx version.
+     foo/$ edit manifest    # Add 'depends: libx >= 1.0.0'
+     foo/$ bdep sync        # Fetch and configure suitable libx version.
 
-     test/$ bdep sync -u     # Upgrade all immediate dependencies of test.
-     test/$ cd ../
-     proj/$ bdep sync -u -r  # Upgrade all dependencies of all packages in
-                             # a project recursively.
+     foo/$ bdep sync -u     # Upgrade all immediate dependencies of foo.
+     foo/$ cd ../
+     prj/$ bdep sync -u -r  # Upgrade all dependencies of all packages in
+                            # a project recursively.
 
-     proj/$ bdep sync    libx  # Upgrade libx to the latest version.
-     proj/$ bdep sync -i libx  # ...and its immediate dependecies.
+     prj/$ bdep sync    libx           # Upgrade libx to the latest version.
+     prj/$ bdep sync -i libx           # ...and its immediate dependecies.
 
-     proj/$ bdep sync -p libx     # Upgrade libx to the latest patch.
-     proj/$ bdep sync -p -r libx  # ...and its dependecies, recursively.
+     prj/$ bdep sync -p    libx        # Upgrade libx to the latest patch.
+     prj/$ bdep sync -p -r libx        # ...and its dependecies recursively.
 
-     proj/$ bdep sync libx/1.2.3        # Upgrade libx to version 1.2.3.
-     proj/$ bdep sync -p -r libx/1.2.3  # ...and patch its dependecies,
-                                        # recursively.
+     prj/$ bdep sync       libx/1.2.3  # Upgrade libx to version 1.2.3.
+     prj/$ bdep sync -p -r libx/1.2.3  # ...and patch its dependecies,
+                                       # recursively.
      \
 
      "
@@ -104,13 +108,13 @@ namespace bdep
 
     bool --upgrade|-u
     {
-      "Upgrade the dependencies to the latest available version that satisfies
+      "Upgrade dependencies to the latest available version that satisfies
        all the constraints."
     }
 
     bool --patch|-p
     {
-      "Upgrade the dependencies to the latest available patch version that
+      "Upgrade dependencies to the latest available patch version that
        satisfies all the constraints."
     }
 
