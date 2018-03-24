@@ -13,12 +13,13 @@ using namespace std;
 namespace bdep
 {
   shared_ptr<configuration>
-  cmd_config_add (const dir_path& prj,
-                  database& db,
-                  dir_path path,
-                  optional<string> name,
-                  optional<bool> def,
-                  optional<uint64_t> id)
+  cmd_config_add (const dir_path&    prj,
+                  database&          db,
+                  dir_path           path,
+                  optional<string>   name,
+                  optional<bool>     def,
+                  optional<uint64_t> id,
+                  const char*        what)
   {
     if (!exists (path))
       fail << "configuration directory " << path << " does not exist";
@@ -42,7 +43,7 @@ namespace bdep
     }
 
     // Make sure the configuration path is absolute and normalized. Also
-    // derive relative to project directory path is possible.
+    // derive relative to project directory path if possible.
     //
     path.complete ();
     path.normalize ();
@@ -89,7 +90,7 @@ namespace bdep
     if (verb)
     {
       diag_record dr (text);
-      /*            */ dr << "added configuration ";
+      /*            */ dr << what << " configuration ";
       if (r->name)     dr << '@' << *r->name << ' ';
       /*            */ dr << r->path << " (" << *r->id;
       if (r->default_) dr << ", default";
@@ -97,6 +98,35 @@ namespace bdep
     }
 
     return r;
+  }
+
+  shared_ptr<configuration>
+  cmd_config_create (const common_options& co,
+                     const dir_path&       prj,
+                     database&             db,
+                     dir_path              path,
+                     cli::scanner&         cfg_args,
+                     optional<string>      name,
+                     optional<bool>        def,
+                     optional<uint64_t>    id)
+  {
+    // Call bpkg to create the configuration.
+    //
+    {
+      strings args;
+      while (cfg_args.more ())
+        args.push_back (cfg_args.next ());
+
+      run_bpkg (co, "create", "-d", path, args);
+    }
+
+    return cmd_config_add (prj,
+                           db,
+                           move (path),
+                           move (name),
+                           def,
+                           id,
+                           "created");
   }
 
   int

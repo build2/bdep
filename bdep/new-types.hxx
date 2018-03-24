@@ -35,9 +35,9 @@ namespace bdep
       BARE bare_opt;
     };
 
-    // Default is bare with no options.
+    // Default is exe with no options.
     //
-    cmd_new_type_template (): type (bare) {bare_opt = BARE ();}
+    cmd_new_type_template (): type (exe) {bare_opt = BARE ();}
 
     friend ostream&
     operator<< (ostream& os, const cmd_new_type_template& t)

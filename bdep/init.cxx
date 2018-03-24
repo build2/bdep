@@ -21,13 +21,13 @@ namespace bdep
                    const dir_path& prj,
                    database& db,
                    const dir_path& cfg,
+                   cli::scanner& args,
                    bool ca,
                    bool cc,
                    optional<bool> cd)
   {
     const char* m (!ca ? "--config-create" :
-                   !cc ? "--config-add"    :
-                   nullptr);
+                   !cc ? "--config-add"    : nullptr);
 
     if (m == nullptr)
       fail << "both --config-add and --config-create specified";
@@ -51,13 +51,8 @@ namespace bdep
     }
 
     return ca
-      ? cmd_config_add (prj,
-                        db,
-                        cfg,
-                        move (name),
-                        cd,
-                        move (id))
-      : nullptr; // @@ TODO: create
+      ? cmd_config_add    (   prj, db, cfg,       move (name), cd, move (id))
+      : cmd_config_create (o, prj, db, cfg, args, move (name), cd, move (id));
   }
 
   void
@@ -129,7 +124,7 @@ namespace bdep
   }
 
   int
-  cmd_init (const cmd_init_options& o, cli::scanner&)
+  cmd_init (const cmd_init_options& o, cli::scanner& args)
   {
     tracer trace ("init");
 
@@ -200,6 +195,7 @@ namespace bdep
           prj,
           db,
           ca ? o.config_add () : o.config_create (),
+          args,
           ca,
           cc,
           cd));

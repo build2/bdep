@@ -49,6 +49,7 @@ cfg_name (configuration_name_options* o, const char* a)
     fail << "empty configuration name";
 
   o->config_name ().push_back (move (n));
+  o->config_name_specified (true);
   return true;
 }
 
@@ -72,31 +73,29 @@ init (const common_options& co, cli::scanner& scan, strings& args)
   {
     if (opt)
     {
+      const char* a (scan.peek ());
+
       // If we see first "--", then we are done parsing options.
       //
-      if (strcmp (scan.peek (), "--") == 0)
+      if (strcmp (a, "--") == 0)
       {
         scan.next ();
         opt = false;
         continue;
       }
 
-      // Parse the next chunk of options until we reach an argument (or eos).
-      //
-      o.parse (scan);
-
-      if (!scan.more ())
-        break;
-
       // @<cfg-name>
       //
-      const char* a (scan.peek ());
-
       if (*a == '@' && cfg_name (&o, a + 1))
       {
         scan.next ();
         continue;
       }
+
+      // Parse the next chunk of options until we reach an argument (or eos).
+      //
+      if (o.parse (scan))
+        continue;
 
       // Fall through.
     }

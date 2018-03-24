@@ -15,7 +15,7 @@ namespace bdep
      <prj-spec> <prj-dir>
      <pkg-spec> <pkg-dir>
      <cfg-spec> <cfg-name> <cfg-dir>
-     <cfg-args> <cfg-var> <module>
+     <cfg-args> <option> <module> <cfg-var>
      <pkg-args> <pkg>",
 
     "\h|SYNOPSIS|
@@ -30,7 +30,7 @@ namespace bdep
         <pkg-spec> = (\b{--directory}|\b{-d} <pkg-dir>)... | <prj-spec>\n
         <prj-spec> = \b{--directory}|\b{-d} <prj-dir>\n
         <pkg-args> = (<pkg> | <cfg-var>)...\n
-        <cfg-args> = (<module> | <cfg-var>)...}
+        <cfg-args> = (<option> | <module> | <cfg-var>)...}
 
      \h|DESCRIPTION|
 

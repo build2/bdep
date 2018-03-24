@@ -20,6 +20,7 @@ namespace bdep
                    const dir_path& prj,
                    database&,
                    const dir_path& cfg,
+                   cli::scanner& cfg_args,
                    bool config_add_specified,
                    bool config_create_specified,
                    optional<bool> config_default);

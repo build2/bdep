@@ -358,6 +358,7 @@ namespace bdep
           prj,
           db,
           ca ? o.config_add () : o.config_create (),
+          args,
           ca,
           cc,
           cd)};

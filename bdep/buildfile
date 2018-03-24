@@ -74,7 +74,7 @@ if $cli.configured
   cli.options += -I $src_root --include-with-brackets --include-prefix bdep \
 --guard-prefix BDEP --cxx-prologue "#include <bdep/types-parsers.hxx>" \
 --cli-namespace bdep::cli --generate-vector-scanner --generate-file-scanner \
---generate-specifier --generate-modifier --generate-parse \
+--keep-separator --generate-specifier --generate-modifier --generate-parse \
 --page-usage 'bdep::print_$name$_' --ansi-color --include-base-last \
 --suppress-undocumented --option-length 23
 

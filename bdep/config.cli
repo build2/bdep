@@ -14,8 +14,16 @@ namespace bdep
     "<options>
      <cfg-spec> <cfg-name> <cfg-dir>
      <prj-spec> <prj-dir>
-     <cfg-args> <cfg-var> <module>",
+     <cfg-args> <option> <module> <cfg-var>",
 
+    // Other potential subcommands:
+    //
+    // list        - list associated configurations
+    // show|status - details about a configuration (init'ed packages, etc)
+    //
+    // @@ Should we be able to remove config with init'ed packages? Who
+    //    is going to drop them in configs? Or require them to be de-init'ed?
+    //
     "\h|SYNOPSIS|
 
      \c{\b{bdep config add} \ \ \ [<options>] [<prj-spec>] [\b{@}<cfg-name>] <cfg-dir>\n
@@ -26,16 +34,15 @@ namespace bdep
 
      \c{<cfg-spec> = \b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>\n
         <prj-spec> = \b{--directory}|\b{-d} <prj-dir>\n
-        <cfg-args> = (<module> | <cfg-var>)...}
+        <cfg-args> = (<option> | <module> | <cfg-var>)...}
 
      \h|DESCRIPTION|
 
      The \cb{config} command...
 
-
      Unless the \cb{--no-default} option is specified, the first added or
-     created build configuration is designated as the default configuration.
-     Several \cb{bdep} commands use such a configuration by default if no
+     created build configuration is designated as the default. Several
+     \cb{bdep} commands use such a configuration by default if no
      configuration was specified explicitly (see \l{bdep-projects-configs(1)}
      for details). To make a subsequently added configuration the default use
      the \cb{--default} option.

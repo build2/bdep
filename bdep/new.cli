@@ -16,7 +16,7 @@ namespace bdep
      <type> <type-opt>
      <lang> <lang-opt>
      <cfg-name> <cfg-dir>
-     <cfg-args> <cfg-var> <module>",
+     <cfg-args> <option> <module> <cfg-var>",
 
     "\h|SYNOPSIS|
 
@@ -28,7 +28,7 @@ namespace bdep
      \c{<spec> = [<type>] [<lang>]\n
         <type> = \b{--type}|\b{-t} (\b{exe}|\b{lib}|\b{bare})[\b{,}<type-opt>...]\n
         <lang> = \b{--lang}|\b{-l} (\b{c}|\b{c++})[\b{,}<lang-opt>...]\n
-        <cfg-args> = (<module> | <cfg-var>)...}
+        <cfg-args> = (<option> | <module> | <cfg-var>)...}
 
      \h|DESCRIPTION|
 
@@ -104,8 +104,8 @@ namespace bdep
     {
       "<type>[,<opt>...]",
       "Specify project type and options. Valid values for <type> are \cb{exe}
-       (executable project) \cb{lib} (library project), and \cb{bare} (bare
-       project without any source code, default). Valid values for <opt> are
+       (executable project, default) \cb{lib} (library project), and \cb{bare}
+       (bare project without any source code). Valid values for <opt> are
        type-specific."
     }
 
