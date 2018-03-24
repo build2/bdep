@@ -57,6 +57,8 @@ namespace bdep
      Note also that \c{\b{--immediate}|\b{-i}} or \c{\b{--recursive}|\b{-r}}
      can only be specified with an explicit \cb{--upgrade} or \cb{--patch}.
 
+     \h|EXAMPLES|
+
      As an example, consider project \cb{prj} with two packages, \cb{foo}
      and \cb{libfoo}:
 

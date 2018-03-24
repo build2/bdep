@@ -21,7 +21,9 @@ namespace bdep
                    const dir_path& prj,
                    database& db,
                    const dir_path& cfg,
-                   bool ca, bool cc)
+                   bool ca,
+                   bool cc,
+                   optional<bool> cd)
   {
     const char* m (!ca ? "--config-create" :
                    !cc ? "--config-add"    :
@@ -53,7 +55,7 @@ namespace bdep
                         db,
                         cfg,
                         move (name),
-                        nullopt /* default */, // @@ TODO: --[no]-default
+                        cd,
                         move (id))
       : nullptr; // @@ TODO: create
   }
@@ -131,6 +133,27 @@ namespace bdep
   {
     tracer trace ("init");
 
+    bool ca (o.config_add_specified ());
+    bool cc (o.config_create_specified ());
+
+    optional<bool> cd;
+    if (o.default_ () || o.no_default ())
+    {
+      if (!ca && !cc)
+        fail << "--[no-]default specified without --config-(add|create)";
+
+      if (o.default_ () && o.no_default ())
+        fail << "both --default and --no-default specified";
+
+      cd = o.default_ () && !o.no_default ();
+    }
+
+    if (o.empty ())
+    {
+      if (ca) fail << "both --empty and --config-add specified";
+      if (cc) fail << "both --empty and --config-create specified";
+    }
+
     project_packages pp (
       find_project_packages (o, o.empty () /* ignore_packages */));
 
@@ -154,14 +177,8 @@ namespace bdep
 
     // --empty
     //
-    bool ca (o.config_add_specified ());
-    bool cc (o.config_create_specified ());
-
     if (o.empty ())
     {
-      if (ca) fail << "both --empty and --config-add specified";
-      if (cc) fail << "both --empty and --config-create specified";
-
       //@@ TODO: what should we do if the database already exists?
 
       return 0;
@@ -184,7 +201,8 @@ namespace bdep
           db,
           ca ? o.config_add () : o.config_create (),
           ca,
-          cc));
+          cc,
+          cd));
 
       // Fall through.
     }

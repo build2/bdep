@@ -22,6 +22,27 @@ namespace bdep
   {
     tracer trace ("new");
 
+    bool ca (o.config_add_specified ());
+    bool cc (o.config_create_specified ());
+
+    optional<bool> cd;
+    if (o.default_ () || o.no_default ())
+    {
+      if (!ca && !cc)
+        fail << "--[no-]default specified without --config-(add|create)";
+
+      if (o.default_ () && o.no_default ())
+        fail << "both --default and --no-default specified";
+
+      cd = o.default_ () && !o.no_default ();
+    }
+
+    if (o.no_init ())
+    {
+      if (ca) fail << "both --no-init and --config-add specified";
+      if (cc) fail << "both --no-init and --config-create specified";
+    }
+
     // Validate type options.
     //
     const type& t (o.type ());
@@ -315,16 +336,8 @@ namespace bdep
 
     // --no-init
     //
-    bool ca (o.config_add_specified ());
-    bool cc (o.config_create_specified ());
-
     if (o.no_init ())
-    {
-      if (ca) fail << "both --no-init and --config-add specified";
-      if (cc) fail << "both --no-init and --config-create specified";
-
       return 0;
-    }
 
     // Create .bdep/.
     //
@@ -346,7 +359,8 @@ namespace bdep
           db,
           ca ? o.config_add () : o.config_create (),
           ca,
-          cc)};
+          cc,
+          cd)};
 
       package_locations pkgs {{n, dir_path ()}}; // project == package
 

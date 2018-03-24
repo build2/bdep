@@ -26,34 +26,114 @@ namespace bdep
         \b{bdep init} [<options>] [<pkg-spec>] \b{--config-create|-C} <cfg-dir> [\b{@}<cfg-name>]\n
         \ \ \ \ \ \ \ \ \ \ [<cfg-args>]}
 
-     \c{<pkg-args> = (<pkg> | <cfg-var>)...\n
-        <cfg-spec> = (\b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>)... | \b{--all}|\b{-a}\n
+     \c{<cfg-spec> = (\b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>)... | \b{--all}|\b{-a}\n
         <pkg-spec> = (\b{--directory}|\b{-d} <pkg-dir>)... | <prj-spec>\n
         <prj-spec> = \b{--directory}|\b{-d} <prj-dir>\n
+        <pkg-args> = (<pkg> | <cfg-var>)...\n
         <cfg-args> = (<module> | <cfg-var>)...}
 
      \h|DESCRIPTION|
 
-     The \cb{init} command...
+     The \cb{init} command initializes a project in one or more build
+     configurations. The first form initializes the specified project packages
+     (<pkg-spec>), or, if the project itself is specified (<prj-spec>), all
+     its available packages, in one or more build configurations (<cfg-spec>)
+     that have already been associated with the project (\l{bdep-config(1)}).
+     If no project directory is specified, then the current working directory
+     is assumed. If no configuration is specified, the the default
+     configuration is assumed. See \l{bdep-projects-configs(1)} for details on
+     specifying projects and configurations. Optional <pkg-args> are the
+     additional arguments to the underlying \l{bpkg-pkg-build(1)} command.
 
-     If <cfg-spec> is omitted, then the default configuration is assumed.
+     The second form (\cb{--empty} is specified) initializes an empty project
+     database that can later be used to first add build configurations
+     (\l{bdep-config(1)}) and then initialize project packages using the first
+     form.
 
-     If <pkg-spec> is omitted, then the current working directory is
-     assumed. In this case the current directory must be either a project
-     directory (<prj-dir>), a package directory (<pkg-dir>) or a subdirectory
-     of package directory.
+     The third (\cb{--config-add}) and fourth (\cb{--config-create}) forms are
+     shortcuts that can be used to first add an existing or newly created
+     build configuration and then initialize project packages in that
+     configuration. Semantically they are equivalent to first performing the
+     \cb{config add} or \cb{config create} commands (\l{bdep-config(1)}),
+     respectively, followed by the first form. Optional <cfg-args> in the
+     fourth form are the additional arguments to the underlying
+     \l{bpkg-cfg-create(1)} command.
 
-     <cfg-args> are arguments to \cb{bpkg cfg-create}. <pkg-args> are arguments
-     to \cb{bpkg pkg-build}.
+     \h|EXAMPLES|
 
-     In the first form the configurations can also be specified as
-     directories using the \cb{--config|-c} option.
+     As an example, consider project \cb{prj} with two packages, \cb{foo}
+     and \cb{libfoo}:
 
-     The second and third forms are semantically equivalent to first
-     performing the \cb{config add} and \cb{config create} commands
-     (\l{bdep-config(1)}), respectively, followed by the first form. In
-     both cases the \cb{--default|-d} option can be used to make the
-     added/created configuration default.
+     \
+     prj/
+    ├── foo/
+    └── libfoo/
+     \
+
+     The following invocations illustrate the common \cb{init} use cases (the
+     current working directory is shown before the shell prompt).
+
+     Create new build configuration in \cb{../prj-gcc}, call it \cb{gcc} and
+     initialize project packages \cb{foo} and \cb{libfoo} in this
+     configuration:
+
+     \
+     prj/$ bdep init -C ../prj-gcc @gcc cc config.cxx=g++
+     \
+
+     Create new build configuration in \cb{../prj-clang} using
+     \l{bpkg-cfg-create(1)}. Then add it calling it \cb{clang} and initialize
+     project package \cb{foo} in this configuration:
+
+     \
+     prj/$ bpkg create -d ../prj-clang cc config.cxx=clang++
+     prj/$ cd foo
+     foo/$ bdep init -A ../../prj-clang @clang
+     \
+
+     Initialize project package \cb{libfoo} in the build configuration
+     \cb{clang}:
+
+     \
+     foo/$ cd ..
+     prj/$ bdep init -d libfoo @clang
+     \
+
+     The following set of invocations achieves the same end result but using
+     the \l{bdep-config(1)} command to manage configuration.
+
+     Initialize an empty project database:
+
+     \
+     prj/$ bdep init --empty
+     \
+
+     Create new build configuration in \cb{../prj-gcc}, call it \cb{gcc}:
+
+     \
+     prj/$ bdep config create ../prj-gcc @gcc cc config.cxx=g++
+     \
+
+     Add existing build configuration in \cb{../prj-clang}, call it
+     \cb{clang}.
+
+     \
+     prj/$ bdep config add ../prj-clang @clang
+     \
+
+     Initialize project packages \cb{foo} and \cb{libfoo} in build
+     configurations \cb{gcc} and \cb{clang}.
+
+     \
+     prj/$ bdep init @gcc @clang
+     \
+
+     Or, alternatively, in all the build configurations:
+
+     \
+     prj/$ bdep init -a
+     \
+
      "
   }
 
@@ -76,6 +156,20 @@ namespace bdep
     {
       "<dir>",
       "Create a new build configuration in <dir>."
+    }
+
+    bool --default
+    {
+      "Make the added or created configuration the default. Only valid with
+       \cb{--config-add} or \cb{--config-create}, see \l{bdep-config(1)} for
+       details."
+    }
+
+    bool --no-default
+    {
+      "Don't make the first added or created configuration then default. Only
+       valid with \cb{--config-add} or \cb{--config-create}, see
+       \l{bdep-config(1)} for details."
     }
   };
 }

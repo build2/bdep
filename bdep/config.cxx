@@ -32,6 +32,14 @@ namespace bdep
     //
     if (!def)
       def = (db.query_value<count> () == 0);
+    else if (*def)
+    {
+      using query = bdep::query<configuration>;
+
+      if (auto p = db.query_one<configuration> (query::default_))
+        fail << "configuration " << *p << " is already the default" <<
+          info << "use 'bdep config set --no-default' to clear";
+    }
 
     // Make sure the configuration path is absolute and normalized. Also
     // derive relative to project directory path is possible.
@@ -95,10 +103,14 @@ namespace bdep
   cmd_config (const cmd_config_options& o, cli::scanner&)
   {
     //@@ TODO: get subcommand and pass to tracer.
+    //@@ TODO: define a CLI options class for subcommands?
 
     tracer trace ("config");
 
     //@@ TODO: validate project/config options for subcommands.
+
+    if (o.default_ () && o.no_default ())
+      fail << "both --default and --no-default specified";
 
     for (const string& n: o.config_name ())
       text << n;

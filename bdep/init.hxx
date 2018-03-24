@@ -21,7 +21,8 @@ namespace bdep
                    database&,
                    const dir_path& cfg,
                    bool config_add_specified,
-                   bool config_create_specified);
+                   bool config_create_specified,
+                   optional<bool> config_default);
 
   // Initialize each package in each configuration skipping those that are
   // already initialized. Then synchronize each configuration.

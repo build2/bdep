@@ -121,5 +121,19 @@ namespace bdep
       "Don't initialize a \cb{git(1)} repository inside the project nor
        generate any \cb{.gitignore} files."
     }
+
+    bool --default
+    {
+      "Make the added or created configuration the default. Only valid with
+       \cb{--config-add} or \cb{--config-create}, see \l{bdep-config(1)} for
+       details."
+    }
+
+    bool --no-default
+    {
+      "Don't make the first added or created configuration then default. Only
+       valid with \cb{--config-add} or \cb{--config-create}, see
+       \l{bdep-config(1)} for details."
+    }
   };
 }
