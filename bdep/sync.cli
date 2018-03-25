@@ -68,34 +68,84 @@ namespace bdep
     └── libfoo/
      \
 
-     The following invocations illustrate the common \cb{sync} use cases (the
-     current working directory is shown before the shell prompt):
+     Assuming \cb{foo} and \cb{libfoo} have been initialized in the default
+     build configuration, the following invocations illustrate the common
+     \cb{sync} use cases (the current working directory is shown before the
+     shell prompt).
+
+
+     Synchronize \cb{foo} and \cb{libfoo} with the default configuration:
 
      \
-     prj/$ bdep sync        # Synchronize foo/ and libfoo/ with the
-                            # default configuration.
+     prj/$ bdep sync
+     \
 
+     The same (all initialized packages in a project are always synchronized
+     at once):
+
+     \
      prj/$ cd foo
-     foo/$ bdep sync        # The same (all packages in a project are
-                            # always synchronized together).
+     foo/$ bdep sync
+     \
 
-     foo/$ edit manifest    # Add 'depends: libx >= 1.0.0'
-     foo/$ bdep sync        # Fetch and configure suitable libx version.
+     Add a dependency on \cb{libx} with \cb{sync} fetching and configuring a
+     suitable version:
 
-     foo/$ bdep sync -u     # Upgrade all immediate dependencies of foo.
+     \
+     foo/$ edit manifest  # Add 'depends: libx >= 1.0.0'
+     foo/$ bdep sync
+     \
+
+     Upgrade all the immediate dependencies of \cb{foo}:
+
+     \
+     foo/$ bdep sync -u
+     \
+
+     Upgrade all the dependencies of all the initialzied packages in a
+     project recursively:
+
+     \
      foo/$ cd ../
-     prj/$ bdep sync -u -r  # Upgrade all dependencies of all packages in
-                            # a project recursively.
+     prj/$ bdep sync -u -r
+     \
 
-     prj/$ bdep sync    libx           # Upgrade libx to the latest version.
-     prj/$ bdep sync -i libx           # ...and its immediate dependecies.
+     Upgrade \cb{libx} to the latest version:
 
-     prj/$ bdep sync -p    libx        # Upgrade libx to the latest patch.
-     prj/$ bdep sync -p -r libx        # ...and its dependecies recursively.
+     \
+     prj/$ bdep sync libx
+     \
 
-     prj/$ bdep sync       libx/1.2.3  # Upgrade libx to version 1.2.3.
-     prj/$ bdep sync -p -r libx/1.2.3  # ...and patch its dependecies,
-                                       # recursively.
+     Upgrade \cb{libx} and its immediate dependecies to the latest version:
+
+     \
+     prj/$ bdep sync -i libx
+     \
+
+     Upgrade \cb{libx} to the latest patch version:
+
+     \
+     prj/$ bdep sync -p libx
+     \
+
+     Upgrade \cb{libx} and all its dependecies recursively to the latest patch
+     version.
+
+     \
+     prj/$ bdep sync -p -r libx
+     \
+
+     Upgrade \cb{libx} to version \cb{1.2.3}.
+
+     \
+     prj/$ bdep sync libx/1.2.3
+     \
+
+     Upgrade \cb{libx} to version \cb{1.2.3} and patch all its dependecies,
+     recursively:
+
+     \
+     prj/$ bdep sync -p -r libx/1.2.3
      \
 
      "
