@@ -38,14 +38,53 @@ namespace bdep
 
      \h|DESCRIPTION|
 
-     The \cb{config} command...
+     The \cb{config} command provides the following subcommands for managing
+     project's build configurations.
 
-     Unless the \cb{--no-default} option is specified, the first added or
-     created build configuration is designated as the default. Several
-     \cb{bdep} commands use such a configuration by default if no
-     configuration was specified explicitly (see \l{bdep-projects-configs(1)}
-     for details). To make a subsequently added configuration the default use
-     the \cb{--default} option.
+     \dl|
+
+     \li|\cb{add}
+
+        |
+
+     \li|\cb{create}
+
+         The \cb{add} subcommand adds an existing \l{bpkg(1)} configuration in
+         directory <cfg-dir> to the project's build configuration set. The
+         \cb{create} subcommand creates a new configuration in directory
+         <cfg-dir> by executing the \l{bpkg-cfg-create(1)} command and passing
+         to it <cfg-args>, if any. It then proceeds as \cb{add} by adding the
+         new configuration to the project's build configuration set.
+
+         In both subcommands, if <cfg-name> is specified, then the added
+         configuration is given this name. Several \cb{bdep} commands can use
+         such names as a more convenient way to specify build configurations
+         (see \l{bdep-projects-configs(1)} for details).
+
+         Unless the \cb{--no-default} option is specified, the first added or
+         created build configuration is designated as the default. Several
+         \cb{bdep} commands use such a configuration by default if no
+         configuration was specified explicitly (see
+         \l{bdep-projects-configs(1)} for details). To make a subsequently
+         added configuration the default use the \cb{--default} option.|
+
+     \li|\cb{remove}
+
+         The \cb{remove} subcommand removes one or more configurations from
+         the project's build configuration set. See
+         \l{bdep-projects-configs(1)} for various ways to specify build
+         configurations.|
+
+     \li|\cb{rename}
+
+         The \cb{rename} subcommand gives the specified build configuration
+         a new name.|
+
+     \li|\cb{set}
+
+         The \cb{set} subcommand sets various properties of the specified
+         build configuration. These include the default flag
+         (\c{\b{--}[\b{no-}]\b{default}}).||
      "
   }
 
