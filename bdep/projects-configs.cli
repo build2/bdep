@@ -28,7 +28,7 @@ include <bdep/common-options.hxx>;
   Most \cb{bdep} commands operate on a project or some of its packages as well
   as its build configurations. For example, \cb{status} (\l{bdep-status(1)})
   shows the status of one or more project packages in one or more build
-  configurations. While \cb{fetch} (\l{bdep-fetch(1)}) re-fetches the list of
+  configurations. While \cb{fetch} (\l{bdep-fetch(1)}) fetches the list of
   available to the project dependency packages, again, in one or more build
   configurations.
 

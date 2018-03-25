@@ -39,7 +39,8 @@ namespace bdep
      \h|DESCRIPTION|
 
      The \cb{config} command provides the following subcommands for managing
-     project's build configurations.
+     project's build configurations. If no project directory is specified,
+     then the current working directory is assumed.
 
      \dl|
 

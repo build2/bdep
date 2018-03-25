@@ -29,14 +29,18 @@ namespace bdep
      \h|DESCRIPTION|
 
      The \cb{status} command prints the status of project packages and/or
-     their dependencies in build configurations. If no <dep-spec> arguments
-     are specified, then \cb{status} prints the status of the project's
-     packages. Otherwise, the status of the specified dependency packages is
-     printed. Additionally, the status of immediate or all dependencies of the
-     above packages can be printed by specifying the
+     their dependencies in one or more build configurations. If no project or
+     package directory is specified, then the current working directory is
+     assumed. If no configuration is specified, the the default configuration
+     is assumed. See \l{bdep-projects-configs(1)} for details on specifying
+     projects and configurations.
+
+     If no <dep-spec> arguments are specified, then \cb{status} prints the
+     status of the project's packages. Otherwise, the status of the specified
+     dependency packages is printed. Additionally, the status of immediate or
+     all dependencies of the above packages can be printed by specifying the
      \c{\b{--immediate}|\b{-i}} or \c{\b{--recursive}|\b{-r}} options,
-     respectively. See \l{bdep-projects-configs(1)} for details on specifying
-     packages (<pkg-spec>) and configurations (<cfg-spec>).
+     respectively.
 
      The status of each package is printed on a separate line. Note that the
      status is written to \cb{STDOUT}, not \cb{STDERR}. The semantics of
