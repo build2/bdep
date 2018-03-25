@@ -16,6 +16,7 @@ namespace bdep
 {
   using type = cmd_new_type;
   using lang = cmd_new_lang;
+  using vcs  = cmd_new_vcs;
 
   int
   cmd_new (const cmd_new_options& o, cli::scanner& args)
@@ -68,6 +69,10 @@ namespace bdep
       }
     }
 
+    // Validate type options.
+    //
+    const vcs& s (o.vcs ());
+
     // Validate argument.
     //
     string n (args.more () ? args.next () : "");
@@ -90,11 +95,14 @@ namespace bdep
     else if (!empty (prj))
       fail << "directory " << prj << " already exists";
 
-    // Initialize the git repository. Do it before writing anything ourselves
-    // in case it fails.
+    // Initialize the version control system. Do it before writing anything
+    // ourselves in case it fails.
     //
-    if (!o.no_git ())
-      run ("git", "init", "-q", prj);
+    switch (s)
+    {
+    case vcs::git:  run ("git", "init", "-q", prj); break;
+    case vcs::none:                                 break;
+    }
 
     path f; // File currently being written.
     try
@@ -186,7 +194,7 @@ namespace bdep
 
       // build/.gitignore
       //
-      if (!o.no_git ())
+      if (s == vcs::git)
       {
         os.open (f = bd / ".gitignore");
         os << "config.build"                                           << endl
@@ -202,7 +210,7 @@ namespace bdep
 
       // .gitignore
       //
-      if (!o.no_git ())
+      if (s == vcs::git)
       {
         // Use POSIX directory separators here.
         //

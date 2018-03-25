@@ -24,7 +24,7 @@ namespace bdep
             typename BARE = cmd_new_bare_options>
   struct cmd_new_type_template
   {
-    enum type_type {exe = 0, lib, bare} type; // Note: used as index.
+    enum type_type {exe, lib, bare} type;
 
     operator type_type () const {return type;}
 
@@ -66,7 +66,7 @@ namespace bdep
             typename CXX = cmd_new_cxx_options>
   struct cmd_new_lang_template
   {
-    enum lang_type {c = 0, cxx} lang; // Note: used as index.
+    enum lang_type {c, cxx} lang;
 
     operator lang_type () const {return lang;}
 
@@ -82,6 +82,32 @@ namespace bdep
   };
 
   using cmd_new_lang = cmd_new_lang_template<>;
+
+  // --vcs
+  //
+  class cmd_new_git_options;
+  class cmd_new_none_options;
+
+  template <typename GIT  = cmd_new_git_options,
+            typename NONE = cmd_new_none_options>
+  struct cmd_new_vcs_template
+  {
+    enum vcs_type {git, none} vcs;
+
+    operator vcs_type () const {return vcs;}
+
+    union
+    {
+      GIT  git_opt;
+      NONE none_opt;
+    };
+
+    // Default is git with no options.
+    //
+    cmd_new_vcs_template (): vcs (git) {git_opt = GIT ();}
+  };
+
+  using cmd_new_vcs = cmd_new_vcs_template<>;
 }
 
 #endif // BDEP_NEW_TYPES_HXX

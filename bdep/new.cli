@@ -15,6 +15,7 @@ namespace bdep
     "<options> <spec> <name>
      <type> <type-opt>
      <lang> <lang-opt>
+     <vcs> <vcs-opt>
      <cfg-name> <cfg-dir>
      <cfg-args> <option> <module> <cfg-var>",
 
@@ -25,31 +26,86 @@ namespace bdep
         \b{bdep new} [<options>] \b{--config-create|-C} <cfg-dir> [\b{@}<cfg-name>] <spec> <name>\n
         \ \ \ \ \ \ \ \ \ [<cfg-args>]}
 
-     \c{<spec> = [<type>] [<lang>]\n
-        <type> = \b{--type}|\b{-t} (\b{exe}|\b{lib}|\b{bare})[\b{,}<type-opt>...]\n
-        <lang> = \b{--lang}|\b{-l} (\b{c}|\b{c++})[\b{,}<lang-opt>...]\n
+     \c{<spec> \ \ \ \ = [<type>] [<lang>] [<vcs>]\n
+        <type> \ \ \ \ = \b{--type}|\b{-t} (\b{exe}|\b{lib}|\b{bare})[\b{,}<type-opt>...]\n
+        <lang> \ \ \ \ = \b{--lang}|\b{-l} (\b{c}|\b{c++})[\b{,}<lang-opt>...]\n
+        <vcs> \ \ \ \ \ = \b{--vcs}|\b{-s} \ (\b{git}|\b{none})[\b{,}<vcs-opt>...]\n
         <cfg-args> = (<option> | <module> | <cfg-var>)...}
 
      \h|DESCRIPTION|
 
-     The \cb{new} command...
+     The \cb{new} command creates and initializes a new \cb{build2} project.
+     All three forms first create according to <spec> a new \cb{build2}
+     project called <name> in the <name> subdirectory of the current working
+     directory.
 
-     The first form, unless the \cb{--no-init} is specified, initializes
-     an empty configuration set, as if by performing \cb{init --empty}.
+     The first form then, unless the \cb{--no-init} option is specified,
+     initializes an empty project database as if by executing the
+     \l{bdep-init(1)} command with the \cb{--empty} option. Similarly, the
+     second and third forms add an existing or create new build configuration
+     and then initialize the project in that configuraton as if by executing
+     the \l{bdep-init(1)} command with the \cb{--config-add} or
+     \cb{--config-create} option, respectively.
 
-     Recognized \cb{c++} language options:
+     The project parameters such as type (executable, library, etc), language,
+     and version control system can be customized as described next. Some of
+     the parameters also support parameter-specific options (such as the file
+     extensions to use in a C++ project) that can be specified after the
+     parameter value.
+
+     The project type can be specified with the \c{\b{--type}|\b{-t}} option.
+     Valid values for this option and their semantics are described next. If
+     unspecified, an executable project is created by default.
 
      \dl|
 
-     \li|\cb{cxx}
+     \li|\cb{exe}
 
-         Use the \cb{.cxx}, \cb{.hxx}, \cb{.ixx}, \cb{.txx}, and \cb{.mxx}
-         source file extensions (default).|
+         A project that builds a sample executable.|
 
-     \li|\cb{cpp}
+     \li|\cb{lib}
 
-         Use the \cb{.cpp}, \cb{.hpp}, \cb{.ipp}, \cb{.tpp}, and \cb{.mpp}
-         source file extensions.||
+         A project that builds a sample library.|
+
+     \li|\cb{bare}
+
+         A project without any source code.||
+
+     The project language can be specified with the \c{\b{--lang}|\b{-l}}
+     option. Valid values for this option and their semantics are described
+     next. If unspecified, a C++ project is created by default.
+
+     \dl|
+
+     \li|\cb{c}
+
+         A C project.|
+
+     \li|\cb{c++}
+
+         A C++ project. Recognized language options:
+
+         \cb{cxx} \- Use the \cb{.cxx}, \cb{.hxx}, \cb{.ixx}, \cb{.txx}, and
+         \cb{.mxx} source file extensions (default).
+
+         \cb{cpp} \- Use the \cb{.cpp}, \cb{.hpp}, \cb{.ipp}, \cb{.tpp}, and
+         \cb{.mpp} source file extensions.||
+
+     The project version control system can be specified with the
+     \c{\b{--vcs}|\b{-s}} option. Valid values for this option and their
+     semantics are described next. If unspecified, \cb{git} is assumed by
+     default.
+
+     \dl|
+
+     \li|\cb{git}
+
+         Initialize a \cb{git(1)} repository inside the project and generate
+         \cb{.gitignore} files.|
+
+     \li|\cb{none}
+
+         Don't initialize a version control system inside the project.||
      "
   }
 
@@ -79,6 +135,16 @@ namespace bdep
     bool cxx;
   };
 
+  // --vcs options
+  //
+  class cmd_new_git_options
+  {
+  };
+
+  class cmd_new_none_options
+  {
+  };
+
   class cmd_new_options: configuration_name_options
   {
     "\h|NEW OPTIONS|"
@@ -104,22 +170,24 @@ namespace bdep
     {
       "<type>[,<opt>...]",
       "Specify project type and options. Valid values for <type> are \cb{exe}
-       (executable project, default) \cb{lib} (library project), and \cb{bare}
-       (bare project without any source code). Valid values for <opt> are
-       type-specific."
+       (executable project, default), \cb{lib} (library project), and
+       \cb{bare} (bare project without any source code). Valid values for
+       <opt> are type-specific."
     }
 
     cmd_new_lang --lang|-l
     {
       "<lang>[,<opt>...]",
-      "Specify language type and options. Valid values for <lang> are \cb{c},
+      "Specify language type and options. Valid values for <lang> are \cb{c}
        and \cb{c++} (default). Valid values for <opt> are language-specific."
     }
 
-    bool --no-git
+    cmd_new_vcs --vcs|-s
     {
-      "Don't initialize a \cb{git(1)} repository inside the project nor
-       generate any \cb{.gitignore} files."
+      "<vcs>[,<opt>...]",
+      "Specify version control system and options. Valid values for <vcs> are
+       \cb{git} (default) and \cb{none}. Valid values for <opt> are
+       system-specific."
     }
 
     bool --default

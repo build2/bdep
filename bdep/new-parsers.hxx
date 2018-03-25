@@ -32,6 +32,13 @@ namespace bdep
       static void
       parse (cmd_new_lang&, bool&, scanner&);
     };
+
+    template <>
+    struct parser<cmd_new_vcs>
+    {
+      static void
+      parse (cmd_new_vcs&, bool&, scanner&);
+    };
   }
 }
 

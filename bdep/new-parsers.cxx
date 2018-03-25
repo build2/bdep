@@ -12,6 +12,7 @@ namespace bdep
   {
     using type = cmd_new_type;
     using lang = cmd_new_lang;
+    using vcs  = cmd_new_vcs;
 
     // Parse comma-separated list of of options starting from the first comma
     // at pos.
@@ -104,6 +105,34 @@ namespace bdep
       {
         r.lang = lang::cxx;
         r.cxx_opt = parse_options<cmd_new_cxx_options> (o, v, i);
+      }
+      else
+        throw invalid_value (o, l);
+
+      xs = true;
+    }
+
+    void parser<vcs>::
+    parse (vcs& r, bool& xs, scanner& s)
+    {
+      const char* o (s.next ());
+
+      if (!s.more ())
+        throw missing_value (o);
+
+      string v (s.next ());
+      size_t i (v.find (','));
+      string l (v, 0, i);
+
+      if (l == "git")
+      {
+        r.vcs = vcs::git;
+        r.git_opt = parse_options<cmd_new_git_options> (o, v, i);
+      }
+      else if (l == "none")
+      {
+        r.vcs = vcs::none;
+        r.none_opt = parse_options<cmd_new_none_options> (o, v, i);
       }
       else
         throw invalid_value (o, l);
