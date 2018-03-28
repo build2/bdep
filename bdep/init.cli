@@ -40,7 +40,7 @@ namespace bdep
      its available packages, in one or more build configurations (<cfg-spec>)
      that have already been associated with the project (\l{bdep-config(1)}).
      If no project directory is specified, then the current working directory
-     is assumed. If no configuration is specified, the the default
+     is assumed. If no configuration is specified, then the default
      configuration is assumed. See \l{bdep-projects-configs(1)} for details on
      specifying projects and configurations. Optional <pkg-args> are the
      additional arguments to the underlying \l{bpkg-pkg-build(1)} command.

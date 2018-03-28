@@ -38,7 +38,7 @@ namespace bdep
      iteration, adjusts their dependencies according to the latest manifest
      information, and updates the lockfile. If no project or package directory
      is specified, then the current working directory is assumed. If no
-     configuration is specified, the the default configuration is assumed. See
+     configuration is specified, then the default configuration is assumed. See
      \l{bdep-projects-configs(1)} for details on specifying projects and
      configurations.
 
