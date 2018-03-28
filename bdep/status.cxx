@@ -19,7 +19,7 @@ namespace bdep
   cmd_status (const cmd_status_options& o,
               const dir_path& prj,
               const dir_path& cfg,
-              const cstrings& pkgs,
+              const strings& pkgs,
               bool fetch)
   {
     // Shallow fetch the project to make sure we show latest iterations and
@@ -61,17 +61,17 @@ namespace bdep
     // If no packages were explicitly specified, then we print the status for
     // all that have been initialized in the configuration.
     //
-    cstrings pkgs;
+    strings pkgs;
 
     if (ps.empty ())
     {
       for (const package_state& p: c->packages)
-        pkgs.push_back (p.name.c_str ());
+        pkgs.push_back (p.name);
     }
     else
     {
       for (const package_location& p: ps)
-        pkgs.push_back (p.name.c_str ());
+        pkgs.push_back (p.name);
     }
 
     cmd_status (o, prj, c->path, pkgs, fetch);
@@ -85,18 +85,18 @@ namespace bdep
     if (o.immediate () && o.recursive ())
       fail << "both --immediate|-i and --recursive|-r specified";
 
-    // We have two pretty different modes: project status and dependency
-    // status (have arguments).
+    // We have two pretty different modes: project package status and
+    // dependency package status (have arguments).
     //
-    cstrings pkgs;
-    for (; args.more (); pkgs.push_back (args.next ())) ;
+    strings dep_pkgs;
+    for (; args.more (); dep_pkgs.push_back (args.next ())) ;
 
     // For the project status the same story as in sync.
     //
     project_packages pp (
       find_project_packages (o,
-                             !pkgs.empty () /* ignore_packages */,
-                             false          /* load_packages */));
+                             !dep_pkgs.empty () /* ignore_packages */,
+                             false              /* load_packages   */));
 
     const dir_path& prj (pp.project);
 
@@ -140,12 +140,10 @@ namespace bdep
       if (fetch)
         cmd_fetch (o, prj, c, o.fetch_full ());
 
-      // Don't re-fetch if we just fetched.
-      //
-      if (pkgs.empty ())
+      if (dep_pkgs.empty ())
         cmd_status (o, prj, c, pp.packages, !fetch);
       else
-        cmd_status (o, prj, c->path, pkgs, !fetch);
+        cmd_status (o, prj, c->path, dep_pkgs, !fetch);
     }
 
     return 0;
