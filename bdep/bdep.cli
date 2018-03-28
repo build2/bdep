@@ -22,7 +22,8 @@ namespace bdep
 
      \h|DESCRIPTION|
 
-     The \cb{build2} project dependency manager is used to @@ TODO.
+     The \cb{build2} project dependency manager is used to manage the
+     dependencies of a project during development.
 
      For a detailed description of any command or help topic, use the
      \cb{help} command or see the corresponding man page (the man pages have
@@ -37,9 +38,177 @@ namespace bdep
   {
     "",
     "",
+    "
+     A typical \cb{bdep} workflow would consist of the following steps.
 
-    //@@ TODO
-    "Description...
+     \dl|
+
+     \li|\b{Obtain the Project}\n
+
+         Normally we would use the version control system to obtail the
+         project we want to develop:
+
+         \
+         $ git clone ssh://example.com/hello.git
+         \
+
+         Alternatively, we can use the \l{bdep-new(1)} command to create a
+         sample project:
+
+         \
+         $ bdep new -t exe -l c++ hello
+         \
+
+         Similar to version control tools, we normally run \cb{bdep} from the
+         project's directory or one of its subdirectories:
+
+         \
+         $ cd hello
+         \
+
+         See \l{bdep-projects-configs(1)} for alternative ways to specify
+         the project location.
+
+         |
+
+
+     \li|\b{Initialize the Project}\n
+
+         Next we use the \l{bdep-init(1)} command to create new or add
+         existing build configurations and initialize our project in these
+         configurations:
+
+         \
+         $ bdep init -C ../hello-gcc @gcc cc config.cxx=g++
+         $ bdep init -A ../hello-clang @clang
+         \
+
+         We can now use the \l{bdep-status(1)} command to examine the status
+         of our project in its configuration:
+
+         \
+         $ bdep status -a
+         status in configuration @gcc
+         hello configured 0.1.0-a.0.19700101000000
+
+         status in configuration @clang
+         hello configured 0.1.0-a.0.19700101000000
+         \
+
+         Most \cb{bdep} commands operate on one or more build configurations
+         associated with the project. If we don't specify one explicitly, then
+         the \i{default configuration} (usually the first added; \cb{gcc} in
+         our case) is used. Alternatively, we can specify the configurations
+         by name (if assigned), as directories, or with \c{\b{--all}|\b{-a}}
+         (see \l{bdep-projects-configs(1)} for details). For example:
+
+         \
+         $ bdep status @clang @gcc      # by name
+         $ bdep status -c ../hello-gcc  # as a directory
+         \
+
+         If a command is operating on multiple configurations (like \cb{status
+         -a} in the previous example), then it will print a line identifying
+         each configuration before printing the command's result.
+
+         @@ build and run?
+
+         |
+
+     \li|\b{Add, Remove, or Change Dependencies}\n
+
+         Let's say we found \cb{libhello} that we would like to use in our
+         project. First we edit our project's \cb{repositories.manifest}
+         file and add the \cb{libhello}'s repository as our prerequisite:
+
+         \
+         $ cat repositories.manifest
+         ...
+         role: prerequisite
+         location: https://example.com/libhello.git
+         ...
+         \
+
+         Next we edit our \cb{manifest} file and specify a dependency on
+         \cb{libhello}:
+
+         \
+         $ cat manifest
+         ...
+         depends: libhello >= 1.0.0
+         ...
+         \
+
+         If we now run \l{bdep-status(1)}, we will notice that a new iteration
+         of our project is available for synchronization:
+
+         \
+         $ bdep status
+         hello configured 0.1.0-a.0.19700101000000
+               available  0.1.0-a.0.19700101000000#1
+         \
+
+         |
+
+     \li|\b{Synchronize the Project with Configurations}\n
+
+         To synchronize changes in the project's dependency information with
+         its build configurations we use the \l{bdep-sync(1)} command.
+         Continuing with our example, this will result in \cb{libhello} being
+         downloaded and configured since our project now depends on it:
+
+         \
+         $ bdep sync
+
+         $ bdep status -i
+         hello configured 0.1.0-a.0.19700101000000#1
+           libhello >= 1.0.0 configured 1.0.0
+         \
+
+         |
+
+     \li|\b{Upgrade or Downgrade Dependencies}\n
+
+         The \l{bdep-sync(1)} command is also used to upgrade or downgrade
+         dependencies (and it is also executed as the last step of \cb{init}).
+         Let's say we learned a new version of \cb{libhello} was release and
+         we would like to try it out.
+
+         To refresh the list of available dependency packages we use the
+         \l{bdep-fetch(1)} command (or, as a shortcut, the \cb{-f} flag to
+         \cb{status}):
+
+         \
+         $ bdep fetch
+
+         $ bdep status libhello
+         libhello configured 1.0.0 available [1.1.0]
+         \
+
+         Without an explicit version or the \c{\b{--patch}|\b{-p}} option,
+         \cb{sync} will upgrade the specified dependency to the latest
+         available version:
+
+         \
+         $ bdep sync libhello
+
+         $ bdep status -i
+         hello configured 0.1.0-a.0.19700101000000#1
+           libhello >= 1.0.0 configured 1.1.0
+         \
+
+         Let's say we didn't like the new version and would like to go back to
+         using the old one. To downgrade a dependency we have to specify its
+         version explicitly:
+
+         \
+         $ bdep status -o libhello
+         libhello configured 1.1.0 available [1.0.0] (1.1.0)
+
+         $ bdep sync libhello/1.0.0
+         \
+
+         ||
     "
   }
 
