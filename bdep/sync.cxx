@@ -110,17 +110,13 @@ namespace bdep
       }
     }
 
-    // @@ TODO: right now it is silent. Can we print a plan without the
-    //    prompts? Probably also a good idea even if from build system
-    //    hook... Issue: drop dependents has no "drop " prefix. Also indented
-    //    stuff out of nowhere will look odd. --  Need custom prompt.
-    //
     run_bpkg (co,
               "build",
               "-d", c->path,
               "--no-fetch",
               "--configure-only",
               "--keep-out",
+              "--plan", "synchronizing:",
               (yes ? "--yes" : nullptr),
               args);
   }
@@ -212,7 +208,7 @@ namespace bdep
       if (verb && cfgs.size () > 1)
       {
         text << (first ? "" : "\n")
-             << "synchronizing with configuration " << *c;
+             << "in configuration " << *c << ':';
 
         first = false;
       }

@@ -88,10 +88,10 @@ namespace bdep
 
          \
          $ bdep status -a
-         status in configuration @gcc
+         in configuration @gcc:
          hello configured 0.1.0-a.0.19700101000000
 
-         status in configuration @clang
+         in configuration @clang:
          hello configured 0.1.0-a.0.19700101000000
          \
 

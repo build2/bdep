@@ -74,7 +74,7 @@ namespace bdep
       if (verb && cfgs.size () > 1)
       {
         text << (first ? "" : "\n")
-             << "initializing in configuration " << *c;
+             << "in configuration " << *c << ":";
 
         first = false;
       }
@@ -100,8 +100,7 @@ namespace bdep
                      }) != c->packages.end ())
         {
           if (verb)
-            info << "package " << p.name << " is already initialized "
-                 << "in configuration " << *c;
+            info << "package " << p.name << " is already initialized";
 
           continue;
         }
