@@ -8,7 +8,6 @@
 #include <libbutl/manifest-serializer.mxx>
 
 #include <bdep/diagnostics.hxx>
-#include <bdep/common-options.hxx>
 
 namespace bdep
 {
@@ -240,5 +239,37 @@ namespace bdep
     {
       fail << "unable to write " << what << " manifest " << name << ": " << e;
     }
+  }
+
+  template <typename C>
+  bool
+  parse_command (const char* cmd, C& r)
+  {
+    int argc (2);
+    char* argv[] {const_cast<char*> (""), const_cast<char*> (cmd)};
+
+    r.parse (argc, argv, true, cli::unknown_mode::stop);
+
+    return argc == 1;
+  }
+
+  template <typename C>
+  C
+  parse_command (cli::scanner& scan, const char* what, const char* help)
+  {
+    // The next argument should be a command.
+    //
+    if (!scan.more ())
+      fail << what << " expected" <<
+        info << "run '" << help << "' for more information";
+
+    const char* cmd (scan.next ());
+
+    C r;
+    if (parse_command (cmd, r))
+      return r;
+
+    fail << "unknown " << what << " '" << cmd << "'" <<
+      info << "run '" << help << "' for more information" << endf;
   }
 }

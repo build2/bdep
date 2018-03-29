@@ -40,7 +40,12 @@ namespace bdep
 
      The \cb{config} command provides the following subcommands for managing
      project's build configurations. If no project directory is specified,
-     then the current working directory is assumed.
+     then the current working directory is assumed."
+  }
+
+  class cmd_config_subcommands
+  {
+    "\h|CONFIG SUBCOMMANDS|
 
      \dl|
 
@@ -85,9 +90,14 @@ namespace bdep
 
          The \cb{set} subcommand sets various properties of the specified
          build configuration. These include the default flag
-         (\c{\b{--}[\b{no-}]\b{default}}).||
-     "
-  }
+         (\c{\b{--}[\b{no-}]\b{default}}).||"
+
+    bool add;
+    bool create;
+    bool remove;
+    bool rename;
+    bool set;
+  };
 
   // Note that not all project/configuration options are valid for all
   // subcommands.

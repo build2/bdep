@@ -100,6 +100,12 @@ namespace bdep
     return r;
   }
 
+  static int
+  cmd_config_add (const cmd_config_options&, cli::scanner&)
+  {
+    fail << "@@ TODO" << endf;
+  }
+
   shared_ptr<configuration>
   cmd_config_create (const common_options& co,
                      const dir_path&       prj,
@@ -129,22 +135,72 @@ namespace bdep
                            "created");
   }
 
-  int
-  cmd_config (const cmd_config_options& o, cli::scanner&)
+  static int
+  cmd_config_create (const cmd_config_options&, cli::scanner&)
   {
-    //@@ TODO: get subcommand and pass to tracer.
-    //@@ TODO: define a CLI options class for subcommands?
+    fail << "@@ TODO" << endf;
+  }
 
+  static int
+  cmd_config_remove (const cmd_config_options&, cli::scanner&)
+  {
+    fail << "@@ TODO" << endf;
+  }
+
+  static int
+  cmd_config_rename (const cmd_config_options&, cli::scanner&)
+  {
+    fail << "@@ TODO" << endf;
+  }
+
+  static int
+  cmd_config_set (const cmd_config_options&, cli::scanner&)
+  {
+    fail << "@@ TODO" << endf;
+  }
+
+  int
+  cmd_config (const cmd_config_options& o, cli::scanner& scan)
+  {
     tracer trace ("config");
 
-    //@@ TODO: validate project/config options for subcommands.
+    cmd_config_subcommands c (
+      parse_command<cmd_config_subcommands> (scan,
+                                             "config subcommand",
+                                             "bdep help config"));
 
+    // Validate options/subcommands.
+    //
+
+    // --[no-]default
+    //
     if (o.default_ () && o.no_default ())
       fail << "both --default and --no-default specified";
 
-    for (const string& n: o.config_name ())
-      text << n;
+    if (const char* n = (o.default_ ()   ? "--default"    :
+                         o.no_default () ? "--no-default" : nullptr))
+    {
+      if (!(c.add () || c.create () || c.set ()))
+        fail << n << " not valid for this command";
+    }
 
-    return 0;
+    // --all
+    //
+    if (o.all ())
+    {
+      if (!c.remove ())
+        fail << "--all not valid for this command";
+    }
+
+    // Dispatch to subcommand function.
+    //
+    if (c.add    ()) return cmd_config_add    (o, scan);
+    if (c.create ()) return cmd_config_create (o, scan);
+    if (c.remove ()) return cmd_config_remove (o, scan);
+    if (c.rename ()) return cmd_config_rename (o, scan);
+    if (c.set    ()) return cmd_config_set    (o, scan);
+
+    assert (false); // Unhandled (new) subcommand.
+    return 1;
   }
 }

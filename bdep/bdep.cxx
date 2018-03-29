@@ -185,18 +185,7 @@ try
 
   // The next argument should be a command.
   //
-  if (!scan.more ())
-    fail << "bdep command expected" <<
-      info << "run 'bdep help' for more information";
-
-  int cmd_argc (2);
-  char* cmd_argv[] {argv[0], const_cast<char*> (scan.next ())};
-  commands cmd;
-  cmd.parse (cmd_argc, cmd_argv, true, unknown_mode::stop);
-
-  if (cmd_argc != 1)
-    fail << "unknown bdep command/option '" << cmd_argv[1] << "'" <<
-      info << "run 'bdep help' for more information";
+  commands cmd (parse_command<commands> (scan, "bdep command", "bdep help"));
 
   // If the command is 'help', then what's coming next is another command.
   // Parse it into cmd so that we only need to check for each command in one
@@ -211,18 +200,14 @@ try
 
     if (args.more ())
     {
-      cmd_argc = 2;
-      cmd_argv[1] = const_cast<char*> (args.next ());
+      const char* a (args.next ());
 
-      // First see if this is a command.
-      //
       cmd = commands (); // Clear the help option.
-      cmd.parse (cmd_argc, cmd_argv, true, unknown_mode::stop);
 
-      // If not, then it got to be a help topic.
+      // If not a command, then it got to be a help topic.
       //
-      if (cmd_argc != 1)
-        return help (ho, cmd_argv[1], nullptr);
+      if (!parse_command (a, cmd))
+        return help (ho, a, nullptr);
     }
     else
       return help (ho, "", nullptr);

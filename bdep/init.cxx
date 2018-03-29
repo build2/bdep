@@ -116,8 +116,6 @@ namespace bdep
       db.update (c);
       t.commit ();
 
-      //@@ --no-sync for some reason?
-      //
       cmd_sync (o, prj, c);
     }
   }

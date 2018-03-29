@@ -19,6 +19,7 @@
 
 #include <bdep/types.hxx>
 #include <bdep/version.hxx>
+#include <bdep/common-options.hxx>
 
 namespace bdep
 {
@@ -100,8 +101,6 @@ namespace bdep
 
   // Run the bpkg process.
   //
-  class common_options;
-
   const char*
   name_bpkg (const common_options&);
 
@@ -140,6 +139,16 @@ namespace bdep
                       ostream&,
                       const string& name,
                       const char* what);
+
+  // CLI (sub)command parsing helper.
+  //
+  template <typename C>
+  C
+  parse_command (cli::scanner& scan, const char* what, const char* help);
+
+  template <typename C>
+  bool
+  parse_command (cli::scanner& scan, C&);
 }
 
 #include <bdep/utility.txx>
