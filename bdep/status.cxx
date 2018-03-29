@@ -130,7 +130,7 @@ namespace bdep
       if (verb && cfgs.size () > 1)
       {
         text << (first ? "" : "\n")
-             << "in configuration " << *c << ':';
+             << "CONFIGURATION " << *c;
 
         first = false;
       }
