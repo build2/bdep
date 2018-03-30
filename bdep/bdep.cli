@@ -38,7 +38,113 @@ namespace bdep
   {
     "",
     "",
-    "
+    "A \cb{bdep} project is a directory, normally under a version control
+     system such as \cb{git(1)}, called \i{project repository}. A project
+     contains one or more \i{packages}. If it contain several, then they are
+     normally related, for example, the \cb{libhello} library and the
+     \cb{hello} program.
+
+     Packages in a project may depend on other packages outside of the
+     project. To distinguish between the two we call them \i{project packages}
+     and \i{dependency packages}, respectively.  Naturally, our project
+     packages may be someone else's dependency packages.
+
+     A simple, single-package project contains the package in the root of the
+     project repository. For example (note the location of the package
+     \cb{manifest} and \cb{lockfile}):
+
+     \
+     hello/
+     ├── .git/
+     ├── ...
+     ├── lockfile
+     └── manifest
+     \
+
+     See \l{bpkg#manifest-package Package Manifest} for details on the
+     \cb{manifest} file.
+
+     If a project contains multiple packages or we wish to place the package
+     into a subdirectory, then the root of the project repository must
+     contain the \cb{packages.manifest} file that specifies the package
+     locations. For example:
+
+     \
+     hello/
+     ├── .git/
+     ├── hello/
+     │   ├── ...
+     │   ├── lockfile
+     │   └── manifest
+     ├── libhello/
+     │   ├── ...
+     │   ├── lockfile
+     │   └── manifest
+     └── packages.manifest
+     \
+
+     For this project, \cb{packages.manifest} would have the following
+     contents:
+
+     \
+     : 1
+     location: hello/
+     :
+     location: libhello/
+     \
+
+     A project repository root would usually also contain the
+     \cb{repositories.manifest} file that lists the repositories that provide
+     the dependency packages. For example:
+
+     \
+     hello/
+     ├── ...
+     ├── manifest
+     └── repositories.manifest
+     \
+
+     If our \cb{hello} project wanted to use \cb{libhello} as a dependency
+     package, then \cb{repositories.manifest} could look like this:
+
+     \
+     : 1
+     role: prerequisite
+     location: https://example.com/libhello.git
+     :
+     role: base
+     summary: hello project repository
+     \
+
+     See \l{bpkg#manifest-repository-list Repository List Manifest} for
+     details on the \cb{repositories.manifest} file.
+
+     For development a \cb{bdep} project is associated with one or more
+     \l{bpkg(1)} \i{build configurations}. These configuration are used as a
+     \i{backing} for building project packages and their dependencies.
+
+     The list of the associated build configuration as well as the list of
+     project packages initialized in each such configuration are stored in
+     the \cb{bdep} \i{project database} under the \cb{.bdep/} subdirectory
+     of the project root directory. For example:
+
+     \
+     hello-gcc/     # Build configuration for gcc.
+     hello-clang/   # Build configuration for clang.
+     hello/
+     ├── .bdep/
+     ├── .git/
+     └── ...
+     \
+
+     The core of \cb{bdep} functionality is \i{state synchronization} between
+     the project and one or more associated build configurations. For example,
+     if we list a new dependency in the package's \cb{manifest} file, then
+     \cb{bdep} fetches and configures this dependency in a build
+     configuration. Similarly, if we upgrade a dependency in a build
+     configuration, then \cb{bdep} updates the corresponding entry in the
+     package's \cb{lockfile}.
+
      A typical \cb{bdep} workflow would consist of the following steps.
 
      \dl|
@@ -52,8 +158,8 @@ namespace bdep
          $ git clone ssh://example.com/hello.git
          \
 
-         Alternatively, we can use the \l{bdep-new(1)} command to create a
-         sample project:
+         Alternatively, we can use the \l{bdep-new(1)} command to start a new
+         project:
 
          \
          $ bdep new -t exe -l c++ hello
@@ -139,8 +245,8 @@ namespace bdep
          ...
          \
 
-         If we now run \l{bdep-status(1)}, we will notice that a new iteration
-         of our project is available for synchronization:
+         If we now run \l{bdep-status(1)}, we will notice that a new
+         \i{iteration} of our project is available for synchronization:
 
          \
          $ bdep status
@@ -148,7 +254,8 @@ namespace bdep
                available  0.1.0-a.0.19700101000000#1
          \
 
-         |
+         See \l{bpkg#package-version Package Version} for details on package
+         versions and iterations.|
 
      \li|\b{Synchronize the Project with Configurations}\n
 

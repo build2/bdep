@@ -40,12 +40,14 @@ function compile ()
 --include-base-last "${o[@]}" --generate-html --html-prologue-file \
 man-prologue.xhtml --html-epilogue-file man-epilogue.xhtml --html-suffix .xhtml \
 --link-regex '%bpkg([-.].+)%../../bpkg/doc/bpkg$1%' \
+--link-regex '%bpkg(#.+)?%../../bpkg/doc/build2-package-manager-manual.xhtml$1%' \
 --link-regex '%bdep(#.+)?%build2-project-manager-manual.xhtml$1%' \
 ../bdep/$n.cli
 
   cli -I .. -v project="bdep" -v version="$version" -v date="$date" \
 --include-base-last "${o[@]}" --generate-man --man-prologue-file \
 man-prologue.1 --man-epilogue-file man-epilogue.1 --man-suffix .1 \
+--link-regex '%bpkg(#.+)?%$1%' \
 --link-regex '%bdep(#.+)?%$1%' \
 ../bdep/$n.cli
 }
