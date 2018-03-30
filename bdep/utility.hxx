@@ -37,6 +37,8 @@ namespace bdep
 
   // <libbutl/utility.mxx>
   //
+  using butl::ucase;
+  using butl::lcase;
   using butl::casecmp;
   using butl::reverse_iterate;
 
