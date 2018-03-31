@@ -147,6 +147,9 @@ namespace bdep
     if (o.upgrade () && o.patch ())
       fail << "both --upgrade|-u and --patch|-p specified";
 
+    if (o.immediate () && o.recursive ())
+      fail << "both --immediate|-i and --recursive|-r specified";
+
     // The --immediate or --recursive option can only be specified with
     // an explicit --upgrade or --patch.
     //
