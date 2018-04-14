@@ -92,7 +92,7 @@ namespace bdep
       if (n.compare (0, 3, "lib") != 0)
         fail << "library name does not start with 'lib'";
 
-      s.assign (n, 3);
+      s.assign (n, 3, string::npos);
     }
 
     dir_path prj (n);
