@@ -435,7 +435,7 @@ namespace bdep
                << "// inline functions, and classes with only inline member functions. Exporting"  << endl
                << "// classes that inherit from non-exported/imported bases (e.g., std::string)"   << endl
                << "// will end up badly. The only known workarounds are to not inherit or to not"  << endl
-               << "// export. Also, MinGW GCC doesn't like seeing non-exported function being"     << endl
+               << "// export. Also, MinGW GCC doesn't like seeing non-exported functions being"     << endl
                << "// used before their inline definition. The workaround is to reorder code. In"  << endl
                << "// the end it's all trial and error."                                           << endl
                <<                                                                                     endl;
