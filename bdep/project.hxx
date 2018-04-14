@@ -70,7 +70,9 @@ namespace bdep
     // Since it is not always possible to derive a relative path, it is
     // optional.
     //
-    optional<uint64_t> id;
+    using id_type = optional<uint64_t>;
+
+    id_type            id;
     optional<string>   name;
     dir_path           path;
     optional<dir_path> relative_path;
