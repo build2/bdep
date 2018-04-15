@@ -240,7 +240,7 @@ namespace bdep
       {
         // Name is to be extracted later.
         //
-        r.packages.push_back (move (package_location {"", *p.package}));
+        r.packages.push_back (package_location {"", *p.package});
       }
     }
 

@@ -5,6 +5,8 @@
 #ifndef BDEP_WRAPPER_TRAITS_HXX
 #define BDEP_WRAPPER_TRAITS_HXX
 
+#include <cstdint>
+
 #include <libbutl/optional.mxx>
 
 #include <odb/wrapper-traits.hxx>
@@ -54,6 +56,16 @@ namespace odb
       return const_cast<unrestricted_wrapped_type&> (*o);
     }
   };
+
+  // These magic incantations are necessary to get portable generated
+  // code (without these because of the way GCC works uint64_t will be
+  // spelled as unsigned long which will break on Windows).
+  //
+  using optional_uint64_t = butl::optional<std::uint64_t>;
+  using optional_uint64_traits = odb::wrapper_traits<optional_uint64_t>;
+#ifdef ODB_COMPILER
+  template class odb::wrapper_traits<optional_uint64_t>;
+#endif
 }
 
 #endif // BDEP_WRAPPER_TRAITS_HXX

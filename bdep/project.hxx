@@ -26,6 +26,8 @@ void assert (int);
 
 namespace bdep
 {
+  using optional_uint64_t = optional<uint64_t>;
+
   using optional_string = optional<string>;
   using optional_dir_path = optional<dir_path>;
 
@@ -70,12 +72,10 @@ namespace bdep
     // Since it is not always possible to derive a relative path, it is
     // optional.
     //
-    using id_type = optional<uint64_t>;
-
-    id_type            id;
-    optional<string>   name;
+    optional_uint64_t  id;
+    optional_string    name;
     dir_path           path;
-    optional<dir_path> relative_path;
+    optional_dir_path  relative_path;
 
     bool default_;
 
