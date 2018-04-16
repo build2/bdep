@@ -124,9 +124,9 @@ namespace bdep
      \i{backing} for building project packages and their dependencies.
 
      The list of the associated build configuration as well as the list of
-     project packages initialized in each such configuration are stored in
-     the \cb{bdep} \i{project database} under the \cb{.bdep/} subdirectory
-     of the project root directory. For example:
+     project packages initialized in each configuration are stored in the
+     \cb{bdep} \i{project database} under the \cb{.bdep/} subdirectory of the
+     project root directory. For example:
 
      \
      hello-gcc/     # Build configuration for gcc.
