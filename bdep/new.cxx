@@ -94,6 +94,8 @@ namespace bdep
 
       s.assign (n, 3, string::npos);
     }
+    else
+      s = n;
 
     dir_path prj (n);
     prj.complete ();
