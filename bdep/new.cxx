@@ -134,6 +134,8 @@ namespace bdep
          << "email: you@example.org"                                   << endl
          << "depends: * build2 >= 0.7.0-"                              << endl
          << "depends: * bpkg >= 0.7.0-"                                << endl;
+      if (t == type::exe)
+        os << "#depends: libhello >= 1.0.0"                            << endl;
       os.close ();
 
       // repositories.manifest
