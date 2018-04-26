@@ -9,6 +9,7 @@
 #include <bdep/diagnostics.hxx>
 
 #include <bdep/init.hxx>
+#include <bdep/config.hxx>
 
 using namespace std;
 
@@ -26,22 +27,16 @@ namespace bdep
     bool ca (o.config_add_specified ());
     bool cc (o.config_create_specified ());
 
-    optional<bool> cd;
-    if (o.default_ () || o.no_default ())
-    {
-      if (!ca && !cc)
-        fail << "--[no-]default specified without --config-(add|create)";
-
-      if (o.default_ () && o.no_default ())
-        fail << "both --default and --no-default specified";
-
-      cd = o.default_ () && !o.no_default ();
-    }
-
     if (o.no_init ())
     {
       if (ca) fail << "both --no-init and --config-add specified";
       if (cc) fail << "both --no-init and --config-create specified";
+    }
+
+    if (const char* n = cmd_config_validate_add (o))
+    {
+      if (!ca && !cc)
+        fail << n << " specified without --config-(add|create)";
     }
 
     // Validate type options.
@@ -621,6 +616,14 @@ namespace bdep
 
     if (ca || cc)
     {
+      optional<bool> cd;
+      if (o.default_ () || o.no_default ())
+        cd = o.default_ () && !o.no_default ();
+
+      optional<bool> cf;
+      if (o.forward () || o.no_forward ())
+        cf = o.forward ()  && !o.no_forward ();
+
       configurations cfgs {
         cmd_init_config (
           o,
@@ -630,7 +633,8 @@ namespace bdep
           args,
           ca,
           cc,
-          cd)};
+          cd,
+          cf)};
 
       package_locations pkgs {{n, dir_path ()}}; // project == package
 

@@ -70,7 +70,7 @@ namespace bdep
                      }) != prj_pkgs.end ())
         {
           // The project package itself must always be upgraded to the latest
-          // version/iteration. So we have to translate our option to their
+          // version/iteration. So we have to translate our options to their
           // dependency-only --{upgrade,patch}-{recursive,immediate}.
           //
           args.push_back ("{");
@@ -119,6 +119,82 @@ namespace bdep
               "--plan", "synchronizing:",
               (yes ? "--yes" : nullptr),
               args);
+
+
+    // Handle configuration forwarding.
+    //
+    // We do it here (instead of, say init) because a change in a package may
+    // introduce new subprojects. Though it would be nice to only do this if
+    // the package was upgraded (probably by comparing before/after versions
+    // @@ TODO: changed flag below).
+    //
+    // Also, the current thinking is that config set --[no-]forward is best
+    // implemented by just changing the flag on the configuration and then
+    // requiring an explicit sync to configure/disfigure forwards.
+    //
+    // @@ TODO: could optimize out version query/comparison if pkg-build
+    //    signalled that nothing has changed (the --exit-result idea). Would
+    //    be nice to optimize the whole thing. Maybe --force flag (for things
+    //    like config set --no-forward)? Or maybe we should require explicit
+    //    sync for certain changes (and pass --implicit or some such in hook
+    //    -- after all, configuring forward of a project being bootstrapped
+    //    might get tricky).
+    //
+    package_locations pls (load_packages (prj));
+
+    for (const package_state& p: c->packages)
+    {
+      // If this is a forwarded configuration, make sure forwarding is
+      // configured and is up-to-date. Otherwise, make sure it is disfigured
+      // (the config set --no-forward case).
+      //
+      dir_path src (prj);
+      {
+        auto i (find_if (pls.begin (),
+                         pls.end (),
+                         [&p] (const package_location& pl)
+                         {
+                           return p.name == pl.name;
+                         }));
+
+        if (i == pls.end ())
+          fail << "package " << p.name << " is not listed in " << prj;
+
+        src /= i->path;
+      }
+
+      // We could run 'b info' and used the 'forwarded' value but this is
+      // both faster and simpler.
+      //
+      path f (src / "build" / "bootstrap" / "out-root.build");
+      bool e (exists (f));
+
+      const char* o (nullptr);
+      if (c->forward)
+      {
+        bool changed (true);
+
+        if (changed || !e)
+          o = "configure:";
+      }
+      else
+      {
+        //@@ This is broken: we will disfigure forwards to other configs.
+        //   Looks like we will need to test that the forward is to this
+        //   config. 'b info' here we come?
+
+        //if (e)
+        //  o = "disfigure:";
+      }
+
+      if (o != nullptr)
+      {
+        dir_path out (dir_path (c->path) /= p.name);
+        string arg (src.representation () + '@' + out.representation () +
+                    ",forward");
+        run_b (co, o, arg);
+      }
+    }
   }
 
   void

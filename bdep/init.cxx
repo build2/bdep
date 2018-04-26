@@ -24,7 +24,8 @@ namespace bdep
                    cli::scanner& args,
                    bool ca,
                    bool cc,
-                   optional<bool> cd)
+                   optional<bool> cd,
+                   optional<bool> cf)
   {
     const char* m (!ca ? "--config-create" :
                    !cc ? "--config-add"    : nullptr);
@@ -32,13 +33,13 @@ namespace bdep
     if (m == nullptr)
       fail << "both --config-add and --config-create specified";
 
-    optional<string> name;
+    optional<string> nm;
     if (size_t n = o.config_name ().size ())
     {
       if (n > 1)
         fail << "multiple configuration names specified for " << m;
 
-      name = o.config_name ()[0];
+      nm = o.config_name ()[0];
     }
 
     optional<uint64_t> id;
@@ -51,8 +52,8 @@ namespace bdep
     }
 
     return ca
-      ? cmd_config_add    (   prj, db, cfg,       move (name), cd, move (id))
-      : cmd_config_create (o, prj, db, cfg, args, move (name), cd, move (id));
+      ? cmd_config_add    (   prj, db, cfg,       move (nm), cd, cf, move (id))
+      : cmd_config_create (o, prj, db, cfg, args, move (nm), cd, cf, move (id));
   }
 
   void
@@ -128,22 +129,16 @@ namespace bdep
     bool ca (o.config_add_specified ());
     bool cc (o.config_create_specified ());
 
-    optional<bool> cd;
-    if (o.default_ () || o.no_default ())
-    {
-      if (!ca && !cc)
-        fail << "--[no-]default specified without --config-(add|create)";
-
-      if (o.default_ () && o.no_default ())
-        fail << "both --default and --no-default specified";
-
-      cd = o.default_ () && !o.no_default ();
-    }
-
     if (o.empty ())
     {
       if (ca) fail << "both --empty and --config-add specified";
       if (cc) fail << "both --empty and --config-create specified";
+    }
+
+    if (const char* n = cmd_config_validate_add (o))
+    {
+      if (!ca && !cc)
+        fail << n << " specified without --config-(add|create)";
     }
 
     project_packages pp (
@@ -186,6 +181,14 @@ namespace bdep
     configurations cfgs;
     if (ca || cc)
     {
+      optional<bool> cd;
+      if (o.default_ () || o.no_default ())
+        cd = o.default_ () && !o.no_default ();
+
+      optional<bool> cf;
+      if (o.forward () || o.no_forward ())
+        cf = o.forward ()  && !o.no_forward ();
+
       cfgs.push_back (
         cmd_init_config (
           o,
@@ -195,7 +198,8 @@ namespace bdep
           args,
           ca,
           cc,
-          cd));
+          cd,
+          cf));
 
       // Fall through.
     }

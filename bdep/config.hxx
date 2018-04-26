@@ -19,6 +19,7 @@ namespace bdep
                   dir_path           path,
                   optional<string>   name,
                   optional<bool>     default_ = nullopt,
+                  optional<bool>     forward  = nullopt,
                   optional<uint64_t> id = nullopt,
                   const char*        what = "added");
 
@@ -30,10 +31,16 @@ namespace bdep
                      cli::scanner&          args,
                      optional<string>       name,
                      optional<bool>         default_ = nullopt,
+                     optional<bool>         forward  = nullopt,
                      optional<uint64_t>     id = nullopt);
 
   int
   cmd_config (const cmd_config_options&, cli::scanner& args);
+
+  // Validate returning one of the options or NULL if none specified.
+  //
+  const char*
+  cmd_config_validate_add (const configuration_add_options&);
 }
 
 #endif // BDEP_CONFIG_HXX

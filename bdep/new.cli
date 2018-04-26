@@ -145,7 +145,7 @@ namespace bdep
   {
   };
 
-  class cmd_new_options: configuration_name_options
+  class cmd_new_options: configuration_add_options, configuration_name_options
   {
     "\h|NEW OPTIONS|"
 
@@ -188,20 +188,6 @@ namespace bdep
       "Specify version control system and options. Valid values for <vcs> are
        \cb{git} (default) and \cb{none}. Valid values for <opt> are
        system-specific."
-    }
-
-    bool --default
-    {
-      "Make the added or created configuration the default. Only valid with
-       \cb{--config-add} or \cb{--config-create}, see \l{bdep-config(1)} for
-       details."
-    }
-
-    bool --no-default
-    {
-      "Don't make the first added or created configuration then default. Only
-       valid with \cb{--config-add} or \cb{--config-create}, see
-       \l{bdep-config(1)} for details."
     }
   };
 }

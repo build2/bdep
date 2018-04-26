@@ -24,13 +24,22 @@ namespace bdep
     // @@ Should we be able to remove config with init'ed packages? Who
     //    is going to drop them in configs? Or require them to be de-init'ed?
     //
+    // @@ Should set be able to alter forward flag? This will require both
+    //    disfiguring forward on old and configuring on new. Perhaps best
+    //    done by sync? I.e., for this change to take effect, one has to
+    //    run sync on both configs? Then sync would somehow need to know
+    //    to remove forwards. Maybe it should always check for stray
+    //    forwards (via out-root.build).
+    //
     "\h|SYNOPSIS|
 
      \c{\b{bdep config add} \ \ \ [<options>] [<prj-spec>] [\b{@}<cfg-name>] <cfg-dir>\n
         \b{bdep config create} [<options>] [<prj-spec>] [\b{@}<cfg-name>] <cfg-dir> [<cfg-args>]\n
         \b{bdep config remove} [<options>] [<prj-spec>] <cfg-spec>... | \b{--all}|\b{-a}\n
         \b{bdep config rename} [<options>] [<prj-spec>] <cfg-spec> <cfg-name>\n
-        \b{bdep config set} \ \ \ [<options>] [<prj-spec>] <cfg-spec> \b{--}[\b{no-}]\b{default}}
+        \b{bdep config set} \ \ \ [<options>] [<prj-spec>] <cfg-spec>\n
+        \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ [\b{--}[\b{no-}]\b{default}]\n
+        \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ [\b{--}[\b{no-}]\b{forward}]}
 
      \c{<cfg-spec> = \b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>\n
         <prj-spec> = \b{--directory}|\b{-d} <prj-dir>\n
@@ -72,7 +81,15 @@ namespace bdep
          \cb{bdep} commands use such a configuration by default if no
          configuration was specified explicitly (see
          \l{bdep-projects-configs(1)} for details). To make a subsequently
-         added configuration the default use the \cb{--default} option.|
+         added configuration the default use the \cb{--default} option.
+
+         The default build configuration is also designated as forwarded
+         unless the \cb{--no-forward} option is specified or another
+         configuration is already designated as forwarded. When a project is
+         initialized in a forwarded build configuration, its source directory
+         is configured to forward to this configuration (see \l{b(1)} for
+         details on forwarded configurations). To forward to a non-default
+         configuration use the \cb{--forward} option.|
 
      \li|\cb{remove}
 
@@ -89,8 +106,10 @@ namespace bdep
      \li|\cb{set}
 
          The \cb{set} subcommand sets various properties of the specified
-         build configuration. These include the default flag
-         (\c{\b{--}[\b{no-}]\b{default}}).||"
+         build configuration. These include the default
+         (\c{\b{--}[\b{no-}]\b{default}}) and forward
+         (\c{\b{--}[\b{no-}]\b{forward}}) flags. Note that changing the
+         forward flag requires an explicit \cb{sync} command to take effect.||"
 
     bool add;
     bool create;
@@ -102,18 +121,8 @@ namespace bdep
   // Note that not all project/configuration options are valid for all
   // subcommands.
   //
-  class cmd_config_options: project_options
+  class cmd_config_options: configuration_add_options, project_options
   {
     "\h|CONFIG OPTIONS|"
-
-    bool --default
-    {
-      "Make the added or created configuration the default."
-    }
-
-    bool --no-default
-    {
-      "Don't make the first added or created configuration then default."
-    }
   };
 }

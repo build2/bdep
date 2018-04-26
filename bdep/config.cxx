@@ -18,6 +18,7 @@ namespace bdep
                   dir_path           path,
                   optional<string>   name,
                   optional<bool>     def,
+                  optional<bool>     fwd,
                   optional<uint64_t> id,
                   const char*        what)
   {
@@ -27,19 +28,32 @@ namespace bdep
     transaction t (db.begin ());
 
     using count = configuration_count;
-    using query = bdep::query<count>;
 
-    // By default the first added configuration is the default.
-    //
-    if (!def)
-      def = (db.query_value<count> () == 0);
-    else if (*def)
     {
       using query = bdep::query<configuration>;
 
-      if (auto p = db.query_one<configuration> (query::default_))
-        fail << "configuration " << *p << " is already the default" <<
-          info << "use 'bdep config set --no-default' to clear";
+      // By default the first added configuration is the default.
+      //
+      if (!def)
+        def = (db.query_value<count> () == 0);
+      else if (*def)
+      {
+        if (auto p = db.query_one<configuration> (query::default_))
+          fail << "configuration " << *p << " is already the default" <<
+            info << "use 'bdep config set --no-default' to clear";
+      }
+
+      // By default the default configuration is forwarded unless another
+      // is already forwarded.
+      //
+      if (!fwd)
+        fwd = *def && db.query_one<configuration> (query::forward) == nullptr;
+      else if (*fwd)
+      {
+        if (auto p = db.query_one<configuration> (query::forward))
+          fail << "configuration " << *p << " is already forwarded" <<
+            info << "use 'bdep config set --no-forward' to clear";
+      }
     }
 
     // Make sure the configuration path is absolute and normalized. Also
@@ -58,6 +72,7 @@ namespace bdep
         path,
         move (rel_path),
         *def,
+        *fwd,
         {} /* packages */});
 
     try
@@ -66,6 +81,8 @@ namespace bdep
     }
     catch (const odb::exception&)
     {
+      using query = bdep::query<count>;
+
       // See if this is id, name, or path conflict.
       //
       if (id && db.query_value<count> (query::id == *id) != 0)
@@ -94,6 +111,7 @@ namespace bdep
       if (r->name)     dr << '@' << *r->name << ' ';
       /*            */ dr << r->path << " (" << *r->id;
       if (r->default_) dr << ", default";
+      if (r->forward)  dr << ", forwarded";
       /*            */ dr << ')';
     }
 
@@ -114,6 +132,7 @@ namespace bdep
                      cli::scanner&         cfg_args,
                      optional<string>      name,
                      optional<bool>        def,
+                     optional<bool>        fwd,
                      optional<uint64_t>    id)
   {
     // Call bpkg to create the configuration.
@@ -131,6 +150,7 @@ namespace bdep
                            move (path),
                            move (name),
                            def,
+                           fwd,
                            id,
                            "created");
   }
@@ -159,6 +179,25 @@ namespace bdep
     fail << "@@ TODO" << endf;
   }
 
+  const char*
+  cmd_config_validate_add (const configuration_add_options& o)
+  {
+    // --[no-]default
+    //
+    if (o.default_ () && o.no_default ())
+      fail << "both --default and --no-default specified";
+
+    // --[no-]forward
+    //
+    if (o.forward () && o.no_forward ())
+      fail << "both --forward and --no-forward specified";
+
+    return (o.default_ ()   ? "--default"    :
+            o.forward ()    ? "--forward"    :
+            o.no_default () ? "--no-default" :
+            o.no_forward () ? "--no-forward" : nullptr);
+  }
+
   int
   cmd_config (const cmd_config_options& o, cli::scanner& scan)
   {
@@ -171,14 +210,7 @@ namespace bdep
 
     // Validate options/subcommands.
     //
-
-    // --[no-]default
-    //
-    if (o.default_ () && o.no_default ())
-      fail << "both --default and --no-default specified";
-
-    if (const char* n = (o.default_ ()   ? "--default"    :
-                         o.no_default () ? "--no-default" : nullptr))
+    if (const char* n = cmd_config_validate_add (o))
     {
       if (!(c.add () || c.create () || c.set ()))
         fail << n << " not valid for this command";

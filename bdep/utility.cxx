@@ -107,4 +107,12 @@ namespace bdep
       ? co.bpkg ().string ().c_str ()
       : "bpkg" BDEP_EXE_SUFFIX;
   }
+
+  const char*
+  name_b (const common_options& co)
+  {
+    return co.build_specified ()
+      ? co.build ().string ().c_str ()
+      : "b" BDEP_EXE_SUFFIX;
+  }
 }

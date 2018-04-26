@@ -144,6 +144,81 @@ namespace bdep
     }
   }
 
+  // *_b()
+  //
+  template <typename O, typename E, typename... A>
+  process
+  start_b (const common_options& co,
+              O&& out,
+              E&& err,
+              A&&... args)
+  {
+    const char* b (name_b (co));
+
+    try
+    {
+      process_path pp (process::path_search (b, exec_dir));
+
+      small_vector<const char*, 1> ops;
+
+      // Map verbosity level. If we are running quiet or at level 1, then run
+      // b quiet. Otherwise, run it at the same level as us.
+      //
+      bool quiet (true); // Maybe will become an argument one day.
+
+      string vl;
+      switch (verb)
+      {
+      case  0:            ops.push_back ("-q"); break;
+      case  1: if (quiet) ops.push_back ("-q"); break;
+      case  2:            ops.push_back ("-v"); break;
+      default:
+        {
+          vl = to_string (verb);
+          ops.push_back ("--verbose");
+          ops.push_back (vl.c_str ());
+        }
+      }
+
+      return process_start_callback (
+        [] (const char* const args[], size_t n)
+        {
+          if (verb >= 2)
+            print_process (args, n);
+        },
+        0 /* stdin */,
+        forward<O> (out),
+        forward<E> (err),
+        pp,
+        ops,
+        co.build_option (),
+        forward<A> (args)...);
+    }
+    catch (const process_error& e)
+    {
+      fail << "unable to execute " << b << ": " << e << endf;
+    }
+  }
+
+  template <typename... A>
+  void
+  run_b (const common_options& co, A&&... args)
+  {
+    process pr (start_b (co,
+                         1 /* stdout */,
+                         2 /* stderr */,
+                         forward<A> (args)...));
+    if (!pr.wait ())
+    {
+      const process_exit& e (*pr.exit);
+
+      if (e.normal ())
+        throw failed (); // Assume the child issued diagnostics.
+
+      fail << "process " << name_b (co) << " " << e;
+    }
+  }
+
   // *_manifest()
   //
   template <typename T>

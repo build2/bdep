@@ -8,6 +8,31 @@ include <bdep/common.cli>;
 
 namespace bdep
 {
+  // Common options for commands that add/create configurations.
+  //
+  class configuration_add_options
+  {
+    bool --default
+    {
+      "Make the added or created configuration the default."
+    }
+
+    bool --no-default
+    {
+      "Don't make the first added or created configuration then default."
+    }
+
+    bool --forward
+    {
+      "Make the added or created configuration forwarded."
+    }
+
+    bool --no-forward
+    {
+      "Don't make the added or created configuration forwarded."
+    }
+  };
+
   // Common options for commands that accept --config-id and @<cfg-name>.
   //
   class configuration_name_options: common_options

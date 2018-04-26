@@ -114,6 +114,19 @@ namespace bdep
   void
   run_bpkg (const common_options&, A&&... args);
 
+  // Run the b process.
+  //
+  const char*
+  name_b (const common_options&);
+
+  template <typename O, typename E, typename... A>
+  process
+  start_b (const common_options&, O&& out, E&& err, A&&... args);
+
+  template <typename... A>
+  void
+  run_b (const common_options&, A&&... args);
+
   // Manifest parsing and serialization.
   //
   // For parsing, if path is '-', then read from stdin.

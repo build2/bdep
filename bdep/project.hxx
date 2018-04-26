@@ -78,6 +78,7 @@ namespace bdep
     optional_dir_path  relative_path;
 
     bool default_;
+    bool forward;
 
     // We made it a vector instead of set/map since we are unlikely to have
     // more than a handful of packages. We may, however, want to use a change-
@@ -161,6 +162,9 @@ namespace bdep
   };
 
   using package_locations = vector<package_location>;
+
+  package_locations
+  load_packages (const dir_path& prj);
 
   struct project_packages
   {

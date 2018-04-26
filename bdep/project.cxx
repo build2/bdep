@@ -110,7 +110,7 @@ namespace bdep
     return r;
   }
 
-  // Given a directory which can a project root, a package root, or one of
+  // Given a directory which can be a project root, a package root, or one of
   // their subdirectories, return the absolute project (first) and relative
   // package (second) directories. The package directory may be absent if the
   // given directory is not within a package root or empty if the project and
@@ -186,6 +186,69 @@ namespace bdep
     return project_package {move (prj), move (pkg)};
   }
 
+  static package_locations
+  load_package_locations (const dir_path& prj)
+  {
+    package_locations pls;
+
+    // If exists, load packages.manifest from the project root. Otherwise,
+    // this must be a simple, single-package project.
+    //
+    path f (prj / packages_file);
+
+    if (exists (f))
+    {
+      using bpkg::package_manifest;
+      using bpkg::dir_package_manifests;
+
+      auto ms (parse_manifest<dir_package_manifests> (f, "packages"));
+
+      // While an empty repository is legal, in our case it doesn't make much
+      // sense and will just further complicate things.
+      //
+      if (ms.empty ())
+        fail << "no packages listed in " << f;
+
+      for (package_manifest& m: ms)
+      {
+        // Convert the package location from POSIX to the host form and make
+        // sure the current directory is represented as an empty path.
+        //
+        assert (m.location);
+        dir_path d (path_cast<dir_path> (move (*m.location)));
+        d.normalize (false /* actualize */, true /* cur_empty */);
+
+        pls.push_back (package_location {string (), move (d)});
+      }
+    }
+    else
+      pls.push_back (package_location {string (), dir_path ()});
+
+    return pls;
+  }
+
+  static void
+  load_package_names (const dir_path& prj, package_locations& pls)
+  {
+    // Load each package's manifest and obtain its name (name is normally the
+    // first value so we could optimize this, if necessary).
+    //
+    for (package_location& pl: pls)
+    {
+      path f (prj / pl.path / manifest_file);
+      auto m (parse_manifest<bpkg::package_manifest> (f, "package"));
+      pl.name = move (m.name);
+    }
+  }
+
+  package_locations
+  load_packages (const dir_path& prj)
+  {
+    package_locations pls (load_package_locations (prj));
+    load_package_names (prj, pls);
+    return pls;
+  }
+
   project_packages
   find_project_packages (const project_options& po,
                          bool ignore_packages,
@@ -246,82 +309,37 @@ namespace bdep
 
     if (!ignore_packages)
     {
-      // If exists, load packages.manifest from the project root and either
-      // verify that the discovered packages are in it or, if nothing was
-      // discovered, use it as the source for the package list.
+      // Load the package locations and either verify that the discovered
+      // packages are in it or, if nothing was discovered, use it as the
+      // source for the package list.
       //
-      path f (r.project / packages_file);
+      package_locations pls (load_package_locations (r.project));
 
-      if (exists (f))
+      if (!r.packages.empty ())
       {
-        using bpkg::package_manifest;
-        using bpkg::dir_package_manifests;
-
-        auto ms (parse_manifest<dir_package_manifests> (f, "packages"));
-
-        // While an empty repository is legal, in our case it doesn't make
-        // much sense and will just further complicate things.
-        //
-        if (ms.empty ())
-          fail << "no packages listed in " << f;
-
-        // Convert the package location from POSIX to the host form and make
-        // sure the current directory is represented as an empty path.
-        //
-        auto location = [] (const package_manifest& m)
+        for (const package_location& x: r.packages)
         {
-          assert (m.location);
-          dir_path d (path_cast<dir_path> (*m.location));
-          d.normalize (false /* actualize */, true /* cur_empty */);
-          return d;
-        };
-
-        if (!r.packages.empty ())
-        {
-          // It could be costly to normalize the location for each
-          // comparison. We, however, do not expect more than a handful of
-          // packages so we are probably ok.
-          //
-          for (const package_location& pl: r.packages)
+          if (find_if (pls.begin (),
+                       pls.end (),
+                       [&x] (const package_location& y)
+                       {
+                         return x.path == y.path;
+                       }) == pls.end ())
           {
-            const dir_path& p (pl.path);
-
-            if (find_if (ms.begin (),
-                         ms.end (),
-                         [&p, &location] (const package_manifest& m)
-                         {
-                           return p == location (m);
-                         }) == ms.end ())
-            {
-              fail << "package directory " << p << " is not listed in " << f;
-            }
+            fail << "package directory " << x.path << " is not listed in "
+                 << r.project;
           }
         }
-        else if (load_packages)
-        {
-          // Name is to be extracted later.
-          //
-          for (package_manifest& m: ms)
-            r.packages.push_back (package_location {"", location (m)});
-        }
       }
-      else
+      else if (load_packages)
       {
-        // If packages.manifest does not exist, then this must be a simple
-        // project.
+        // Names to be extracted later.
         //
-        assert (r.packages.size () == 1 && r.packages[0].path.empty ());
+        r.packages = move (pls);
       }
 
-      // Load each package's manifest and obtain its name (name is normally
-      // the first value so we could optimize this, if necessary).
-      //
-      for (package_location& pl: r.packages)
-      {
-        path f (r.project / pl.path / manifest_file);
-        auto m (parse_manifest<bpkg::package_manifest> (f, "package"));
-        pl.name = move (m.name);
-      }
+      if (!r.packages.empty ())
+        load_package_names (r.project, r.packages);
     }
 
     return r;

@@ -137,7 +137,7 @@ namespace bdep
      "
   }
 
-  class cmd_init_options: project_options
+  class cmd_init_options: configuration_add_options, project_options
   {
     "\h|INIT OPTIONS|"
 
@@ -156,20 +156,6 @@ namespace bdep
     {
       "<dir>",
       "Create a new build configuration in <dir>."
-    }
-
-    bool --default
-    {
-      "Make the added or created configuration the default. Only valid with
-       \cb{--config-add} or \cb{--config-create}, see \l{bdep-config(1)} for
-       details."
-    }
-
-    bool --no-default
-    {
-      "Don't make the first added or created configuration then default. Only
-       valid with \cb{--config-add} or \cb{--config-create}, see
-       \l{bdep-config(1)} for details."
     }
   };
 }

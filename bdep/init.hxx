@@ -23,7 +23,8 @@ namespace bdep
                    cli::scanner& cfg_args,
                    bool config_add_specified,
                    bool config_create_specified,
-                   optional<bool> config_default);
+                   optional<bool> config_default,
+                   optional<bool> config_forward);
 
   // Initialize each package in each configuration skipping those that are
   // already initialized. Then synchronize each configuration.

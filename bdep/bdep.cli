@@ -217,7 +217,17 @@ namespace bdep
          -a} in the previous example), then it will print a line identifying
          each configuration before printing the command's result.
 
-         @@ build and run?
+         By default the project's source directory is configured to forward to
+         the default build configuration. That is, we can run the build system
+         in the source directory and it will automatically build in the
+         forwarded configuration as well as link the results back to the
+         source directory using symlinks or a another suitable mechanism (see
+         \l{bdep-config(1)} for details). For example:
+
+         \
+         $ b        # build in gcc
+         $ ./hello  # run the result
+         \
 
          |
 
@@ -271,6 +281,8 @@ namespace bdep
          hello configured 0.1.0-a.0.19700101000000#1
            libhello >= 1.0.0 configured 1.0.0
          \
+
+         @@ TODO: build system hook.
 
          |
 
