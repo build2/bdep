@@ -204,7 +204,8 @@ namespace bdep
       {
         os.open (f = bd / ".gitignore");
         os << "config.build"                                           << endl
-           << "bootstrap/out-root.build"                               << endl;
+           << "root/"                                                  << endl
+           << "bootstrap/"                                             << endl;
         os.close ();
       }
 
