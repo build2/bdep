@@ -20,11 +20,12 @@ namespace bdep
   cmd_sync (const common_options&,
             const dir_path& prj,
             const shared_ptr<configuration>&,
+            bool implicit,
             bool fetch = true,
             bool yes = true);
 
   int
-  cmd_sync (const cmd_sync_options&, cli::scanner& args);
+  cmd_sync (cmd_sync_options&&, cli::scanner& args);
 }
 
 #endif // BDEP_SYNC_HXX

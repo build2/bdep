@@ -26,6 +26,7 @@ namespace bdep
   const path repositories_file   ("repositories.manifest");
   const path configurations_file ("configurations.manifest");
 
+  const char* argv0;
   dir_path exec_dir;
 
   bool

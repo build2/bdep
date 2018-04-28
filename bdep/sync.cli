@@ -198,5 +198,28 @@ namespace bdep
     {
       "Don't prompt for confirmation when up/down-grading dependencies."
     }
+
+    bool --implicit
+    {
+      "Perform implicit synchronization. This mode is normally used by other
+       tools (for example, a build system hook) to ensure packages and
+       configurations are synchronized. To improve performance, especially for
+       the \"everything is already synchronized\" case, \cb{sync} executed in
+       this mode assumes that no configuration flags (see \l{bdep-config(1)})
+       have changed since the last explicit synchronization.
+
+       To avoid recursive re-synchronization, the \cb{sync} command maintains
+       the \cb{BDEP_SYNCED_CONFIGS} environment variable. It contains a
+       space-separated, \cb{\"}-quoted list of configuration paths that have
+       been or are being synchronized by the current \cb{bdep} invocation
+       chain. The \cb{sync} command in the implicit mode also examines this
+       variable and silently ignores synchronization requests that have been
+       or are already being performed."
+    }
+
+    // The build system hook protocol version. Internal, undocumented, and
+    // implies --implicit.
+    //
+    uint16_t --hook = 0;
   };
 }

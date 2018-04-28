@@ -7,6 +7,7 @@
       <column name="relative_path" type="TEXT" null="true"/>
       <column name="default" type="INTEGER" null="true"/>
       <column name="forward" type="INTEGER" null="true"/>
+      <column name="auto_sync" type="INTEGER" null="true"/>
       <primary-key auto="true">
         <column name="id"/>
       </primary-key>

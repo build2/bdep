@@ -13,14 +13,13 @@ using namespace std;
 namespace bdep
 {
   shared_ptr<configuration>
-  cmd_config_add (const dir_path&    prj,
-                  database&          db,
-                  dir_path           path,
-                  optional<string>   name,
-                  optional<bool>     def,
-                  optional<bool>     fwd,
-                  optional<uint64_t> id,
-                  const char*        what)
+  cmd_config_add (const configuration_add_options& ao,
+                  const dir_path&                  prj,
+                  database&                        db,
+                  dir_path                         path,
+                  optional<string>                 name,
+                  optional<uint64_t>               id,
+                  const char*                      what)
   {
     if (!exists (path))
       fail << "configuration directory " << path << " does not exist";
@@ -29,11 +28,15 @@ namespace bdep
 
     using count = configuration_count;
 
+    optional<bool> def, fwd;
     {
       using query = bdep::query<configuration>;
 
       // By default the first added configuration is the default.
       //
+      if (ao.default_ () || ao.no_default ())
+        def = ao.default_ () && !ao.no_default ();
+
       if (!def)
         def = (db.query_value<count> () == 0);
       else if (*def)
@@ -46,6 +49,9 @@ namespace bdep
       // By default the default configuration is forwarded unless another
       // is already forwarded.
       //
+      if (ao.forward () || ao.no_forward ())
+        fwd = ao.forward ()  && !ao.no_forward ();
+
       if (!fwd)
         fwd = *def && db.query_one<configuration> (query::forward) == nullptr;
       else if (*fwd)
@@ -73,6 +79,7 @@ namespace bdep
         move (rel_path),
         *def,
         *fwd,
+        !ao.no_auto_sync (),
         {} /* packages */});
 
     try
@@ -107,12 +114,13 @@ namespace bdep
     if (verb)
     {
       diag_record dr (text);
-      /*            */ dr << what << " configuration ";
-      if (r->name)     dr << '@' << *r->name << ' ';
-      /*            */ dr << r->path << " (" << *r->id;
-      if (r->default_) dr << ", default";
-      if (r->forward)  dr << ", forwarded";
-      /*            */ dr << ')';
+      /*              */ dr << what << " configuration ";
+      if (r->name)       dr << '@' << *r->name << ' ';
+      /*              */ dr << r->path << " (" << *r->id;
+      if (r->default_)   dr << ", default";
+      if (r->forward)    dr << ", forwarded";
+      if (r->auto_sync)  dr << ", auto-synchronized";
+      /*              */ dr << ')';
     }
 
     return r;
@@ -125,15 +133,14 @@ namespace bdep
   }
 
   shared_ptr<configuration>
-  cmd_config_create (const common_options& co,
-                     const dir_path&       prj,
-                     database&             db,
-                     dir_path              path,
-                     cli::scanner&         cfg_args,
-                     optional<string>      name,
-                     optional<bool>        def,
-                     optional<bool>        fwd,
-                     optional<uint64_t>    id)
+  cmd_config_create (const common_options&            co,
+                     const configuration_add_options& ao,
+                     const dir_path&                  prj,
+                     database&                        db,
+                     dir_path                         path,
+                     cli::scanner&                    cfg_args,
+                     optional<string>                 name,
+                     optional<uint64_t>               id)
   {
     // Call bpkg to create the configuration.
     //
@@ -145,12 +152,11 @@ namespace bdep
       run_bpkg (co, "create", "-d", path, args);
     }
 
-    return cmd_config_add (prj,
+    return cmd_config_add (ao,
+                           prj,
                            db,
                            move (path),
                            move (name),
-                           def,
-                           fwd,
                            id,
                            "created");
   }
@@ -192,10 +198,17 @@ namespace bdep
     if (o.forward () && o.no_forward ())
       fail << "both --forward and --no-forward specified";
 
-    return (o.default_ ()   ? "--default"    :
-            o.forward ()    ? "--forward"    :
-            o.no_default () ? "--no-default" :
-            o.no_forward () ? "--no-forward" : nullptr);
+    // --[no-]auto-sync
+    //
+    if (o.auto_sync () && o.no_auto_sync ())
+      fail << "both --auto-sync and --no-auto-sync specified";
+
+    return (o.default_ ()     ? "--default"      :
+            o.no_default ()   ? "--no-default"   :
+            o.forward ()      ? "--forward"      :
+            o.no_forward ()   ? "--no-forward"   :
+            o.auto_sync ()    ? "--auto-sync"    :
+            o.no_auto_sync () ? "--no-auto-sync" : nullptr);
   }
 
   int

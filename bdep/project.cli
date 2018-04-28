@@ -31,6 +31,17 @@ namespace bdep
     {
       "Don't make the added or created configuration forwarded."
     }
+
+    bool --auto-sync
+    {
+      "Make the added or created configuration automatically synchronized."
+    }
+
+    bool --no-auto-sync
+    {
+      "Don't make the added or created configuration automatically
+       synchronized."
+    }
   };
 
   // Common options for commands that accept --config-id and @<cfg-name>.

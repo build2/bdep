@@ -79,6 +79,7 @@ namespace bdep
 
     bool default_;
     bool forward;
+    bool auto_sync;
 
     // We made it a vector instead of set/map since we are unlikely to have
     // more than a handful of packages. We may, however, want to use a change-

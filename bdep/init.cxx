@@ -18,14 +18,13 @@ namespace bdep
 {
   shared_ptr<configuration>
   cmd_init_config (const configuration_name_options& o,
+                   const configuration_add_options& ao,
                    const dir_path& prj,
                    database& db,
                    const dir_path& cfg,
                    cli::scanner& args,
                    bool ca,
-                   bool cc,
-                   optional<bool> cd,
-                   optional<bool> cf)
+                   bool cc)
   {
     const char* m (!ca ? "--config-create" :
                    !cc ? "--config-add"    : nullptr);
@@ -52,8 +51,8 @@ namespace bdep
     }
 
     return ca
-      ? cmd_config_add    (   prj, db, cfg,       move (nm), cd, cf, move (id))
-      : cmd_config_create (o, prj, db, cfg, args, move (nm), cd, cf, move (id));
+      ? cmd_config_add    (   ao, prj, db, cfg,       move (nm), move (id))
+      : cmd_config_create (o, ao, prj, db, cfg, args, move (nm), move (id));
   }
 
   void
@@ -117,7 +116,7 @@ namespace bdep
       db.update (c);
       t.commit ();
 
-      cmd_sync (o, prj, c);
+      cmd_sync (o, prj, c, false /* implicit */);
     }
   }
 
@@ -181,25 +180,16 @@ namespace bdep
     configurations cfgs;
     if (ca || cc)
     {
-      optional<bool> cd;
-      if (o.default_ () || o.no_default ())
-        cd = o.default_ () && !o.no_default ();
-
-      optional<bool> cf;
-      if (o.forward () || o.no_forward ())
-        cf = o.forward ()  && !o.no_forward ();
-
       cfgs.push_back (
         cmd_init_config (
+          o,
           o,
           prj,
           db,
           ca ? o.config_add () : o.config_create (),
           args,
           ca,
-          cc,
-          cd,
-          cf));
+          cc));
 
       // Fall through.
     }

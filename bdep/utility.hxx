@@ -40,6 +40,10 @@ namespace bdep
   using butl::ucase;
   using butl::lcase;
   using butl::casecmp;
+
+  using butl::trim;
+  using butl::next_word;
+
   using butl::reverse_iterate;
 
   using butl::exception_guard;
@@ -65,6 +69,10 @@ namespace bdep
   extern const path packages_file;       // packages.manifest
   extern const path repositories_file;   // repositories.manifest
   extern const path configurations_file; // configurations.manifest
+
+  // Process path (argv[0]).
+  //
+  extern const char* argv0;
 
   // Directory extracted from argv[0] (i.e., this process' recall directory)
   // or empty if there is none. Can be used as a search fallback.

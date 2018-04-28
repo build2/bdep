@@ -14,25 +14,23 @@
 namespace bdep
 {
   shared_ptr<configuration>
-  cmd_config_add (const dir_path&    prj,
+  cmd_config_add (const configuration_add_options&,
+                  const dir_path&    prj,
                   database&,
                   dir_path           path,
                   optional<string>   name,
-                  optional<bool>     default_ = nullopt,
-                  optional<bool>     forward  = nullopt,
                   optional<uint64_t> id = nullopt,
                   const char*        what = "added");
 
   shared_ptr<configuration>
   cmd_config_create (const common_options&,
-                     const dir_path&        prj,
+                     const configuration_add_options&,
+                     const dir_path&    prj,
                      database&,
-                     dir_path               path,
-                     cli::scanner&          args,
-                     optional<string>       name,
-                     optional<bool>         default_ = nullopt,
-                     optional<bool>         forward  = nullopt,
-                     optional<uint64_t>     id = nullopt);
+                     dir_path           path,
+                     cli::scanner&      args,
+                     optional<string>   name,
+                     optional<uint64_t> id = nullopt);
 
   int
   cmd_config (const cmd_config_options&, cli::scanner& args);

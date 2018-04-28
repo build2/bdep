@@ -121,7 +121,8 @@ try
 {
   using namespace cli;
 
-  exec_dir = path (argv[0]).directory ();
+  argv0 = argv[0];
+  exec_dir = path (argv0).directory ();
 
   // This is a little hack to make our baseutils for Windows work when called
   // with absolute path. In a nutshell, MSYS2's exec*p() doesn't search in the

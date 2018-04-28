@@ -39,7 +39,8 @@ namespace bdep
         \b{bdep config rename} [<options>] [<prj-spec>] <cfg-spec> <cfg-name>\n
         \b{bdep config set} \ \ \ [<options>] [<prj-spec>] <cfg-spec>\n
         \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ [\b{--}[\b{no-}]\b{default}]\n
-        \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ [\b{--}[\b{no-}]\b{forward}]}
+        \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ [\b{--}[\b{no-}]\b{forward}]\n
+        \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ [\b{--}[\b{no-}]\b{auto-sync}]}
 
      \c{<cfg-spec> = \b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>\n
         <prj-spec> = \b{--directory}|\b{-d} <prj-dir>\n
@@ -89,7 +90,14 @@ namespace bdep
          initialized in a forwarded build configuration, its source directory
          is configured to forward to this configuration (see \l{b(1)} for
          details on forwarded configurations). To forward to a non-default
-         configuration use the \cb{--forward} option.|
+         configuration use the \cb{--forward} option.
+
+         Unless the \cb{--no-auto-sync} option is specified, an added or
+         created build configuration will be automatically synchronized on
+         every build system invocation. Note that this flag affects the entire
+         build configuration and if multiple projects share the same
+         configuration, then they must have a consistent auto-synchronization
+         setting.|
 
      \li|\cb{remove}
 
@@ -106,10 +114,12 @@ namespace bdep
      \li|\cb{set}
 
          The \cb{set} subcommand sets various properties of the specified
-         build configuration. These include the default
-         (\c{\b{--}[\b{no-}]\b{default}}) and forward
-         (\c{\b{--}[\b{no-}]\b{forward}}) flags. Note that changing the
-         forward flag requires an explicit \cb{sync} command to take effect.||"
+         build configuration. These include the
+         default (\c{\b{--}[\b{no-}]\b{default}}),
+         forward (\c{\b{--}[\b{no-}]\b{forward}}), and
+         auto-synchronization (\c{\b{--}[\b{no-}]\b{auto-sync}}) flags.
+         Note that changing any of these flags requires an explicit
+         \cb{sync} command to take effect.||"
 
     bool add;
     bool create;

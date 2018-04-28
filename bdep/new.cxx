@@ -617,25 +617,16 @@ namespace bdep
 
     if (ca || cc)
     {
-      optional<bool> cd;
-      if (o.default_ () || o.no_default ())
-        cd = o.default_ () && !o.no_default ();
-
-      optional<bool> cf;
-      if (o.forward () || o.no_forward ())
-        cf = o.forward ()  && !o.no_forward ();
-
       configurations cfgs {
         cmd_init_config (
+          o,
           o,
           prj,
           db,
           ca ? o.config_add () : o.config_create (),
           args,
           ca,
-          cc,
-          cd,
-          cf)};
+          cc)};
 
       package_locations pkgs {{n, dir_path ()}}; // project == package
 

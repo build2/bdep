@@ -4,6 +4,8 @@
 
 #include <bdep/sync.hxx>
 
+#include <stdlib.h> // getenv() setenv()/_putenv()
+
 #include <bdep/database.hxx>
 #include <bdep/diagnostics.hxx>
 
@@ -22,6 +24,7 @@ namespace bdep
   cmd_sync (const common_options& co,
             const dir_path& prj,
             const shared_ptr<configuration>& c,
+            bool implicit,
             bool fetch,
             bool yes,
             optional<bool> upgrade,   // true - upgrade,   false - patch
@@ -43,6 +46,10 @@ namespace bdep
     //
     // We also use the repository name rather than the location as a sanity
     // check (the repository must have been added as part of init).
+    //
+    // @@ For implicit fetch this will print diagnostics/progress before
+    //    "synchronizing <cfg-dir>:". Maybe rep-fetch also needs something
+    //    like --plan but for progress? Plus there might be no sync at all.
     //
     if (fetch)
       run_bpkg (co,
@@ -110,35 +117,41 @@ namespace bdep
       }
     }
 
+    // For implicit sync (normally performed on one configuration at a time)
+    // add the configuration directory to the plan header.
+    //
+    // We use the configuration directory rather than the name because this
+    // could be a multi-project configuration and in the implicit mode there
+    // will normally be no "originating project" (unlike with explicit sync).
+    //
+    string plan (implicit
+                 ? "synchronizing " + c->path.representation () + ':'
+                 : "synchronizing:");
+
     run_bpkg (co,
               "build",
               "-d", c->path,
               "--no-fetch",
               "--configure-only",
               "--keep-out",
-              "--plan", "synchronizing:",
+              "--plan", plan,
               (yes ? "--yes" : nullptr),
               args);
-
 
     // Handle configuration forwarding.
     //
     // We do it here (instead of, say init) because a change in a package may
     // introduce new subprojects. Though it would be nice to only do this if
-    // the package was upgraded (probably by comparing before/after versions
-    // @@ TODO: changed flag below).
+    // the package was upgraded.
+    //
+    // @@ TODO: changed flag below: Probably by comparing before/after
+    //          versions. Or, even simpler, if pkg-build signalled that
+    //          nothing has changed (the --exit-result idea) -- then we
+    //          can skip the whole thing.
     //
     // Also, the current thinking is that config set --[no-]forward is best
     // implemented by just changing the flag on the configuration and then
     // requiring an explicit sync to configure/disfigure forwards.
-    //
-    // @@ TODO: could optimize out version query/comparison if pkg-build
-    //    signalled that nothing has changed (the --exit-result idea). Would
-    //    be nice to optimize the whole thing. Maybe --force flag (for things
-    //    like config set --no-forward)? Or maybe we should require explicit
-    //    sync for certain changes (and pass --implicit or some such in hook
-    //    -- after all, configuring forward of a project being bootstrapped
-    //    might get tricky).
     //
     package_locations pls (load_packages (prj));
 
@@ -177,7 +190,7 @@ namespace bdep
         if (changed || !e)
           o = "configure:";
       }
-      else
+      else if (!implicit) // Requires explicit sync.
       {
         //@@ This is broken: we will disfigure forwards to other configs.
         //   Looks like we will need to test that the forward is to this
@@ -195,18 +208,71 @@ namespace bdep
         run_b (co, o, arg);
       }
     }
+
+    // Add/remove auto-synchronization build system hook.
+    //
+    if (!implicit)
+    {
+      path f (c->path / "build" / "bootstrap" / "pre-bdep-sync.build");
+      bool e (exists (f));
+
+      if (c->auto_sync)
+      {
+        if (!e)
+        {
+          mk (f.directory ());
+
+          try
+          {
+            ofdstream os (f);
+
+            // Should we analyze BDEP_SYNCED_CONFIGS ourselves or should we
+            // let bdep-sync to it for us? Doing it here instead of spawning a
+            // process (which will loading the database, etc) will be faster.
+            // But, on the other hand, this is only an issue for commands like
+            // update and test that do their own implicit sync.
+            //
+            // cfgs = $getenv(BDEP_SYNCED_CONFIGS)
+            // if! $null($cfgs)
+            //   cfgs = [dir_paths] $regex.split($cfgs, ' *"([^"]*)" *', '\1')
+            //
+            os << "# Created automatically by bdep."                   << endl
+               << "#"                                                  << endl
+               << "if ($build.meta_operation != 'info'      && \\"     << endl
+               << "    $build.meta_operation != 'configure' && \\"     << endl
+               << "    $build.meta_operation != 'disfigure')"          << endl
+               << "  run " << argv0 << " sync --hook=1 "               <<
+              "--config \"$out_root\" "                                <<
+              "-d '" << prj.string () << "'"                           << endl;
+
+            os.close ();
+          }
+          catch (const io_error& e)
+          {
+            fail << "unable to write " << f << ": " << e;
+          }
+        }
+      }
+      else
+      {
+        if (e)
+          rm (f);
+      }
+    }
   }
 
   void
   cmd_sync (const common_options& co,
             const dir_path& prj,
             const shared_ptr<configuration>& c,
+            bool implicit,
             bool fetch,
             bool yes)
   {
     cmd_sync (co,
               prj,
               c,
+              implicit,
               fetch,
               yes,
               nullopt              /* upgrade   */,
@@ -216,7 +282,7 @@ namespace bdep
   }
 
   int
-  cmd_sync (const cmd_sync_options& o, cli::scanner& args)
+  cmd_sync (cmd_sync_options&& o, cli::scanner& args)
   {
     tracer trace ("sync");
 
@@ -241,6 +307,29 @@ namespace bdep
     //
     strings dep_pkgs;
     for (; args.more (); dep_pkgs.push_back (args.next ())) ;
+
+    // --hook
+    //
+    if (o.hook_specified ())
+    {
+      if (o.hook () != 1)
+        fail << "unsupported build system hook protocol" <<
+          info << "project requires re-initialization";
+
+      o.implicit (true); // Implies --implicit.
+    }
+
+    // --implicit
+    //
+    if (o.implicit ())
+    {
+      if (const char* n = (o.upgrade () ? "--upgrade|-u" :
+                           o.patch ()   ? "--patch|-p"   : nullptr))
+        fail << "--implicit specified with " << n;
+
+      if (!dep_pkgs.empty ())
+        fail << "--implicit specified with dependency package";
+    }
 
     // We could be running from a package directory (or the user specified one
     // with -d) that has not been init'ed in this configuration. Unless we are
@@ -306,6 +395,7 @@ namespace bdep
         cmd_sync (o,
                   prj,
                   c,
+                  false /* implicit */,
                   !fetch,
                   o.recursive () || o.immediate () ? o.yes () : true,
                   !o.patch (), // Upgrade by default unless patch requested.
@@ -322,6 +412,7 @@ namespace bdep
         cmd_sync (o,
                   prj,
                   c,
+                  false /* implicit */,
                   !fetch,
                   o.yes (),
                   o.upgrade (),
@@ -331,9 +422,64 @@ namespace bdep
       }
       else
       {
-        // The first form: sync of project packages.
+        // The first form: sync of project packages (potentially implicit).
         //
-        cmd_sync (o, prj, c, !fetch, true /* yes */);
+
+        // Update the BDEP_SYNCED_CONFIGS environment variable.
+        //
+        // Note that it covers both depth and breadth (i.e., we don't restore
+        // the previous value before returning). The idea here is for commands
+        // like update or test would perform an implicit sync which will then
+        // be "noticed" by the build system hook. This should be both faster
+        // (no need to spawn multiple bdep processes) and simpler (no need to
+        // worry about who has the database open, etc).
+        //
+        {
+          const char n[] = "BDEP_SYNCED_CONFIGS";
+
+          string v;
+          const string& p (c->path.string ());
+
+          if (const char* e = getenv (n))
+          {
+            v = e;
+
+            // Check if this configuration is already (being) synchronized.
+            //
+            for (size_t b (0), e (0);
+                 (e = v.find ('"', e)) != string::npos; // Skip leading ' '.
+                 ++e)                                   // Skip trailing '"'.
+            {
+              size_t n (next_word (v, b, e, '"'));
+
+              // Both paths are normilized so we can just compare them as
+              // strings.
+              //
+              if (path::traits::compare (v.c_str () + b, n,
+                                         p.c_str (),     p.size ()) == 0)
+              {
+                if (o.implicit ())
+                  return 0; // Ignore.
+                else
+                  fail << "explicit re-synchronization of " << c->path;
+              }
+            }
+
+            v += ' ';
+          }
+
+          v += '"';
+          v += p;
+          v += '"';
+
+#ifndef _WIN32
+          setenv (n, v.c_str (), 1 /* overwrite */);
+#else
+          _putenv ((string (n) + '=' + v).c_str ());
+#endif
+        }
+
+        cmd_sync (o, prj, c, o.implicit (), !fetch, true /* yes */);
       }
     }
 

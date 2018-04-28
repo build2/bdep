@@ -17,14 +17,13 @@ namespace bdep
   //
   shared_ptr<configuration>
   cmd_init_config (const configuration_name_options&,
+                   const configuration_add_options&,
                    const dir_path& prj,
                    database&,
                    const dir_path& cfg,
                    cli::scanner& cfg_args,
                    bool config_add_specified,
-                   bool config_create_specified,
-                   optional<bool> config_default,
-                   optional<bool> config_forward);
+                   bool config_create_specified);
 
   // Initialize each package in each configuration skipping those that are
   // already initialized. Then synchronize each configuration.
