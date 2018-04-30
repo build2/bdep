@@ -221,11 +221,13 @@ namespace bdep
          the default build configuration. That is, we can run the build system
          in the source directory and it will automatically build in the
          forwarded configuration as well as link the results back to the
-         source directory using symlinks or a another suitable mechanism (see
+         source directory using symlinks or another suitable mechanism (see
          \l{bdep-config(1)} for details). For example:
 
          \
          $ b        # build in gcc
+         <...>
+
          $ ./hello  # run the result
          \
 
@@ -276,13 +278,43 @@ namespace bdep
 
          \
          $ bdep sync
+         synchronizing:
+           build libhello/1.0.0 (required by hello)
+           upgrade hello/0.1.0-a.0.19700101000000#1
 
          $ bdep status -i
          hello configured 0.1.0-a.0.19700101000000#1
            libhello >= 1.0.0 configured 1.0.0
          \
 
-         @@ TODO: build system hook.
+         Note that by default build configurations are automatically
+         synchronized on every build system invocation (see \l{bdep-config(1)}
+         for details). As a result, we rarely need to run the \cb{sync}
+         command explicitly and instead can just run the desired build system
+         operation (for instance, \cb{update} or \cb{test}) directly. For
+         example:
+
+         \
+         $ b test
+         synchronizing:
+           build libhello/1.0.0 (required by hello)
+           upgrade hello/0.1.0-a.0.19700101000000#1
+         <...>
+         \
+
+         It is also possible for several projects to shared a build
+         configuration. In this case all the projects are synchronized at once
+         regardless of the originating project. For example, if we were also
+         the authors of \cb{libhello} and hosted it in a separate version
+         control repository (as opposed to being a package in the \cb{hello}
+         repository), then it would have been natural to develop it together
+         with \cb{hello} in the same configurations:
+
+         \
+         $ cd ../libhello
+         $ bdep init -A ../hello-gcc @gcc
+         $ bdep sync  # synchronizes both hello and libhello
+         \
 
          |
 
