@@ -20,7 +20,8 @@ namespace bdep
     // Let's use the repository name rather than the location as a sanity
     // check (the repository must have been added as part of init).
     //
-    run_bpkg (o,
+    run_bpkg (2,
+              o,
               "fetch",
               "-d", c->path,
               (full ? nullptr : ("dir:" + prj.string ()).c_str ()));

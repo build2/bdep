@@ -149,7 +149,7 @@ namespace bdep
       while (cfg_args.more ())
         args.push_back (cfg_args.next ());
 
-      run_bpkg (co, "create", "-d", path, args);
+      run_bpkg (2, co, "create", "-d", path, args);
     }
 
     return cmd_config_add (ao,

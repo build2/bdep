@@ -48,7 +48,8 @@ namespace bdep
     {
       fdpipe pipe (fdopen_pipe ()); // Text mode seems appropriate.
 
-      pr = start_bpkg (co,
+      pr = start_bpkg (3,
+                       co,
                        pipe /* stdout */,
                        2    /* stderr */,
                        "rep-list",
@@ -247,7 +248,7 @@ namespace bdep
     //    init'ed packages in this configuration.
     //
     if (!reps.empty ())
-      run_bpkg (co, "fetch", "-d", cfg, "--shallow", reps);
+      run_bpkg (3, co, "fetch", "-d", cfg, "--shallow", reps);
 
     // For implicit sync (normally performed on one configuration at a time)
     // add the configuration directory to the plan header.
@@ -260,7 +261,8 @@ namespace bdep
                  ? "synchronizing " + cfg.representation () + ':'
                  : "synchronizing:");
 
-    run_bpkg (co,
+    run_bpkg (2,
+              co,
               "build",
               "-d", cfg,
               "--no-fetch",

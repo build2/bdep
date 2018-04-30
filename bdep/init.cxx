@@ -84,7 +84,8 @@ namespace bdep
       // Add project repository to the configuration. Note that we don't fetch
       // it since sync is going to do it anyway.
       //
-      run_bpkg (o,
+      run_bpkg (3,
+                o,
                 "add",
                 "-d", c->path,
                 "--type", "dir",

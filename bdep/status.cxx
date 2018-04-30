@@ -28,7 +28,8 @@ namespace bdep
     // We do it in a separate command for the same reason as in sync.
     //
     if (fetch)
-      run_bpkg (o,
+      run_bpkg (3,
+                o,
                 "fetch",
                 "-d", cfg,
                 "--shallow",
@@ -37,7 +38,8 @@ namespace bdep
     // Don't show the hold status since the only packages that will normally
     // be held are the project's. But do show dependency constraints.
     //
-    run_bpkg (o,
+    run_bpkg (2,
+              o,
               "status",
               "-d", cfg,
               "--no-hold",

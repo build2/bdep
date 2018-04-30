@@ -59,7 +59,8 @@ namespace bdep
   //
   template <typename O, typename E, typename... A>
   process
-  start_bpkg (const common_options& co,
+  start_bpkg (uint16_t v,
+              const common_options& co,
               O&& out,
               E&& err,
               A&&... args)
@@ -72,23 +73,29 @@ namespace bdep
 
       small_vector<const char*, 1> ops;
 
-      // Map verbosity level. If we are running quiet or at level 1, then run
-      // bpkg quiet. Otherwise, run it at the same level as us.
+      // Map verbosity level.
       //
-      bool quiet (false); // Maybe will become an argument one day.
+      bool q (false);
 
       string vl;
-      switch (verb)
       {
-      case  0: ops.push_back (        "-q");                 break;
-      case  1: ops.push_back (quiet ? "-q" : "--no-result"); break;
-      case  2: ops.push_back (        "-v");                 break;
-      default:
+        const char* o (nullptr);
+
+        switch (verb)
         {
-          vl = to_string (verb);
-          ops.push_back ("--verbose");
-          ops.push_back (vl.c_str ());
+        case  0: o =          "-q";                 break;
+        case  1: o = q      ? "-q" : "--no-result"; break;
+        case  2: o = 2 >= v ? "-v" : "--no-result"; break;
+        default:
+          {
+            ops.push_back ("--verbose");
+            vl = to_string (verb);
+            o = vl.c_str ();
+          }
         }
+
+        if (o != nullptr)
+          ops.push_back (o);
       }
 
       // Forward our --build* options.
@@ -106,9 +113,9 @@ namespace bdep
       }
 
       return process_start_callback (
-        [] (const char* const args[], size_t n)
+        [v] (const char* const args[], size_t n)
         {
-          if (verb >= 2)
+          if (verb >= v)
             print_process (args, n);
         },
         0 /* stdin */,
@@ -127,9 +134,10 @@ namespace bdep
 
   template <typename... A>
   void
-  run_bpkg (const common_options& co, A&&... args)
+  run_bpkg (uint16_t v, const common_options& co, A&&... args)
   {
-    process pr (start_bpkg (co,
+    process pr (start_bpkg (v,
+                            co,
                             1 /* stdout */,
                             2 /* stderr */,
                             forward<A> (args)...));
@@ -141,9 +149,9 @@ namespace bdep
   template <typename O, typename E, typename... A>
   process
   start_b (const common_options& co,
-              O&& out,
-              E&& err,
-              A&&... args)
+           O&& out,
+           E&& err,
+           A&&... args)
   {
     const char* b (name_b (co));
 
@@ -153,29 +161,36 @@ namespace bdep
 
       small_vector<const char*, 1> ops;
 
-      // Map verbosity level. If we are running quiet or at level 1, then run
-      // b quiet. Otherwise, run it at the same level as us.
+      // Map verbosity level.
       //
-      bool quiet (true); // Maybe will become an argument one day.
+      bool q (true);
+      uint16_t v (3);
 
       string vl;
-      switch (verb)
       {
-      case  0:            ops.push_back ("-q"); break;
-      case  1: if (quiet) ops.push_back ("-q"); break;
-      case  2:            ops.push_back ("-v"); break;
-      default:
+        const char* o (nullptr);
+
+        switch (verb)
         {
-          vl = to_string (verb);
-          ops.push_back ("--verbose");
-          ops.push_back (vl.c_str ());
+        case  0: o = "-q";                               break;
+        case  1: o = q ? "-q" : nullptr;                 break;
+        case  2: o = 2 >= v ? "-v" : q ? "-q" : nullptr; break;
+        default:
+          {
+            ops.push_back ("--verbose");
+            vl = to_string (verb);
+            o = vl.c_str ();
+          }
         }
+
+        if (o != nullptr)
+          ops.push_back (o);
       }
 
       return process_start_callback (
-        [] (const char* const args[], size_t n)
+        [v] (const char* const args[], size_t n)
         {
-          if (verb >= 2)
+          if (verb >= v)
             print_process (args, n);
         },
         0 /* stdin */,

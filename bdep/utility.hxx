@@ -121,14 +121,18 @@ namespace bdep
 
   template <typename O, typename E, typename... A>
   process
-  start_bpkg (const common_options&, O&& out, E&& err, A&&... args);
+  start_bpkg (uint16_t verbosity,
+              const common_options&,
+              O&& out,
+              E&& err,
+              A&&... args);
 
   void
   finish_bpkg (const common_options&, process&, bool io_error = false);
 
   template <typename... A>
   void
-  run_bpkg (const common_options&, A&&... args);
+  run_bpkg (uint16_t verbosity, const common_options&, A&&... args);
 
   // Run the b process.
   //
