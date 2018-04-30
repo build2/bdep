@@ -170,38 +170,40 @@ namespace bdep
       return 0;
     }
 
-    // Make sure everyone refers to the same objects across all the
-    // transactions.
-    //
-    session s;
-
-    // --config-add/create
-    //
     configurations cfgs;
-    if (ca || cc)
     {
-      cfgs.push_back (
-        cmd_init_config (
-          o,
-          o,
-          prj,
-          db,
-          ca ? o.config_add () : o.config_create (),
-          args,
-          ca,
-          cc));
+      // Make sure everyone refers to the same objects across all the
+      // transactions.
+      //
+      session s;
 
-      // Fall through.
-    }
+      // --config-add/create
+      //
+      if (ca || cc)
+      {
+        cfgs.push_back (
+          cmd_init_config (
+            o,
+            o,
+            prj,
+            db,
+            ca ? o.config_add () : o.config_create (),
+            args,
+            ca,
+            cc));
 
-    // If this is the default mode, then find the configurations the user
-    // wants us to use.
-    //
-    if (cfgs.empty ())
-    {
-      transaction t (db.begin ());
-      cfgs = find_configurations (prj, t, o);
-      t.commit ();
+        // Fall through.
+      }
+
+      // If this is the default mode, then find the configurations the user
+      // wants us to use.
+      //
+      if (cfgs.empty ())
+      {
+        transaction t (db.begin ());
+        cfgs = find_configurations (prj, t, o);
+        t.commit ();
+      }
     }
 
     // Initialize each package in each configuration.

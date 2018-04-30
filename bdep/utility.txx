@@ -133,15 +133,7 @@ namespace bdep
                             1 /* stdout */,
                             2 /* stderr */,
                             forward<A> (args)...));
-    if (!pr.wait ())
-    {
-      const process_exit& e (*pr.exit);
-
-      if (e.normal ())
-        throw failed (); // Assume the child issued diagnostics.
-
-      fail << "process " << name_bpkg (co) << " " << e;
-    }
+    finish_bpkg (co, pr);
   }
 
   // *_b()

@@ -8,6 +8,7 @@
 
 #include <bdep/database.hxx>
 #include <bdep/diagnostics.hxx>
+#include <bdep/project-odb.hxx>
 
 #include <bdep/fetch.hxx>
 
@@ -15,6 +16,114 @@ using namespace std;
 
 namespace bdep
 {
+  // Project to be synchronized.
+  //
+  struct project
+  {
+    dir_path path;
+    shared_ptr<configuration> config;
+
+    bool implicit;
+    bool fetch;
+  };
+
+  using projects = small_vector<project, 1>;
+
+  // Append the list of additional (to origin, if not empty) projects that are
+  // using this configuration.
+  //
+  static void
+  load_implicit (const common_options& co,
+                 const dir_path& cfg,
+                 const dir_path& origin_prj,
+                 projects& r)
+  {
+    tracer trace ("load_implicit");
+
+    // Use bpkg-rep-list to discover the list of project directories.
+    //
+    process pr;
+    bool io (false);
+    try
+    {
+      fdpipe pipe (fdopen_pipe ()); // Text mode seems appropriate.
+
+      pr = start_bpkg (co,
+                       pipe /* stdout */,
+                       2    /* stderr */,
+                       "rep-list",
+                       "-d", cfg);
+
+      pipe.out.close ();
+      ifdstream is (move (pipe.in), fdstream_mode::skip, ifdstream::badbit);
+
+      for (string l; !eof (getline (is, l)); )
+      {
+        // The repository type must be 'dir'.
+        //
+        if (l.compare (0, 4, "dir:") != 0)
+          continue;
+
+        size_t p (l.find (' '));
+        if (p == string::npos)
+          fail << "invalid bpkg-rep-list output: no repository location";
+
+        // Paths that we add are absolute and normilized but who knows what
+        // else the user might have added.
+        //
+        dir_path d (l, p + 1, string::npos);
+
+        if (d.relative ())
+          continue;
+
+        d.normalize (); // For good measure.
+
+        if (d == origin_prj)
+          continue;
+
+        // Next see if it looks like a bdep-managed project.
+        //
+        if (!exists (d / bdep_file))
+          continue;
+
+        shared_ptr<configuration> c;
+        {
+          using query = bdep::query<configuration>;
+
+          database db (open (d, trace));
+
+          transaction t (db.begin ());
+          c = db.query_one<configuration> (query::path == cfg.string ());
+          t.commit ();
+        }
+
+        // If the project is a repository of this configuration but the bdep
+        // database has no knowledge of this configuration, then assume it is
+        // not managed by bdep (i.e., the user added the project manually or
+        // some such).
+        //
+        if (c == nullptr)
+          continue;
+
+        r.push_back (project {move (d),
+                              move (c),
+                              true /* implicit */,
+                              true /* fetch */});
+      }
+
+      is.close (); // Detect errors.
+    }
+    catch (const io_error&)
+    {
+      // Presumably the child process failed and issued diagnostics so let
+      // finish_bpkg() try to deal with that first.
+      //
+      io = true;
+    }
+
+    finish_bpkg (co, pr, io);
+  }
+
   // Sync with optional upgrade.
   //
   // If upgrade is not nullopt, then: If there are dep_pkgs, then we are
@@ -22,8 +131,9 @@ namespace bdep
   //
   static void
   cmd_sync (const common_options& co,
-            const dir_path& prj,
-            const shared_ptr<configuration>& c,
+            const dir_path& cfg,
+            const dir_path& origin_prj,
+            const shared_ptr<configuration>& origin_config,
             bool implicit,
             bool fetch,
             bool yes,
@@ -32,73 +142,69 @@ namespace bdep
             const package_locations& prj_pkgs,
             const strings&           dep_pkgs)
   {
-    assert (!c->packages.empty ());
+    assert (origin_config == nullptr || !origin_config->packages.empty ());
     assert (prj_pkgs.empty () || dep_pkgs.empty ()); // Can't have both.
 
-    // Do a separate fetch instead of letting pkg-build do it. This way we get
-    // better control of the diagnostics (no "fetching ..." for the project
-    // itself). We also make sure that if the user specifies a repository for
-    // a dependency to upgrade, then that repository is listed as part of the
-    // project prerequisites/complements. Or, in other words, we only want to
-    // allow specifying the location as a proxy for specifying version (i.e.,
-    // "I want this dependency upgraded to the latest version available from
-    // this repository").
-    //
-    // We also use the repository name rather than the location as a sanity
-    // check (the repository must have been added as part of init).
-    //
-    // @@ For implicit fetch this will print diagnostics/progress before
-    //    "synchronizing <cfg-dir>:". Maybe rep-fetch also needs something
-    //    like --plan but for progress? Plus there might be no sync at all.
-    //
-    if (fetch)
-      run_bpkg (co,
-                "fetch",
-                "-d", c->path,
-                "--shallow",
-                "dir:" + prj.string ());
+    projects prjs;
 
-    // Prepare the package list.
+    if (origin_config != nullptr)
+      prjs.push_back (project {origin_prj, origin_config, implicit, fetch});
+
+    // Load other projects that might be using the same configuration -- we
+    // have to synchronize everything at once.
+    //
+    load_implicit (co, cfg, origin_prj, prjs);
+
+    // Prepare the list of packages to build and repositories to fetch.
     //
     strings args;
+    strings reps;
 
-    for (const package_state& p: c->packages)
+    for (const project& prj: prjs)
     {
-      if (upgrade)
-      {
-        // We synchronize all the init'ed packages but only upgrade the
-        // specified.
-        //
-        if (find_if (prj_pkgs.begin (),
-                     prj_pkgs.end (),
-                     [&p] (const package_location& pl)
-                     {
-                       return pl.name == p.name;
-                     }) != prj_pkgs.end ())
-        {
-          // The project package itself must always be upgraded to the latest
-          // version/iteration. So we have to translate our options to their
-          // dependency-only --{upgrade,patch}-{recursive,immediate}.
-          //
-          args.push_back ("{");
-          args.push_back (
-            *upgrade
-            ? *recursive ? "--upgrade-recursive" : "--upgrade-immediate"
-            : *recursive ? "--patch-recursive"   : "--patch-immediate");
-          args.push_back ("}+");
-        }
-      }
+      if (prj.fetch)
+        reps.push_back ("dir:" + prj.path.string ());
 
-      // We need to add the explicit location qualification (@<rep-loc>) since
-      // there is no guarantee a higher version isn't available from another
-      // repository.
-      //
-      args.push_back (p.name + '@' + prj.string ());
+      for (const package_state& pkg: prj.config->packages)
+      {
+        if (upgrade && !prj.implicit)
+        {
+          // We synchronize all the init'ed packages but only upgrade the
+          // specified.
+          //
+          if (find_if (prj_pkgs.begin (),
+                       prj_pkgs.end (),
+                       [&pkg] (const package_location& pl)
+                       {
+                         return pl.name == pkg.name;
+                       }) != prj_pkgs.end ())
+          {
+            // The project package itself must always be upgraded to the
+            // latest version/iteration. So we have to translate to
+            // dependency-only --{upgrade,patch}-{recursive,immediate}.
+            //
+            args.push_back ("{");
+            args.push_back (
+              *upgrade
+              ? *recursive ? "--upgrade-recursive" : "--upgrade-immediate"
+              : *recursive ? "--patch-recursive"   : "--patch-immediate");
+            args.push_back ("}+");
+          }
+        }
+
+        // We need to add the explicit location qualification (@<rep-loc>)
+        // since there is no guarantee a higher version isn't available from
+        // another repository.
+        //
+        args.push_back (pkg.name + '@' + prj.path.string ());
+      }
     }
 
+    // Add dependencies to upgrade (if any).
+    //
     if (upgrade)
     {
-      for (const string& p: dep_pkgs)
+      for (const string& n: dep_pkgs)
       {
         // Unless this is the default "non-recursive upgrade" we need to add a
         // group.
@@ -106,16 +212,42 @@ namespace bdep
         if (recursive || !*upgrade)
         {
           args.push_back ("{");
-          args.push_back (*upgrade ? "-u" : "-p");
-          if (recursive) args.push_back (*recursive ? "-r" : "-i");
+
+          string o (*upgrade ? "-u" : "-p");
+          if (recursive) o += *recursive ? 'r' : 'i';
+          args.push_back (move (o));
+
           args.push_back ("}+");
         }
 
         // Make sure it is treated as a dependency.
         //
-        args.push_back ('?' + p);
+        args.push_back ('?' + n);
       }
     }
+
+    // We do a separate fetch instead of letting pkg-build do it. This way we
+    // get better control of the diagnostics (no "fetching ..." for the
+    // project itself). We also make sure that if the user specifies a
+    // repository for a dependency to upgrade, then that repository is listed
+    // as part of the project prerequisites/complements. Or, in other words,
+    // we only want to allow specifying the location as a proxy for specifying
+    // version (i.e., "I want this dependency upgraded to the latest version
+    // available from this repository").
+    //
+    // Note also that we use the repository name rather than the location as a
+    // sanity check (the repository must have been added as part of init).
+    // Plus, without 'dir:' it will be treated as version control-based.
+    //
+    // @@ For implicit fetch this will print diagnostics/progress before
+    //    "synchronizing <cfg-dir>:". Maybe rep-fetch also needs something
+    //    like --plan but for progress? Plus there might be no sync at all.
+    //
+    // @@ TODO: remember to rep-remove in deinit if there are no more
+    //    init'ed packages in this configuration.
+    //
+    if (!reps.empty ())
+      run_bpkg (co, "fetch", "-d", cfg, "--shallow", reps);
 
     // For implicit sync (normally performed on one configuration at a time)
     // add the configuration directory to the plan header.
@@ -125,12 +257,12 @@ namespace bdep
     // will normally be no "originating project" (unlike with explicit sync).
     //
     string plan (implicit
-                 ? "synchronizing " + c->path.representation () + ':'
+                 ? "synchronizing " + cfg.representation () + ':'
                  : "synchronizing:");
 
     run_bpkg (co,
               "build",
-              "-d", c->path,
+              "-d", cfg,
               "--no-fetch",
               "--configure-only",
               "--keep-out",
@@ -153,70 +285,73 @@ namespace bdep
     // implemented by just changing the flag on the configuration and then
     // requiring an explicit sync to configure/disfigure forwards.
     //
-    package_locations pls (load_packages (prj));
-
-    for (const package_state& p: c->packages)
+    for (const project& prj: prjs)
     {
-      // If this is a forwarded configuration, make sure forwarding is
-      // configured and is up-to-date. Otherwise, make sure it is disfigured
-      // (the config set --no-forward case).
-      //
-      dir_path src (prj);
+      package_locations pls (load_packages (prj.path));
+
+      for (const package_state& pkg: prj.config->packages)
       {
-        auto i (find_if (pls.begin (),
-                         pls.end (),
-                         [&p] (const package_location& pl)
-                         {
-                           return p.name == pl.name;
-                         }));
+        // If this is a forwarded configuration, make sure forwarding is
+        // configured and is up-to-date. Otherwise, make sure it is disfigured
+        // (the config set --no-forward case).
+        //
+        dir_path src (prj.path);
+        {
+          auto i (find_if (pls.begin (),
+                           pls.end (),
+                           [&pkg] (const package_location& pl)
+                           {
+                             return pkg.name == pl.name;
+                           }));
 
-        if (i == pls.end ())
-          fail << "package " << p.name << " is not listed in " << prj;
+          if (i == pls.end ())
+            fail << "package " << pkg.name << " is not listed in " << prj.path;
 
-        src /= i->path;
-      }
+          src /= i->path;
+        }
 
-      // We could run 'b info' and used the 'forwarded' value but this is
-      // both faster and simpler.
-      //
-      path f (src / "build" / "bootstrap" / "out-root.build");
-      bool e (exists (f));
+        // We could run 'b info' and used the 'forwarded' value but this is
+        // both faster and simpler.
+        //
+        path f (src / "build" / "bootstrap" / "out-root.build");
+        bool e (exists (f));
 
-      const char* o (nullptr);
-      if (c->forward)
-      {
-        bool changed (true);
+        const char* o (nullptr);
+        if (prj.config->forward)
+        {
+          bool changed (true);
 
-        if (changed || !e)
-          o = "configure:";
-      }
-      else if (!implicit) // Requires explicit sync.
-      {
-        //@@ This is broken: we will disfigure forwards to other configs.
-        //   Looks like we will need to test that the forward is to this
-        //   config. 'b info' here we come?
+          if (changed || !e)
+            o = "configure:";
+        }
+        else if (!prj.implicit) // Requires explicit sync.
+        {
+          //@@ This is broken: we will disfigure forwards to other configs.
+          //   Looks like we will need to test that the forward is to this
+          //   config. 'b info' here we come?
 
-        //if (e)
-        //  o = "disfigure:";
-      }
+          //if (e)
+          //  o = "disfigure:";
+        }
 
-      if (o != nullptr)
-      {
-        dir_path out (dir_path (c->path) /= p.name);
-        string arg (src.representation () + '@' + out.representation () +
-                    ",forward");
-        run_b (co, o, arg);
+        if (o != nullptr)
+        {
+          dir_path out (dir_path (cfg) /= pkg.name);
+          string arg (src.representation () + '@' + out.representation () +
+                      ",forward");
+          run_b (co, o, arg);
+        }
       }
     }
 
     // Add/remove auto-synchronization build system hook.
     //
-    if (!implicit)
+    if (origin_config != nullptr && !implicit)
     {
-      path f (c->path / "build" / "bootstrap" / "pre-bdep-sync.build");
+      path f (cfg / "build" / "bootstrap" / "pre-bdep-sync.build");
       bool e (exists (f));
 
-      if (c->auto_sync)
+      if (origin_config->auto_sync)
       {
         if (!e)
         {
@@ -242,8 +377,8 @@ namespace bdep
                << "    $build.meta_operation != 'configure' && \\"     << endl
                << "    $build.meta_operation != 'disfigure')"          << endl
                << "  run " << argv0 << " sync --hook=1 "               <<
-              "--config \"$out_root\" "                                <<
-              "-d '" << prj.string () << "'"                           << endl;
+              "--verbose $build.verbosity "                            <<
+              "--config \"$out_root\""                                 << endl;
 
             os.close ();
           }
@@ -270,6 +405,7 @@ namespace bdep
             bool yes)
   {
     cmd_sync (co,
+              c->path,
               prj,
               c,
               implicit,
@@ -316,6 +452,9 @@ namespace bdep
         fail << "unsupported build system hook protocol" <<
           info << "project requires re-initialization";
 
+      if (o.directory_specified ())
+        fail << "--hook specified with project directory";
+
       o.implicit (true); // Implies --implicit.
     }
 
@@ -329,40 +468,90 @@ namespace bdep
 
       if (!dep_pkgs.empty ())
         fail << "--implicit specified with dependency package";
+
+      if (!o.directory_specified ())
+      {
+        // All of these options require an originating project.
+        //
+        if (o.fetch () || o.fetch_full ())
+          fail << "--implicit specified with --fetch";
+
+        if (o.config_id_specified ())
+          fail << "--implicit specified with --config-id";
+
+        if (o.config_name_specified ())
+          fail << "--implicit specified with --config-name";
+
+        if (!o.config_specified ())
+          fail << "no project or configuration specified with --implicit";
+      }
     }
 
-    // We could be running from a package directory (or the user specified one
-    // with -d) that has not been init'ed in this configuration. Unless we are
-    // upgrading specific dependencies, we want to diagnose that since such a
-    // package will not be present in the bpkg configuration. But if we are
-    // running from the project, then we don't want to treat all the available
-    // packages as specified by the user (thus load_packages=false).
+    dir_path prj; // Empty if we have no originating project.
+    package_locations prj_pkgs;
+    configurations cfgs;
+    dir_paths cfg_dirs;
+
+    // In the implicit mode we don't search the current working directory
+    // for a project.
     //
-    project_packages pp (
-      find_project_packages (o,
-                             !dep_pkgs.empty () /* ignore_packages */,
-                             false              /* load_packages   */));
-
-    const dir_path& prj (pp.project);
-    const package_locations& prj_pkgs (pp.packages);
-
-    database db (open (prj, trace));
-
-    transaction t (db.begin ());
-    configurations cfgs (find_configurations (prj, t, o));
-    t.commit ();
-
-    // If specified, verify packages are present in each configuration.
-    //
-    if (!prj_pkgs.empty ())
-      verify_project_packages (pp, cfgs);
-
-    // Synchronize each configuration skipping empty ones.
-    //
-    bool first (true);
-    for (const shared_ptr<configuration>& c: cfgs)
+    if (o.directory_specified () || !o.implicit ())
     {
-      if (c->packages.empty ())
+      // We could be running from a package directory (or the user specified
+      // one with -d) that has not been init'ed in this configuration. Unless
+      // we are upgrading specific dependencies, we want to diagnose that
+      // since such a package will not be present in the bpkg configuration.
+      // But if we are running from the project, then we don't want to treat
+      // all the available packages as specified by the user (thus
+      // load_packages is false).
+      //
+      project_packages pp (
+        find_project_packages (o,
+                               !dep_pkgs.empty () /* ignore_packages */,
+                               false              /* load_packages   */));
+
+      // Load project configurations.
+      //
+      {
+        database db (open (pp.project, trace));
+
+        transaction t (db.begin ());
+        cfgs = find_configurations (pp.project, t, o);
+        t.commit ();
+      }
+
+      // If specified, verify packages are present in each configuration.
+      //
+      if (!pp.packages.empty ())
+        verify_project_packages (pp, cfgs);
+
+      prj = move (pp.project);
+      prj_pkgs = move (pp.packages);
+    }
+    else
+    {
+      // Implicit sync without an originating project.
+      //
+      for (dir_path d: o.config ())
+      {
+        d.complete ();
+        d.normalize ();
+
+        cfgs.push_back (nullptr);
+        cfg_dirs.push_back (move (d));
+      }
+    }
+
+    // Synchronize each configuration.
+    //
+    for (size_t i (0), n (cfgs.size ()); i != n; ++i)
+    {
+      const shared_ptr<configuration>& c (cfgs[i]); // Can be NULL.
+      const dir_path& cd (c != nullptr ? c->path : cfg_dirs[i]);
+
+      // Skipping empty ones.
+      //
+      if (c != nullptr && c->packages.empty ())
       {
         if (verb)
           info << "skipping empty configuration " << *c;
@@ -373,13 +562,9 @@ namespace bdep
       // If we are synchronizing multiple configurations, separate them with a
       // blank line and print the configuration name/directory.
       //
-      if (verb && cfgs.size () > 1)
-      {
-        text << (first ? "" : "\n")
+      if (verb && n > 1)
+        text << (i == 0 ? "" : "\n")
              << "in configuration " << *c << ':';
-
-        first = false;
-      }
 
       bool fetch (o.fetch () || o.fetch_full ());
 
@@ -393,6 +578,7 @@ namespace bdep
         // Only prompt if upgrading their dependencies.
         //
         cmd_sync (o,
+                  cd,
                   prj,
                   c,
                   false /* implicit */,
@@ -410,6 +596,7 @@ namespace bdep
         // (immediate by default, recursive if requested).
         //
         cmd_sync (o,
+                  cd,
                   prj,
                   c,
                   false /* implicit */,
@@ -438,7 +625,7 @@ namespace bdep
           const char n[] = "BDEP_SYNCED_CONFIGS";
 
           string v;
-          const string& p (c->path.string ());
+          const string& p (cd.string ());
 
           if (const char* e = getenv (n))
           {
@@ -461,7 +648,7 @@ namespace bdep
                 if (o.implicit ())
                   return 0; // Ignore.
                 else
-                  fail << "explicit re-synchronization of " << c->path;
+                  fail << "explicit re-synchronization of " << cd;
               }
             }
 
@@ -479,7 +666,17 @@ namespace bdep
 #endif
         }
 
-        cmd_sync (o, prj, c, o.implicit (), !fetch, true /* yes */);
+        cmd_sync (o,
+                  cd,
+                  prj,
+                  c,
+                  o.implicit (),
+                  !fetch,
+                  true /* yes */,
+                  nullopt              /* upgrade   */,
+                  nullopt              /* recursive */,
+                  package_locations () /* prj_pkgs  */,
+                  strings ()           /* dep_pkgs  */);
       }
     }
 

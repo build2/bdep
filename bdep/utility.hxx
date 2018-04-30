@@ -15,6 +15,7 @@
 #include <libbutl/ft/lang.hxx>
 
 #include <libbutl/utility.mxx>    // casecmp(), reverse_iterate(), etc
+#include <libbutl/fdstream.mxx>
 #include <libbutl/filesystem.mxx>
 
 #include <bdep/types.hxx>
@@ -53,6 +54,10 @@ namespace bdep
   //
   using butl::auto_rmfile;
   using butl::auto_rmdir;
+
+  // <libbutl/fdstream.mxx>
+  //
+  using butl::fdopen_pipe;
 
   // Empty string and path.
   //
@@ -117,6 +122,9 @@ namespace bdep
   template <typename O, typename E, typename... A>
   process
   start_bpkg (const common_options&, O&& out, E&& err, A&&... args);
+
+  void
+  finish_bpkg (const common_options&, process&, bool io_error = false);
 
   template <typename... A>
   void

@@ -206,7 +206,9 @@ namespace bdep
        configurations are synchronized. To improve performance, especially for
        the \"everything is already synchronized\" case, \cb{sync} executed in
        this mode assumes that no configuration flags (see \l{bdep-config(1)})
-       have changed since the last explicit synchronization.
+       have changed since the last explicit synchronization. It also does not
+       search for a project in the current working directory \- if any, its
+       directory should be specified explicitly with \c{\b{--config}|\b{-c}}.
 
        To avoid recursive re-synchronization, the \cb{sync} command maintains
        the \cb{BDEP_SYNCED_CONFIGS} environment variable. It contains a
