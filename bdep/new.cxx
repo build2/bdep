@@ -43,6 +43,11 @@ namespace bdep
     //
     const type& t (o.type ());
 
+    bool tests (t == type::exe  ? !t.exe_opt.no_tests ()  :
+                t == type::lib  ? !t.lib_opt.no_tests ()  :
+                t == type::bare ? !t.bare_opt.no_tests () : false);
+
+
     // Validate language options.
     //
     const lang& l (o.lang ());
@@ -158,13 +163,16 @@ namespace bdep
       os << "project = " << n                                          << endl
          <<                                                               endl
          << "using version"                                            << endl
-         << "using config"                                             << endl
-         << "using test"                                               << endl
-         << "using dist"                                               << endl
+         << "using config"                                             << endl;
+      if (tests)
+        os << "using test"                                             << endl;
+      os << "using dist"                                               << endl
          << "using install"                                            << endl;
       os.close ();
 
       // build/root.build
+      //
+      // Note: see also tests/build/root.build below.
       //
       os.open (f = bd / "root.build");
       switch (l)
@@ -213,9 +221,16 @@ namespace bdep
       //
       os.open (f = prj / "buildfile");
       os << "./: {*/ -build/} file{manifest}"                          << endl;
+      if (tests && t == type::lib) // Have tests/ subproject.
+        os <<                                                             endl
+           << "# Don't install tests."                                 << endl
+           << "#"                                                      << endl
+           << "dir{tests/}: install = false"                           << endl;
       os.close ();
 
       // .gitignore
+      //
+      // See also tests/.gitignore below.
       //
       if (v == vcs::git)
       {
@@ -261,14 +276,20 @@ namespace bdep
           {
           case lang::c:
             {
-              // <name>.c
+              // <name>/<name>.c
               //
               os.open (f = sd / n + ".c");
               os << "#include <stdio.h>"                               << endl
                  <<                                                       endl
-                 << "int main ()"                                      << endl
+                 << "int main (int argc, char *argv[])"                << endl
                  << "{"                                                << endl
-                 << "  printf (\"Hello, World!\\n\");"                 << endl
+                 << "  if (argc < 2)"                                  << endl
+                 << "  {"                                              << endl
+                 << "    fprintf (stderr, \"error: missing name\\n\");"<< endl
+                 << "    return 1;"                                    << endl
+                 << "  }"                                              << endl
+                 <<                                                       endl
+                 << "  printf (\"Hello, %s!\\n\", argv[1]);"           << endl
                  << "  return 0;"                                      << endl
                  << "}"                                                << endl;
               os.close ();
@@ -279,14 +300,22 @@ namespace bdep
             {
               string x (l.cxx_opt.cpp () ? "pp" : "xx");
 
-              // <name>.c(xx|pp)
+              // <name>/<name>.c(xx|pp)
               //
               os.open (f = sd / n + ".c" + x);
               os << "#include <iostream>"                              << endl
                  <<                                                       endl
-                 << "int main ()"                                      << endl
+                 << "using namespace std;"                             << endl
+                 <<                                                       endl
+                 << "int main (int argc, char* argv[])"                << endl
                  << "{"                                                << endl
-                 << "  std::cout << \"Hello, World!\" << std::endl;"   << endl
+                 << "  if (argc < 2)"                                  << endl
+                 << "  {"                                              << endl
+                 << "    cerr << \"error: missing name\" << endl;"     << endl
+                 << "    return 1;"                                    << endl
+                 << "  }"                                              << endl
+                 <<                                                       endl
+                 << "  cout << \"Hello, \" << argv[1] << '!' << endl;" << endl
                  << "}"                                                << endl;
               os.close ();
 
@@ -294,7 +323,7 @@ namespace bdep
             }
           }
 
-          // buildfile
+          // <name>/buildfile
           //
           os.open (f = sd / "buildfile");
           os << "libs ="                                           << endl
@@ -306,14 +335,16 @@ namespace bdep
           {
           case lang::c:
             {
-              os << "exe{" << n << "}: {h c}{*} $libs"                 << endl;
+              os << "exe{" << n << "}: {h c}{*} $libs"                 <<
+                (tests ? " test{testscript}" : "")                     << endl;
 
               x = "c";
               break;
             }
           case lang::cxx:
             {
-              os << "exe{" << n << "}: {hxx ixx txx cxx}{*} $libs"     << endl;
+              os << "exe{" << n << "}: {hxx ixx txx cxx}{*} $libs"     <<
+                (tests ? " test{testscript}" : "")                     << endl;
 
               x = "cxx";
               break;
@@ -322,6 +353,37 @@ namespace bdep
 
           os <<                                                           endl
              << x << ".poptions =+ \"-I$out_root\" \"-I$src_root\""    << endl;
+          os.close ();
+
+          // <name>/.gitignore
+          //
+          if (v == vcs::git)
+          {
+            os.open (f = sd / ".gitignore");
+            os << n                                                    << endl;
+            if (tests)
+              os <<                                                       endl
+                 << "# Testscript output directory (can be symlink)."  << endl
+                 << "#"                                                << endl
+                 << "test-" << n                                       << endl;
+            os.close ();
+          }
+
+          // <name>/testscript
+          //
+          if (!tests)
+            break;
+
+          os.open (f = sd / "testscript");
+          os << ": basics"                                             << endl
+             << ":"                                                    << endl
+             << "$* 'World' >'Hello, World!'"                          << endl
+             <<                                                           endl
+             << ": missing-name"                                       << endl
+             << ":"                                                    << endl
+             << "$* 2>>EOE != 0"                                       << endl
+             << "error: missing name"                                  << endl
+             << "EOE"                                                  << endl;
           os.close ();
 
           break;
@@ -336,6 +398,7 @@ namespace bdep
               return (c == '-' || c == '+' || c == '.') ? '_' : ucase (c);
             });
 
+          string hdr; // API header name.
           string exp; // Export header name.
           string ver; // Version header name.
 
@@ -343,33 +406,43 @@ namespace bdep
           {
           case lang::c:
             {
+              hdr = s + ".h";
               exp = "export.h";
               ver = "version.h";
 
               // <stem>.h
               //
-              os.open (f = sd / s + ".h");
+              os.open (f = sd / hdr);
               os << "#pragma once"                                     << endl
+                 <<                                                       endl
+                 << "#include <stdio.h>"                               << endl
                  <<                                                       endl
                  << "#include <" << n << "/" << exp << ">"             << endl
                  <<                                                       endl
-                 << m << "_SYMEXPORT void"                             << endl
-                 << "say_hello (const char* name);"                    << endl;
+                 << "// Print a greeting for the specified name into the specified"  << endl
+                 << "// stream. On success, return the number of character printed." << endl
+                 << "// On failure, set errno and return a negative value."          << endl
+                 << "//"                                                             << endl
+                 << m << "_SYMEXPORT int"                              << endl
+                 << "say_hello (FILE *, const char *name);"            << endl;
               os.close ();
 
               // <stem>.c
               //
               os.open (f = sd / s + ".c");
-              os << "#include <" << n << "/" << s << ".h" << ">"       << endl
+              os << "#include <" << n << "/" << hdr << ">"             << endl
                  <<                                                       endl
-                 << "#include <stdio.h>"                               << endl
+                 << "#include <errno.h>"                               << endl
                  <<                                                       endl
-                 << "#include <" << n << "/" << ver << ">"             << endl
-                 <<                                                       endl
-                 << "void"                                             << endl
-                 << "say_hello (const char* n)"                        << endl
+                 << "int say_hello (FILE *f, const char* n)"           << endl
                  << "{"                                                << endl
-                 << "  printf (\"Hello, %s from " << n << " %s!\\n\", n, " << m << "_VERSION_ID);" << endl
+                 << "  if (f == NULL || n == NULL || *n == '\\0')"     << endl
+                 << "  {"                                              << endl
+                 << "    errno = EINVAL;"                              << endl
+                 << "    return -1;"                                   << endl
+                 << "  }"                                              << endl
+                 <<                                                       endl
+                 << "  return fprintf (f, \"Hello, %s!\\n\", n);"      << endl
                  << "}"                                                << endl;
               os.close ();
 
@@ -379,43 +452,49 @@ namespace bdep
             {
               string x (l.cxx_opt.cpp () ? "pp" : "xx");
 
+              hdr = s + ".h" + x;
               exp = "export.h" + x;
               ver = "version.h" + x;
 
               // <stem>.h(xx|pp)
               //
-              os.open (f = sd / s + ".h" + x);
+              os.open (f = sd / hdr);
               os << "#pragma once"                                     << endl
                  <<                                                       endl
+                 << "#include <iosfwd>"                                << endl
                  << "#include <string>"                                << endl
                  <<                                                       endl
                  << "#include <" << n << "/" << exp << ">"             << endl
                  <<                                                       endl
                  << "namespace " << s                                  << endl
                  << "{"                                                << endl
+                 << "  // Print a greeting for the specified name into the specified" << endl
+                 << "  // stream. Throw std::invalid_argument if the name is empty."  << endl
+                 << "  //"                                                            << endl
                  << "  " << m << "_SYMEXPORT void"                     << endl
-                 << "  say_hello (const std::string& name);"           << endl
+                 << "  say_hello (std::ostream&, "                     <<
+                "const std::string& name);"                            << endl
                  << "}"                                                << endl;
               os.close ();
 
               // <stem>.c(xx|pp)
               //
               os.open (f = sd / s + ".c" + x);
-              os << "#include <" << n << "/" << s << ".h" << x << ">"  << endl
+              os << "#include <" << n << "/" << hdr << ">"             << endl
                  <<                                                       endl
-                 << "#include <iostream>"                              << endl
-                 <<                                                       endl
-                 << "#include <" << n << "/" << ver << ">"             << endl
+                 << "#include <ostream>"                               << endl
+                 << "#include <stdexcept>"                             << endl
                  <<                                                       endl
                  << "using namespace std;"                             << endl
                  <<                                                       endl
                  << "namespace " << s                                  << endl
                  << "{"                                                << endl
-                 << "  void"                                           << endl
-                 << "  say_hello (const string& n)"                    << endl
+                 << "  void say_hello (ostream& o, const string& n)"   << endl
                  << "  {"                                              << endl
-                 << "    cout << \"Hello, \" << n << \" from \""       << endl
-                 << "         << \"" << n << " \" << " << m << "_VERSION_ID << '!' << endl;" << endl
+                 << "    if (n.empty ())"                              << endl
+                 << "      throw invalid_argument (\"empty name\");"   << endl
+                 <<                                                       endl
+                 << "    o << \"Hello, \" << n << '!' << endl;"        << endl
                  << "  }"                                              << endl
                  << "}"                                                << endl;
               os.close ();
@@ -572,6 +651,17 @@ namespace bdep
              << "{" << hs << "}{*}: install.subdirs = true"              << endl;
           os.close ();
 
+          // <name>/.gitignore
+          //
+          if (v == vcs::git)
+          {
+            os.open (f = sd / ".gitignore");
+            os << "# Generated version header."                      << endl
+               << "#"                                                << endl
+               << ver                                                << endl;
+            os.close ();
+          }
+
           // build/export.build
           //
           os.open (f = bd / "export.build");
@@ -581,6 +671,216 @@ namespace bdep
              << "}"                                                    << endl
              <<                                                           endl
              << "export $out_root/" << n << "/lib{" << s << "}"        << endl;
+          os.close ();
+
+          // tests/ (tests subproject).
+          //
+          if (!tests)
+            break;
+
+          dir_path td (dir_path (prj) /= "tests");
+          mk (td);
+
+          // tests/build/
+          //
+          dir_path tbd (dir_path (td) /= "build");
+          mk (tbd);
+
+          // tests/build/bootstrap.build
+          //
+          os.open (f = tbd / "bootstrap.build");
+          os << "project = # Unnamed tests subproject."                << endl
+             <<                                                           endl
+             << "using config"                                         << endl
+             << "using test"                                           << endl
+             << "using dist"                                           << endl;
+          os.close ();
+
+          // tests/build/root.build
+          //
+          os.open (f = tbd / "root.build");
+          switch (l)
+          {
+          case lang::c:
+            {
+              // @@ TODO: 'latest' in c.std.
+              //
+              os //<< "c.std = latest"                                 << endl
+                //<<                                                      endl
+                << "using c"                                           << endl
+                <<                                                        endl
+                << "h{*}: extension = h"                               << endl
+                << "c{*}: extension = c"                               << endl;
+              break;
+            }
+          case lang::cxx:
+            {
+              const char* s (l.cxx_opt.cpp () ? "pp" : "xx");
+
+              os << "cxx.std = latest"                                 << endl
+                 <<                                                       endl
+                 << "using cxx"                                        << endl
+                 <<                                                       endl
+                 << "hxx{*}: extension = h" << s                       << endl
+                 << "ixx{*}: extension = i" << s                       << endl
+                 << "txx{*}: extension = t" << s                       << endl
+                 << "cxx{*}: extension = c" << s                       << endl;
+              break;
+            }
+          }
+          os <<                                                            endl
+             << "# Every exe{} in this subproject is by default a test."<< endl
+             << "#"                                                     << endl
+             << "exe{*}: test = true"                                  << endl;
+          os.close ();
+
+          // tests/build/.gitignore
+          //
+          if (v == vcs::git)
+          {
+            os.open (f = tbd / ".gitignore");
+            os << "config.build"                                       << endl
+               << "root/"                                              << endl
+               << "bootstrap/"                                         << endl;
+            os.close ();
+          }
+
+          // tests/buildfile
+          //
+          os.open (f = td / "buildfile");
+          os << "./: {*/ -build/}"                                     << endl;
+          os.close ();
+
+          // tests/.gitignore
+          //
+          if (v == vcs::git)
+          {
+            os.open (f = td / ".gitignore");
+            os << "# Test executables."                                << endl
+               << "#"                                                  << endl
+               << "driver"                                             << endl
+               <<                                                         endl
+               << "# Testscript output directories (can be symlinks)." << endl
+               << "#"                                                  << endl
+               << "test"                                               << endl
+               << "test-*"                                             << endl;
+            os.close ();
+          }
+
+          // tests/basics/
+          //
+          td /= "basics";
+          mk (td);
+
+          switch (l)
+          {
+          case lang::c:
+            {
+              // tests/basics/driver.c
+              //
+              os.open (f = td / "driver.c");
+              os << "#include <stdio.h>"                               << endl
+                 << "#include <errno.h>"                               << endl
+                 << "#include <string.h>"                              << endl
+                 << "#include <assert.h>"                              << endl
+                 <<                                                       endl
+                 << "#include <" << n << "/" << ver << ">"             << endl
+                 << "#include <" << n << "/" << hdr << ">"             << endl
+                 <<                                                       endl
+                 << "int main ()"                                      << endl
+                 << "{"                                                << endl
+                 << "  char b[256];"                                   << endl
+                 <<                                                       endl
+                 << "  // Basics."                                     << endl
+                 << "  //"                                             << endl
+                 << "  {"                                              << endl
+                 << "    FILE *o = fmemopen (b, sizeof (b), \"w\");"   << endl
+                 << "    assert (say_hello (o, \"World\") > 0);"       << endl
+                 << "    fclose (o);"                                  << endl
+                 << "    assert (strcmp (b, \"Hello, World!\\n\") == 0);" << endl
+                 << "  }"                                              << endl
+                 <<                                                       endl
+                 << "  // Empty name."                                 << endl
+                 << "  //"                                             << endl
+                 << "  {"                                              << endl
+                 << "    FILE *o = fmemopen (b, sizeof (b), \"w\");"   << endl
+                 << "    assert (say_hello (o, \"\") < 0 && errno == EINVAL);" << endl
+                 << "    fclose (o);"                                  << endl
+                 << "  }"                                              << endl
+                 <<                                                       endl
+                 << "  return 0;"                                      << endl
+                 << "}"                                                << endl;
+              os.close ();
+
+              break;
+            }
+          case lang::cxx:
+            {
+              string x (l.cxx_opt.cpp () ? "pp" : "xx");
+
+              // tests/basics/driver.c(xx|pp)
+              //
+              os.open (f = td / "driver.c" + x);
+              os << "#include <cassert>"                               << endl
+                 << "#include <sstream>"                               << endl
+                 << "#include <stdexcept>"                             << endl
+                 <<                                                       endl
+                 << "#include <" << n << "/" << ver << ">"             << endl
+                 << "#include <" << n << "/" << hdr << ">"             << endl
+                 <<                                                       endl
+                 << "using namespace std;"                             << endl
+                 << "using namespace " << s << ";"                     << endl
+                 <<                                                       endl
+                 << "int main ()"                                      << endl
+                 << "{"                                                << endl
+                 << "  // Basics."                                     << endl
+                 << "  //"                                             << endl
+                 << "  {"                                              << endl
+                 << "    ostringstream o;"                             << endl
+                 << "    say_hello (o, \"World\");"                    << endl
+                 << "    assert (o.str () == \"Hello, World!\\n\");"   << endl
+                 << "  }"                                              << endl
+                 <<                                                       endl
+                 << "  // Empty name."                                 << endl
+                 << "  //"                                             << endl
+                 << "  try"                                            << endl
+                 << "  {"                                              << endl
+                 << "    ostringstream o;"                             << endl
+                 << "    say_hello (o, \"\");"                         << endl
+                 << "    assert (false);"                              << endl
+                 << "  }"                                              << endl
+                 << "  catch (const invalid_argument& e)"              << endl
+                 << "  {"                                              << endl
+                 << "    assert (e.what () == string (\"empty name\"));" << endl
+                 << "  }"                                              << endl
+                 << "}"                                                << endl;
+              os.close ();
+
+              break;
+            }
+          }
+
+          // tests/basics/buildfile
+          //
+          os.open (f = td / "buildfile");
+          os << "import libs = " << n << "%lib{" << s << "}"           << endl
+             <<                                                           endl;
+
+          switch (l)
+          {
+          case lang::c:
+            {
+              os << "exe{driver}: {h c}{*} $libs"                      << endl;
+              break;
+            }
+          case lang::cxx:
+            {
+              os << "exe{driver}: {hxx ixx txx cxx}{*} $libs"          << endl;
+              break;
+            }
+          }
+          //os <<                                                         endl
+          //   << x << ".poptions =+ \"-I$out_root\" \"-I$src_root\""  << endl;
           os.close ();
 
           break;

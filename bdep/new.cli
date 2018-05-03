@@ -61,15 +61,26 @@ namespace bdep
 
      \li|\cb{exe}
 
-         A project that builds a sample executable.|
+         A project that builds a sample executable. Recognized executable
+         project options:
+
+         \cb{no-tests} \- Don't add support for functional/integration testing.
+         |
 
      \li|\cb{lib}
 
-         A project that builds a sample library.|
+         A project that builds a sample library. Recognized library project
+         options:
+
+         \cb{no-tests} \- Don't add support for functional/integration testing.
+        |
 
      \li|\cb{bare}
 
-         A project without any source code.||
+         A project without any source code. Recognized bare project options:
+
+        \cb{no-tests} \- Don't add support for functional/integration testing.
+        ||
 
      The project language can be specified with the \c{\b{--lang}|\b{-l}}
      option. Valid values for this option and their semantics are described
@@ -113,14 +124,17 @@ namespace bdep
   //
   class cmd_new_exe_options
   {
+    bool no-tests;
   };
 
   class cmd_new_lib_options
   {
+    bool no-tests;
   };
 
   class cmd_new_bare_options
   {
+    bool no-tests;
   };
 
   // --lang options
