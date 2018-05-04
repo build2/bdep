@@ -364,8 +364,8 @@ namespace bdep
             ofdstream os (f);
 
             // Should we analyze BDEP_SYNCED_CONFIGS ourselves or should we
-            // let bdep-sync to it for us? Doing it here instead of spawning a
-            // process (which will loading the database, etc) will be faster.
+            // let bdep-sync do it for us? Doing it here instead of spawning a
+            // process (which will load the database, etc) will be faster.
             // But, on the other hand, this is only an issue for commands like
             // update and test that do their own implicit sync.
             //
@@ -573,6 +573,64 @@ namespace bdep
       if (fetch)
         cmd_fetch (o, prj, c, o.fetch_full ());
 
+      // Update the BDEP_SYNCED_CONFIGS environment variable.
+      //
+      // Note that it covers both depth and breadth (i.e., we don't restore
+      // the previous value before returning). The idea here is for commands
+      // like update or test would perform an implicit sync which will then be
+      // "noticed" by the build system hook. This should be both faster (no
+      // need to spawn multiple bdep processes) and simpler (no need to worry
+      // about who has the database open, etc).
+      //
+      // We also used to do this only in the first form of sync but it turns
+      // out we may end up invoking a hook during upgrade (e.g., to prepare a
+      // distribution of a package as part of pkg-checkout which happens in
+      // the configuration we have "hooked" -- yeah, this rabbit hole's deep).
+      {
+        const char n[] = "BDEP_SYNCED_CONFIGS";
+
+        string v;
+        const string& p (cd.string ());
+
+        if (const char* e = getenv (n))
+        {
+          v = e;
+
+          // Check if this configuration is already (being) synchronized.
+          //
+          for (size_t b (0), e (0);
+               (e = v.find ('"', e)) != string::npos; // Skip leading ' '.
+               ++e)                                   // Skip trailing '"'.
+          {
+            size_t n (next_word (v, b, e, '"'));
+
+            // Both paths are normilized so we can just compare them as
+            // strings.
+            //
+            if (path::traits::compare (v.c_str () + b, n,
+                                       p.c_str (),     p.size ()) == 0)
+            {
+              if (o.implicit ())
+                return 0; // Ignore.
+              else
+                fail << "explicit re-synchronization of " << cd;
+            }
+          }
+
+          v += ' ';
+        }
+
+        v += '"';
+        v += p;
+        v += '"';
+
+#ifndef _WIN32
+        setenv (n, v.c_str (), 1 /* overwrite */);
+#else
+        _putenv ((string (n) + '=' + v).c_str ());
+#endif
+      }
+
       if (!dep_pkgs.empty ())
       {
         // The third form: upgrade of the specified dependencies.
@@ -613,61 +671,6 @@ namespace bdep
       {
         // The first form: sync of project packages (potentially implicit).
         //
-
-        // Update the BDEP_SYNCED_CONFIGS environment variable.
-        //
-        // Note that it covers both depth and breadth (i.e., we don't restore
-        // the previous value before returning). The idea here is for commands
-        // like update or test would perform an implicit sync which will then
-        // be "noticed" by the build system hook. This should be both faster
-        // (no need to spawn multiple bdep processes) and simpler (no need to
-        // worry about who has the database open, etc).
-        //
-        {
-          const char n[] = "BDEP_SYNCED_CONFIGS";
-
-          string v;
-          const string& p (cd.string ());
-
-          if (const char* e = getenv (n))
-          {
-            v = e;
-
-            // Check if this configuration is already (being) synchronized.
-            //
-            for (size_t b (0), e (0);
-                 (e = v.find ('"', e)) != string::npos; // Skip leading ' '.
-                 ++e)                                   // Skip trailing '"'.
-            {
-              size_t n (next_word (v, b, e, '"'));
-
-              // Both paths are normilized so we can just compare them as
-              // strings.
-              //
-              if (path::traits::compare (v.c_str () + b, n,
-                                         p.c_str (),     p.size ()) == 0)
-              {
-                if (o.implicit ())
-                  return 0; // Ignore.
-                else
-                  fail << "explicit re-synchronization of " << cd;
-              }
-            }
-
-            v += ' ';
-          }
-
-          v += '"';
-          v += p;
-          v += '"';
-
-#ifndef _WIN32
-          setenv (n, v.c_str (), 1 /* overwrite */);
-#else
-          _putenv ((string (n) + '=' + v).c_str ());
-#endif
-        }
-
         cmd_sync (o,
                   cd,
                   prj,
