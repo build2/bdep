@@ -205,6 +205,11 @@ namespace bdep
           break;
         }
       }
+      if (tests)
+        os <<                                                           endl
+           << "# The test target for cross-testing (running tests under Wine, etc)." << endl
+           << "#"                                                    << endl
+           << "test.target = $cxx.target"                            << endl;
       os.close ();
 
       // build/.gitignore
@@ -729,10 +734,14 @@ namespace bdep
               break;
             }
           }
-          os <<                                                            endl
+          os <<                                                           endl
              << "# Every exe{} in this subproject is by default a test."<< endl
-             << "#"                                                     << endl
-             << "exe{*}: test = true"                                  << endl;
+             << "#"                                                    << endl
+             << "exe{*}: test = true"                                  << endl
+             <<                                                           endl
+             << "# The test target for cross-testing (running tests under Wine, etc)." << endl
+             << "#"                                                    << endl
+             << "test.target = $cxx.target"                            << endl;
           os.close ();
 
           // tests/build/.gitignore
