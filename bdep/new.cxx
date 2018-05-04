@@ -142,10 +142,12 @@ namespace bdep
       os.open (f = prj / "repositories.manifest");
       os << ": 1"                                                      << endl
          << "summary: " << n << " project repository"                  << endl
+         <<                                                               endl
          << "#:"                                                       << endl
          << "#role: prerequisite"                                      << endl
          << "#location: https://pkg.cppget.org/1/stable"               << endl
          << "#trust: ..."                                              << endl
+         <<                                                               endl
          << "#:"                                                       << endl
          << "#role: prerequisite"                                      << endl
          << "#location: https://git.build2.org/hello/libhello.git"     << endl;
