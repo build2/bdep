@@ -133,23 +133,22 @@ namespace bdep
          << "url: https://example.org/" << n                           << endl
          << "email: you@example.org"                                   << endl
          << "depends: * build2 >= 0.7.0-"                              << endl
-         << "depends: * bpkg >= 0.7.0-"                                << endl;
-      if (t == type::exe)
-        os << "#depends: libhello >= 1.0.0"                            << endl;
+         << "depends: * bpkg >= 0.7.0-"                                << endl
+         << "#depends: libhello ^1.0.0"                                << endl;
       os.close ();
 
       // repositories.manifest
       //
       os.open (f = prj / "repositories.manifest");
       os << ": 1"                                                      << endl
-         << "# To add a repository for a dependency, uncomment the"    << endl
-         << "# next four lines and specify its location."              << endl
-         << "#role: prerequisite"                                      << endl
-         << "#location: ..."                                           << endl
-         << "#"                                                        << endl
+         << "summary: " << n << " project repository"                  << endl
          << "#:"                                                       << endl
-         << "role: base"                                               << endl
-         << "summary: " << n << " project repository"                  << endl;
+         << "#role: prerequisite"                                      << endl
+         << "#location: https://pkg.cppget.org/1/stable"               << endl
+         << "#trust: ..."                                              << endl
+         << "#:"                                                       << endl
+         << "#role: prerequisite"                                      << endl
+         << "#location: https://git.build2.org/hello/libhello.git"     << endl;
       os.close ();
 
       // build/
@@ -225,7 +224,7 @@ namespace bdep
         os <<                                                             endl
            << "# Don't install tests."                                 << endl
            << "#"                                                      << endl
-           << "dir{tests/}: install = false"                           << endl;
+           << "tests/: install = false"                                << endl;
       os.close ();
 
       // .gitignore
@@ -665,7 +664,7 @@ namespace bdep
           // build/export.build
           //
           os.open (f = bd / "export.build");
-          os << "$out_root/:"                                          << endl
+          os << "$out_root/"                                           << endl
              << "{"                                                    << endl
              << "  include " << n << "/"                               << endl
              << "}"                                                    << endl
