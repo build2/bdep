@@ -37,7 +37,7 @@ namespace bdep
      The \cb{new} command creates and initializes a new \cb{build2} project.
      All three forms first create according to <spec> a new \cb{build2}
      project called <name> in the <name> subdirectory of the current working
-     directory.
+     directory (unless overriden with \c{\b{--directory}|\b{-d}}).
 
      The first form then, unless the \cb{--no-init} option is specified,
      initializes an empty project database as if by executing the
@@ -202,6 +202,12 @@ namespace bdep
       "Specify version control system and options. Valid values for <vcs> are
        \cb{git} (default) and \cb{none}. Valid values for <opt> are
        system-specific."
+    }
+
+    dir_path --directory|-d
+    {
+      "<dir>",
+      "Create the project in the specified directory."
     }
   };
 }

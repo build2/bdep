@@ -97,8 +97,9 @@ namespace bdep
     else
       s = n;
 
-    dir_path prj (n);
+    dir_path prj (o.directory_specified () ? o.directory () : dir_path (n));
     prj.complete ();
+    prj.normalize ();
 
     // If the directory already exists, make sure it is empty. Otherwise
     // create it.
