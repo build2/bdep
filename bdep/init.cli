@@ -51,8 +51,8 @@ namespace bdep
      form.
 
      The third (\cb{--config-add}) and fourth (\cb{--config-create}) forms are
-     shortcuts that can be used to first add an existing or newly created
-     build configuration and then initialize project packages in that
+     shortcuts to first adding an existing or newly created build
+     configuration and then initializing project packages in that
      configuration. Semantically they are equivalent to first performing the
      \cb{config add} or \cb{config create} commands (\l{bdep-config(1)}),
      respectively, followed by the first form. Optional <cfg-args> in the
@@ -73,7 +73,7 @@ namespace bdep
      The following invocations illustrate the common \cb{init} use cases (the
      current working directory is shown before the shell prompt).
 
-     Create new build configuration in \cb{../prj-gcc}, call it \cb{gcc} and
+     Create new build configuration in \cb{../prj-gcc}, call it \cb{gcc}, and
      initialize project packages \cb{foo} and \cb{libfoo} in this
      configuration:
 

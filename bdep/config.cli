@@ -65,12 +65,13 @@ namespace bdep
 
      \li|\cb{create}
 
-         The \cb{add} subcommand adds an existing \l{bpkg(1)} configuration in
-         directory <cfg-dir> to the project's build configuration set. The
-         \cb{create} subcommand creates a new configuration in directory
-         <cfg-dir> by executing the \l{bpkg-cfg-create(1)} command and passing
-         to it <cfg-args>, if any. It then proceeds as \cb{add} by adding the
-         new configuration to the project's build configuration set.
+         The \cb{add} subcommand adds an existing \l{bpkg(1)} build
+         configuration in directory <cfg-dir> to the project's build
+         configuration set. The \cb{create} subcommand creates a new
+         configuration in directory <cfg-dir> by executing the
+         \l{bpkg-cfg-create(1)} command and passing to it <cfg-args>, if
+         any. It then proceeds as \cb{add} by adding the new configuration to
+         the project's build configuration set.
 
          In both subcommands, if <cfg-name> is specified, then the added
          configuration is given this name. Several \cb{bdep} commands can use
@@ -101,8 +102,8 @@ namespace bdep
 
      \li|\cb{remove}
 
-         The \cb{remove} subcommand removes one or more configurations from
-         the project's build configuration set. See
+         The \cb{remove} subcommand removes one or more build configurations
+         from the project's build configuration set. See
          \l{bdep-projects-configs(1)} for various ways to specify build
          configurations.|
 
@@ -119,7 +120,7 @@ namespace bdep
          forward (\c{\b{--}[\b{no-}]\b{forward}}), and
          auto-synchronization (\c{\b{--}[\b{no-}]\b{auto-sync}}) flags.
          Note that changing any of these flags requires an explicit
-         \cb{sync} command to take effect.||"
+         \l{bdep-sync(1)} command to take effect.||"
 
     bool add;
     bool create;

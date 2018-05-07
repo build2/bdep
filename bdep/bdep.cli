@@ -105,15 +105,14 @@ namespace bdep
      \
 
      If our \cb{hello} project wanted to use \cb{libhello} as a dependency
-     package, then \cb{repositories.manifest} could look like this:
+     package, then its \cb{repositories.manifest} could look like this:
 
      \
      : 1
+     summary: hello project repository
+     :
      role: prerequisite
      location: https://example.com/libhello.git
-     :
-     role: base
-     summary: hello project repository
      \
 
      See \l{bpkg#manifest-repository-list Repository List Manifest} for
@@ -141,9 +140,9 @@ namespace bdep
      the project and one or more associated build configurations. For example,
      if we list a new dependency in the package's \cb{manifest} file, then
      \cb{bdep} fetches and configures this dependency in a build
-     configuration. Similarly, if we upgrade a dependency in a build
-     configuration, then \cb{bdep} updates the corresponding entry in the
-     package's \cb{lockfile}.
+     configuration. Similarly, if we upgrade or downgrade a dependency in a
+     build configuration, then \cb{bdep} updates the corresponding entry in
+     the package's \cb{lockfile}.
 
      A typical \cb{bdep} workflow would consist of the following steps.
 
@@ -151,7 +150,7 @@ namespace bdep
 
      \li|\b{Obtain the Project}\n
 
-         Normally we would use the version control system to obtail the
+         Normally we would use the version control system to obtain the
          project we want to develop:
 
          \
@@ -190,7 +189,7 @@ namespace bdep
          \
 
          We can now use the \l{bdep-status(1)} command to examine the status
-         of our project in its configuration:
+         of our project in its configurations:
 
          \
          $ bdep status -a
@@ -253,7 +252,7 @@ namespace bdep
          \
          $ cat manifest
          ...
-         depends: libhello >= 1.0.0
+         depends: libhello ^1.0.0
          ...
          \
 
@@ -284,7 +283,7 @@ namespace bdep
 
          $ bdep status -i
          hello configured 0.1.0-a.0.19700101000000#1
-           libhello >= 1.0.0 configured 1.0.0
+           libhello ^1.0.0 configured 1.0.0
          \
 
          Note that by default build configurations are automatically
@@ -342,10 +341,13 @@ namespace bdep
 
          \
          $ bdep sync libhello
+         synchronizing:
+           upgrade libhello/1.1.0
+           reconfigure hello/0.1.0
 
          $ bdep status -i
          hello configured 0.1.0-a.0.19700101000000#1
-           libhello >= 1.0.0 configured 1.1.0
+           libhello ^1.0.0 configured 1.1.0
          \
 
          Let's say we didn't like the new version and would like to go back to
@@ -357,6 +359,9 @@ namespace bdep
          libhello configured 1.1.0 available [1.0.0] (1.1.0)
 
          $ bdep sync libhello/1.0.0
+         synchronizing:
+           downgrade libhello/1.1.0
+           reconfigure hello/0.1.0
          \
 
          ||

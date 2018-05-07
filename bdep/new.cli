@@ -37,21 +37,21 @@ namespace bdep
      The \cb{new} command creates and initializes a new \cb{build2} project.
      All three forms first create according to <spec> a new \cb{build2}
      project called <name> in the <name> subdirectory of the current working
-     directory (unless overriden with \c{\b{--directory}|\b{-d}}).
+     directory (unless overridden with \c{\b{--directory}|\b{-d}}).
 
      The first form then, unless the \cb{--no-init} option is specified,
      initializes an empty project database as if by executing the
      \l{bdep-init(1)} command with the \cb{--empty} option. Similarly, the
      second and third forms add an existing or create new build configuration
-     and then initialize the project in that configuraton as if by executing
+     and then initialize the project in that configuration as if by executing
      the \l{bdep-init(1)} command with the \cb{--config-add} or
      \cb{--config-create} option, respectively.
 
      The project parameters such as type (executable, library, etc), language,
      and version control system can be customized as described next. Some of
-     the parameters also support parameter-specific options (such as the file
-     extensions to use in a C++ project) that can be specified after the
-     parameter value.
+     these parameters also support parameter-specific options (such as the
+     file extensions to use in a C++ project) that can be specified with a
+     comma after the parameter value.
 
      The project type can be specified with the \c{\b{--type}|\b{-t}} option.
      Valid values for this option and their semantics are described next. If
@@ -192,15 +192,15 @@ namespace bdep
     cmd_new_lang --lang|-l
     {
       "<lang>[,<opt>...]",
-      "Specify language type and options. Valid values for <lang> are \cb{c}
+      "Specify project language and options. Valid values for <lang> are \cb{c}
        and \cb{c++} (default). Valid values for <opt> are language-specific."
     }
 
     cmd_new_vcs --vcs|-s
     {
       "<vcs>[,<opt>...]",
-      "Specify version control system and options. Valid values for <vcs> are
-       \cb{git} (default) and \cb{none}. Valid values for <opt> are
+      "Specify project version control system and options. Valid values for
+       <vcs> are \cb{git} (default) and \cb{none}. Valid values for <opt> are
        system-specific."
     }
 

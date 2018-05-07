@@ -25,11 +25,12 @@ namespace bdep
      \h|DESCRIPTION|
 
      The \cb{fetch} command fetches the list of packages available in the
-     project's repositories in one or more build configurations. If no project
-     or package directory is specified, then the current working directory is
-     assumed. If no configuration is specified, then the default configuration
-     is assumed. See \l{bdep-projects-configs(1)} for details on specifying
-     projects and configurations.
+     project's prerequisite/complement repositories in one or more build
+     configurations. If no project or package directory is specified, then the
+     current working directory is assumed. If no configuration is specified,
+     then the default configuration is assumed. See
+     \l{bdep-projects-configs(1)} for details on specifying projects and
+     configurations.
 
      If the \cb{--full|-F} option is specified, then instead \cb{fetch}
      performs a full re-fetch of all the repositories added to the

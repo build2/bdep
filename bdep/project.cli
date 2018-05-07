@@ -19,7 +19,7 @@ namespace bdep
 
     bool --no-default
     {
-      "Don't make the first added or created configuration then default."
+      "Don't make the first added or created configuration the default."
     }
 
     bool --forward

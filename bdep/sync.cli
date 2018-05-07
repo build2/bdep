@@ -35,12 +35,12 @@ namespace bdep
      The \cb{sync} command synchronizes a project with its build
      configurations. The first form (no arguments nor \cb{--upgrade} or
      \cb{--patch} are specified) upgrades the project packages to the latest
-     iteration, adjusts their dependencies according to the latest manifest
-     information, and updates the lockfile. If no project or package directory
-     is specified, then the current working directory is assumed. If no
-     configuration is specified, then the default configuration is assumed. See
-     \l{bdep-projects-configs(1)} for details on specifying projects and
-     configurations.
+     version/iteration, adjusts their dependencies according to the latest
+     manifest information, and updates the lockfile. If no project or package
+     directory is specified, then the current working directory is assumed. If
+     no configuration is specified, then the default configuration is
+     assumed. See \l{bdep-projects-configs(1)} for details on specifying
+     projects and configurations.
 
      The second form (no arguments but either \cb{--upgrade} or \cb{--patch}
      is specified), in addition to the first form's functionality, also
@@ -96,7 +96,7 @@ namespace bdep
      suitable version:
 
      \
-     foo/$ edit manifest  # Add 'depends: libx >= 1.0.0'
+     foo/$ edit manifest  # Add 'depends: libx ^1.0.0'
      foo/$ bdep sync
      \
 
@@ -106,7 +106,7 @@ namespace bdep
      foo/$ bdep sync -u
      \
 
-     Upgrade all the dependencies of all the initialzied packages in a
+     Upgrade all the dependencies of all the initialized packages in a
      project recursively:
 
      \
@@ -120,7 +120,7 @@ namespace bdep
      prj/$ bdep sync libx
      \
 
-     Upgrade \cb{libx} and its immediate dependecies to the latest version:
+     Upgrade \cb{libx} and its immediate dependencies to the latest version:
 
      \
      prj/$ bdep sync -i libx
@@ -132,7 +132,7 @@ namespace bdep
      prj/$ bdep sync -p libx
      \
 
-     Upgrade \cb{libx} and all its dependecies recursively to the latest patch
+     Upgrade \cb{libx} and all its dependencies recursively to the latest patch
      version.
 
      \
@@ -145,7 +145,7 @@ namespace bdep
      prj/$ bdep sync libx/1.2.3
      \
 
-     Upgrade \cb{libx} to version \cb{1.2.3} and patch all its dependecies,
+     Upgrade \cb{libx} to version \cb{1.2.3} and patch all its dependencies,
      recursively:
 
      \
@@ -202,7 +202,7 @@ namespace bdep
     bool --implicit
     {
       "Perform implicit synchronization. This mode is normally used by other
-       tools (for example, a build system hook) to ensure packages and
+       tools (for example, a build system hook) to ensure projects and
        configurations are synchronized. To improve performance, especially for
        the \"everything is already synchronized\" case, \cb{sync} executed in
        this mode assumes that no configuration flags (see \l{bdep-config(1)})

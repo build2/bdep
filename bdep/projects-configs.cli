@@ -61,7 +61,7 @@ include <bdep/common-options.hxx>;
   A project managed by \cb{bdep} has one or more associated build
   configurations (see \l{bdep-config(1)} for details). One of these
   configurations can be designated as the default and used if no configuration
-  is explicitly specified. So, for example, running \cb{status} without any
+  is specified explicitly. So, for example, running \cb{status} without any
   arguments in the project directory will show the status of all the project
   packages initialized in the default configuration.
 
@@ -77,7 +77,7 @@ include <bdep/common-options.hxx>;
   mixed. For example:
 
   \
-  $ bdep status @gcc -c ../builds/clang/
+  $ bdep status @gcc -c ../builds/clang
   \
 
   Finally, we can use the \c{\b{--all}|\b{-a}} option to specify all the
