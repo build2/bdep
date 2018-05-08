@@ -378,7 +378,7 @@ namespace bdep
                << "if ($build.meta_operation != 'info'      && \\"     << endl
                << "    $build.meta_operation != 'configure' && \\"     << endl
                << "    $build.meta_operation != 'disfigure')"          << endl
-               << "  run " << argv0 << " sync --hook=1 "               <<
+               << "  run '" << argv0 << "' sync --hook=1 "             <<
               "--verbose $build.verbosity "                            <<
               "--config \"$out_root\""                                 << endl;
 
