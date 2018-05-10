@@ -28,6 +28,9 @@
 #include <bdep/fetch.hxx>
 #include <bdep/status.hxx>
 #include <bdep/config.hxx>
+#include <bdep/test.hxx>
+#include <bdep/update.hxx>
+#include <bdep/clean.hxx>
 
 using namespace std;
 using namespace bdep;
@@ -262,6 +265,9 @@ try
     COMMAND_IMPL (fetch,  fetch,  "fetch");
     COMMAND_IMPL (status, status, "status");
     COMMAND_IMPL (config, config, "config");
+    COMMAND_IMPL (test,   test,   "test");
+    COMMAND_IMPL (update, update, "update");
+    COMMAND_IMPL (clean,  clean,  "clean");
 
     assert (false);
     fail << "unhandled command";

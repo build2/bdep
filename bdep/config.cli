@@ -66,14 +66,14 @@ namespace bdep
      \li|\cb{create}
 
          The \cb{add} subcommand adds an existing \l{bpkg(1)} build
-         configuration in directory <cfg-dir> to the project's build
+         configuration in directory \ci{cfg-dir} to the project's build
          configuration set. The \cb{create} subcommand creates a new
-         configuration in directory <cfg-dir> by executing the
-         \l{bpkg-cfg-create(1)} command and passing to it <cfg-args>, if
+         configuration in directory \ci{cfg-dir} by executing the
+         \l{bpkg-cfg-create(1)} command and passing to it \ci{cfg-args}, if
          any. It then proceeds as \cb{add} by adding the new configuration to
          the project's build configuration set.
 
-         In both subcommands, if <cfg-name> is specified, then the added
+         In both subcommands, if \ci{cfg-name} is specified, then the added
          configuration is given this name. Several \cb{bdep} commands can use
          such names as a more convenient way to specify build configurations
          (see \l{bdep-projects-configs(1)} for details).

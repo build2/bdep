@@ -14,6 +14,9 @@ import libs += libbutl%lib{butl}
 import libs += libodb%lib{odb}
 import libs += libodb-sqlite%lib{odb-sqlite}
 
+# @@ Why don't we generate these with wildcard patterns (and rules below with
+# a for-loop)?
+#
 options_topics = \
 bdep-options     \
 common-options   \
@@ -24,7 +27,10 @@ init-options     \
 sync-options     \
 fetch-options    \
 status-options   \
-config-options
+config-options   \
+test-options     \
+update-options   \
+clean-options
 
 help_topics = projects-configs
 
@@ -64,6 +70,9 @@ if $cli.configured
   cli.cxx{fetch-options}:  cli{fetch}
   cli.cxx{status-options}: cli{status}
   cli.cxx{config-options}: cli{config}
+  cli.cxx{test-options}:   cli{test}
+  cli.cxx{update-options}: cli{update}
+  cli.cxx{clean-options}:  cli{clean}
 
   # Help topics.
   #

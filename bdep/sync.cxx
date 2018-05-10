@@ -141,6 +141,7 @@ namespace bdep
             bool implicit,
             bool fetch,
             bool yes,
+            bool name_cfg,
             optional<bool> upgrade,   // true - upgrade,   false - patch
             optional<bool> recursive, // true - recursive, false - immediate
             const package_locations& prj_pkgs,
@@ -257,16 +258,22 @@ namespace bdep
     if (!reps.empty ())
       run_bpkg (3, co, "fetch", "-d", cfg, "--shallow", reps);
 
-    // For implicit sync (normally performed on one configuration at a time)
-    // add the configuration directory to the plan header.
-    //
-    // We use the configuration directory rather than the name because this
-    // could be a multi-project configuration and in the implicit mode there
-    // will normally be no "originating project" (unlike with explicit sync).
-    //
-    string plan (implicit
-                 ? "synchronizing " + cfg.representation () + ':'
-                 : "synchronizing:");
+    string plan ("synchronizing");
+    if (name_cfg)
+    {
+      plan += ' ';
+
+      // Use name if available, directory otherwise.
+      //
+      if (origin_config != nullptr && origin_config->name)
+      {
+        plan += '@';
+        plan += *origin_config->name;
+      }
+      else
+        plan += cfg.representation ();
+    }
+    plan += ':';
 
     run_bpkg (2,
               co,
@@ -405,6 +412,69 @@ namespace bdep
     }
   }
 
+  // The BDEP_SYNCED_CONFIGS environment variable.
+  //
+  // Note that it covers both depth and breadth (i.e., we don't restore the
+  // previous value before returning). The idea here is for commands like
+  // update or test would perform an implicit sync which will then be
+  // "noticed" by the build system hook. This should be both faster (no need
+  // to spawn multiple bdep processes) and simpler (no need to worry about
+  // who has the database open, etc).
+  //
+  // We also used to do this only in the first form of sync but it turns out
+  // we may end up invoking a hook during upgrade (e.g., to prepare a
+  // distribution of a package as part of pkg-checkout which happens in the
+  // configuration we have "hooked" -- yeah, this rabbit hole is deep).
+  //
+  const char synced_name[] = "BDEP_SYNCED_CONFIGS";
+
+  // Check if the specified configuration directory is already (being)
+  // synchronized. If it is not and add is true, then add it to the
+  // BDEP_SYNCED_CONFIGS environment variable.
+  //
+  //
+  static bool
+  synced (const dir_path& d, bool implicit, bool add = true)
+  {
+    string v;
+    const string& p (d.string ());
+
+    if (const char* e = getenv (synced_name))
+      v = e;
+
+    for (size_t b (0), e (0);
+         (e = v.find ('"', e)) != string::npos; // Skip leading ' '.
+         ++e)                                   // Skip trailing '"'.
+    {
+      size_t n (next_word (v, b, e, '"'));
+
+      // Both paths are normilized so we can just compare them as
+      // strings.
+      //
+      if (path::traits::compare (v.c_str () + b, n,
+                                 p.c_str (),     p.size ()) == 0)
+      {
+        if (implicit)
+          return true;
+        else
+          fail << "explicit re-synchronization of " << d;
+      }
+    }
+
+    if (add)
+    {
+      v += (v.empty () ? "\"" : " \"") + p + '"';
+
+#ifndef _WIN32
+      setenv (synced_name, v.c_str (), 1 /* overwrite */);
+#else
+      _putenv ((string (synced_name) + '=' + v).c_str ());
+#endif
+    }
+
+    return false;
+  }
+
   void
   cmd_sync (const common_options& co,
             const dir_path& prj,
@@ -412,20 +482,23 @@ namespace bdep
             const strings& pkg_args,
             bool implicit,
             bool fetch,
-            bool yes)
+            bool yes,
+            bool name_cfg)
   {
-    cmd_sync (co,
-              c->path,
-              prj,
-              c,
-              pkg_args,
-              implicit,
-              fetch,
-              yes,
-              nullopt              /* upgrade   */,
-              nullopt              /* recursive */,
-              package_locations () /* prj_pkgs  */,
-              strings ()           /* dep_pkgs  */);
+    if (!synced (c->path, implicit))
+      cmd_sync (co,
+                c->path,
+                prj,
+                c,
+                pkg_args,
+                implicit,
+                fetch,
+                yes,
+                name_cfg,
+                nullopt              /* upgrade   */,
+                nullopt              /* recursive */,
+                package_locations () /* prj_pkgs  */,
+                strings ()           /* dep_pkgs  */);
   }
 
   int
@@ -559,9 +632,15 @@ namespace bdep
         d.complete ();
         d.normalize ();
 
-        cfgs.push_back (nullptr);
-        cfg_dirs.push_back (move (d));
+        if (!synced (d, o.implicit (), false /* add */))
+        {
+          cfgs.push_back (nullptr);
+          cfg_dirs.push_back (move (d));
+        }
       }
+
+      if (cfgs.empty ())
+        return 0; // All configuration are already (being) synchronized.
     }
 
     // Synchronize each configuration.
@@ -570,6 +649,11 @@ namespace bdep
     {
       const shared_ptr<configuration>& c (cfgs[i]); // Can be NULL.
       const dir_path& cd (c != nullptr ? c->path : cfg_dirs[i]);
+
+      // Check if this configuration is already (being) synchronized.
+      //
+      if (synced (cd, o.implicit ()))
+        continue;
 
       // Skipping empty ones.
       //
@@ -593,64 +677,6 @@ namespace bdep
       if (fetch)
         cmd_fetch (o, prj, c, o.fetch_full ());
 
-      // Update the BDEP_SYNCED_CONFIGS environment variable.
-      //
-      // Note that it covers both depth and breadth (i.e., we don't restore
-      // the previous value before returning). The idea here is for commands
-      // like update or test would perform an implicit sync which will then be
-      // "noticed" by the build system hook. This should be both faster (no
-      // need to spawn multiple bdep processes) and simpler (no need to worry
-      // about who has the database open, etc).
-      //
-      // We also used to do this only in the first form of sync but it turns
-      // out we may end up invoking a hook during upgrade (e.g., to prepare a
-      // distribution of a package as part of pkg-checkout which happens in
-      // the configuration we have "hooked" -- yeah, this rabbit hole's deep).
-      {
-        const char n[] = "BDEP_SYNCED_CONFIGS";
-
-        string v;
-        const string& p (cd.string ());
-
-        if (const char* e = getenv (n))
-        {
-          v = e;
-
-          // Check if this configuration is already (being) synchronized.
-          //
-          for (size_t b (0), e (0);
-               (e = v.find ('"', e)) != string::npos; // Skip leading ' '.
-               ++e)                                   // Skip trailing '"'.
-          {
-            size_t n (next_word (v, b, e, '"'));
-
-            // Both paths are normilized so we can just compare them as
-            // strings.
-            //
-            if (path::traits::compare (v.c_str () + b, n,
-                                       p.c_str (),     p.size ()) == 0)
-            {
-              if (o.implicit ())
-                return 0; // Ignore.
-              else
-                fail << "explicit re-synchronization of " << cd;
-            }
-          }
-
-          v += ' ';
-        }
-
-        v += '"';
-        v += p;
-        v += '"';
-
-#ifndef _WIN32
-        setenv (n, v.c_str (), 1 /* overwrite */);
-#else
-        _putenv ((string (n) + '=' + v).c_str ());
-#endif
-      }
-
       if (!dep_pkgs.empty ())
       {
         // The third form: upgrade of the specified dependencies.
@@ -665,6 +691,7 @@ namespace bdep
                   false /* implicit */,
                   !fetch,
                   o.recursive () || o.immediate () ? o.yes () : true,
+                  false /* name_cfg */,
                   !o.patch (), // Upgrade by default unless patch requested.
                   (o.recursive () ? optional<bool> (true)  :
                    o.immediate () ? optional<bool> (false) : nullopt),
@@ -684,6 +711,7 @@ namespace bdep
                   false /* implicit */,
                   !fetch,
                   o.yes (),
+                  false /* name_cfg */,
                   o.upgrade (),
                   o.recursive (),
                   prj_pkgs,
@@ -693,6 +721,9 @@ namespace bdep
       {
         // The first form: sync of project packages (potentially implicit).
         //
+        // For implicit sync (normally performed on one configuration at a
+        // time) add the configuration name/directory to the plan header.
+        //
         cmd_sync (o,
                   cd,
                   prj,
@@ -700,7 +731,8 @@ namespace bdep
                   pkg_args,
                   o.implicit (),
                   !fetch,
-                  true                 /* yes */,
+                  true                 /* yes       */,
+                  o.implicit ()        /* name_cfg  */,
                   nullopt              /* upgrade   */,
                   nullopt              /* recursive */,
                   package_locations () /* prj_pkgs  */,

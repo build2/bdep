@@ -1,0 +1,49 @@
+// file      : bdep/test.cli
+// copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
+// license   : MIT; see accompanying LICENSE file
+
+include <bdep/project.cli>;
+
+"\section=1"
+"\name=bdep-test"
+"\summary=test project in build configurations"
+
+namespace bdep
+{
+  {
+    "<options>
+     <prj-spec> <prj-dir>
+     <pkg-spec> <pkg-dir>
+     <cfg-spec> <cfg-name> <cfg-dir>
+     <cfg-var>",
+
+    "\h|SYNOPSIS|
+
+     \c{\b{bdep test} [<options>] [<pkg-spec>] [<cfg-spec>] [<cfg-var>...]}
+
+     \c{<cfg-spec> = (\b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>)... | \b{--all}|\b{-a}\n
+        <pkg-spec> = (\b{--directory}|\b{-d} <pkg-dir>)... | <prj-spec>\n
+        <prj-spec> = \b{--directory}|\b{-d} <prj-dir>}
+
+     \h|DESCRIPTION|
+
+     The \cb{test} command tests the project packages in one or more build
+     configurations. Underneath it executes the \l{bpkg-pkg-test(1)} command
+     which itself is not much more than the build system \cb{test} operation
+     (see \l{b(1)} for details). As a result, the main utility of this command
+     is the ability to refer to build configurations by names and to project
+     packages implicitly via the current working directory.
+
+     If no project or package directory is specified, then the current working
+     directory is assumed. If no configuration is specified, then the default
+     configuration is assumed. See \l{bdep-projects-configs(1)} for details on
+     specifying projects and configurations. Optional \c{\i{cfg-var}...} are
+     the additional configuration variables to pass to the build system.
+     "
+  }
+
+  class cmd_test_options: project_options
+  {
+    "\h|TEST OPTIONS|"
+  };
+}

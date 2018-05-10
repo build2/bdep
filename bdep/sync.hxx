@@ -17,7 +17,9 @@ namespace bdep
   // configuration variables to pass to bpkg-pkg-build (see bdep-init).
   //
   // If fetch is false, don't perform a (shallow) fetch of the project
-  // repository. If yes is false, then don't suppress bpkg prompts.
+  // repository. If yes is false, then don't suppress bpkg prompts. If
+  // name_cfg is true then include the configuration name/directory into
+  // progress.
   //
   void
   cmd_sync (const common_options&,
@@ -26,7 +28,8 @@ namespace bdep
             const strings& pkg_args,
             bool implicit,
             bool fetch = true,
-            bool yes = true);
+            bool yes = true,
+            bool name_cfg = false);
 
   int
   cmd_sync (cmd_sync_options&&, cli::group_scanner& args);

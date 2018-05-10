@@ -413,6 +413,21 @@ namespace bdep
     {
       "\l{bdep-config(1)} \- manage project's build configurations"
     }
+
+    bool test
+    {
+      "\l{bdep-test(1)} \- test project in build configurations"
+    }
+
+    bool update
+    {
+      "\l{bdep-update(1)} \- update project in build configurations"
+    }
+
+    bool clean
+    {
+      "\l{bdep-clean(1)} \- clean project in build configurations"
+    }
   };
 
   // Make sure these don't conflict with command names above.

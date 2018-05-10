@@ -38,13 +38,14 @@ namespace bdep
      configurations. The first form (no arguments nor \cb{--upgrade} or
      \cb{--patch} are specified) upgrades the project packages to the latest
      version/iteration, adjusts their dependencies according to the latest
-     manifest information, and updates the lockfile. If no project or package
-     directory is specified, then the current working directory is assumed. If
-     no configuration is specified, then the default configuration is
-     assumed. See \l{bdep-projects-configs(1)} for details on specifying
-     projects and configurations. Optional <pkg-args> are the additional
-     dependency packages and/or configuration variables to pass to the
-     underlying \l{bpkg-pkg-build(1)} command.
+     manifest information, and updates the lockfile.
+
+     If no project or package directory is specified, then the current working
+     directory is assumed. If no configuration is specified, then the default
+     configuration is assumed. See \l{bdep-projects-configs(1)} for details on
+     specifying projects and configurations. Optional <pkg-args> are the
+     additional dependency packages and/or configuration variables to pass to
+     the underlying \l{bpkg-pkg-build(1)} command.
 
      The second form (no arguments but either \cb{--upgrade} or \cb{--patch}
      is specified), in addition to the first form's functionality, also
