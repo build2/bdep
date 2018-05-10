@@ -43,7 +43,8 @@ namespace bdep
      is assumed. If no configuration is specified, then the default
      configuration is assumed. See \l{bdep-projects-configs(1)} for details on
      specifying projects and configurations. Optional <pkg-args> are the
-     additional arguments to the underlying \l{bpkg-pkg-build(1)} command.
+     additional dependency packages and/or configuration variables to pass
+     to the underlying \l{bpkg-pkg-build(1)} command.
 
      The second form (\cb{--empty} is specified) initializes an empty project
      database that can later be used to first add build configurations

@@ -33,10 +33,11 @@ namespace bdep
             const dir_path& prj,
             database&,
             const configurations&,
-            const package_locations&);
+            const package_locations&,
+            const strings& pkg_args);
 
   int
-  cmd_init (const cmd_init_options&, cli::scanner& args);
+  cmd_init (const cmd_init_options&, cli::group_scanner& args);
 }
 
 #endif // BDEP_INIT_HXX

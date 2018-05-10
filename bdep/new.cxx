@@ -20,7 +20,7 @@ namespace bdep
   using vcs  = cmd_new_vcs;
 
   int
-  cmd_new (const cmd_new_options& o, cli::scanner& args)
+  cmd_new (const cmd_new_options& o, cli::group_scanner& args)
   {
     tracer trace ("new");
 
@@ -941,7 +941,7 @@ namespace bdep
 
       package_locations pkgs {{n, dir_path ()}}; // project == package
 
-      cmd_init (o, prj, db, cfgs, pkgs);
+      cmd_init (o, prj, db, cfgs, pkgs, scan_arguments (args) /* pkg_args */);
     }
 
     return 0;

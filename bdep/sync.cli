@@ -15,11 +15,12 @@ namespace bdep
      <prj-spec> <prj-dir>
      <pkg-spec> <pkg-dir>
      <cfg-spec> <cfg-name> <cfg-dir>
-     <dep-spec> <pkg> <ver>",
+     <dep-spec> <pkg> <ver>
+     <pkg-args> <pkg> <cfg-var>",
 
     "\h|SYNOPSIS|
 
-     \c{\b{bdep sync} [<options>] [<pkg-spec>] [<cfg-spec>]\n
+     \c{\b{bdep sync} [<options>] [<pkg-spec>] [<cfg-spec>] [<pkg-args>]\n
         \b{bdep sync} [<options>] [<pkg-spec>] [<cfg-spec>] \ \b{--upgrade}|\b{-u} | \b{--patch}|\b{-p}\n
         \b{bdep sync} [<options>] [<pkg-spec>] [<cfg-spec>] [\b{--upgrade}|\b{-u} | \b{--patch}|\b{-p}]\n
         \ \ \ \ \ \ \ \ \ \ <dep-spec>...
@@ -28,7 +29,8 @@ namespace bdep
      \c{<dep-spec> = <pkg>[\b{/}<ver>]\n
         <cfg-spec> = (\b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>)... | \b{--all}|\b{-a}\n
         <pkg-spec> = (\b{--directory}|\b{-d} <pkg-dir>)... | <prj-spec>\n
-        <prj-spec> = \b{--directory}|\b{-d} <prj-dir>}
+        <prj-spec> = \b{--directory}|\b{-d} <prj-dir>\n
+        <pkg-args> = (<pkg> | <cfg-var>)...}
 
      \h|DESCRIPTION|
 
@@ -40,7 +42,9 @@ namespace bdep
      directory is specified, then the current working directory is assumed. If
      no configuration is specified, then the default configuration is
      assumed. See \l{bdep-projects-configs(1)} for details on specifying
-     projects and configurations.
+     projects and configurations. Optional <pkg-args> are the additional
+     dependency packages and/or configuration variables to pass to the
+     underlying \l{bpkg-pkg-build(1)} command.
 
      The second form (no arguments but either \cb{--upgrade} or \cb{--patch}
      is specified), in addition to the first form's functionality, also

@@ -61,7 +61,7 @@ cfg_name (...)
 
 template <typename O>
 static O
-init (const common_options& co, cli::scanner& scan, strings& args)
+init (const common_options& co, cli::group_scanner& scan, strings& args)
 {
   O o;
   static_cast<common_options&> (o) = co;
@@ -100,7 +100,9 @@ init (const common_options& co, cli::scanner& scan, strings& args)
       // Fall through.
     }
 
-    args.push_back (scan.next ());
+    // Copy over the argument including the group.
+    //
+    scan_argument (args, scan);
   }
 
   // Global initializations.
@@ -159,7 +161,8 @@ try
          << system_error (errno, generic_category ()); // Sanitize.
 #endif
 
-  argv_file_scanner scan (argc, argv, "--options-file");
+  argv_file_scanner argv_scan (argc, argv, "--options-file");
+  group_scanner scan (argv_scan);
 
   // First parse common options and --version/--help.
   //
@@ -177,7 +180,8 @@ try
   }
 
   strings argsv; // To be filled by parse() above.
-  vector_scanner args (argsv);
+  vector_scanner vect_args (argsv);
+  group_scanner args (vect_args);
 
   const common_options& co (o);
 

@@ -184,6 +184,25 @@ namespace bdep
   template <typename C>
   bool
   parse_command (cli::scanner& scan, C&);
+
+  // Scan and return/append arguments preserving grouping.
+  //
+  void
+  scan_argument (strings&, cli::group_scanner&);
+
+  inline void
+  scan_arguments (strings& r, cli::group_scanner& s)
+  {
+    for (; s.more (); scan_argument (r, s)) ;
+  }
+
+  inline strings
+  scan_arguments (cli::group_scanner& s)
+  {
+    strings r;
+    scan_arguments (r, s);
+    return r;
+  }
 }
 
 #include <bdep/utility.txx>

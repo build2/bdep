@@ -133,4 +133,23 @@ namespace bdep
       ? co.build ().string ().c_str ()
       : "b" BDEP_EXE_SUFFIX;
   }
+
+  void
+  scan_argument (strings& r, cli::group_scanner& s)
+  {
+    // Copy over the argument including the group.
+    //
+    using scanner = cli::scanner;
+    using group_scanner = cli::group_scanner;
+
+    r.push_back (group_scanner::escape (s.next ()));
+
+    scanner& gs (s.group ());
+    if (gs.more ())
+    {
+      r.push_back ("+{");
+      for (; gs.more (); r.push_back (group_scanner::escape (gs.next ()))) ;
+      r.push_back ("}");
+    }
+  }
 }

@@ -6,6 +6,8 @@
 
 #include <stdlib.h> // getenv() setenv()/_putenv()
 
+#include <cstring>  // strchr()
+
 #include <bdep/database.hxx>
 #include <bdep/diagnostics.hxx>
 #include <bdep/project-odb.hxx>
@@ -135,6 +137,7 @@ namespace bdep
             const dir_path& cfg,
             const dir_path& origin_prj,
             const shared_ptr<configuration>& origin_config,
+            const strings& pkg_args,
             bool implicit,
             bool fetch,
             bool yes,
@@ -226,6 +229,10 @@ namespace bdep
         args.push_back ('?' + n);
       }
     }
+
+    // Finally, add pkg_args, if any.
+    //
+    args.insert (args.end (), pkg_args.begin (), pkg_args.end ());
 
     // We do a separate fetch instead of letting pkg-build do it. This way we
     // get better control of the diagnostics (no "fetching ..." for the
@@ -402,6 +409,7 @@ namespace bdep
   cmd_sync (const common_options& co,
             const dir_path& prj,
             const shared_ptr<configuration>& c,
+            const strings& pkg_args,
             bool implicit,
             bool fetch,
             bool yes)
@@ -410,6 +418,7 @@ namespace bdep
               c->path,
               prj,
               c,
+              pkg_args,
               implicit,
               fetch,
               yes,
@@ -420,10 +429,13 @@ namespace bdep
   }
 
   int
-  cmd_sync (cmd_sync_options&& o, cli::scanner& args)
+  cmd_sync (cmd_sync_options&& o, cli::group_scanner& args)
   {
     tracer trace ("sync");
 
+    // We have two pretty different upgrade modes: project package upgrade and
+    // dependency package upgrade (have non-pkg-args arguments).
+    //
     if (o.upgrade () && o.patch ())
       fail << "both --upgrade|-u and --patch|-p specified";
 
@@ -440,11 +452,19 @@ namespace bdep
         fail << n << " requires explicit --upgrade|-u or --patch|-p";
     }
 
-    // We have two pretty different upgrade modes: project package upgrade and
-    // dependency package upgrade (have arguments).
+    // Sort arguments (if any) into pkg-args and dep-spec: if the argument
+    // starts with '?' (dependency flag) or contains '=' (config variable),
+    // then we assume it is pkg-args.
     //
+    strings pkg_args;
     strings dep_pkgs;
-    for (; args.more (); dep_pkgs.push_back (args.next ())) ;
+    while (args.more ())
+    {
+      const char* r (args.peek ());
+      scan_argument (
+        (*r == '?' || strchr (r, '=') != nullptr) ? pkg_args : dep_pkgs,
+        args);
+    }
 
     // --hook
     //
@@ -641,6 +661,7 @@ namespace bdep
                   cd,
                   prj,
                   c,
+                  pkg_args,
                   false /* implicit */,
                   !fetch,
                   o.recursive () || o.immediate () ? o.yes () : true,
@@ -659,6 +680,7 @@ namespace bdep
                   cd,
                   prj,
                   c,
+                  pkg_args,
                   false /* implicit */,
                   !fetch,
                   o.yes (),
@@ -675,9 +697,10 @@ namespace bdep
                   cd,
                   prj,
                   c,
+                  pkg_args,
                   o.implicit (),
                   !fetch,
-                  true /* yes */,
+                  true                 /* yes */,
                   nullopt              /* upgrade   */,
                   nullopt              /* recursive */,
                   package_locations () /* prj_pkgs  */,

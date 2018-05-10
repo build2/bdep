@@ -60,7 +60,8 @@ namespace bdep
             const dir_path& prj,
             database& db,
             const configurations& cfgs,
-            const package_locations& pkgs)
+            const package_locations& pkgs,
+            const strings& pkg_args)
   {
     // We do each configuration in a separate transaction so that our state
     // reflects the bpkg configuration as closely as possible.
@@ -117,12 +118,12 @@ namespace bdep
       db.update (c);
       t.commit ();
 
-      cmd_sync (o, prj, c, false /* implicit */);
+      cmd_sync (o, prj, c, pkg_args, false /* implicit */);
     }
   }
 
   int
-  cmd_init (const cmd_init_options& o, cli::scanner& args)
+  cmd_init (const cmd_init_options& o, cli::group_scanner& args)
   {
     tracer trace ("init");
 
@@ -192,15 +193,12 @@ namespace bdep
             args,
             ca,
             cc));
-
-        // Fall through.
       }
-
-      // If this is the default mode, then find the configurations the user
-      // wants us to use.
-      //
-      if (cfgs.empty ())
+      else
       {
+        // If this is the default mode, then find the configurations the user
+        // wants us to use.
+        //
         transaction t (db.begin ());
         cfgs = find_configurations (prj, t, o);
         t.commit ();
@@ -209,7 +207,12 @@ namespace bdep
 
     // Initialize each package in each configuration.
     //
-    cmd_init (o, prj, db, cfgs, pp.packages);
+    cmd_init (o,
+              prj,
+              db,
+              cfgs,
+              pp.packages,
+              scan_arguments (args) /* pkg_args */);
 
     return 0;
   }

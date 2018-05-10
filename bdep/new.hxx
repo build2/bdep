@@ -13,7 +13,7 @@
 namespace bdep
 {
   int
-  cmd_new (const cmd_new_options&, cli::scanner& args);
+  cmd_new (const cmd_new_options&, cli::group_scanner& args);
 }
 
 #endif // BDEP_NEW_HXX
