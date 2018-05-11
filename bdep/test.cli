@@ -28,11 +28,17 @@ namespace bdep
      \h|DESCRIPTION|
 
      The \cb{test} command tests the project packages in one or more build
-     configurations. Underneath it executes the \l{bpkg-pkg-test(1)} command
-     which itself is not much more than the build system \cb{test} operation
-     (see \l{b(1)} for details). As a result, the main utility of this command
-     is the ability to refer to build configurations by names and to project
-     packages implicitly via the current working directory.
+     configurations. Additionally, immediate or all dependencies of the
+     project packages can be tested by specifying the
+     \c{\b{--immediate}|\b{-i}} or \c{\b{--recursive}|\b{-r}} options,
+     respectively.
+
+     Underneath \cb{test} executes the \l{bpkg-pkg-test(1)} command which
+     itself is not much more than the build system \cb{test} operation (see
+     \l{b(1)} for details). As a result, the main utility of this command is
+     the ability to refer to build configurations by names and to project
+     packages implicitly via the current working directory as well as to
+     test dependencies.
 
      If no project or package directory is specified, then the current working
      directory is assumed. If no configuration is specified, then the default
@@ -45,5 +51,15 @@ namespace bdep
   class cmd_test_options: project_options
   {
     "\h|TEST OPTIONS|"
+
+    bool --immediate|-i
+    {
+      "Also test immediate dependencies."
+    }
+
+    bool --recursive|-r
+    {
+      "Also test all dependencies, recursively."
+    }
   };
 }

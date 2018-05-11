@@ -46,8 +46,7 @@ namespace bdep
               "--constraint",
               (o.old_available () ? "--old-available" : nullptr),
               (o.immediate () ? "--immediate" :
-               o.recursive () ? "--recursive" :
-               nullptr),
+               o.recursive () ? "--recursive" : nullptr),
               pkgs);
   }
 
