@@ -1,0 +1,43 @@
+# file      : tests/common.test
+# copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
+# license   : MIT; see accompanying LICENSE file
+
+# Commonly-used variables setup and driver command line.
+#
+
+# Use the same build system driver as the one running the tests (as opposed
+# to one that may or may not be found via PATH). A common approach will be to
+# run build2 as a sanity check in a directory produced/updated by the bdep
+# command being tested.
+#
+build = $recall($build.path)
+test.options += --build $build
+
+# Helper commands that can be used by tests to prepare the testing environment
+# or validate an outcome of the command being tested. They are likely to get
+# additional options and redirects appended prior to use. A common approach
+# will be to redirect output to the null device for commands that are used for
+# test setup, and to match it for commands being tested or performing teardown
+# (for example, to make sure that configuration post-test state is valid and is
+# as expected).
+#
+new    = $* new
+status = $* status
+init   = $* init
+sync   = $* sync
+fetch  = $* fetch
+
+# All testscripts are named after bdep commands, for example sync.test. So the
+# testscript scope id is a name of the command being tested.
+#
+cmd = [string] $@
+test.arguments = $cmd
+
+# Convenience variables for supporting Windows/POSIX testscript variants.
+#
+win32 = ($cxx.target.class == 'windows')
+exe   = ($win32 ? '.exe' : '')
+
+# @@ It would be nice to query bdep for the bpkg path it uses.
+#
+bpkg = ("$config.bdep.test.bpkg" != '' ? "$config.bdep.test.bpkg" : "bpkg$exe")

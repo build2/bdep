@@ -1,0 +1,17 @@
+# file      : tests/build/root.build
+# copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
+# license   : MIT; see accompanying LICENSE file
+
+# We need to configure C++ module to pass the compiler path to some of bdep
+# test commands.
+#
+using cxx
+
+# Setup the bdep that we are testing.
+#
+import bdep = bdep%exe{bdep}
+test{*}: test = $bdep
+
+# Specify the test target for cross-testing.
+#
+test.target = $cxx.target

@@ -1,0 +1,45 @@
+# file      : tests/new.test
+# copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
+# license   : MIT; see accompanying LICENSE file
+
+.include common.test
+
+: exe
+{
+  $* -t exe hello 2>>/"EOE" &hello/***;
+    created new executable project hello in $~/hello/
+    EOE
+
+  $build hello/ 2>>/EOE
+    c++ hello/hello/cxx{hello}
+    ld hello/hello/exe{hello}
+    EOE
+}
+
+: lib
+{
+  $* -t lib libhello 2>>/"EOE" &libhello/***;
+    created new library project libhello in $~/libhello/
+    EOE
+
+  # We build the project by chunks to make sure the output is reproducible (no,
+  # -s doesn't really help).
+  #
+  echo "#include <libhello/version.hxx>" >+libhello/libhello/hello.hxx;
+
+  $build libhello/libhello/libs{hello} 2>>/EOE;
+    ver libhello/libhello/version.hxx.in
+    c++ libhello/libhello/cxx{hello}
+    ld libhello/libhello/libs{hello}
+    EOE
+
+  $build libhello/libhello/ 2>>/EOE;
+    c++ libhello/libhello/cxx{hello}
+    ld libhello/libhello/liba{hello}
+    EOE
+
+  $build libhello/ 2>>/EOE
+    c++ libhello/tests/basics/cxx{driver}
+    ld libhello/tests/basics/exe{driver}
+    EOE
+}

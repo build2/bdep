@@ -1,0 +1,95 @@
+# file      : tests/init.test
+# copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
+# license   : MIT; see accompanying LICENSE file
+
+.include common.test project.test
+
+new    += 2>!
+status += --all
+
+test.cleanups += &prj/build/bootstrap/*** &?prj-cfg/***
+
+: cfg-create
+:
+: We will also test that the configuration variables are properly persisted and
+: the project is properly built in the source tree.
+:
+{
+  $clone_prj;
+
+  $* -C prj-cfg @cfg cc "config.cxx=$config.cxx" 'config.cc.poptions=-DTEST' 2>>/~"%EOE%";
+    initializing in project $~/prj/
+    created configuration @cfg $~/prj-cfg/ \(1, default, forwarded, auto-synchronized\)
+    synchronizing:
+    %  new prj.0\.1\.0-a\.0\.19700101000000%
+    EOE
+
+  sed -n -e 's/^config.cc.poptions = (.+)$/\1/p' prj-cfg/build/config.build \
+    >'-DTEST';
+
+  $status --directory prj >'prj configured 0.1.0-a.0.19700101000000';
+
+  $build prj/ 2>>/EOE &prj/prj/prj$exe;
+    mkdir prj-cfg/prj/fsdir{prj/}
+    c++ prj/prj/cxx{prj}@prj-cfg/prj/prj/
+    ld prj-cfg/prj/prj/exe{prj}
+    ln prj-cfg/prj/prj/exe{prj} -> prj/prj/
+    EOE
+
+  $build prj-cfg/ 2>>/EOE
+    info: dir{prj-cfg/} is up to date
+    EOE
+}
+
+: cfg-add
+:
+{
+  create_cfg = $bpkg create cc "config.cxx=$config.cxx" -d 2>!
+
+  $clone_prj;
+
+  $create_cfg prj-cfg1/ &prj-cfg1/***;
+  $create_cfg prj-cfg2/ &prj-cfg2/***;
+
+  $* -A prj-cfg1 @cfg1 2>>/~"%EOE%";
+    initializing in project $~/prj/
+    added configuration @cfg1 $~/prj-cfg1/ \(1, default, forwarded, auto-synchronized\)
+    synchronizing:
+    %  new prj.0\.1\.0-a\.0\.19700101000000%
+    EOE
+
+  $* -A prj-cfg2 @cfg2 2>>/~"%EOE%";
+    initializing in project $~/prj/
+    added configuration @cfg2 $~/prj-cfg2/ \(2, auto-synchronized\)
+    synchronizing:
+    %  new prj.0\.1\.0-a\.0\.19700101000000%
+    EOE
+
+  $status --directory prj >>EOO;
+    in configuration @cfg1:
+    prj configured 0.1.0-a.0.19700101000000
+
+    in configuration @cfg2:
+    prj configured 0.1.0-a.0.19700101000000
+    EOO
+
+  $build prj-cfg1/ 2>>/EOE;
+    mkdir prj-cfg1/prj/fsdir{prj/}
+    c++ prj/prj/cxx{prj}@prj-cfg1/prj/prj/
+    ld prj-cfg1/prj/prj/exe{prj}
+    EOE
+
+  $build prj-cfg2/ 2>>/EOE;
+    mkdir prj-cfg2/prj/fsdir{prj/}
+    c++ prj/prj/cxx{prj}@prj-cfg2/prj/prj/
+    ld prj-cfg2/prj/prj/exe{prj}
+    EOE
+
+  $build prj/ 2>>/EOE &prj/prj/prj$exe
+    ln prj-cfg1/prj/prj/exe{prj} -> prj/prj/
+    info: prj-cfg1/dir{prj/} is up to date
+    EOE
+}
+
+# @@ Test initializing a package rather than project.
+#

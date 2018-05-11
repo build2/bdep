@@ -1,0 +1,66 @@
+# file      : tests/sync.test
+# copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
+# license   : MIT; see accompanying LICENSE file
+
+.include common.test project.test
+
+new    += 2>!
+init   += cc "config.cxx=$config.cxx" -d prj 2>!
+status += --all --recursive
+
+: dependency
+:
+{
+  $clone_prj;
+  $init -C prj-cfg @cfg &prj/build/bootstrap/*** &prj-cfg/***;
+
+  $new -t lib --vcs none libhello &libhello/***;
+
+  cat <<EOI >+prj/repositories.manifest;
+    :
+    role: prerequisite
+    location: ../libhello
+    type: dir
+    EOI
+
+  cat <<EOI >+prj/manifest;
+    depends: libhello
+    EOI
+
+  sed -i -e 's/^(#import .+)$/import libs += libhello%lib{hello}/' \
+      prj/prj/buildfile;
+
+  cat <<EOI >=prj/prj/prj.cxx;
+    #include <iostream>
+
+    #include <libhello/hello.hxx>
+
+    using namespace std;
+
+    int main (int argc, char* argv[])
+    {
+      if (argc < 2)
+      {
+        cerr << "error: missing name" << endl;
+        return 1;
+      }
+
+      hello::say_hello (cout, argv[1]);
+    }
+    EOI
+
+  $* 2>>/~"%EOE%";
+    fetching dir:$~/libhello \(prerequisite of dir:$~/prj\)
+    synchronizing:
+    %  new libhello.0\.1\.0-a\.0\..+ \\\(required by prj\\\)%
+    %  upgrade prj.0\.1\.0-a\.0\.19700101000000#1%
+    EOE
+
+  $status -d prj >>~%EOO%;
+    prj configured 0.1.0-a.0.19700101000000#1
+    %  libhello configured 0\.1\.0-a\.0\..+%
+    EOO
+
+  $build prj/ 2>! &prj/prj/prj$exe &?prj/prj/prj.exe.dlls/***;
+  prj/prj/prj 'testscript' >'Hello, testscript!'
+}

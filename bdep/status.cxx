@@ -4,6 +4,8 @@
 
 #include <bdep/status.hxx>
 
+#include <iostream> // cout
+
 #include <bdep/project.hxx>
 #include <bdep/database.hxx>
 #include <bdep/diagnostics.hxx>
@@ -129,8 +131,8 @@ namespace bdep
       //
       if (verb && cfgs.size () > 1)
       {
-        text << (first ? "" : "\n")
-             << "in configuration " << *c << ':';
+        cout << (first ? "" : "\n")
+             << "in configuration " << *c << ':' << endl;
 
         first = false;
       }

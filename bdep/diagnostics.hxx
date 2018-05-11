@@ -5,6 +5,8 @@
 #ifndef BDEP_DIAGNOSTICS_HXX
 #define BDEP_DIAGNOSTICS_HXX
 
+#include <utility> // forward()
+
 #include <odb/tracer.hxx>
 
 #include <libbutl/diagnostics.mxx>
