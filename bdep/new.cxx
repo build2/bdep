@@ -97,7 +97,7 @@ namespace bdep
     else
       s = n;
 
-    dir_path prj (o.directory_specified () ? o.directory () : dir_path (n));
+    dir_path prj (o.output_dir_specified () ? o.output_dir () : dir_path (n));
     prj.complete ();
     prj.normalize ();
 
