@@ -230,6 +230,23 @@ namespace bdep
          $ ./hello  # run the result
          \
 
+         Using the build system directly on configurations other than the
+         default requires explicitly specifying their paths. To make this more
+         convenient, the \l{bdep-update(1)}, \l{bdep-test(1)}, and
+         \l{bdep-clean(1)} commands allow us to refer to them by names,
+         perform the desired build system operation on several of them at
+         once, and, in case of \cb{test}, perform it on immediate or all
+         dependencies or a project. For example:
+
+         \
+         $ bdep test @gcc @clang
+         in configuration @gcc:
+         <...>
+
+         in configuration @clang:
+         <...>
+         \
+
          |
 
      \li|\b{Add, Remove, or Change Dependencies}\n
