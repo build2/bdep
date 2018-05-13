@@ -80,8 +80,6 @@ namespace bdep
         first = false;
       }
 
-      transaction t (db.begin ());
-
       // Add project repository to the configuration. Note that we don't fetch
       // it since sync is going to do it anyway.
       //
@@ -91,6 +89,8 @@ namespace bdep
                 "-d", c->path,
                 "--type", "dir",
                 prj);
+
+      transaction t (db.begin ());
 
       for (const package_location& p: pkgs)
       {
@@ -115,10 +115,18 @@ namespace bdep
         c->packages.push_back (package_state {p.name});
       }
 
+      // Should we sync then commit the database or commit and then sync?
+      // Either way we can end up with an incosistent state. Note, however,
+      // that the state in the build configuration can in most cases be
+      // corrected with a retry (e.g., "upgrade" the package to the fixed
+      // version, etc) while if we think (from the database state) that the
+      // package has already been initialized, then there will be no way to
+      // retry anything.
+      //
+      cmd_sync (o, prj, c, pkg_args, false /* implicit */);
+
       db.update (c);
       t.commit ();
-
-      cmd_sync (o, prj, c, pkg_args, false /* implicit */);
     }
   }
 
@@ -148,7 +156,7 @@ namespace bdep
     const dir_path& prj (pp.project);
 
     if (verb)
-      text << "initializing project " << prj;
+      text << "initializing in project " << prj;
 
     // Create .bdep/.
     //

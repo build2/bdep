@@ -247,6 +247,13 @@ namespace bdep
          <...>
          \
 
+         To deinitialize a project in one or more build configurations we
+         can use the \l{bdep-deinit(1)} command. For example:
+
+         \
+         $ bdep deinit -a
+         \
+
          |
 
      \li|\b{Add, Remove, or Change Dependencies}\n
@@ -424,6 +431,11 @@ namespace bdep
     bool status
     {
       "\l{bdep-status(1)} \- print status of project and/or its dependencies"
+    }
+
+    bool deinit
+    {
+      "\l{bdep-deinit(1)} \- deinitialize project in build configurations"
     }
 
     bool config

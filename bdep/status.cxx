@@ -5,7 +5,6 @@
 #include <bdep/status.hxx>
 
 #include <bdep/project.hxx>
-#include <bdep/project-odb.hxx>
 #include <bdep/database.hxx>
 #include <bdep/diagnostics.hxx>
 
@@ -92,7 +91,7 @@ namespace bdep
     strings dep_pkgs;
     for (; args.more (); dep_pkgs.push_back (args.next ())) ;
 
-    // For the project status the same story as in sync.
+    // The same ignore/load story as in sync.
     //
     project_packages pp (
       find_project_packages (o,

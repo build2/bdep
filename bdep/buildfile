@@ -27,6 +27,7 @@ init-options     \
 sync-options     \
 fetch-options    \
 status-options   \
+deinit-options   \
 config-options   \
 test-options     \
 update-options   \
@@ -69,6 +70,7 @@ if $cli.configured
   cli.cxx{sync-options}:   cli{sync}
   cli.cxx{fetch-options}:  cli{fetch}
   cli.cxx{status-options}: cli{status}
+  cli.cxx{deinit-options}: cli{deinit}
   cli.cxx{config-options}: cli{config}
   cli.cxx{test-options}:   cli{test}
   cli.cxx{update-options}: cli{update}

@@ -23,6 +23,8 @@ namespace bdep
     //
     // @@ Should we be able to remove config with init'ed packages? Who
     //    is going to drop them in configs? Or require them to be de-init'ed?
+    //    A: yes, only empty configs should be removed, if not empty, suggest
+    //    to deinitialize with bdep-deinit.
     //
     // @@ Should set be able to alter forward flag? This will require both
     //    disfiguring forward on old and configuring on new. Perhaps best

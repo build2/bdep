@@ -33,6 +33,17 @@ namespace bdep
 
   int
   cmd_sync (cmd_sync_options&&, cli::group_scanner& args);
+
+
+  // Return the list of additional (to prj, if not empty) projects that are
+  // using this configuration.
+  //
+  dir_paths
+  configuration_projects (const common_options& co,
+                          const dir_path& cfg,
+                          const dir_path& prj = dir_path ());
+
+  extern const path hook_file; // build/bootstrap/pre-bdep-sync.build
 }
 
 #endif // BDEP_SYNC_HXX

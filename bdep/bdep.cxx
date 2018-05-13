@@ -27,6 +27,7 @@
 #include <bdep/sync.hxx>
 #include <bdep/fetch.hxx>
 #include <bdep/status.hxx>
+#include <bdep/deinit.hxx>
 #include <bdep/config.hxx>
 #include <bdep/test.hxx>
 #include <bdep/update.hxx>
@@ -264,6 +265,7 @@ try
     COMMAND_IMPL (sync,   sync,   "sync");
     COMMAND_IMPL (fetch,  fetch,  "fetch");
     COMMAND_IMPL (status, status, "status");
+    COMMAND_IMPL (deinit, deinit, "deinit");
     COMMAND_IMPL (config, config, "config");
     COMMAND_IMPL (test,   test,   "test");
     COMMAND_IMPL (update, update, "update");

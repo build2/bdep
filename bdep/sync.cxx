@@ -18,29 +18,15 @@ using namespace std;
 
 namespace bdep
 {
-  // Project to be synchronized.
-  //
-  struct project
+  const path hook_file (
+    dir_path ("build") / "bootstrap" / "pre-bdep-sync.build");
+
+  dir_paths
+  configuration_projects (const common_options& co,
+                          const dir_path& cfg,
+                          const dir_path& prj)
   {
-    dir_path path;
-    shared_ptr<configuration> config;
-
-    bool implicit;
-    bool fetch;
-  };
-
-  using projects = small_vector<project, 1>;
-
-  // Append the list of additional (to origin, if not empty) projects that are
-  // using this configuration.
-  //
-  static void
-  load_implicit (const common_options& co,
-                 const dir_path& cfg,
-                 const dir_path& origin_prj,
-                 projects& r)
-  {
-    tracer trace ("load_implicit");
+    dir_paths r;
 
     // Use bpkg-rep-list to discover the list of project directories.
     //
@@ -81,7 +67,7 @@ namespace bdep
 
         d.normalize (); // For good measure.
 
-        if (d == origin_prj)
+        if (d == prj)
           continue;
 
         // Next see if it looks like a bdep-managed project.
@@ -89,29 +75,7 @@ namespace bdep
         if (!exists (d / bdep_file))
           continue;
 
-        shared_ptr<configuration> c;
-        {
-          using query = bdep::query<configuration>;
-
-          database db (open (d, trace));
-
-          transaction t (db.begin ());
-          c = db.query_one<configuration> (query::path == cfg.string ());
-          t.commit ();
-        }
-
-        // If the project is a repository of this configuration but the bdep
-        // database has no knowledge of this configuration, then assume it is
-        // not managed by bdep (i.e., the user added the project manually or
-        // some such).
-        //
-        if (c == nullptr)
-          continue;
-
-        r.push_back (project {move (d),
-                              move (c),
-                              true /* implicit */,
-                              true /* fetch */});
+        r.push_back (move (d));
       }
 
       is.close (); // Detect errors.
@@ -125,6 +89,60 @@ namespace bdep
     }
 
     finish_bpkg (co, pr, io);
+
+    return r;
+  }
+
+  // Project to be synchronized.
+  //
+  struct project
+  {
+    dir_path path;
+    shared_ptr<configuration> config;
+
+    bool implicit;
+    bool fetch;
+  };
+
+  using projects = small_vector<project, 1>;
+
+  // Append the list of additional (to origin, if not empty) projects that are
+  // using this configuration.
+  //
+  static void
+  load_implicit (const common_options& co,
+                 const dir_path& cfg,
+                 const dir_path& origin_prj,
+                 projects& r)
+  {
+    tracer trace ("load_implicit");
+
+    for (dir_path& d: configuration_projects (co, cfg, origin_prj))
+    {
+      shared_ptr<configuration> c;
+      {
+        using query = bdep::query<configuration>;
+
+        database db (open (d, trace));
+
+        transaction t (db.begin ());
+        c = db.query_one<configuration> (query::path == cfg.string ());
+        t.commit ();
+      }
+
+      // If the project is a repository of this configuration but the bdep
+      // database has no knowledge of this configuration, then assume it is
+      // not managed by bdep (i.e., the user added the project manually or
+      // some such).
+      //
+      if (c == nullptr)
+        continue;
+
+      r.push_back (project {move (d),
+                            move (c),
+                            true /* implicit */,
+                            true /* fetch */});
+    }
   }
 
   // Sync with optional upgrade.
@@ -252,9 +270,6 @@ namespace bdep
     //    "synchronizing <cfg-dir>:". Maybe rep-fetch also needs something
     //    like --plan but for progress? Plus there might be no sync at all.
     //
-    // @@ TODO: remember to rep-remove in deinit if there are no more
-    //    init'ed packages in this configuration.
-    //
     if (!reps.empty ())
       run_bpkg (3, co, "fetch", "-d", cfg, "--shallow", reps);
 
@@ -353,9 +368,10 @@ namespace bdep
         if (o != nullptr)
         {
           dir_path out (dir_path (cfg) /= pkg.name);
-          string arg (src.representation () + '@' + out.representation () +
-                      ",forward");
-          run_b (co, o, arg);
+          run_b (co,
+                 o,
+                 src.representation () + '@' + out.representation () +
+                 ",forward");
         }
       }
     }
@@ -364,7 +380,7 @@ namespace bdep
     //
     if (origin_config != nullptr && !implicit)
     {
-      path f (cfg / "build" / "bootstrap" / "pre-bdep-sync.build");
+      path f (cfg / hook_file);
       bool e (exists (f));
 
       if (origin_config->auto_sync)
