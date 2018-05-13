@@ -102,6 +102,7 @@ namespace bdep
   using butl::fdpipe;
   using butl::ifdstream;
   using butl::ofdstream;
+  using butl::fdopen_mode;
   using butl::fdstream_mode;
 }
 

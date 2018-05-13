@@ -17,6 +17,7 @@ namespace bdep
      <lang> <lang-opt>
      <vcs> <vcs-opt>
      <cfg-name> <cfg-dir>
+     <prj-spec> <prj-dir>
      <cfg-args> <option> <module> <cfg-var>",
 
     "\h|SYNOPSIS|
@@ -24,20 +25,23 @@ namespace bdep
      \c{\b{bdep new} [<options>] [\b{--no-init}] <spec> <name>\n
         \b{bdep new} [<options>] \b{--config-add|-A} <cfg-dir> [\b{@}<cfg-name>] <spec> <name>\n
         \b{bdep new} [<options>] \b{--config-create|-C} <cfg-dir> [\b{@}<cfg-name>] <spec> <name>\n
-        \ \ \ \ \ \ \ \ \ [<cfg-args>]}
+        \ \ \ \ \ \ \ \ \ [<cfg-args>]\n
+        \b{bdep new} [<options>] \b{--package} [<prj-spec>] <spec> <name>}
 
      \c{<spec> \ \ \ \ = [<type>] [<lang>] [<vcs>]\n
         <type> \ \ \ \ = \b{--type}|\b{-t} (\b{exe}|\b{lib}|\b{bare})[\b{,}<type-opt>...]\n
         <lang> \ \ \ \ = \b{--lang}|\b{-l} (\b{c}|\b{c++})[\b{,}<lang-opt>...]\n
         <vcs> \ \ \ \ \ = \b{--vcs}|\b{-s} \ (\b{git}|\b{none})[\b{,}<vcs-opt>...]\n
+        <prj-spec> = \b{--directory}|\b{-d} <prj-dir>\n
         <cfg-args> = (<option> | <module> | <cfg-var>)...}
 
      \h|DESCRIPTION|
 
-     The \cb{new} command creates and initializes a new \cb{build2} project.
-     All three forms first create according to <spec> a new \cb{build2}
-     project called <name> in the <name> subdirectory of the current working
-     directory (unless overridden with \c{\b{--output-dir}|\b{-o}}).
+     The \cb{new} command creates and initializes a new project (the first
+     three forms) or a new package in an already existing project (the last
+     form). All four forms first create according to <spec> a new \cb{build2}
+     project/package called <name> in the <name> subdirectory of the current
+     working directory (unless overridden with \c{\b{--output-dir}|\b{-o}}).
 
      The first form then, unless the \cb{--no-init} option is specified,
      initializes an empty project database as if by executing the
@@ -46,6 +50,11 @@ namespace bdep
      and then initialize the project in that configuration as if by executing
      the \l{bdep-init(1)} command with the \cb{--config-add} or
      \cb{--config-create} option, respectively.
+
+     The last form adds the new package to the \cb{packages.manifest} file
+     creating it if necessary. If no project directory is explicitly specified
+     with \c{\b{--directory}|\b{-d}}, then the current working directory is
+     assumed.
 
      The project parameters such as type (executable, library, etc), language,
      and version control system can be customized as described next. Some of
@@ -168,6 +177,12 @@ namespace bdep
       "Don't initialize an empty build configuration set."
     }
 
+    bool --package
+    {
+      "Create a package inside an already existing project rather than a
+       new project."
+    }
+
     dir_path --config-add|-A
     {
       "<dir>",
@@ -208,6 +223,13 @@ namespace bdep
     {
       "<dir>",
       "Create the project in the specified directory."
+    }
+
+    dir_path --directory|-d
+    {
+      "<dir>",
+      "Assume project is in the specified directory rather than in the current
+       working directory."
     }
   };
 }

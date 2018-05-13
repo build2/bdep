@@ -27,11 +27,18 @@ namespace bdep
     bool ca (o.config_add_specified ());
     bool cc (o.config_create_specified ());
 
-    if (o.no_init ())
+    if (o.package () && o.no_init ())
+      fail << "both --no-init and --package specified";
+
+    if (const char* n = (o.no_init () ? "--no-init" :
+                         o.package () ? "--package" : nullptr))
     {
-      if (ca) fail << "both --no-init and --config-add specified";
-      if (cc) fail << "both --no-init and --config-create specified";
+      if (ca) fail << "both " << n << " and --config-add specified";
+      if (cc) fail << "both " << n << " and --config-create specified";
     }
+
+    if (o.directory_specified () && !o.package ())
+      fail << "--directory|-d only valid with --package";
 
     if (const char* n = cmd_config_validate_add (o))
     {
@@ -97,25 +104,51 @@ namespace bdep
     else
       s = n;
 
-    dir_path prj (o.output_dir_specified () ? o.output_dir () : dir_path (n));
-    prj.complete ();
-    prj.normalize ();
+    dir_path out;           // Project/package output directory.
+    dir_path prj;           // Project.
+    optional<dir_path> pkg; // Package relative to its project root.
+
+    if (o.package ())
+    {
+      if (o.directory_specified ())
+        (prj = o.directory ()).complete ().normalize ();
+      else
+        prj = path::current_directory ();
+
+      out = o.output_dir_specified () ? o.output_dir () : prj / dir_path (n);
+      out.complete ().normalize ();
+
+      if (!out.sub (prj))
+        fail << "package directory " << out << " is not a subdirectory of "
+             << "project directory " << prj;
+
+      pkg = out.leaf (prj);
+    }
+    else
+    {
+      out = o.output_dir_specified () ? o.output_dir () : dir_path (n);
+      out.complete ().normalize ();
+      prj = out;
+    }
 
     // If the directory already exists, make sure it is empty. Otherwise
     // create it.
     //
-    if (!exists (prj))
-      mk (prj);
-    else if (!empty (prj))
-      fail << "directory " << prj << " already exists";
+    if (!exists (out))
+      mk (out);
+    else if (!empty (out))
+      fail << "directory " << out << " already exists";
 
     // Initialize the version control system. Do it before writing anything
     // ourselves in case it fails.
     //
-    switch (v)
+    if (!pkg)
     {
-    case vcs::git:  run ("git", "init", "-q", prj); break;
-    case vcs::none:                                 break;
+      switch (v)
+      {
+      case vcs::git:  run ("git", "init", "-q", out); break;
+      case vcs::none:                                 break;
+      }
     }
 
     path f; // File currently being written.
@@ -125,7 +158,7 @@ namespace bdep
 
       // manifest
       //
-      os.open (f = prj / "manifest");
+      os.open (f = out / "manifest");
       os << ": 1"                                                      << endl
          << "name: " << n                                              << endl
          << "version: 0.1.0-a.0.z"                                     << endl
@@ -140,23 +173,36 @@ namespace bdep
 
       // repositories.manifest
       //
-      os.open (f = prj / "repositories.manifest");
-      os << ": 1"                                                      << endl
-         << "summary: " << n << " project repository"                  << endl
-         <<                                                               endl
-         << "#:"                                                       << endl
-         << "#role: prerequisite"                                      << endl
-         << "#location: https://pkg.cppget.org/1/stable"               << endl
-         << "#trust: ..."                                              << endl
-         <<                                                               endl
-         << "#:"                                                       << endl
-         << "#role: prerequisite"                                      << endl
-         << "#location: https://git.build2.org/hello/libhello.git"     << endl;
-      os.close ();
+      if (!pkg)
+      {
+        os.open (f = out / "repositories.manifest");
+        os << ": 1"                                                    << endl
+           << "summary: " << n << " project repository"                << endl
+           <<                                                             endl
+           << "#:"                                                     << endl
+           << "#role: prerequisite"                                    << endl
+           << "#location: https://pkg.cppget.org/1/stable"             << endl
+           << "#trust: ..."                                            << endl
+           <<                                                             endl
+           << "#:"                                                     << endl
+           << "#role: prerequisite"                                    << endl
+           << "#location: https://git.build2.org/hello/libhello.git"   << endl;
+        os.close ();
+      }
+      // packages.manifest
+      //
+      else
+      {
+        bool e (exists (f = prj / "packages.manifest"));
+        os.open (f, fdopen_mode::create | fdopen_mode::append);
+        os << (e ? ":" : ": 1")                                        << endl
+           << "location: " << pkg->posix_representation ()             << endl;
+        os.close ();
+      }
 
       // build/
       //
-      dir_path bd (dir_path (prj) /= "build");
+      dir_path bd (dir_path (out) /= "build");
       mk (bd);
 
       // build/bootstrap.build
@@ -226,7 +272,7 @@ namespace bdep
 
       // buildfile
       //
-      os.open (f = prj / "buildfile");
+      os.open (f = out / "buildfile");
       os << "./: {*/ -build/} file{manifest}"                          << endl;
       if (tests && t == type::lib) // Have tests/ subproject.
         os <<                                                             endl
@@ -243,7 +289,7 @@ namespace bdep
       {
         // Use POSIX directory separators here.
         //
-        os.open (f = prj / ".gitignore");
+        os.open (f = out / ".gitignore");
         os << bdep_dir.string () << '/'                                << endl
            <<                                                             endl
            << "# Compiler/linker output."                              << endl
@@ -270,7 +316,7 @@ namespace bdep
 
       // <name>/ (source subdirectory).
       //
-      dir_path sd (dir_path (prj) /= n);
+      dir_path sd (dir_path (out) /= n);
 
       if (t != type::bare)
         mk (sd);
@@ -685,7 +731,7 @@ namespace bdep
           if (!tests)
             break;
 
-          dir_path td (dir_path (prj) /= "tests");
+          dir_path td (dir_path (out) /= "tests");
           mk (td);
 
           // tests/build/
@@ -908,19 +954,17 @@ namespace bdep
     }
 
     if (verb)
-      text << "created new " << t << " project " << n << " in " << prj;
+      text << "created new " << t << ' ' << (pkg ? "package" : "project")
+           << ' ' << n << " in " << out;
 
-    // --no-init
+    // --no-init | --package
     //
-    if (o.no_init ())
+    if (o.no_init () || o.package ())
       return 0;
 
     // Create .bdep/.
     //
-    {
-      dir_path d (prj / bdep_dir);
-      mk (prj / bdep_dir);
-    }
+    mk (prj / bdep_dir);
 
     // Everything else requires a database.
     //
