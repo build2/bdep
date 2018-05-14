@@ -7,12 +7,13 @@
 new    += 2>!
 init   += cc "config.cxx=$config.cxx" -d prj 2>!
 status += --all
+deinit += -d prj
 
 : add-dependency
 :
 {
   $clone_prj;
-  $init -C prj-cfg @cfg &prj/build/bootstrap/*** &prj-cfg/***;
+  $init -C prj-cfg @cfg &prj-cfg/***;
 
   $new -t lib --vcs none libfoo &libfoo/*** 2>!;
   $new -t lib --vcs none libbar &libbar/*** 2>!;
@@ -35,9 +36,15 @@ status += --all
 
   $status -d prj >'prj configured 0.1.0-a.0.19700101000000';
 
-  $bpkg list --complements --prerequisites -d prj-cfg >>/"EOO"
+  $bpkg list --complements --prerequisites -d prj-cfg >>/"EOO";
     dir:$~/prj $~/prj
       complement dir:$~/libbar $~/libbar
       prerequisite dir:$~/libfoo $~/libfoo
     EOO
+
+  $deinit 2>>/"EOE"
+    deinitializing in project $~/prj/
+    synchronizing:
+      drop prj
+    EOE
 }

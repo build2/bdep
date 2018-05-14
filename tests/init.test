@@ -7,13 +7,13 @@
 
 .include common.test project.test
 
-new    += 2>!
-status += --all
+new    += -d prj
+status += -d prj
 deinit += -d prj
 
 cxx = cc "config.cxx=$config.cxx"
 
-: cfg-create
+: create-cfg
 :
 : We will also test that the configuration variables are properly persisted and
 : the project is properly built in the source tree.
@@ -25,23 +25,31 @@ cxx = cc "config.cxx=$config.cxx"
     initializing in project $~/prj/
     created configuration @cfg $~/prj-cfg/ \(1, default, forwarded, auto-synchronized\)
     synchronizing:
-    %  new prj.0\.1\.0-a\.0\.19700101000000%
+    %  new prj.+19700101000000%
     EOE
 
   sed -n -e 's/^config.cc.poptions = (.+)$/\1/p' prj-cfg/build/config.build \
     >'-DTEST';
 
-  $status --directory prj >'prj configured 0.1.0-a.0.19700101000000';
+  $status >'prj configured 0.1.0-a.0.19700101000000';
 
-  $build prj/ 2>>/EOE &prj/prj/prj$exe;
+  $build prj/ 2>>/EOE;
     mkdir prj-cfg/prj/fsdir{prj/}
     c++ prj/prj/cxx{prj}@prj-cfg/prj/prj/
     ld prj-cfg/prj/prj/exe{prj}
     ln prj-cfg/prj/prj/exe{prj} -> prj/prj/
     EOE
 
-  $build prj-cfg/ 2>>/EOE;
-    info: dir{prj-cfg/} is up to date
+  prj/prj/prj 'testscript' >'Hello, testscript!';
+
+  $build prj-cfg/prj/ 2>>/EOE;
+    info: prj-cfg/dir{prj/} is up to date
+    EOE
+
+  $build 'clean:' prj/ 2>>/EOE;
+    rm prj-cfg/prj/prj/exe{prj}
+    rm prj-cfg/prj/prj/obje{prj}
+    rm prj-cfg/prj/fsdir{prj/}
     EOE
 
   $deinit 2>>/"EOE"
@@ -51,31 +59,29 @@ cxx = cc "config.cxx=$config.cxx"
     EOE
 }
 
-: cfg-add
+: add-cfg
 :
 {
-  create_cfg = $bpkg create $cxx -d 2>!
-
   $clone_prj;
 
-  $create_cfg prj-cfg1/ &prj-cfg1/***;
-  $create_cfg prj-cfg2/ &prj-cfg2/***;
+  $bpkg create $cxx -d prj-cfg1/ 2>! &prj-cfg1/***;
+  $bpkg create $cxx -d prj-cfg2/ 2>! &prj-cfg2/***;
 
-  $* -A @cfg1 2>>/~"%EOE%";
+  $* -A @cfg1 2>>/~"%EOE%"; # Shortcut.
     initializing in project $~/prj/
     added configuration @cfg1 $~/prj-cfg1/ \(1, default, forwarded, auto-synchronized\)
     synchronizing:
-    %  new prj.0\.1\.0-a\.0\.19700101000000%
+    %  new prj.+19700101000000%
     EOE
 
   $* -A prj-cfg2 @cfg2 2>>/~"%EOE%";
     initializing in project $~/prj/
     added configuration @cfg2 $~/prj-cfg2/ \(2, auto-synchronized\)
     synchronizing:
-    %  new prj.0\.1\.0-a\.0\.19700101000000%
+    %  new prj.+19700101000000%
     EOE
 
-  $status --directory prj >>EOO;
+  $status --all >>EOO;
     in configuration @cfg1:
     prj configured 0.1.0-a.0.19700101000000
 
@@ -107,5 +113,109 @@ cxx = cc "config.cxx=$config.cxx"
     EOE
 }
 
-# @@ Test initializing a package rather than project.
-#
+: pkg
+:
+: Test initializing a package while creating it inside an already existing
+: project.
+:
+{
+  # Create (and build) the executable single-package project.
+  #
+  cp --no-cleanup -p -r ../prj ./ &prj/***;
+
+  $* -C @cfg $cxx 2>>/~"%EOE%" &prj-cfg/***;
+    initializing in project $~/prj/
+    created configuration @cfg $~/prj-cfg/ \(1, default, forwarded, auto-synchronized\)
+    synchronizing:
+    %  new prj.+19700101000000%
+    EOE
+
+  $status >'prj configured 0.1.0-a.0.19700101000000';
+
+  $build prj/ 2>>/EOE;
+    mkdir prj-cfg/prj/fsdir{prj/}
+    c++ prj/prj/cxx{prj}@prj-cfg/prj/prj/
+    ld prj-cfg/prj/prj/exe{prj}
+    ln prj-cfg/prj/prj/exe{prj} -> prj/prj/
+    EOE
+
+  $build prj-cfg/ 2>>/EOE;
+    info: dir{prj-cfg/} is up to date
+    EOE
+
+  # Move the executable package into a separate directory.
+  #
+  mkdir --no-cleanup prj/prj.pkg;
+
+  # @@ Shouldn't we add mv builtin?
+  #
+  fs = prj/prj/ prj/build/ prj/buildfile prj/manifest prj/.gitignore;
+  cp --no-cleanup -p -r $fs prj/prj.pkg/;
+  rm -r $fs;
+
+  cp --no-cleanup -p -r prj/prj.pkg/ prj/prj;
+  rm -r prj/prj.pkg/;
+
+  cat <<EOI >=prj/packages.manifest;
+    : 1
+    location: prj/
+    EOI
+
+  # Add the library package.
+  #
+  $new --package -t lib libprj 2>>/"EOE";
+    created new library package libprj in $~/prj/libprj/
+    EOE
+
+  $init -a -d prj/libprj 2>>/~"%EOE%";
+    initializing in project $~/prj/
+    synchronizing:
+    %  upgrade prj.+19700101000000#1%
+    %  new libprj.+19700101000000%
+    EOE
+
+  # Factor out some of the executable package functionality into the library.
+  #
+  cat <<EOI >+prj/prj/manifest;
+    depends: libprj
+    EOI
+
+  sed -i -e 's/^(#import .+)$/import libs += libprj%lib{prj}/' \
+      prj/prj/prj/buildfile;
+
+  cat <<EOI >=prj/prj/prj/prj.cxx;
+    #include <iostream>
+
+    #include <libprj/prj.hxx>
+
+    using namespace std;
+
+    int main (int argc, char* argv[])
+    {
+      if (argc < 2)
+      {
+        cerr << "error: missing name" << endl;
+        return 1;
+      }
+
+      prj::say_hello (cout, argv[1]);
+    }
+    EOI
+
+  $build prj-cfg/prj/ 2>>/~"%EOE%";
+    synchronizing $~/prj-cfg/:
+    %  upgrade prj.+19700101000000#2%
+    %mkdir prj-cfg/.+%{2}
+    %.{3}
+    %ld prj-cfg/.+%{2}
+    EOE
+
+  $deinit 2>>/"EOE"
+    deinitializing in project $~/prj/
+    deinitializing package prj
+    deinitializing package libprj
+    synchronizing:
+      drop prj
+      drop libprj
+    EOE
+}

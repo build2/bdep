@@ -1,0 +1,38 @@
+# file      : tests/update.test
+# copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
+# license   : MIT; see accompanying LICENSE file
+
+# Here we test both update and clean commands.
+#
+
+.include common.test project.test
+
+init   += cc "config.cxx=$config.cxx" -d prj 2>!
+deinit += -d prj
+clean  += -d prj
+
+: project
+:
+{
+  $clone_prj;
+
+  $init -C @cfg &prj-cfg/***;
+
+  $* 2>>/EOE;
+    mkdir prj-cfg/prj/fsdir{prj/}
+    c++ prj/prj/cxx{prj}@prj-cfg/prj/prj/
+    ld prj-cfg/prj/prj/exe{prj}
+    EOE
+
+  $clean 2>>/EOE;
+    rm prj-cfg/prj/prj/exe{prj}
+    rm prj-cfg/prj/prj/obje{prj}
+    rm prj-cfg/prj/fsdir{prj/}
+    EOE
+
+  $deinit 2>>/"EOE"
+    deinitializing in project $~/prj/
+    synchronizing:
+      drop prj
+    EOE
+}

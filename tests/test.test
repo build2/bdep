@@ -1,0 +1,29 @@
+# file      : tests/test.test
+# copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
+# license   : MIT; see accompanying LICENSE file
+
+.include common.test project.test
+
+init   += cc "config.cxx=$config.cxx" -d prj 2>!
+deinit += -d prj
+
+: project
+:
+{
+  $clone_prj;
+
+  $init -C @cfg &prj-cfg/***;
+
+  $* 2>>/EOE;
+    mkdir prj-cfg/prj/fsdir{prj/}
+    c++ prj/prj/cxx{prj}@prj-cfg/prj/prj/
+    ld prj-cfg/prj/prj/exe{prj}
+    test prj/prj/test{testscript}@prj-cfg/prj/prj/ prj-cfg/prj/prj/exe{prj}
+    EOE
+
+  $deinit 2>>/"EOE"
+    deinitializing in project $~/prj/
+    synchronizing:
+      drop prj
+    EOE
+}

@@ -5,13 +5,24 @@
 # Commonly-used variables setup and driver command line.
 #
 
+# Variables for supporting Windows/POSIX testscript variants.
+#
+win32 = ($cxx.target.class == 'windows')
+exe   = ($win32 ? '.exe' : '')
+
 # Use the same build system driver as the one running the tests (as opposed
-# to one that may or may not be found via PATH). A common approach will be to
-# run build2 as a sanity check in a directory produced/updated by the bdep
-# command being tested.
+# to one that may or may not be found via PATH). This implies that we don't
+# support cross-testing.
+#
+# A common approach will be to run build2 as a sanity check in a directory
+# produced/updated by a command being tested.
 #
 build = $recall($build.path)
 test.options += --build $build
+
+# @@ It would be nice to query bdep for the bpkg path it uses.
+#
+bpkg = ("$config.bdep.test.bpkg" != '' ? "$config.bdep.test.bpkg" : "bpkg$exe")
 
 # Helper commands that can be used by tests to prepare the testing environment
 # or validate an outcome of the command being tested. They are likely to get
@@ -21,24 +32,17 @@ test.options += --build $build
 # (for example, to make sure that configuration post-test state is valid and is
 # as expected).
 #
+clean  = $* clean
+deinit = $* deinit
+init   = $* init
+fetch  = $* fetch
 new    = $* new
 status = $* status
-init   = $* init
 sync   = $* sync
-fetch  = $* fetch
-deinit = $* deinit
+update = $* update
 
 # All testscripts are named after bdep commands, for example sync.test. So the
 # testscript scope id is a name of the command being tested.
 #
 cmd = [string] $@
 test.arguments = $cmd
-
-# Convenience variables for supporting Windows/POSIX testscript variants.
-#
-win32 = ($cxx.target.class == 'windows')
-exe   = ($win32 ? '.exe' : '')
-
-# @@ It would be nice to query bdep for the bpkg path it uses.
-#
-bpkg = ("$config.bdep.test.bpkg" != '' ? "$config.bdep.test.bpkg" : "bpkg$exe")

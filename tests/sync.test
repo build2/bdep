@@ -6,34 +6,37 @@
 
 new    += 2>!
 init   += cc "config.cxx=$config.cxx" -d prj 2>!
-status += --all --recursive
+status += --all --recursive -d prj
+deinit += -d prj
 
 : dependency
 :
 {
   $clone_prj;
-  $init -C prj-cfg @cfg &prj/build/bootstrap/*** &prj-cfg/***;
 
-  $new -t lib --vcs none libhello &libhello/***;
+  $init -C @cfg1 &prj-cfg1/***;
+  $init -C @cfg2 &prj-cfg2/***;
+
+  $new -t lib --vcs none libprj &libprj/***;
 
   cat <<EOI >+prj/repositories.manifest;
     :
     role: prerequisite
-    location: ../libhello
+    location: ../libprj
     type: dir
     EOI
 
   cat <<EOI >+prj/manifest;
-    depends: libhello
+    depends: libprj
     EOI
 
-  sed -i -e 's/^(#import .+)$/import libs += libhello%lib{hello}/' \
+  sed -i -e 's/^(#import .+)$/import libs += libprj%lib{prj}/' \
       prj/prj/buildfile;
 
   cat <<EOI >=prj/prj/prj.cxx;
     #include <iostream>
 
-    #include <libhello/hello.hxx>
+    #include <libprj/prj.hxx>
 
     using namespace std;
 
@@ -45,22 +48,70 @@ status += --all --recursive
         return 1;
       }
 
-      hello::say_hello (cout, argv[1]);
+      prj::say_hello (cout, argv[1]);
     }
     EOI
 
+  # Sync the default (cfg1) configuration.
+  #
   $* 2>>/~"%EOE%";
-    fetching dir:$~/libhello \(prerequisite of dir:$~/prj\)
+    fetching dir:$~/libprj \(prerequisite of dir:$~/prj\)
     synchronizing:
-    %  new libhello.0\.1\.0-a\.0\..+ \\\(required by prj\\\)%
-    %  upgrade prj.0\.1\.0-a\.0\.19700101000000#1%
+    %  new libprj.+ \\\(required by prj\\\)%
+    %  upgrade prj.+19700101000000#1%
     EOE
 
-  $status -d prj >>~%EOO%;
+  $status >>~%EOO% 2>>/~"%EOE%";
+    in configuration @cfg1:
     prj configured 0.1.0-a.0.19700101000000#1
-    %  libhello configured 0\.1\.0-a\.0\..+%
-    EOO
+    %  libprj configured 0.+%
 
-  $build prj/ 2>! &prj/prj/prj$exe &?prj/prj/prj.exe.dlls/***;
-  prj/prj/prj 'testscript' >'Hello, testscript!'
+    in configuration @cfg2:
+    prj configured 0.1.0-a.0.19700101000000 available 0.1.0-a.0.19700101000000#1
+    EOO
+    fetching dir:$~/libprj \(prerequisite of dir:$~/prj\)
+    EOE
+
+  # Sync all configuration.
+  #
+  $* --all 2>>~%EOE%;
+    in configuration @cfg1:
+
+    in configuration @cfg2:
+    synchronizing:
+    %  new libprj.+ \(required by prj\)%
+      upgrade prj/0.1.0-a.0.19700101000000#1
+    EOE
+
+  $status >>~%EOE%;
+    in configuration @cfg1:
+    prj configured 0.1.0-a.0.19700101000000#1
+    %  libprj configured 0.+%
+
+    in configuration @cfg2:
+    prj configured 0.1.0-a.0.19700101000000#1
+    %  libprj configured 0.+%
+    EOE
+
+  # @@ Add synchronizing a single package when 'new -t empty' is supported.
+  #
+  $build prj/ 2>>/~"%EOE%";
+    %mkdir prj-cfg1/.+%{2}
+    %.{3}
+    %ld prj-cfg1/.+%{2}
+    ln prj-cfg1/prj/prj/exe{prj} -> prj/prj/
+    EOE
+
+  $build 'clean:' prj/ 2>>/EOE;
+    rm prj-cfg1/prj/prj/exe{prj}
+    rm prj-cfg1/prj/prj/obje{prj}
+    rm prj-cfg1/prj/fsdir{prj/}
+    EOE
+
+  $deinit 2>>/"EOE"
+    deinitializing in project $~/prj/
+    synchronizing:
+      drop prj
+      drop libprj
+    EOE
 }
