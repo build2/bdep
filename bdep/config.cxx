@@ -12,6 +12,27 @@ using namespace std;
 
 namespace bdep
 {
+  // Translate the configuration directory that is actually a name (@foo) to
+  // the real directory (prj-foo) and name (@foo).
+  //
+  static inline void
+  translate_path_name (const dir_path& prj,
+                       dir_path& path,
+                       optional<string> name)
+  {
+    if (name || !path.simple () || path.string ().front () != '@')
+      return;
+
+    string n (move (path).string ()); // Move out.
+    n.erase (0, 1);                   // Remove leading '@'.
+
+    path  = prj;
+    path += '-';
+    path += n;
+
+    name = move (n);
+  }
+
   shared_ptr<configuration>
   cmd_config_add (const configuration_add_options& ao,
                   const dir_path&                  prj,
@@ -21,6 +42,8 @@ namespace bdep
                   optional<uint64_t>               id,
                   const char*                      what)
   {
+    translate_path_name (prj, path, name);
+
     if (!exists (path))
       fail << "configuration directory " << path << " does not exist";
 
@@ -142,6 +165,8 @@ namespace bdep
                      optional<string>                 name,
                      optional<uint64_t>               id)
   {
+    translate_path_name (prj, path, name);
+
     // Call bpkg to create the configuration.
     //
     {

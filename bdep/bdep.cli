@@ -188,8 +188,17 @@ namespace bdep
          $ bdep init -A ../hello-clang @clang
          \
 
-         We can now use the \l{bdep-status(1)} command to examine the status
-         of our project in its configurations:
+         If the configuration directory is next to the project and its name is
+         in the \c{\i{prj-name}\b{-}\i{cfg-name}} form, then the shortcut
+         version of the \c{init} can be used instead:
+
+         \
+         $ bdep init -C @gcc cc config.cxx=g++
+         $ bdep init -A @clang
+         \
+
+         After initialization we can use the \l{bdep-status(1)} command to
+         examine the status of our project in its configurations:
 
          \
          $ bdep status -a

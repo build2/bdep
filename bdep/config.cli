@@ -80,6 +80,11 @@ namespace bdep
          such names as a more convenient way to specify build configurations
          (see \l{bdep-projects-configs(1)} for details).
 
+         As a shortcut, if \ci{cfg-name} is not specified and \ci{cfg-dir} is
+         a simple path that starts with \cb{@}, then it is treated as the name
+         and the configuration directory is assumed to be
+         \c{\i{prj-dir}\b{-}\i{cfg-name}}.
+
          Unless the \cb{--no-default} option is specified, the first added or
          created build configuration is designated as the default. Several
          \cb{bdep} commands use such a configuration by default if no
