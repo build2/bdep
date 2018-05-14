@@ -47,7 +47,7 @@ namespace bdep
 
   using butl::reverse_iterate;
 
-  using butl::exception_guard;
+  using butl::make_guard;
   using butl::make_exception_guard;
 
   // <libbutl/filesystem.mxx>
