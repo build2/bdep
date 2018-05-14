@@ -123,11 +123,27 @@ namespace bdep
       {
         using query = bdep::query<configuration>;
 
-        database db (open (d, trace));
+        // Save and restore the current transaction, if any.
+        //
+        transaction* ct (nullptr);
+        if (transaction::has_current ())
+        {
+          ct = &transaction::current ();
+          transaction::reset_current ();
+        }
 
-        transaction t (db.begin ());
-        c = db.query_one<configuration> (query::path == cfg.string ());
-        t.commit ();
+        auto tg (make_guard ([ct] ()
+                             {
+                               if (ct != nullptr)
+                                 transaction::current (*ct);
+                             }));
+
+        {
+          database db (open (d, trace));
+          transaction t (db.begin ());
+          c = db.query_one<configuration> (query::path == cfg.string ());
+          t.commit ();
+        }
       }
 
       // If the project is a repository of this configuration but the bdep
