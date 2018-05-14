@@ -174,7 +174,12 @@ namespace bdep
       while (cfg_args.more ())
         args.push_back (cfg_args.next ());
 
-      run_bpkg (2, co, "create", "-d", path, args);
+      run_bpkg (2,
+                co,
+                "create",
+                "-d", path,
+                (ao.wipe () ? "--wipe" : nullptr),
+                args);
     }
 
     return cmd_config_add (ao,
@@ -233,7 +238,8 @@ namespace bdep
             o.forward ()      ? "--forward"      :
             o.no_forward ()   ? "--no-forward"   :
             o.auto_sync ()    ? "--auto-sync"    :
-            o.no_auto_sync () ? "--no-auto-sync" : nullptr);
+            o.no_auto_sync () ? "--no-auto-sync" :
+            o.wipe ()         ? "--wipe"         : nullptr);
   }
 
   int
@@ -252,6 +258,9 @@ namespace bdep
     {
       if (!(c.add () || c.create () || c.set ()))
         fail << n << " not valid for this command";
+
+      if (o.wipe () && !c.create ())
+        fail << "--wipe is not valid for this command";
     }
 
     // --all

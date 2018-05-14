@@ -42,6 +42,12 @@ namespace bdep
       "Don't make the added or created configuration automatically
        synchronized."
     }
+
+    bool --wipe
+    {
+      "Wipe the configuration directory clean before creating the new
+       configuration."
+    }
   };
 
   // Common options for commands that accept --config-id and @<cfg-name>.

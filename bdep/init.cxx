@@ -148,6 +148,9 @@ namespace bdep
     {
       if (!ca && !cc)
         fail << n << " specified without --config-(add|create)";
+
+      if (o.wipe () && !cc)
+        fail << "--wipe specified without --config-create";
     }
 
     project_packages pp (
