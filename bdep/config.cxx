@@ -18,7 +18,7 @@ namespace bdep
   static inline void
   translate_path_name (const dir_path& prj,
                        dir_path& path,
-                       optional<string> name)
+                       optional<string>& name)
   {
     if (name || !path.simple () || path.string ().front () != '@')
       return;

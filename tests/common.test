@@ -26,6 +26,7 @@ status = $* status
 init   = $* init
 sync   = $* sync
 fetch  = $* fetch
+deinit = $* deinit
 
 # All testscripts are named after bdep commands, for example sync.test. So the
 # testscript scope id is a name of the command being tested.
