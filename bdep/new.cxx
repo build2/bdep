@@ -358,10 +358,10 @@ namespace bdep
               os.open (f = sd / n + ".c" + x);
               os << "#include <iostream>"                              << endl
                  <<                                                       endl
-                 << "using namespace std;"                             << endl
-                 <<                                                       endl
                  << "int main (int argc, char* argv[])"                << endl
                  << "{"                                                << endl
+                 << "  using namespace std;"                           << endl
+                 <<                                                       endl
                  << "  if (argc < 2)"                                  << endl
                  << "  {"                                              << endl
                  << "    cerr << \"error: missing name\" << endl;"     << endl
@@ -885,11 +885,11 @@ namespace bdep
                  << "#include <" << n << "/" << ver << ">"             << endl
                  << "#include <" << n << "/" << hdr << ">"             << endl
                  <<                                                       endl
-                 << "using namespace std;"                             << endl
-                 << "using namespace " << s << ";"                     << endl
-                 <<                                                       endl
                  << "int main ()"                                      << endl
                  << "{"                                                << endl
+                 << "  using namespace std;"                           << endl
+                 << "  using namespace " << s << ";"                   << endl
+                 <<                                                       endl
                  << "  // Basics."                                     << endl
                  << "  //"                                             << endl
                  << "  {"                                              << endl
