@@ -154,25 +154,45 @@ namespace bdep
       }
     }
 
-    path f; // File currently being written.
+    for (path f;;) // Breakout loop with file currently being written.
     try
     {
       ofdstream os;
 
-      // manifest
+      // .gitignore
       //
-      os.open (f = out / "manifest");
-      os << ": 1"                                                      << endl
-         << "name: " << n                                              << endl
-         << "version: 0.1.0-a.0.z"                                     << endl
-         << "summary: " << s << " " << t << " project"                 << endl
-         << "license: proprietary"                                     << endl
-         << "url: https://example.org/" << n                           << endl
-         << "email: you@example.org"                                   << endl
-         << "depends: * build2 >= 0.7.0-"                              << endl
-         << "depends: * bpkg >= 0.7.0-"                                << endl
-         << "#depends: libhello ^1.0.0"                                << endl;
-      os.close ();
+      // See also tests/.gitignore below.
+      //
+      if (v == vcs::git)
+      {
+        // Use POSIX directory separators here.
+        //
+        os.open (f = out / ".gitignore");
+        if (!pkg)
+          os << bdep_dir.string () << '/'                              << endl
+             <<                                                           endl;
+        if (t != type::empty)
+          os << "# Compiler/linker output."                            << endl
+             << "#"                                                    << endl
+             << "*.d"                                                  << endl
+             << "*.t"                                                  << endl
+             << "*.i"                                                  << endl
+             << "*.ii"                                                 << endl
+             << "*.o"                                                  << endl
+             << "*.obj"                                                << endl
+             << "*.so"                                                 << endl
+             << "*.dll"                                                << endl
+             << "*.a"                                                  << endl
+             << "*.lib"                                                << endl
+             << "*.exp"                                                << endl
+             << "*.pdb"                                                << endl
+             << "*.ilk"                                                << endl
+             << "*.exe"                                                << endl
+             << "*.exe.dlls/"                                          << endl
+             << "*.exe.manifest"                                       << endl
+             << "*.pc"                                                 << endl;
+        os.close ();
+      }
 
       // repositories.manifest
       //
@@ -202,6 +222,24 @@ namespace bdep
            << "location: " << pkg->posix_representation ()             << endl;
         os.close ();
       }
+
+      if (t == type::empty)
+        break;
+
+      // manifest
+      //
+      os.open (f = out / "manifest");
+      os << ": 1"                                                      << endl
+         << "name: " << n                                              << endl
+         << "version: 0.1.0-a.0.z"                                     << endl
+         << "summary: " << s << " " << t                               << endl
+         << "license: proprietary"                                     << endl
+         << "url: https://example.org/" << n                           << endl
+         << "email: you@example.org"                                   << endl
+         << "depends: * build2 >= 0.7.0-"                              << endl
+         << "depends: * bpkg >= 0.7.0-"                                << endl
+         << "#depends: libhello ^1.0.0"                                << endl;
+      os.close ();
 
       // build/
       //
@@ -284,45 +322,13 @@ namespace bdep
            << "tests/: install = false"                                << endl;
       os.close ();
 
-      // .gitignore
-      //
-      // See also tests/.gitignore below.
-      //
-      if (v == vcs::git)
-      {
-        // Use POSIX directory separators here.
-        //
-        os.open (f = out / ".gitignore");
-        os << bdep_dir.string () << '/'                                << endl
-           <<                                                             endl
-           << "# Compiler/linker output."                              << endl
-           << "#"                                                      << endl
-           << "*.d"                                                    << endl
-           << "*.t"                                                    << endl
-           << "*.i"                                                    << endl
-           << "*.ii"                                                   << endl
-           << "*.o"                                                    << endl
-           << "*.obj"                                                  << endl
-           << "*.so"                                                   << endl
-           << "*.dll"                                                  << endl
-           << "*.a"                                                    << endl
-           << "*.lib"                                                  << endl
-           << "*.exp"                                                  << endl
-           << "*.pdb"                                                  << endl
-           << "*.ilk"                                                  << endl
-           << "*.exe"                                                  << endl
-           << "*.exe.dlls/"                                            << endl
-           << "*.exe.manifest"                                         << endl
-           << "*.pc"                                                   << endl;
-        os.close ();
-      }
+      if (t == type::bare)
+        break;
 
       // <name>/ (source subdirectory).
       //
       dir_path sd (dir_path (out) /= n);
-
-      if (t != type::bare)
-        mk (sd);
+      mk (sd);
 
       switch (t)
       {
@@ -946,10 +952,13 @@ namespace bdep
           break;
         }
       case type::bare:
+      case type::empty:
         {
-          break;
+          assert (false);
         }
       }
+
+      break;
     }
     catch (const io_error& e)
     {
@@ -986,9 +995,11 @@ namespace bdep
           ca,
           cc)};
 
-      package_locations pkgs {{n, dir_path ()}}; // project == package
-
-      cmd_init (o, prj, db, cfgs, pkgs, scan_arguments (args) /* pkg_args */);
+      if (t != type::empty)
+      {
+        package_locations pkgs {{n, dir_path ()}}; // project == package
+        cmd_init (o, prj, db, cfgs, pkgs, scan_arguments (args) /* pkg_args */);
+      }
     }
 
     return 0;

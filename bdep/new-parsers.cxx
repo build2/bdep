@@ -78,6 +78,11 @@ namespace bdep
         r.type = type::bare;
         r.bare_opt = parse_options<cmd_new_bare_options> (o, v, i);
       }
+      else if (l == "empty")
+      {
+        r.type = type::empty;
+        r.empty_opt = parse_options<cmd_new_empty_options> (o, v, i);
+      }
       else
         throw invalid_value (o, l);
 

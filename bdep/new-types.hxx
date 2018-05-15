@@ -18,13 +18,15 @@ namespace bdep
   class cmd_new_exe_options;
   class cmd_new_lib_options;
   class cmd_new_bare_options;
+  class cmd_new_empty_options;
 
-  template <typename EXE  = cmd_new_exe_options,
-            typename LIB  = cmd_new_lib_options,
-            typename BARE = cmd_new_bare_options>
+  template <typename EXE   = cmd_new_exe_options,
+            typename LIB   = cmd_new_lib_options,
+            typename BARE  = cmd_new_bare_options,
+            typename EMPTY = cmd_new_empty_options>
   struct cmd_new_type_template
   {
-    enum type_type {exe, lib, bare} type;
+    enum type_type {exe, lib, bare, empty} type;
 
     operator type_type () const {return type;}
 
@@ -32,12 +34,13 @@ namespace bdep
     {
       EXE   exe_opt;
       LIB   lib_opt;
-      BARE bare_opt;
+      BARE  bare_opt;
+      EMPTY empty_opt;
     };
 
     // Default is exe with no options.
     //
-    cmd_new_type_template (): type (exe) {bare_opt = BARE ();}
+    cmd_new_type_template (): type (exe) {exe_opt = EXE ();}
 
     friend ostream&
     operator<< (ostream& os, const cmd_new_type_template& t)
@@ -46,9 +49,10 @@ namespace bdep
 
       switch (t)
       {
-      case type::exe:  return os << "executable";
-      case type::lib:  return os << "library";
-      case type::bare: return os << "bare";
+      case type::exe:   return os << "executable";
+      case type::lib:   return os << "library";
+      case type::bare:  return os << "bare";
+      case type::empty: return os << "empty";
       }
 
       return os;
