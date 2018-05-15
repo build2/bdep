@@ -88,9 +88,10 @@ init (const common_options& co, cli::group_scanner& scan, strings& args)
         continue;
       }
 
-      // @<cfg-name>
+      // @<cfg-name> & -@<cfg-name>
       //
-      if (*a == '@' && cfg_name (&o, a + 1))
+      if ((*a == '@' &&                cfg_name (&o, a + 1)) ||
+          (*a == '-' && a[1] == '@' && cfg_name (&o, a + 2)))
       {
         scan.next ();
         continue;

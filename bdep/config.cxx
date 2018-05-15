@@ -12,25 +12,33 @@ using namespace std;
 
 namespace bdep
 {
-  // Translate the configuration directory that is actually a name (@foo) to
-  // the real directory (prj-foo) and name (@foo).
+  // Translate the configuration directory that is actually a name (@foo or
+  // -@foo) to the real directory (prj-foo) and name (@foo).
   //
   static inline void
   translate_path_name (const dir_path& prj,
                        dir_path& path,
                        optional<string>& name)
   {
-    if (name || !path.simple () || path.string ().front () != '@')
+    if (name || !path.simple ())
       return;
 
-    string n (move (path).string ()); // Move out.
-    n.erase (0, 1);                   // Remove leading '@'.
+    size_t n;
+    {
+      const string& s (path.string ());
+      if      (s.size () > 1 && s[0] == '@')                n = 1;
+      else if (s.size () > 2 && s[0] == '-' && s[1] == '@') n = 2;
+      else return;
+    }
+
+    string s (move (path).string ()); // Move out.
+    s.erase (0, n);                   // Remove leading '@' or '-@'.
 
     path  = prj;
     path += '-';
-    path += n;
+    path += s;
 
-    name = move (n);
+    name = move (s);
   }
 
   shared_ptr<configuration>
