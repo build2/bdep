@@ -7,15 +7,14 @@
 
 .include common.test project.test
 
-new    += -d prj
+cxx = cc "config.cxx=$config.cxx"
+
 status += -d prj
 deinit += -d prj
 
-cxx = cc "config.cxx=$config.cxx"
-
 : create-cfg
 :
-: We will also test that the configuration variables are properly persisted and
+: Here we also test that the configuration variable is properly persisted and
 : the project is properly built in the source tree.
 :
 {
@@ -40,7 +39,7 @@ cxx = cc "config.cxx=$config.cxx"
     ln prj-cfg/prj/prj/exe{prj} -> prj/prj/
     EOE
 
-  prj/prj/prj 'testscript' >'Hello, testscript!';
+  prj/prj/prj 'testscript' >'Hello, testscript!'; # Make sure is forwarded.
 
   $build prj-cfg/prj/ 2>>/EOE;
     info: prj-cfg/dir{prj/} is up to date
@@ -64,10 +63,12 @@ cxx = cc "config.cxx=$config.cxx"
 {
   $clone_prj;
 
-  $bpkg create $cxx -d prj-cfg1/ 2>! &prj-cfg1/***;
-  $bpkg create $cxx -d prj-cfg2/ 2>! &prj-cfg2/***;
+  # Pre-create configurations.
+  #
+  $new  -C prj-cfg1    tmp $cxx 2>! &prj-cfg1/*** &tmp/***;
+  $init -C prj-cfg2 -d tmp $cxx 2>! &prj-cfg2/***;
 
-  $* -A @cfg1 2>>/~"%EOE%"; # Shortcut.
+  $* -A @cfg1 2>>/~"%EOE%";
     initializing in project $~/prj/
     added configuration @cfg1 $~/prj-cfg1/ \(1, default, forwarded, auto-synchronized\)
     synchronizing:
@@ -89,21 +90,27 @@ cxx = cc "config.cxx=$config.cxx"
     prj configured 0.1.0-a.0.19700101000000
     EOO
 
-  $build prj-cfg1/ 2>>/EOE;
-    mkdir prj-cfg1/prj/fsdir{prj/}
-    c++ prj/prj/cxx{prj}@prj-cfg1/prj/prj/
-    ld prj-cfg1/prj/prj/exe{prj}
+  $build prj-cfg1/ 2>>/~%EOE%;
+    %mkdir prj-cfg1/.+%{2}
+    %c\+\+ .+%{2}
+    %ld prj-cfg1/.+%{2}
     EOE
 
-  $build prj-cfg2/ 2>>/EOE;
-    mkdir prj-cfg2/prj/fsdir{prj/}
-    c++ prj/prj/cxx{prj}@prj-cfg2/prj/prj/
-    ld prj-cfg2/prj/prj/exe{prj}
+  $build prj-cfg2/ 2>>/~%EOE%;
+    %mkdir prj-cfg2/.+%{2}
+    %c\+\+ .+%{2}
+    %ld prj-cfg2/.+%{2}
     EOE
 
-  $build prj/ 2>>/EOE &prj/prj/prj$exe;
+  $build prj/ 2>>/EOE;
     ln prj-cfg1/prj/prj/exe{prj} -> prj/prj/
     info: prj-cfg1/dir{prj/} is up to date
+    EOE
+
+  $build 'clean:' prj/ 2>>/EOE;
+    rm prj-cfg1/prj/prj/exe{prj}
+    rm prj-cfg1/prj/prj/obje{prj}
+    rm prj-cfg1/prj/fsdir{prj/}
     EOE
 
   $deinit 2>>/"EOE"
@@ -139,10 +146,6 @@ cxx = cc "config.cxx=$config.cxx"
     ln prj-cfg/prj/prj/exe{prj} -> prj/prj/
     EOE
 
-  $build prj-cfg/ 2>>/EOE;
-    info: dir{prj-cfg/} is up to date
-    EOE
-
   # Move the executable package into a separate directory.
   #
   mkdir --no-cleanup prj/prj.pkg;
@@ -163,11 +166,11 @@ cxx = cc "config.cxx=$config.cxx"
 
   # Add the library package.
   #
-  $new --package -t lib libprj 2>>/"EOE";
+  $new --package -t lib libprj -d prj 2>>/"EOE";
     created new library package libprj in $~/prj/libprj/
     EOE
 
-  $init -a -d prj/libprj 2>>/~"%EOE%";
+  $init --all -d prj/libprj 2>>/~"%EOE%";
     initializing in project $~/prj/
     synchronizing:
     %  upgrade prj.+19700101000000#1%

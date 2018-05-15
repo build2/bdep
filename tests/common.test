@@ -5,24 +5,15 @@
 # Commonly-used variables setup and driver command line.
 #
 
-# Variables for supporting Windows/POSIX testscript variants.
-#
-win32 = ($cxx.target.class == 'windows')
-exe   = ($win32 ? '.exe' : '')
-
 # Use the same build system driver as the one running the tests (as opposed
-# to one that may or may not be found via PATH). This implies that we don't
-# support cross-testing.
+# to one that may or may not be found via PATH). Note that this implies that
+# we don't support cross-testing.
 #
 # A common approach will be to run build2 as a sanity check in a directory
-# produced/updated by a command being tested.
+# produced or updated by a command being tested.
 #
 build = $recall($build.path)
 test.options += --build $build
-
-# @@ It would be nice to query bdep for the bpkg path it uses.
-#
-bpkg = ("$config.bdep.test.bpkg" != '' ? "$config.bdep.test.bpkg" : "bpkg$exe")
 
 # Helper commands that can be used by tests to prepare the testing environment
 # or validate an outcome of the command being tested. They are likely to get

@@ -4,12 +4,14 @@
 
 .include common.test project.test
 
+cxx = cc "config.cxx=$config.cxx"
+
 new    += 2>!
-init   += cc "config.cxx=$config.cxx" -d prj 2>!
+init   += $cxx -d prj 2>!
 sync   += -d prj 2>!
 deinit += -d prj
 
-: no-config
+: no-cfg
 :
 {
   $clone_prj;
@@ -20,11 +22,12 @@ deinit += -d prj
     EOE
 }
 
-: one-config
+: single-cfg
 :
 {
   $clone_prj;
-  $init -C prj-cfg @cfg &prj-cfg/***;
+
+  $init -C @cfg &prj-cfg/***;
 
   $* >'prj configured 0.1.0-a.0.19700101000000';
 
@@ -35,12 +38,13 @@ deinit += -d prj
     EOE
 }
 
-: two-configs
+: multi-cfg
 :
 {
   $clone_prj;
-  $init -C prj-cfg1 @cfg1 &prj-cfg1/***;
-  $init -C prj-cfg2 @cfg2 &prj-cfg2/***;
+
+  $init -C @cfg1 &prj-cfg1/***;
+  $init -C @cfg2 &prj-cfg2/***;
 
   $* @cfg2 >'prj configured 0.1.0-a.0.19700101000000';
 
@@ -63,9 +67,10 @@ deinit += -d prj
 :
 {
   $clone_prj;
-  $init -C prj-cfg @cfg &prj-cfg/***;
 
-  $new -t lib --vcs none libprj &libprj/***;
+  $init -C @cfg &prj-cfg/***;
+
+  $new -t lib libprj &libprj/***;
 
   cat <<EOI >+prj/repositories.manifest;
     :
@@ -78,7 +83,7 @@ deinit += -d prj
     depends: libprj
     EOI
 
-  $* --recursive >>EOO 2>>/"EOE";
+  $* --recursive >>EOO 2>>/"EOE"; # Note: implicitly fetches in cfg.
     prj configured 0.1.0-a.0.19700101000000 available 0.1.0-a.0.19700101000000#1
     EOO
     fetching dir:$~/libprj \(prerequisite of dir:$~/prj\)
@@ -88,7 +93,7 @@ deinit += -d prj
 
   $* --recursive >>~%EOO%;
     prj configured 0.1.0-a.0.19700101000000#1
-    %  libprj configured 0\.1\.0-a\.0\..+%
+    %  libprj configured 0.+%
     EOO
 
   $deinit 2>>/"EOE"

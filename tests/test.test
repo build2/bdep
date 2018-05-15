@@ -2,19 +2,20 @@
 # copyright : Copyright (c) 2014-2017 Code Synthesis Ltd
 # license   : MIT; see accompanying LICENSE file
 
-.include common.test project.test
+.include common.test
 
+cxx = cc "config.cxx=$config.cxx"
+
+new    += 2>!
 init   += cc "config.cxx=$config.cxx" -d prj 2>!
 deinit += -d prj
 
-: project
+: single-pkg-cfg
 :
 {
-  $clone_prj;
+  $new -C @cfg prj $cxx &prj/*** &prj-cfg/***;
 
-  $init -C @cfg &prj-cfg/***;
-
-  $* 2>>/EOE;
+  $* -d prj 2>>/EOE;
     mkdir prj-cfg/prj/fsdir{prj/}
     c++ prj/prj/cxx{prj}@prj-cfg/prj/prj/
     ld prj-cfg/prj/prj/exe{prj}
@@ -25,5 +26,94 @@ deinit += -d prj
     deinitializing in project $~/prj/
     synchronizing:
       drop prj
+    EOE
+}
+
+: multi-pkg-cfg
+:
+: Here we will also test recursively.
+:
+{
+  $new -t empty prj &prj/***;
+
+  $new --package pkg1 -d prj;
+  $new --package pkg2 -d prj;
+
+  $init -C @cfg1 &prj-cfg1/***;
+  $init -C @cfg2 &prj-cfg2/***;
+
+  $new -t lib libprj &libprj/***;
+
+  cat <<EOI >+prj/repositories.manifest;
+    :
+    role: prerequisite
+    location: ../libprj
+    type: dir
+    EOI
+
+  cat <<EOI >+prj/pkg1/manifest;
+    depends: libprj
+    EOI
+
+  sed -i -e 's/^(#import .+)$/import libs += libprj%lib{prj}/' \
+      prj/pkg1/pkg1/buildfile;
+
+  cat <<EOI >=prj/pkg1/pkg1/pkg1.cxx;
+    #include <iostream>
+
+    #include <libprj/prj.hxx>
+
+    using namespace std;
+
+    int main (int argc, char* argv[])
+    {
+      if (argc < 2)
+      {
+        cerr << "error: missing name" << endl;
+        return 1;
+      }
+
+      prj::say_hello (cout, argv[1]);
+    }
+    EOI
+
+  cat <<EOI >+prj/pkg2/manifest;
+    tags: c++
+    EOI
+
+  $* -d prj/pkg2 2>>/~"%EOE%";               # Default (cfg1).
+    fetching dir:$~/libprj \(prerequisite of dir:$~/prj\)
+    synchronizing:
+    %  new libprj.+ \\\(required by pkg1\\\)%
+    %  upgrade pkg1.+19700101000000#1%
+    %  upgrade pkg2.+19700101000000#1%
+    mkdir prj-cfg1/pkg2/fsdir{pkg2/}
+    c++ prj/pkg2/pkg2/cxx{pkg2}@prj-cfg1/pkg2/pkg2/
+    ld prj-cfg1/pkg2/pkg2/exe{pkg2}
+    test prj/pkg2/pkg2/test{testscript}@prj-cfg1/pkg2/pkg2/ prj-cfg1/pkg2/pkg2/exe{pkg2}
+    EOE
+
+  $* @cfg2 -d prj/pkg2 2>>/~"%EOE%";         # By name (cfg2).
+    fetching dir:$~/libprj \(prerequisite of dir:$~/prj\)
+    synchronizing:
+    %  new libprj.+ \\\(required by pkg1\\\)%
+    %  upgrade pkg1.+19700101000000#1%
+    %  upgrade pkg2.+19700101000000#1%
+    mkdir prj-cfg2/pkg2/fsdir{pkg2/}
+    c++ prj/pkg2/pkg2/cxx{pkg2}@prj-cfg2/pkg2/pkg2/
+    ld prj-cfg2/pkg2/pkg2/exe{pkg2}
+    test prj/pkg2/pkg2/test{testscript}@prj-cfg2/pkg2/pkg2/ prj-cfg2/pkg2/pkg2/exe{pkg2}
+    EOE
+
+  $* -a --recursive -d prj/pkg1 2>>/~%EOE%   # All configs recursive.
+    in configuration @cfg1:
+    %mkdir prj-cfg1/.+%{3}
+    %.{7}
+    %test prj.+%{2}
+
+    in configuration @cfg2:
+    %mkdir prj-cfg2/.+%{3}
+    %.{7}
+    %test prj.+%{2}
     EOE
 }
