@@ -194,6 +194,25 @@ namespace bdep
     //
     load_implicit (co, cfg, origin_prj, prjs);
 
+    // Verify that no initialized package in any of the projects sharing this
+    // configuration is specified as a dependency.
+    //
+    for (const string& n: dep_pkgs)
+    {
+      for (const project& prj: prjs)
+      {
+        auto& pkgs (prj.config->packages);
+
+        if (find_if (pkgs.begin (),
+                     pkgs.end (),
+                     [&n] (const package_state& ps)
+                     {
+                       return n == ps.name;
+                     }) != pkgs.end ())
+          fail << "initialized package " << n << " specified as a dependency";
+      }
+    }
+
     // Prepare the list of packages to build and repositories to fetch.
     //
     strings args;
@@ -747,7 +766,7 @@ namespace bdep
                   o.upgrade (),
                   o.recursive (),
                   prj_pkgs,
-                  dep_pkgs);
+                  strings () /* dep_pkgs  */);
       }
       else
       {
