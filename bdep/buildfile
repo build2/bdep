@@ -41,7 +41,7 @@ exe{bdep}:                                                                  \
   {hxx ixx cxx}{project-odb database-views-odb}                             \
   {hxx}{version} $libs
 
-hxx{version}: in{version} $src_root/file{manifest}
+hxx{version}: in{version} $src_root/manifest
 
 obj{utility}: cxx.poptions += -DBDEP_EXE_SUFFIX='"'$bin.exe.suffix'"'
 

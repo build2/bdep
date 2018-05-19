@@ -13,7 +13,3 @@
 *.exe.dlls/
 *.exe.manifest
 *.pc
-
-# Generated version.
-#
-version
