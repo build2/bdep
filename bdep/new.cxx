@@ -314,7 +314,7 @@ namespace bdep
       // buildfile
       //
       os.open (f = out / "buildfile");
-      os << "./: {*/ -build/} file{manifest}"                          << endl;
+      os << "./: {*/ -build/} manifest"                                << endl;
       if (tests && t == type::lib) // Have tests/ subproject.
         os <<                                                             endl
            << "# Don't install tests."                                 << endl
@@ -398,7 +398,7 @@ namespace bdep
           case lang::c:
             {
               os << "exe{" << n << "}: {h c}{*} $libs"                 <<
-                (tests ? " test{testscript}" : "")                     << endl;
+                (tests ? " testscript" : "")                           << endl;
 
               x = "c";
               break;
@@ -406,7 +406,7 @@ namespace bdep
           case lang::cxx:
             {
               os << "exe{" << n << "}: {hxx ixx txx cxx}{*} $libs"     <<
-                (tests ? " test{testscript}" : "")                     << endl;
+                (tests ? " testscript" : "")                           << endl;
 
               x = "cxx";
               break;
@@ -683,7 +683,7 @@ namespace bdep
              << "# pick up an installed one) and don't remove it when cleaning in src (so that"  << endl
              << "# clean results in a state identical to distributed)."                          << endl
              << "#"                                                                              << endl
-             << h << "{version}: in{version} $src_root/file{manifest}"  << endl
+             << h << "{version}: in{version} $src_root/manifest"        << endl
              << h << "{version}: dist  = true"                          << endl
              << h << "{version}: clean = ($src_root != $out_root)"      << endl
              <<                                                            endl
