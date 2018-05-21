@@ -158,7 +158,8 @@ namespace bdep
          \
 
          Alternatively, we can use the \l{bdep-new(1)} command to start a new
-         project:
+         project (see \l{bpkg#package-name Package Name} for details on
+         project naming):
 
          \
          $ bdep new -t exe -l c++ hello

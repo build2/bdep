@@ -42,6 +42,8 @@ namespace bdep
      form). All four forms first create according to <spec> a new \cb{build2}
      project/package called <name> in the <name> subdirectory of the current
      working directory (unless overridden with \c{\b{--output-dir}|\b{-o}}).
+     See \l{bpkg#package-name Package Name} for details on project/package
+     names.
 
      The first form then, unless the \cb{--no-init} option is specified,
      initializes an empty project database as if by executing the
