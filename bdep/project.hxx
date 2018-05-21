@@ -178,6 +178,12 @@ namespace bdep
                          bool ignore_packages = false,
                          bool load_packages = true);
 
+  inline dir_path
+  find_project (const project_options& o)
+  {
+    return find_project_packages (o, true /* ignore_packages */).project;
+  }
+
   // Verify all the packages are present in all the configurations.
   //
   void

@@ -157,12 +157,6 @@ namespace bdep
     return r;
   }
 
-  static int
-  cmd_config_add (const cmd_config_options&, cli::scanner&)
-  {
-    fail << "@@ TODO" << endf;
-  }
-
   shared_ptr<configuration>
   cmd_config_create (const common_options&            co,
                      const configuration_add_options& ao,
@@ -200,9 +194,96 @@ namespace bdep
   }
 
   static int
-  cmd_config_create (const cmd_config_options&, cli::scanner&)
+  cmd_config_add (const cmd_config_options& o, cli::scanner& args)
   {
-    fail << "@@ TODO" << endf;
+    tracer trace ("config_add");
+
+    optional<string> name;
+    optional<uint64_t> id;
+    cmd_config_validate_add (o, "config add", name, id);
+
+    string arg;
+    if (args.more ())
+      arg = args.next ();
+    else if (name)
+    {
+      // Reverse into the shortcut form expected by translate_path_name().
+      //
+      arg = '@' + *name;
+      name = nullopt;
+    }
+    else
+      fail << "configuration directory argument expected";
+
+    dir_path path;
+    try
+    {
+      path = dir_path (move (arg));
+    }
+    catch (const invalid_path& e)
+    {
+      fail << "invalid configuration directory '" << arg << "'";
+    }
+
+    dir_path prj (find_project (o));
+    database db (open (prj, trace));
+
+    cmd_config_add (o,
+                    prj,
+                    db,
+                    move (path),
+                    move (name),
+                    move (id));
+    return 0;
+  }
+
+  static int
+  cmd_config_create (const cmd_config_options& o, cli::scanner& args)
+  {
+    tracer trace ("config_create");
+
+    optional<string> name;
+    optional<uint64_t> id;
+    cmd_config_validate_add (o, "config create", name, id);
+
+    // Note that the shortcut will only work if there are no cfg-args which
+    // is not very likely. Oh, well.
+    //
+    string arg;
+    if (args.more ())
+      arg = args.next ();
+    else if (name)
+    {
+      // Reverse into the shortcut form expected by translate_path_name().
+      //
+      arg = '@' + *name;
+      name = nullopt;
+    }
+    else
+      fail << "configuration directory argument expected";
+
+    dir_path path;
+    try
+    {
+      path = dir_path (move (arg));
+    }
+    catch (const invalid_path& e)
+    {
+      fail << "invalid configuration directory '" << arg << "'";
+    }
+
+    dir_path prj (find_project (o));
+    database db (open (prj, trace));
+
+    cmd_config_create (o,
+                       o,
+                       prj,
+                       db,
+                       move (path),
+                       args,
+                       move (name),
+                       move (id));
+    return 0;
   }
 
   static int
@@ -248,6 +329,32 @@ namespace bdep
             o.auto_sync ()    ? "--auto-sync"    :
             o.no_auto_sync () ? "--no-auto-sync" :
             o.wipe ()         ? "--wipe"         : nullptr);
+  }
+
+  void
+  cmd_config_validate_add (const configuration_name_options& o,
+                           const char* what,
+                           optional<string>& name,
+                           optional<uint64_t> id)
+  {
+    name = nullopt;
+    id = nullopt;
+
+    if (size_t n = o.config_name ().size ())
+    {
+      if (n > 1)
+        fail << "multiple configuration names specified for " << what;
+
+      name = o.config_name ()[0];
+    }
+
+    if (size_t n = o.config_id ().size ())
+    {
+      if (n > 1)
+        fail << "multiple configuration ids specified for " << what;
+
+      id = o.config_id ()[0];
+    }
   }
 
   int

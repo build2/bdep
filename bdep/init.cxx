@@ -33,22 +33,8 @@ namespace bdep
       fail << "both --config-add and --config-create specified";
 
     optional<string> nm;
-    if (size_t n = o.config_name ().size ())
-    {
-      if (n > 1)
-        fail << "multiple configuration names specified for " << m;
-
-      nm = o.config_name ()[0];
-    }
-
     optional<uint64_t> id;
-    if (size_t n = o.config_id ().size ())
-    {
-      if (n > 1)
-        fail << "multiple configuration ids specified for " << m;
-
-      id = o.config_id ()[0];
-    }
+    cmd_config_validate_add (o, m, nm, id);
 
     return ca
       ? cmd_config_add    (   ao, prj, db, cfg,       move (nm), move (id))

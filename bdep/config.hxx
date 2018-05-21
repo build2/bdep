@@ -39,6 +39,14 @@ namespace bdep
   //
   const char*
   cmd_config_validate_add (const configuration_add_options&);
+
+  // Validate setting configuration name and/or id if specified.
+  //
+  void
+  cmd_config_validate_add (const configuration_name_options&,
+                           const char* what,
+                           optional<string>& name,
+                           optional<uint64_t> id);
 }
 
 #endif // BDEP_CONFIG_HXX

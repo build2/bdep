@@ -32,9 +32,7 @@ namespace bdep
   {
     tracer trace ("fetch");
 
-    dir_path prj (
-      find_project_packages (o, true /* ignore_packages */).project);
-
+    dir_path prj (find_project (o));
     database db (open (prj, trace));
 
     transaction t (db.begin ());
