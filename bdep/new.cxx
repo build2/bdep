@@ -4,6 +4,8 @@
 
 #include <bdep/new.hxx>
 
+#include <libbpkg/manifest.hxx> // validate_package_name()
+
 #include <bdep/project.hxx>
 #include <bdep/database.hxx>
 #include <bdep/diagnostics.hxx>
@@ -57,7 +59,6 @@ namespace bdep
                 t == type::lib  ? !t.lib_opt.no_tests ()  :
                 t == type::bare ? !t.bare_opt.no_tests () : false);
 
-
     // Validate language options.
     //
     const lang& l (o.lang ());
@@ -89,7 +90,18 @@ namespace bdep
     if (n.empty ())
       fail << "project name argument expected";
 
-    //@@ TODO: verify valid package name (put the helper in libbpkg).
+    // If the project type is not empty then the project name is also a package
+    // name, so let's validate it as such.
+    //
+    if (t != type::empty)
+    try
+    {
+      bpkg::validate_package_name (n);
+    }
+    catch (const invalid_argument& e)
+    {
+      fail << "invalid package name: " << e;
+    }
 
     // Full name vs the name stem (e.g, 'hello' in 'libhello').
     //
@@ -97,7 +109,7 @@ namespace bdep
     // while the stem for modules, namespaces, etc.
     //
     string s;
-    if (o.type () == type::lib)
+    if (t == type::lib)
     {
       if (n.compare (0, 3, "lib") != 0)
         fail << "library name does not start with 'lib'";

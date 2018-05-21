@@ -34,21 +34,47 @@ status += -d prj
 
 : pkg
 :
-: Test creating a library as a separate package in the project.
-:
 {
-  $* -t empty prj 2>>/"EOE" &prj/***;
-    created new empty project prj in $~/prj/
-    EOE
+  : add
+  :
+  : Test creating a library as a separate package in the project.
+  :
+  {
+    $* -t empty prj 2>>/"EOE" &prj/***;
+      created new empty project prj in $~/prj/
+      EOE
 
-  $* --package -t lib libprj -d prj 2>>/"EOE";
-    created new library package libprj in $~/prj/libprj/
-    EOE
+    $* --package -t lib libprj -d prj 2>>/"EOE";
+      created new library package libprj in $~/prj/libprj/
+      EOE
 
-  $build prj/libprj/ $cxx 2>>/~%EOE%
-    %.{4}
-    %ld prj/libprj/.+%{3}
-    EOE
+    $build prj/libprj/ $cxx 2>>/~%EOE%
+      %.{4}
+      %ld prj/libprj/.+%{3}
+      EOE
+  }
+
+  : name
+  :
+  : Test that the package name is validated.
+  :
+  {
+    : project
+    :
+    $* x 2>'error: invalid package name: length is less than two characters' != 0
+
+    : separate
+    :
+    : Here we also test that the project name is not validated as a package.
+    :
+    {
+      $* -t empty x 2>>/"EOE" &x/***;
+        created new empty project x in $~/x/
+        EOE
+
+      $* --package y -d x 2>'error: invalid package name: length is less than two characters' != 0
+    }
+  }
 }
 
 : cfg
