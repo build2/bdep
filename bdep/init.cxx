@@ -197,7 +197,7 @@ namespace bdep
         // wants us to use.
         //
         transaction t (db.begin ());
-        cfgs = find_configurations (prj, t, o);
+        cfgs = find_configurations (o, prj, t);
         t.commit ();
       }
     }

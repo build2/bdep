@@ -287,9 +287,39 @@ namespace bdep
   }
 
   static int
-  cmd_config_remove (const cmd_config_options&, cli::scanner&)
+  cmd_config_remove (const cmd_config_options& o, cli::scanner&)
   {
-    fail << "@@ TODO" << endf;
+    tracer trace ("config_remove");
+
+    dir_path prj (find_project (o));
+    database db (open (prj, trace));
+
+    transaction t (db.begin ());
+
+    configurations cfgs (
+      find_configurations (o,
+                           prj,
+                           t,
+                           false /* fallback_default */,
+                           false /* validate         */));
+
+    for (const shared_ptr<configuration>& c: cfgs)
+    {
+      if (!c->packages.empty ())
+        fail << "configuration " << *c << " contains initialized packages" <<
+          info << "use deinit command to deinitialize packages" <<
+          info << "use status command to list initialized packages";
+
+      db.erase (c);
+    }
+
+    t.commit ();
+
+    if (verb)
+      for (const shared_ptr<configuration>& c: cfgs)
+        text << "removed configuration " << *c;
+
+    return 0;
   }
 
   static int

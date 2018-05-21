@@ -48,7 +48,7 @@ namespace bdep
     database db (open (prj, trace));
 
     transaction t (db.begin ());
-    configurations cfgs (find_configurations (prj, t, o));
+    configurations cfgs (find_configurations (o, prj, t));
     t.commit ();
 
     // If specified, verify packages are present in each configuration.

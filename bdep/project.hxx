@@ -134,15 +134,18 @@ namespace bdep
   };
 
   // Given the project directory, database, and options resolve all the
-  // mentioned configurations or find the default configuration if none were
-  // mentioned.
+  // mentioned configurations or, unless fallback_default is false, find the
+  // default configuration if none were mentioned. Unless validate is false,
+  // also validate that the configuration directories still exist.
   //
   using configurations = vector<shared_ptr<configuration>>;
 
   configurations
-  find_configurations (const dir_path& prj,
+  find_configurations (const project_options&,
+                       const dir_path& prj,
                        transaction&,
-                       const project_options&);
+                       bool fallback_default = true,
+                       bool validate = true);
 
   // Given the project options (and CWD) locate the packages and their
   // project. The result is an absolute and normalized project directory and a

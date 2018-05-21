@@ -110,7 +110,8 @@ namespace bdep
      \li|\cb{remove}
 
          The \cb{remove} subcommand removes one or more build configurations
-         from the project's build configuration set. See
+         from the project's build configuration set. Note that only
+         configurations that have no initialized packages can be removed. See
          \l{bdep-projects-configs(1)} for various ways to specify build
          configurations.|
 

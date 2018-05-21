@@ -15,9 +15,11 @@ using namespace std;
 namespace bdep
 {
   configurations
-  find_configurations (const dir_path& prj,
+  find_configurations (const project_options& po,
+                       const dir_path& prj,
                        transaction& t,
-                       const project_options& po)
+                       bool fallback_default,
+                       bool validate)
   {
     configurations r;
 
@@ -85,26 +87,37 @@ namespace bdep
     {
       for (auto c: pointer_result (db.query<configuration> ()))
         add (c);
+
+      if (r.empty ())
+        fail << "no existing configurations";
     }
 
     // default
     //
     if (r.empty ())
     {
-      if (auto c = db.query_one<configuration> (query::default_))
-        add (c);
+      if (fallback_default)
+      {
+        if (auto c = db.query_one<configuration> (query::default_))
+          add (c);
+        else
+          fail << "no default configuration in project " << prj <<
+            info << "use (@<cfg-name> | --config|-c <cfg-dir> | --all|-a) to "
+               << "specify configuration explicitly";
+      }
       else
-        fail << "no default configuration in project " << prj <<
-          info << "use (@<cfg-name> | --config|-c <cfg-dir> | --all|-a) to "
-             << "specify configuration explicitly";
+        fail << "no configurations specified";
     }
 
     // Validate all the returned configuration directories are still there.
     //
-    for (const shared_ptr<configuration>& c: r)
+    if (validate)
     {
-      if (!exists (c->path))
-        fail << "configuration directory " << c->path << " no longer exists";
+      for (const shared_ptr<configuration>& c: r)
+      {
+        if (!exists (c->path))
+          fail << "configuration directory " << c->path << " no longer exists";
+      }
     }
 
     return r;

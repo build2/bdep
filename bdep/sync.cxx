@@ -662,7 +662,7 @@ namespace bdep
         database db (open (pp.project, trace));
 
         transaction t (db.begin ());
-        cfgs = find_configurations (pp.project, t, o);
+        cfgs = find_configurations (o, pp.project, t);
         t.commit ();
       }
 
