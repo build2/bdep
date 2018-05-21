@@ -23,7 +23,7 @@ namespace bdep
         \b{bdep config list} \ \ [<options>] [<prj-spec>] [<cfg-spec>...]\n
         \b{bdep config remove} [<options>] [<prj-spec>] <cfg-spec>... | \b{--all}|\b{-a}\n
         \b{bdep config rename} [<options>] [<prj-spec>] <cfg-spec> <cfg-name>\n
-        \b{bdep config set} \ \ \ [<options>] [<prj-spec>] <cfg-spec>\n
+        \b{bdep config set} \ \ \ [<options>] [<prj-spec>] <cfg-spec>... | \b{--all}|\b{-a}\n
         \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ [\b{--}[\b{no-}]\b{default}]\n
         \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ [\b{--}[\b{no-}]\b{forward}]\n
         \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ [\b{--}[\b{no-}]\b{auto-sync}]}
@@ -114,13 +114,17 @@ namespace bdep
 
      \li|\cb{set}
 
-         The \cb{set} subcommand sets various properties of the specified
-         build configuration. These include the
-         default (\c{\b{--}[\b{no-}]\b{default}}),
-         forward (\c{\b{--}[\b{no-}]\b{forward}}), and
-         auto-synchronization (\c{\b{--}[\b{no-}]\b{auto-sync}}) flags.
-         Note that changing any of these flags requires an explicit
-         \l{bdep-sync(1)} command to take effect.||"
+         The \cb{set} subcommand modifies various properties of one or more
+         build configurations associated with the project. See
+         \l{bdep-projects-configs(1)} for various ways to specify build
+         configurations.
+
+         The properties that can be modified include the default
+         (\c{\b{--}[\b{no-}]\b{default}}), forward
+         (\c{\b{--}[\b{no-}]\b{forward}}), and auto-synchronization
+         (\c{\b{--}[\b{no-}]\b{auto-sync}}) flags.  Note that changing any of
+         these flags requires an explicit \l{bdep-sync(1)} command to take
+         effect. ||"
 
     bool add;
     bool create;

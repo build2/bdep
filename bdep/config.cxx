@@ -15,7 +15,7 @@ using namespace std;
 namespace bdep
 {
   template <typename O>
-  void
+  static void
   print_configuration (O& o, const shared_ptr<configuration>& c)
   {
     char s (' ');
@@ -25,6 +25,59 @@ namespace bdep
     if (c->default_)  {o << s << "default";           s = ',';}
     if (c->forward)   {o << s << "forwarded";         s = ',';}
     if (c->auto_sync) {o << s << "auto-synchronized"; s = ',';}
+  }
+
+  const char*
+  cmd_config_validate_add (const configuration_add_options& o)
+  {
+    // --[no-]default
+    //
+    if (o.default_ () && o.no_default ())
+      fail << "both --default and --no-default specified";
+
+    // --[no-]forward
+    //
+    if (o.forward () && o.no_forward ())
+      fail << "both --forward and --no-forward specified";
+
+    // --[no-]auto-sync
+    //
+    if (o.auto_sync () && o.no_auto_sync ())
+      fail << "both --auto-sync and --no-auto-sync specified";
+
+    return (o.default_ ()     ? "--default"      :
+            o.no_default ()   ? "--no-default"   :
+            o.forward ()      ? "--forward"      :
+            o.no_forward ()   ? "--no-forward"   :
+            o.auto_sync ()    ? "--auto-sync"    :
+            o.no_auto_sync () ? "--no-auto-sync" :
+            o.wipe ()         ? "--wipe"         : nullptr);
+  }
+
+  void
+  cmd_config_validate_add (const configuration_name_options& o,
+                           const char* what,
+                           optional<string>& name,
+                           optional<uint64_t> id)
+  {
+    name = nullopt;
+    id = nullopt;
+
+    if (size_t n = o.config_name ().size ())
+    {
+      if (n > 1)
+        fail << "multiple configuration names specified for " << what;
+
+      name = o.config_name ()[0];
+    }
+
+    if (size_t n = o.config_id ().size ())
+    {
+      if (n > 1)
+        fail << "multiple configuration ids specified for " << what;
+
+      id = o.config_id ()[0];
+    }
   }
 
   // Translate the configuration directory that is actually a name (@foo or
@@ -390,62 +443,79 @@ namespace bdep
   }
 
   static int
-  cmd_config_set (const cmd_config_options&, cli::scanner&)
+  cmd_config_set (const cmd_config_options& o, cli::scanner&)
   {
-    fail << "@@ TODO" << endf;
-  }
+    tracer trace ("config_set");
 
-  const char*
-  cmd_config_validate_add (const configuration_add_options& o)
-  {
-    // --[no-]default
+    // Note that these have been validate by cmd_config_validate_add().
     //
-    if (o.default_ () && o.no_default ())
-      fail << "both --default and --no-default specified";
+    optional<bool> d, f, s;
+    if (o.default_  () || o.no_default   ()) d = o.default_  ();
+    if (o.forward   () || o.no_forward   ()) f = o.forward   ();
+    if (o.auto_sync () || o.no_auto_sync ()) s = o.auto_sync ();
 
-    // --[no-]forward
-    //
-    if (o.forward () && o.no_forward ())
-      fail << "both --forward and --no-forward specified";
+    if (!d && !f && !s)
+      fail << "nothing to set";
 
-    // --[no-]auto-sync
-    //
-    if (o.auto_sync () && o.no_auto_sync ())
-      fail << "both --auto-sync and --no-auto-sync specified";
+    dir_path prj (find_project (o));
+    database db (open (prj, trace));
 
-    return (o.default_ ()     ? "--default"      :
-            o.no_default ()   ? "--no-default"   :
-            o.forward ()      ? "--forward"      :
-            o.no_forward ()   ? "--no-forward"   :
-            o.auto_sync ()    ? "--auto-sync"    :
-            o.no_auto_sync () ? "--no-auto-sync" :
-            o.wipe ()         ? "--wipe"         : nullptr);
-  }
+    transaction t (db.begin ());
 
-  void
-  cmd_config_validate_add (const configuration_name_options& o,
-                           const char* what,
-                           optional<string>& name,
-                           optional<uint64_t> id)
-  {
-    name = nullopt;
-    id = nullopt;
+    configurations cfgs (
+      find_configurations (o,
+                           prj,
+                           t,
+                           false /* fallback_default */,
+                           false /* validate         */));
 
-    if (size_t n = o.config_name ().size ())
+    for (const shared_ptr<configuration>& c: cfgs)
     {
-      if (n > 1)
-        fail << "multiple configuration names specified for " << what;
+      using query = bdep::query<configuration>;
 
-      name = o.config_name ()[0];
+      if (d)
+      {
+        if (*d && !c->default_)
+        {
+          if (auto p = db.query_one<configuration> (query::default_))
+            fail << "configuration " << *p << " is already the default" <<
+              info << "while updating configuration " << *c;
+        }
+
+        c->default_   = *d;
+      }
+
+      if (f)
+      {
+        if (*f && !c->forward)
+        {
+          if (auto p = db.query_one<configuration> (query::forward))
+            fail << "configuration " << *p << " is already forwarded" <<
+              info << "while updating configuration " << *c;
+        }
+
+        c->forward    = *f;
+      }
+
+      if (s)
+        c->auto_sync  = *s;
+
+      db.update (c);
     }
 
-    if (size_t n = o.config_id ().size ())
-    {
-      if (n > 1)
-        fail << "multiple configuration ids specified for " << what;
+    t.commit ();
 
-      id = o.config_id ()[0];
+    if (verb)
+    {
+      for (const shared_ptr<configuration>& c: cfgs)
+      {
+        diag_record dr (text);
+        dr << "updated configuration ";
+        print_configuration (dr, c);
+      }
     }
+
+    return 0;
   }
 
   int
