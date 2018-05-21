@@ -4,6 +4,8 @@
 
 #include <bdep/config.hxx>
 
+#include <iostream> // cout
+
 #include <bdep/database.hxx>
 #include <bdep/project-odb.hxx>
 #include <bdep/diagnostics.hxx>
@@ -12,6 +14,19 @@ using namespace std;
 
 namespace bdep
 {
+  template <typename O>
+  void
+  print_configuration (O& o, const shared_ptr<configuration>& c)
+  {
+    char s (' ');
+
+    if (c->name)       o << '@' << *c->name << ' ';
+    /*              */ o << c->path << ' ' << *c->id;
+    if (c->default_)  {o << s << "default";           s = ',';}
+    if (c->forward)   {o << s << "forwarded";         s = ',';}
+    if (c->auto_sync) {o << s << "auto-synchronized"; s = ',';}
+  }
+
   // Translate the configuration directory that is actually a name (@foo or
   // -@foo) to the real directory (prj-foo) and name (@foo).
   //
@@ -145,13 +160,8 @@ namespace bdep
     if (verb)
     {
       diag_record dr (text);
-      /*              */ dr << what << " configuration ";
-      if (r->name)       dr << '@' << *r->name << ' ';
-      /*              */ dr << r->path << " (" << *r->id;
-      if (r->default_)   dr << ", default";
-      if (r->forward)    dr << ", forwarded";
-      if (r->auto_sync)  dr << ", auto-synchronized";
-      /*              */ dr << ')';
+      dr << what << " configuration ";
+      print_configuration (dr, r);
     }
 
     return r;
@@ -287,6 +297,57 @@ namespace bdep
   }
 
   static int
+  cmd_config_list (const cmd_config_options& o, cli::scanner&)
+  {
+    tracer trace ("config_list");
+
+    dir_path prj (find_project (o));
+    database db (open (prj, trace));
+
+    transaction t (db.begin ());
+
+    configurations cfgs;
+    if (o.config_specified ()    || // Note: handling --all|-a ourselves.
+        o.config_id_specified () ||
+        o.config_name_specified ())
+    {
+      cfgs = find_configurations (o,
+                                  prj,
+                                  t,
+                                  false /* fallback_default */,
+                                  false /* validate         */);
+    }
+    else
+    {
+      using query = bdep::query<configuration>;
+
+      // We want to show the default configuration first, then sort them
+      // by name, and then by path.
+      //
+      for (auto c: pointer_result (
+             db.query<configuration> ("ORDER BY" +
+                                      query::default_ + "DESC," +
+                                      query::name     + "IS NULL," +
+                                      query::name     + "," +
+                                      query::path)))
+        cfgs.push_back (move (c));
+    }
+
+    t.commit ();
+
+
+    for (const shared_ptr<configuration>& c: cfgs)
+    {
+      //@@ TODO: use tabular layout facility when ready.
+
+      print_configuration (cout, c);
+      cout << endl;
+    }
+
+    return 0;
+  }
+
+  static int
   cmd_config_remove (const cmd_config_options& o, cli::scanner&)
   {
     tracer trace ("config_remove");
@@ -396,30 +457,30 @@ namespace bdep
       parse_command<cmd_config_subcommands> (scan,
                                              "config subcommand",
                                              "bdep help config"));
-
     // Validate options/subcommands.
     //
     if (const char* n = cmd_config_validate_add (o))
     {
-      if (!(c.add () || c.create () || c.set ()))
-        fail << n << " not valid for this command";
+      if (!c.add () && !c.create () && !c.set ())
+        fail << n << " not valid for this subcommand";
 
       if (o.wipe () && !c.create ())
-        fail << "--wipe is not valid for this command";
+        fail << "--wipe is not valid for this subcommand";
     }
 
     // --all
     //
     if (o.all ())
     {
-      if (!c.remove ())
-        fail << "--all not valid for this command";
+      if (!c.list () && !c.remove () && !c.set ())
+        fail << "--all not valid for this subcommand";
     }
 
     // Dispatch to subcommand function.
     //
     if (c.add    ()) return cmd_config_add    (o, scan);
     if (c.create ()) return cmd_config_create (o, scan);
+    if (c.list   ()) return cmd_config_list   (o, scan);
     if (c.remove ()) return cmd_config_remove (o, scan);
     if (c.rename ()) return cmd_config_rename (o, scan);
     if (c.set    ()) return cmd_config_set    (o, scan);

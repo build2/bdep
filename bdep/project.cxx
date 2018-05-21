@@ -46,7 +46,7 @@ namespace bdep
       for (const string& n: po.config_name ())
       {
         if (auto c = db.query_one<configuration> (query::name == n))
-          add (c);
+          add (move (c));
         else
           fail << "no configuration name '" << n << "' in project " << prj;
       }
@@ -62,7 +62,7 @@ namespace bdep
         d.normalize ();
 
         if (auto c = db.query_one<configuration> (query::path == d.string ()))
-          add (c);
+          add (move (c));
         else
           fail << "no configuration directory " << d << " in project " << prj;
       }
@@ -75,7 +75,7 @@ namespace bdep
       for (uint64_t id: po.config_id ())
       {
         if (auto c = db.find<configuration> (id))
-          add (c);
+          add (move (c));
         else
           fail << "no configuration id " << id << " in project " << prj;
       }
@@ -86,7 +86,7 @@ namespace bdep
     if (po.all ())
     {
       for (auto c: pointer_result (db.query<configuration> ()))
-        add (c);
+        add (move (c));
 
       if (r.empty ())
         fail << "no existing configurations";
@@ -99,7 +99,7 @@ namespace bdep
       if (fallback_default)
       {
         if (auto c = db.query_one<configuration> (query::default_))
-          add (c);
+          add (move (c));
         else
           fail << "no default configuration in project " << prj <<
             info << "use (@<cfg-name> | --config|-c <cfg-dir> | --all|-a) to "

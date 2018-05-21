@@ -84,7 +84,7 @@ status += -d prj
   {
     $* -C prj-config @cfg prj cc $cxx 2>>/~"%EOE%" &prj/*** &prj-config/***;
       created new executable project prj in $~/prj/
-      created configuration @cfg $~/prj-config/ \(1, default, forwarded, auto-synchronized\)
+      created configuration @cfg $~/prj-config/ 1 default,forwarded,auto-synchronized
       synchronizing:
       %  new prj.+19700101000000%
       EOE
@@ -109,7 +109,7 @@ status += -d prj
   {
     $* -C -@cfg prj cc $cxx 2>>/~"%EOE%" &prj/*** &prj-cfg/***;
       created new executable project prj in $~/prj/
-      created configuration @cfg $~/prj-cfg/ \(1, default, forwarded, auto-synchronized\)
+      created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
       synchronizing:
       %  new prj.+19700101000000%
       EOE

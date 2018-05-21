@@ -16,27 +16,11 @@ namespace bdep
      <prj-spec> <prj-dir>
      <cfg-args> <option> <module> <cfg-var>",
 
-    // Other potential subcommands:
-    //
-    // list        - list associated configurations
-    // show|status - details about a configuration (init'ed packages, etc)
-    //
-    // @@ Should we be able to remove config with init'ed packages? Who
-    //    is going to drop them in configs? Or require them to be de-init'ed?
-    //    A: yes, only empty configs should be removed, if not empty, suggest
-    //    to deinitialize with bdep-deinit.
-    //
-    // @@ Should set be able to alter forward flag? This will require both
-    //    disfiguring forward on old and configuring on new. Perhaps best
-    //    done by sync? I.e., for this change to take effect, one has to
-    //    run sync on both configs? Then sync would somehow need to know
-    //    to remove forwards. Maybe it should always check for stray
-    //    forwards (via out-root.build).
-    //
     "\h|SYNOPSIS|
 
      \c{\b{bdep config add} \ \ \ [<options>] [<prj-spec>] [\b{@}<cfg-name>] <cfg-dir>\n
         \b{bdep config create} [<options>] [<prj-spec>] [\b{@}<cfg-name>] <cfg-dir> [<cfg-args>]\n
+        \b{bdep config list} \ \ [<options>] [<prj-spec>] [<cfg-spec>...]\n
         \b{bdep config remove} [<options>] [<prj-spec>] <cfg-spec>... | \b{--all}|\b{-a}\n
         \b{bdep config rename} [<options>] [<prj-spec>] <cfg-spec> <cfg-name>\n
         \b{bdep config set} \ \ \ [<options>] [<prj-spec>] <cfg-spec>\n
@@ -107,6 +91,14 @@ namespace bdep
          configuration, then they must have a consistent auto-synchronization
          setting.|
 
+     \li|\cb{list}
+
+         The \cb{list} subcommand prints the list of build configurations
+         associated with the project. Unless one or more configurations are
+         specified explicitly, \cb{list} prints all the associate
+         configurations. Note that the output is written to \cb{STDOUT}, not
+         \cb{STDERR}.|
+
      \li|\cb{remove}
 
          The \cb{remove} subcommand removes one or more build configurations
@@ -132,6 +124,7 @@ namespace bdep
 
     bool add;
     bool create;
+    bool list;
     bool remove;
     bool rename;
     bool set;
