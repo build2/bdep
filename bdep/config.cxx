@@ -16,15 +16,22 @@ namespace bdep
 {
   template <typename O>
   static void
-  print_configuration (O& o, const shared_ptr<configuration>& c)
+  print_configuration (O& o,
+                       const shared_ptr<configuration>& c,
+                       bool flags = true)
   {
-    char s (' ');
+    if (c->name)
+      o << '@' << *c->name << ' ';
 
-    if (c->name)       o << '@' << *c->name << ' ';
-    /*              */ o << c->path << ' ' << *c->id;
-    if (c->default_)  {o << s << "default";           s = ',';}
-    if (c->forward)   {o << s << "forwarded";         s = ',';}
-    if (c->auto_sync) {o << s << "auto-synchronized"; s = ',';}
+    o << c->path << ' ' << *c->id;
+
+    if (flags)
+    {
+      char s (' ');
+      if (c->default_)  {o << s << "default";           s = ',';}
+      if (c->forward)   {o << s << "forwarded";         s = ',';}
+      if (c->auto_sync) {o << s << "auto-synchronized"; s = ',';}
+    }
   }
 
   const char*
@@ -120,6 +127,9 @@ namespace bdep
   {
     translate_path_name (prj, path, name);
 
+    if (name && name->empty ())
+      fail << "empty configuration name specified";
+
     if (!exists (path))
       fail << "configuration directory " << path << " does not exist";
 
@@ -187,6 +197,9 @@ namespace bdep
     }
     catch (const odb::exception&)
     {
+      //@@ TODO: Maybe redo by querying the conflicting configuration and then
+      //         printing its path, line in rename? Also do it before persist.
+
       using query = bdep::query<count>;
 
       // See if this is id, name, or path conflict.
@@ -430,16 +443,102 @@ namespace bdep
     t.commit ();
 
     if (verb)
+    {
       for (const shared_ptr<configuration>& c: cfgs)
-        text << "removed configuration " << *c;
+      {
+        diag_record dr (text);
+        dr << "removed configuration ";
+        print_configuration (dr, c, false /* flags */);
+      }
+    }
 
     return 0;
   }
 
   static int
-  cmd_config_rename (const cmd_config_options&, cli::scanner&)
+  cmd_config_rename (cmd_config_options& o, cli::scanner& args)
   {
-    fail << "@@ TODO" << endf;
+    tracer trace ("config_rename");
+
+    // Let's be nice and allow specifying the new name as noth <name> and
+    // @<name>.
+    //
+    string name;
+    if (args.more ())
+    {
+      name = args.next ();
+
+      if (name.empty ())
+        fail << "empty configuration name specified";
+    }
+    else
+    {
+      strings& ns (o.config_name ());
+      size_t n (ns.size ());
+
+      if (n > 1 || (n == 1 && (o.config_specified () ||
+                               o.config_id_specified ())))
+      {
+        name = move (ns.back ());
+        ns.pop_back ();
+      }
+      else
+        fail << "configuration name argument expected";
+    }
+
+    dir_path prj (find_project (o));
+    database db (open (prj, trace));
+
+    session ses;
+    transaction t (db.begin ());
+
+    configurations cfgs (
+      find_configurations (o,
+                           prj,
+                           t,
+                           false /* fallback_default */,
+                           false /* validate         */));
+
+    if (cfgs.size () > 1)
+      fail << "multiple configurations specified for config rename";
+
+    const shared_ptr<configuration>& c (cfgs.front ());
+
+
+    // Check if this name is already taken.
+    //
+    using query = bdep::query<configuration>;
+
+    if (auto p = db.query_one<configuration> (query::name == name))
+    {
+      // Note that this also covers the case where p == c.
+      //
+      fail << "configuration " << p->path << " is already called " << name;
+    }
+
+    // Save the old name for diagnostics.
+    //
+    if (c->name)
+      name.swap (*c->name);
+    else
+      c->name = move (name);
+
+    db.update (c);
+    t.commit ();
+
+    if (verb)
+    {
+      // Restore the original name so that we can use print_configuration().
+      //
+      name.swap (*c->name);
+
+      diag_record dr (text);
+      dr << "renamed configuration ";
+      print_configuration (dr, c, false /* flags */);
+      dr << " to @" << name;
+    }
+
+    return 0;
   }
 
   static int
@@ -519,7 +618,7 @@ namespace bdep
   }
 
   int
-  cmd_config (const cmd_config_options& o, cli::scanner& scan)
+  cmd_config (cmd_config_options&& o, cli::scanner& scan)
   {
     tracer trace ("config");
 

@@ -33,7 +33,7 @@ namespace bdep
                      optional<uint64_t> id = nullopt);
 
   int
-  cmd_config (const cmd_config_options&, cli::scanner& args);
+  cmd_config (cmd_config_options&&, cli::scanner& args);
 
   // Validate returning one of the options or NULL if none specified.
   //

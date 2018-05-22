@@ -109,8 +109,9 @@ namespace bdep
 
      \li|\cb{rename}
 
-         The \cb{rename} subcommand gives the specified build configuration
-         a new name.|
+         The \cb{rename} subcommand gives the specified build configuration a
+         new name. See \l{bdep-projects-configs(1)} for various ways to
+         specify a build configuration.|
 
      \li|\cb{set}
 
