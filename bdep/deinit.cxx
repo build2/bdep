@@ -21,6 +21,7 @@ namespace bdep
               const shared_ptr<configuration>& c,
               const strings& pkgs)
   {
+    bool force (o.force ());
     const dir_path& cfg (c->path);
 
     // Remove auto-synchronization build system hook.
@@ -32,7 +33,8 @@ namespace bdep
     // have been removed from the configuration's repositories if that were
     // the case).
     //
-    if (c->auto_sync &&
+    if (!force               &&
+        c->auto_sync         &&
         c->packages.empty () &&
         configuration_projects (o, cfg, prj).empty ())
     {
@@ -41,7 +43,8 @@ namespace bdep
         rm (f);
     }
 
-    // Disfigure configuration forwarding.
+    // Disfigure configuration forwarding. Note that we have to do this even
+    // if forced.
     //
     if (c->forward)
     {
@@ -76,20 +79,23 @@ namespace bdep
     // that are managed by bdep, then its view of what has been initialized
     // in the configuration will become invalid.
     //
-    run_bpkg (2,
-              o,
-              "drop",
-              "-d", cfg,
-              "--keep-dependent",
-              "--plan", "synchronizing:",
-              "--yes",
-              pkgs);
+    if (!force)
+      run_bpkg (2,
+                o,
+                "drop",
+                "-d", cfg,
+                "--keep-dependent",
+                "--plan", "synchronizing:",
+                "--yes",
+                pkgs);
   }
 
   int
   cmd_deinit (const cmd_deinit_options& o, cli::scanner&)
   {
     tracer trace ("deinit");
+
+    bool force (o.force ());
 
     // The same ignore/load story as in sync.
     //
@@ -106,7 +112,12 @@ namespace bdep
     database db (open (prj, trace));
 
     transaction t (db.begin ());
-    configurations cfgs (find_configurations (o, prj, t));
+    configurations cfgs (
+      find_configurations (o,
+                           prj,
+                           t,
+                           true   /* fallback_default */,
+                           !force /* validate */));
     t.commit ();
 
     // If specified, verify packages are present in each configuration.
@@ -197,7 +208,7 @@ namespace bdep
       // Remove our repository from the configuration if we have no more
       // packages that are initialized in it.
       //
-      if (c->packages.empty ())
+      if (!force && c->packages.empty ())
         run_bpkg (3,
                   o,
                   "remove",

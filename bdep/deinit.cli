@@ -41,5 +41,12 @@ namespace bdep
   class cmd_deinit_options: project_options
   {
     "\h|DEINIT OPTIONS|"
+
+    bool --force
+    {
+      "Deinitialize packages without attempting to remove them from the build
+       configuration. This mode is primarily useful when the configuration
+       directory has been removed or is otherwise unusable."
+    }
   };
 }
