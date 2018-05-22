@@ -70,7 +70,8 @@ namespace bdep
     // project and its configurations as a bundle (note that the dir:
     // repository path in the configuration will have to be adjust as well).
     // Since it is not always possible to derive a relative path, it is
-    // optional.
+    // optional. This is still a (maybe) @@ TODO; see find_configurations()
+    // for the place where we could possibly do this.
     //
     optional_uint64_t  id;
     optional_string    name;

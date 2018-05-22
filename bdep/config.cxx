@@ -213,7 +213,7 @@ namespace bdep
              << "in project " << prj;
 
       if (db.query_value<count> (query::path == path.string ()) != 0)
-        fail << "configuration with path " << path << " already exists "
+        fail << "configuration with directory " << path << " already exists "
              << "in project " << prj;
 
       // Hm, what could that be?
@@ -414,13 +414,42 @@ namespace bdep
   }
 
   static int
-  cmd_config_remove (const cmd_config_options& o, cli::scanner&)
+  cmd_config_move (cmd_config_options& o, cli::scanner& args)
   {
-    tracer trace ("config_remove");
+    tracer trace ("config_move");
+
+    if (!args.more ())
+      fail << "configuration directory argument expected";
 
     dir_path prj (find_project (o));
+
+    // Similar story to config-add.
+    //
+    dir_path path;
+    optional<dir_path> rel_path;
+    {
+      const char* a (args.next ());
+      try
+      {
+        path = dir_path (a);
+
+        if (!exists (path))
+          fail << "configuration directory " << path << " does not exist";
+
+        path.complete ();
+        path.normalize ();
+      }
+      catch (const invalid_path& e)
+      {
+        fail << "invalid configuration directory '" << a << "'";
+      }
+
+      try {rel_path = path.relative (prj);} catch (const invalid_path&) {}
+    }
+
     database db (open (prj, trace));
 
+    session ses;
     transaction t (db.begin ());
 
     configurations cfgs (
@@ -430,26 +459,40 @@ namespace bdep
                            false /* fallback_default */,
                            false /* validate         */));
 
-    for (const shared_ptr<configuration>& c: cfgs)
-    {
-      if (!c->packages.empty ())
-        fail << "configuration " << *c << " contains initialized packages" <<
-          info << "use deinit command to deinitialize packages" <<
-          info << "use status command to list initialized packages";
+    if (cfgs.size () > 1)
+      fail << "multiple configurations specified for config move";
 
-      db.erase (c);
+    const shared_ptr<configuration>& c (cfgs.front ());
+
+    // Check if there is already a configuration with this path.
+    //
+    using query = bdep::query<configuration>;
+
+    if (auto p = db.query_one<configuration> (query::path == path.string ()))
+    {
+      // Note that this also covers the case where p == c.
+      //
+      fail << "configuration " << *p << " already uses directory " << path;
     }
 
+    // Save the old path for diagnostics.
+    //
+    c->path.swap (path);
+    c->relative_path = move (rel_path);
+
+    db.update (c);
     t.commit ();
 
     if (verb)
     {
-      for (const shared_ptr<configuration>& c: cfgs)
-      {
-        diag_record dr (text);
-        dr << "removed configuration ";
-        print_configuration (dr, c, false /* flags */);
-      }
+      // Restore the original path so that we can use print_configuration().
+      //
+      path.swap (c->path);
+
+      diag_record dr (text);
+      dr << "moved configuration ";
+      print_configuration (dr, c, false /* flags */);
+      dr << " to " << path;
     }
 
     return 0;
@@ -504,7 +547,6 @@ namespace bdep
 
     const shared_ptr<configuration>& c (cfgs.front ());
 
-
     // Check if this name is already taken.
     //
     using query = bdep::query<configuration>;
@@ -542,6 +584,53 @@ namespace bdep
   }
 
   static int
+  cmd_config_remove (const cmd_config_options& o, cli::scanner&)
+  {
+    tracer trace ("config_remove");
+
+    dir_path prj (find_project (o));
+    database db (open (prj, trace));
+
+    transaction t (db.begin ());
+
+    configurations cfgs (
+      find_configurations (o,
+                           prj,
+                           t,
+                           false /* fallback_default */,
+                           false /* validate         */));
+
+    for (const shared_ptr<configuration>& c: cfgs)
+    {
+      if (!c->packages.empty ())
+      {
+        bool e (exists (c->path));
+
+        fail << "configuration " << *c << " contains initialized packages" <<
+          info << "use deinit " << (e ? "" : "--force ") << "command to "
+             << "deinitialize packages" <<
+          info << "use status command to list initialized packages";
+      }
+
+      db.erase (c);
+    }
+
+    t.commit ();
+
+    if (verb)
+    {
+      for (const shared_ptr<configuration>& c: cfgs)
+      {
+        diag_record dr (text);
+        dr << "removed configuration ";
+        print_configuration (dr, c, false /* flags */);
+      }
+    }
+
+    return 0;
+  }
+
+  static int
   cmd_config_set (const cmd_config_options& o, cli::scanner&)
   {
     tracer trace ("config_set");
@@ -559,6 +648,7 @@ namespace bdep
     dir_path prj (find_project (o));
     database db (open (prj, trace));
 
+    session ses;
     transaction t (db.begin ());
 
     configurations cfgs (
@@ -650,8 +740,9 @@ namespace bdep
     if (c.add    ()) return cmd_config_add    (o, scan);
     if (c.create ()) return cmd_config_create (o, scan);
     if (c.list   ()) return cmd_config_list   (o, scan);
-    if (c.remove ()) return cmd_config_remove (o, scan);
+    if (c.move   ()) return cmd_config_move   (o, scan);
     if (c.rename ()) return cmd_config_rename (o, scan);
+    if (c.remove ()) return cmd_config_remove (o, scan);
     if (c.set    ()) return cmd_config_set    (o, scan);
 
     assert (false); // Unhandled (new) subcommand.

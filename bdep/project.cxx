@@ -116,7 +116,9 @@ namespace bdep
       for (const shared_ptr<configuration>& c: r)
       {
         if (!exists (c->path))
-          fail << "configuration directory " << c->path << " no longer exists";
+          fail << "configuration directory " << c->path << " no longer exists" <<
+            info << "use config move command if it has been moved/renamed" <<
+            info << "use config remove commands if it has been removed";
       }
     }
 

@@ -21,8 +21,9 @@ namespace bdep
      \c{\b{bdep config add} \ \ \ [<options>] [<prj-spec>] [\b{@}<cfg-name>] <cfg-dir>\n
         \b{bdep config create} [<options>] [<prj-spec>] [\b{@}<cfg-name>] <cfg-dir> [<cfg-args>]\n
         \b{bdep config list} \ \ [<options>] [<prj-spec>] [<cfg-spec>...]\n
-        \b{bdep config remove} [<options>] [<prj-spec>] <cfg-spec>... | \b{--all}|\b{-a}\n
+        \b{bdep config move} \ \ [<options>] [<prj-spec>] <cfg-spec> <cfg-dir>\n
         \b{bdep config rename} [<options>] [<prj-spec>] <cfg-spec> <cfg-name>\n
+        \b{bdep config remove} [<options>] [<prj-spec>] <cfg-spec>... | \b{--all}|\b{-a}\n
         \b{bdep config set} \ \ \ [<options>] [<prj-spec>] <cfg-spec>... | \b{--all}|\b{-a}\n
         \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ [\b{--}[\b{no-}]\b{default}]\n
         \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ [\b{--}[\b{no-}]\b{forward}]\n
@@ -99,6 +100,21 @@ namespace bdep
          configurations. Note that the output is written to \cb{STDOUT}, not
          \cb{STDERR}.|
 
+     \li|\cb{move}
+
+         The \cb{move} subcommand assigns the specified build configuration a
+         new directory. It is normally used after moving/renaming the
+         configuration directory. Note that an explicit \l{bdep-sync(1)}
+         command is required for this change to take effect. See
+         \l{bdep-projects-configs(1)} for various ways to specify a build
+         configuration.|
+
+     \li|\cb{rename}
+
+         The \cb{rename} subcommand gives the specified build configuration a
+         new name. See \l{bdep-projects-configs(1)} for various ways to
+         specify a build configuration.|
+
      \li|\cb{remove}
 
          The \cb{remove} subcommand removes one or more build configurations
@@ -106,12 +122,6 @@ namespace bdep
          configurations that have no initialized packages can be removed. See
          \l{bdep-projects-configs(1)} for various ways to specify build
          configurations.|
-
-     \li|\cb{rename}
-
-         The \cb{rename} subcommand gives the specified build configuration a
-         new name. See \l{bdep-projects-configs(1)} for various ways to
-         specify a build configuration.|
 
      \li|\cb{set}
 
@@ -123,15 +133,16 @@ namespace bdep
          The properties that can be modified include the default
          (\c{\b{--}[\b{no-}]\b{default}}), forward
          (\c{\b{--}[\b{no-}]\b{forward}}), and auto-synchronization
-         (\c{\b{--}[\b{no-}]\b{auto-sync}}) flags.  Note that changing any of
+         (\c{\b{--}[\b{no-}]\b{auto-sync}}) flags. Note that changing any of
          these flags requires an explicit \l{bdep-sync(1)} command to take
          effect. ||"
 
     bool add;
     bool create;
     bool list;
-    bool remove;
+    bool move;
     bool rename;
+    bool remove;
     bool set;
   };
 
