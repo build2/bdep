@@ -996,22 +996,25 @@ namespace bdep
 
     if (ca || cc)
     {
+      package_locations pkgs;
+
+      if (t != type::empty)
+        pkgs.push_back (package_location {n, dir_path ()}); // prj == pkg
+
       configurations cfgs {
         cmd_init_config (
           o,
           o,
           prj,
+          pkgs,
           db,
           ca ? o.config_add () : o.config_create (),
           args,
           ca,
           cc)};
 
-      if (t != type::empty)
-      {
-        package_locations pkgs {{n, dir_path ()}}; // project == package
+      if (!pkgs.empty ())
         cmd_init (o, prj, db, cfgs, pkgs, scan_arguments (args) /* pkg_args */);
-      }
     }
 
     return 0;

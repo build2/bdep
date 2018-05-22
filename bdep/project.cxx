@@ -202,7 +202,7 @@ namespace bdep
   }
 
   static package_locations
-  load_package_locations (const dir_path& prj)
+  load_package_locations (const dir_path& prj, bool allow_empty = false)
   {
     package_locations pls;
 
@@ -221,7 +221,7 @@ namespace bdep
       // While an empty repository is legal, in our case it doesn't make much
       // sense and will just further complicate things.
       //
-      if (ms.empty ())
+      if (ms.empty () && !allow_empty)
         fail << "no packages listed in " << f;
 
       for (package_manifest& m: ms)
@@ -236,8 +236,10 @@ namespace bdep
         pls.push_back (package_location {string (), move (d)});
       }
     }
-    else
+    else if (exists (prj / manifest_file))
       pls.push_back (package_location {string (), dir_path ()});
+    else if (!allow_empty)
+      fail << "no packages in project " << prj;
 
     return pls;
   }
@@ -257,9 +259,9 @@ namespace bdep
   }
 
   package_locations
-  load_packages (const dir_path& prj)
+  load_packages (const dir_path& prj, bool allow_empty)
   {
-    package_locations pls (load_package_locations (prj));
+    package_locations pls (load_package_locations (prj, allow_empty));
     load_package_names (prj, pls);
     return pls;
   }

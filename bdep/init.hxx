@@ -19,6 +19,7 @@ namespace bdep
   cmd_init_config (const configuration_name_options&,
                    const configuration_add_options&,
                    const dir_path& prj,
+                   const package_locations&,
                    database&,
                    const dir_path& cfg,
                    cli::scanner& cfg_args,

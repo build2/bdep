@@ -169,7 +169,7 @@ namespace bdep
   using package_locations = vector<package_location>;
 
   package_locations
-  load_packages (const dir_path& prj);
+  load_packages (const dir_path& prj, bool allow_empty = false);
 
   struct project_packages
   {

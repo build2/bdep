@@ -20,6 +20,7 @@ namespace bdep
   cmd_init_config (const configuration_name_options& o,
                    const configuration_add_options& ao,
                    const dir_path& prj,
+                   const package_locations& ps,
                    database& db,
                    const dir_path& cfg,
                    cli::scanner& args,
@@ -37,8 +38,8 @@ namespace bdep
     cmd_config_validate_add (o, m, nm, id);
 
     return ca
-      ? cmd_config_add    (   ao, prj, db, cfg,       move (nm), move (id))
-      : cmd_config_create (o, ao, prj, db, cfg, args, move (nm), move (id));
+      ? cmd_config_add    (   ao, prj, ps, db, cfg,       move (nm), move (id))
+      : cmd_config_create (o, ao, prj, ps, db, cfg, args, move (nm), move (id));
   }
 
   void
@@ -185,6 +186,7 @@ namespace bdep
             o,
             o,
             prj,
+            load_packages (prj),
             db,
             ca ? o.config_add () : o.config_create (),
             args,

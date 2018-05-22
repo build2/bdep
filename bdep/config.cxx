@@ -116,9 +116,27 @@ namespace bdep
     name = move (s);
   }
 
+  // Verify the configuration directory is not inside one of the packages.
+  //
+  static void
+  verify_configuration_path (const dir_path& cfg,
+                             const dir_path& prj,
+                             const package_locations& pkgs)
+  {
+    for (const package_location& p: pkgs)
+    {
+      dir_path d (prj / p.path); // Should already be normalized.
+
+      if (cfg.sub (d))
+        fail << "configuration directory " << cfg << " is inside package "
+             << p.name << " (" << d << ")";
+    }
+  }
+
   shared_ptr<configuration>
   cmd_config_add (const configuration_add_options& ao,
                   const dir_path&                  prj,
+                  const package_locations&         pkgs,
                   database&                        db,
                   dir_path                         path,
                   optional<string>                 name,
@@ -132,6 +150,17 @@ namespace bdep
 
     if (!exists (path))
       fail << "configuration directory " << path << " does not exist";
+
+    // Make sure the configuration path is absolute and normalized. Also
+    // derive relative to project directory path if possible.
+    //
+    path.complete ();
+    path.normalize ();
+
+    verify_configuration_path (path, prj, pkgs);
+
+    optional<dir_path> rel_path;
+    try {rel_path = path.relative (prj);} catch (const invalid_path&) {}
 
     transaction t (db.begin ());
 
@@ -170,15 +199,6 @@ namespace bdep
             info << "use 'bdep config set --no-forward' to clear";
       }
     }
-
-    // Make sure the configuration path is absolute and normalized. Also
-    // derive relative to project directory path if possible.
-    //
-    path.complete ();
-    path.normalize ();
-
-    optional<dir_path> rel_path;
-    try {rel_path = path.relative (prj);} catch (const invalid_path&) {}
 
     shared_ptr<configuration> r (
       new configuration {
@@ -237,13 +257,21 @@ namespace bdep
   cmd_config_create (const common_options&            co,
                      const configuration_add_options& ao,
                      const dir_path&                  prj,
+                     const package_locations&         pkgs,
                      database&                        db,
                      dir_path                         path,
                      cli::scanner&                    cfg_args,
                      optional<string>                 name,
                      optional<uint64_t>               id)
   {
+    // Similar logic to *_add().
+    //
     translate_path_name (prj, path, name);
+
+    path.complete ();
+    path.normalize ();
+
+    verify_configuration_path (path, prj, pkgs);
 
     // Call bpkg to create the configuration.
     //
@@ -262,6 +290,7 @@ namespace bdep
 
     return cmd_config_add (ao,
                            prj,
+                           package_locations {}, // Already verified.
                            db,
                            move (path),
                            move (name),
@@ -306,6 +335,7 @@ namespace bdep
 
     cmd_config_add (o,
                     prj,
+                    load_packages (prj, true /* allow_empty */),
                     db,
                     move (path),
                     move (name),
@@ -354,6 +384,7 @@ namespace bdep
     cmd_config_create (o,
                        o,
                        prj,
+                       load_packages (prj, true /* allow_empty */),
                        db,
                        move (path),
                        args,
