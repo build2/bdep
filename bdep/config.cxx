@@ -325,7 +325,7 @@ namespace bdep
     {
       path = dir_path (move (arg));
     }
-    catch (const invalid_path& e)
+    catch (const invalid_path&)
     {
       fail << "invalid configuration directory '" << arg << "'";
     }
@@ -373,7 +373,7 @@ namespace bdep
     {
       path = dir_path (move (arg));
     }
-    catch (const invalid_path& e)
+    catch (const invalid_path&)
     {
       fail << "invalid configuration directory '" << arg << "'";
     }
@@ -470,7 +470,7 @@ namespace bdep
         path.complete ();
         path.normalize ();
       }
-      catch (const invalid_path& e)
+      catch (const invalid_path&)
       {
         fail << "invalid configuration directory '" << a << "'";
       }
