@@ -14,6 +14,7 @@ $odb $lib -I.. -I../../libbpkg -I../../libbutl                        \
     -d sqlite --std c++14 --generate-query                            \
     --odb-epilogue '#include <bdep/wrapper-traits.hxx>'               \
     --hxx-prologue '#include <bdep/wrapper-traits.hxx>'               \
+    --hxx-prologue '#include <bdep/value-traits.hxx>'                 \
     --include-with-brackets --include-prefix bdep --guard-prefix BDEP \
     --sqlite-override-null project.hxx
 

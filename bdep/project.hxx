@@ -7,6 +7,8 @@
 
 #include <odb/core.hxx>
 
+#include <libbpkg/package-name.hxx>
+
 #include <bdep/types.hxx>
 #include <bdep/utility.hxx>
 
@@ -38,6 +40,12 @@ namespace bdep
     to((?) ? (?)->string () : bdep::optional_string ())            \
     from((?) ? bdep::dir_path (*(?)) : bdep::optional_dir_path ())
 
+  // package_name
+  //
+  using bpkg::package_name;
+
+  #pragma db value(package_name) type("TEXT") options("COLLATE NOCASE")
+
   // State of a package in a configuration.
   //
   // Pretty much everything about the package can change (including location
@@ -51,7 +59,7 @@ namespace bdep
   #pragma db value
   struct package_state
   {
-    string name;
+    package_name name;
   };
 
   // Configuration associated with a project.
@@ -162,8 +170,8 @@ namespace bdep
   //
   struct package_location
   {
-    string   name;
-    dir_path path;
+    package_name name;
+    dir_path     path;
   };
 
   using package_locations = vector<package_location>;

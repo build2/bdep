@@ -65,7 +65,7 @@ namespace bdep
     if (!all)
     {
       for (const package_location& p: pp.packages)
-        pkgs.push_back (p.name.c_str ());
+        pkgs.push_back (p.name.string ().c_str ());
     }
 
     // Build in each configuration skipping empty ones.
@@ -88,7 +88,7 @@ namespace bdep
         pkgs.clear ();
 
         for (const package_state& p: c->packages)
-          pkgs.push_back (p.name.c_str ());
+          pkgs.push_back (p.name.string ().c_str ());
       }
 
       // If we are printing multiple configurations, separate them with a

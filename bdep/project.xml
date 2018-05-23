@@ -21,7 +21,7 @@
     <table name="configuration_packages" kind="container">
       <column name="object_id" type="INTEGER" null="true"/>
       <column name="index" type="INTEGER" null="true"/>
-      <column name="name" type="TEXT" null="true"/>
+      <column name="name" type="TEXT" null="true" options="COLLATE NOCASE"/>
       <foreign-key name="object_id_fk" on-delete="CASCADE">
         <column name="object_id"/>
         <references table="configuration">

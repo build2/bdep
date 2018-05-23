@@ -233,11 +233,11 @@ namespace bdep
         dir_path d (path_cast<dir_path> (move (*m.location)));
         d.normalize (false /* actualize */, true /* cur_empty */);
 
-        pls.push_back (package_location {string (), move (d)});
+        pls.push_back (package_location {package_name (), move (d)});
       }
     }
     else if (exists (prj / manifest_file))
-      pls.push_back (package_location {string (), dir_path ()});
+      pls.push_back (package_location {package_name (), dir_path ()});
     else if (!allow_empty)
       fail << "no packages in project " << prj;
 
@@ -305,7 +305,8 @@ namespace bdep
           {
             // Name is to be extracted later.
             //
-            r.packages.push_back (package_location {"", move (*p.package)});
+            r.packages.push_back (
+              package_location {package_name (), move (*p.package)});
           }
         }
       }
@@ -320,7 +321,7 @@ namespace bdep
       {
         // Name is to be extracted later.
         //
-        r.packages.push_back (package_location {"", *p.package});
+        r.packages.push_back (package_location {package_name (), *p.package});
       }
     }
 

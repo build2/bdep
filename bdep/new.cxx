@@ -4,8 +4,6 @@
 
 #include <bdep/new.hxx>
 
-#include <libbpkg/manifest.hxx> // validate_package_name()
-
 #include <bdep/project.hxx>
 #include <bdep/database.hxx>
 #include <bdep/diagnostics.hxx>
@@ -86,22 +84,26 @@ namespace bdep
 
     // Validate argument.
     //
-    string n (args.more () ? args.next () : "");
-    if (n.empty ())
+    string a (args.more () ? args.next () : "");
+    if (a.empty ())
       fail << "project name argument expected";
 
     // If the project type is not empty then the project name is also a package
-    // name, so let's validate it as such.
+    // name.
     //
+    bpkg::package_name pn;
+
     if (t != type::empty)
     try
     {
-      bpkg::validate_package_name (n);
+      pn = bpkg::package_name (move (a));
     }
     catch (const invalid_argument& e)
     {
       fail << "invalid package name: " << e;
     }
+
+    const string& n (t != type::empty ? pn.string () : a);
 
     // Full name vs the name stem (e.g, 'hello' in 'libhello').
     //
@@ -998,8 +1000,8 @@ namespace bdep
     {
       package_locations pkgs;
 
-      if (t != type::empty)
-        pkgs.push_back (package_location {n, dir_path ()}); // prj == pkg
+      if (t != type::empty) // prj == pkg
+        pkgs.push_back (package_location {move (pn), dir_path ()});
 
       configurations cfgs {
         cmd_init_config (

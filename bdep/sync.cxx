@@ -254,7 +254,7 @@ namespace bdep
         // since there is no guarantee a higher version isn't available from
         // another repository.
         //
-        args.push_back (pkg.name + '@' + prj.path.string ());
+        args.push_back (pkg.name.string () + '@' + prj.path.string ());
       }
     }
 
@@ -402,7 +402,7 @@ namespace bdep
 
         if (o != nullptr)
         {
-          dir_path out (dir_path (cfg) /= pkg.name);
+          dir_path out (dir_path (cfg) /= pkg.name.string ());
           run_b (co,
                  o,
                  src.representation () + '@' + out.representation () +

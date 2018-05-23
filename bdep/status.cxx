@@ -68,12 +68,12 @@ namespace bdep
     if (ps.empty ())
     {
       for (const package_state& p: c->packages)
-        pkgs.push_back (p.name);
+        pkgs.push_back (p.name.string ());
     }
     else
     {
       for (const package_location& p: ps)
-        pkgs.push_back (p.name);
+        pkgs.push_back (p.name.string ());
     }
 
     cmd_status (o, prj, c->path, pkgs, fetch);
