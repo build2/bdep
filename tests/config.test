@@ -1,0 +1,336 @@
+# file      : tests/config.test
+# copyright : Copyright (c) 2014-2018 Code Synthesis Ltd
+# license   : MIT; see accompanying LICENSE file
+
+# Note that we test the list sub-command while testing other sub-commands.
+#
+
+.include common.test project.test
+
+cxx = cc "config.cxx=$config.cxx"
+
+status += -d prj
+init   += -d prj
+update += -d prj
+deinit += -d prj
+
+: create
+:
+{
+  : name-dir
+  :
+  {
+    $clone_root_prj;
+
+    $* create @cfg cfg-dir $cxx 2>>/"EOE" &cfg-dir/***;
+      created configuration @cfg $~/cfg-dir/ 1 default,forwarded,auto-synchronized
+      EOE
+
+    $status 2>'error: package prj is not initialized in configuration @cfg' != 0;
+
+    $init @cfg 2>>/~"%EOE%";
+      initializing in project $~/prj/
+      synchronizing:
+      %  new prj.+19700101000000%
+      EOE
+
+    $status >'prj configured 0.1.0-a.0.19700101000000';
+
+    $* list @cfg >>/"EOO";
+      @cfg $~/cfg-dir/ 1 default,forwarded,auto-synchronized
+      EOO
+
+    $update @cfg 2>>/EOE;
+      mkdir cfg-dir/prj/fsdir{prj/}
+      c++ prj/prj/cxx{prj}@cfg-dir/prj/prj/
+      ld cfg-dir/prj/prj/exe{prj}
+      EOE
+
+    $deinit @cfg 2>>/"EOE"
+      deinitializing in project $~/prj/
+      synchronizing:
+        drop prj
+      EOE
+  }
+
+  : name
+  :
+  {
+    $clone_root_prj;
+
+    $* create -- @cfg $cxx 2>>/"EOE" &prj-cfg/***;
+      created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
+      EOE
+
+    $init @cfg 2>>/~"%EOE%";
+      initializing in project $~/prj/
+      synchronizing:
+      %  new prj.+19700101000000%
+      EOE
+
+    $status >'prj configured 0.1.0-a.0.19700101000000';
+
+    $* list >>/"EOO";
+      @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
+      EOO
+
+    $update @cfg 2>>/EOE;
+      mkdir prj-cfg/prj/fsdir{prj/}
+      c++ prj/prj/cxx{prj}@prj-cfg/prj/prj/
+      ld prj-cfg/prj/prj/exe{prj}
+      EOE
+
+    $deinit @cfg 2>>/"EOE"
+      deinitializing in project $~/prj/
+      synchronizing:
+        drop prj
+      EOE
+  }
+
+  : dir
+  :
+  {
+    $clone_root_prj;
+
+    $* create cfg $cxx 2>>/"EOE" &cfg/***;
+      created configuration $~/cfg/ 1 default,forwarded,auto-synchronized
+      EOE
+
+    $init -c cfg 2>>/~"%EOE%";
+      initializing in project $~/prj/
+      synchronizing:
+      %  new prj.+19700101000000%
+      EOE
+
+    $status >'prj configured 0.1.0-a.0.19700101000000';
+
+    $* list >>/"EOO";
+      $~/cfg/ 1 default,forwarded,auto-synchronized
+      EOO
+
+    $update -c cfg 2>>/EOE;
+      mkdir cfg/prj/fsdir{prj/}
+      c++ prj/prj/cxx{prj}@cfg/prj/prj/
+      ld cfg/prj/prj/exe{prj}
+      EOE
+
+    $deinit -c cfg 2>>/"EOE"
+      deinitializing in project $~/prj/
+      synchronizing:
+        drop prj
+      EOE
+  }
+
+  : wipe
+  :
+  {
+    $clone_root_prj;
+
+    mkdir --no-cleanup cfg;
+    touch --no-cleanup cfg/a;
+
+    $* create cfg $cxx 2>>/"EOE" != 0;
+      error: directory $~/cfg/ is not empty
+        info: use --wipe to clean it up but be careful
+      EOE
+
+    $* create --wipe cfg $cxx 2>>/"EOE" &cfg/***
+      created configuration $~/cfg/ 1 default,forwarded,auto-synchronized
+      EOE
+  }
+}
+
+: add
+:
+{
+  $clone_root_prj;
+
+  # Pre-create configurations.
+  #
+  $new -C prj-cfg1 tmp1 $cxx 2>! &prj-cfg1/*** &tmp1/***;
+  $new -C prj-cfg2 tmp2 $cxx 2>! &prj-cfg2/*** &tmp2/***;
+
+  $* add @cfg1 prj-cfg1 2>>/"EOE";
+    added configuration @cfg1 $~/prj-cfg1/ 1 default,forwarded,auto-synchronized
+    EOE
+
+  $* add @cfg2 prj-cfg2 2>>/"EOE";
+    added configuration @cfg2 $~/prj-cfg2/ 2 auto-synchronized
+    EOE
+
+  $init --all 2>>/~"%EOE%";
+    initializing in project $~/prj/
+    in configuration @cfg1:
+    synchronizing:
+    %  new prj.+19700101000000%
+
+    in configuration @cfg2:
+    synchronizing:
+    %  new prj.+19700101000000%
+    EOE
+
+  $status --all >>EOO;
+    in configuration @cfg1:
+    prj configured 0.1.0-a.0.19700101000000
+
+    in configuration @cfg2:
+    prj configured 0.1.0-a.0.19700101000000
+    EOO
+
+  $* list >>/"EOO";
+    @cfg1 $~/prj-cfg1/ 1 default,forwarded,auto-synchronized
+    @cfg2 $~/prj-cfg2/ 2 auto-synchronized
+    EOO
+
+  $update --all 2>>/EOE;
+    in configuration @cfg1:
+    mkdir prj-cfg1/prj/fsdir{prj/}
+    c++ prj/prj/cxx{prj}@prj-cfg1/prj/prj/
+    ld prj-cfg1/prj/prj/exe{prj}
+
+    in configuration @cfg2:
+    mkdir prj-cfg2/prj/fsdir{prj/}
+    c++ prj/prj/cxx{prj}@prj-cfg2/prj/prj/
+    ld prj-cfg2/prj/prj/exe{prj}
+    EOE
+
+  $deinit --all 2>>/"EOE"
+    deinitializing in project $~/prj/
+    in configuration @cfg1:
+    synchronizing:
+      drop prj
+
+    in configuration @cfg2:
+    synchronizing:
+      drop prj
+    EOE
+}
+
+: move
+:
+{
+  $clone_root_prj;
+
+  $* create -- @cfg $cxx 2>>/"EOE";
+    created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
+    EOE
+
+  $init @cfg 2>>/~"%EOE%";
+    initializing in project $~/prj/
+    synchronizing:
+    %  new prj.+19700101000000%
+    EOE
+
+  cp --no-cleanup -r prj-cfg prj-cfg2 &prj-cfg2/***;
+  rm -r prj-cfg;
+
+  $* move @cfg prj-cfg2 2>>/"EOE";
+    moved configuration @cfg $~/prj-cfg/ 1 to $~/prj-cfg2/
+    EOE
+
+  $update --all 2>>/EOE;
+    mkdir prj-cfg2/prj/fsdir{prj/}
+    c++ prj/prj/cxx{prj}@prj-cfg2/prj/prj/
+    ld prj-cfg2/prj/prj/exe{prj}
+    EOE
+
+  $deinit 2>>/"EOE"
+    deinitializing in project $~/prj/
+    synchronizing:
+      drop prj
+    EOE
+}
+
+: rename
+:
+{
+  $clone_root_prj;
+
+  $* create -- @cfg $cxx 2>>/"EOE" &prj-cfg/***;
+    created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
+    EOE
+
+  $init @cfg 2>>/~"%EOE%";
+    initializing in project $~/prj/
+    synchronizing:
+    %  new prj.+19700101000000%
+    EOE
+
+  $* rename @cfg cfg2 2>>/"EOE";
+    renamed configuration @cfg $~/prj-cfg/ 1 to @cfg2
+    EOE
+
+  $update @cfg2 2>>/EOE;
+    mkdir prj-cfg/prj/fsdir{prj/}
+    c++ prj/prj/cxx{prj}@prj-cfg/prj/prj/
+    ld prj-cfg/prj/prj/exe{prj}
+    EOE
+
+  $deinit 2>>/"EOE"
+    deinitializing in project $~/prj/
+    synchronizing:
+      drop prj
+    EOE
+}
+
+: remove
+:
+: Here we also test the set sub-command.
+:
+{
+  $clone_root_prj;
+
+  $* create -- @cfg1 $cxx 2>! &prj-cfg1/***;
+  $* create -- @cfg2 $cxx 2>! &prj-cfg2/***;
+
+  $init --all 2>!;
+
+  $* remove @cfg1 2>>EOE != 0;
+    error: configuration @cfg1 contains initialized packages
+      info: use deinit command to deinitialize packages
+      info: use status command to list initialized packages
+    EOE
+
+  $deinit @cfg1 2>>/"EOE";
+    deinitializing in project $~/prj/
+    synchronizing:
+      drop prj
+    EOE
+
+  $* remove @cfg1 2>>/"EOE";
+    removed configuration @cfg1 $~/prj-cfg1/ 1
+    EOE
+
+  $status --all >>EOO;
+    prj configured 0.1.0-a.0.19700101000000
+    EOO
+
+  $* list >>/"EOO";
+    @cfg2 $~/prj-cfg2/ 2 auto-synchronized
+    EOO
+
+  $update 2>>/"EOE" != 0;
+    error: no default configuration in project $~/prj/
+      info: use \(@<cfg-name> | --config|-c <cfg-dir> | --all|-a\) to specify configuration explicitly
+    EOE
+
+  $* set @cfg2 --default --forward --no-auto-sync 2>>/"EOE";
+    updated configuration @cfg2 $~/prj-cfg2/ 2 default,forwarded
+    EOE
+
+  $* list >>/"EOO";
+    @cfg2 $~/prj-cfg2/ 2 default,forwarded
+    EOO
+
+  $update 2>>/EOE;
+    mkdir prj-cfg2/prj/fsdir{prj/}
+    c++ prj/prj/cxx{prj}@prj-cfg2/prj/prj/
+    ld prj-cfg2/prj/prj/exe{prj}
+    EOE
+
+  $deinit --all 2>>/"EOE"
+    deinitializing in project $~/prj/
+    synchronizing:
+      drop prj
+    EOE
+}

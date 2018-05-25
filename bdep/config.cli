@@ -68,7 +68,15 @@ namespace bdep
          As a shortcut, if \ci{cfg-name} is not specified and \ci{cfg-dir} is
          a simple path that starts with \cb{@}, then it is treated as the name
          and the configuration directory is assumed to be
-         \c{\i{prj-dir}\b{-}\i{cfg-name}}.
+         \c{\i{prj-dir}\b{-}\i{cfg-name}}. Note that in case of \c{create},
+         \ci{cfg-dir} must be preceded with \cb{--} (double dash) option to
+         disambiguate it from \c{\b{@}\i{cfg-name}}. For example, assuming
+         the project directory is \cb{hello}:
+
+         \
+         $ bdep config add @clang                        # ../hello-clang
+         $ bdep config create -- @gcc cc config.cxx=g++  # ../hello-gcc
+         \
 
          Unless the \cb{--no-default} option is specified, the first added or
          created build configuration is designated as the default. Several

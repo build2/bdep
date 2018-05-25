@@ -31,6 +31,7 @@ new    = $* new
 status = $* status
 sync   = $* sync
 update = $* update
+config = $* config
 
 # All testscripts are named after bdep commands, for example sync.test. So the
 # testscript scope id is a name of the command being tested.
