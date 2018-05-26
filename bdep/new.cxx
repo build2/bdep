@@ -247,7 +247,7 @@ namespace bdep
          << "name: " << n                                              << endl
          << "version: 0.1.0-a.0.z"                                     << endl
          << "summary: " << s << " " << t                               << endl
-         << "license: proprietary"                                     << endl
+         << "license: TODO"                                            << endl
          << "url: https://example.org/" << n                           << endl
          << "email: you@example.org"                                   << endl
          << "depends: * build2 >= 0.7.0-"                              << endl
