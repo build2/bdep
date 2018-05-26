@@ -95,9 +95,16 @@ namespace bdep
   class location
   {
   public:
-    location () {}
+    // Zero lines or columns are not printed.
+    //
+    explicit
     location (string f, uint64_t l, uint64_t c)
         : file (move (f)), line (l), column (c) {}
+
+    location () = default;
+
+    bool
+    empty () const {return file.empty ();}
 
     string file;
     uint64_t line;
