@@ -114,9 +114,14 @@ namespace bdep
     if (t == type::lib)
     {
       if (n.compare (0, 3, "lib") != 0)
-        fail << "library name does not start with 'lib'";
+      {
+        warn << "library name does not start with 'lib'" <<
+          info << "this package may not be acceptable to some repositories";
 
-      s.assign (n, 3, string::npos);
+        s = n;
+      }
+      else
+        s.assign (n, 3, string::npos);
     }
     else
       s = n;
