@@ -14,7 +14,7 @@
 
 #include <bdep/project-options.hxx>
 
-#pragma db model version(1, 1, open)
+#pragma db model version(1, 1, closed)
 
 // Prevent assert() macro expansion in get/set expressions. This should appear
 // after all #include directives since the assert() macro is redefined in each
