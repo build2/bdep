@@ -188,7 +188,7 @@ namespace bdep
     if (prj.empty ())
     {
       if (!pkg)
-        fail << start << " is no a (sub)directory of a package or project";
+        fail << start << " is not a (sub)directory of a package or project";
 
       // Project and package are the same.
       //
