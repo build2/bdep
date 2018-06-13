@@ -477,12 +477,11 @@ namespace bdep
   // distribution of a package as part of pkg-checkout which happens in the
   // configuration we have "hooked" -- yeah, this rabbit hole is deep).
   //
-  const char synced_name[] = "BDEP_SYNCED_CONFIGS";
+  static const char synced_name[] = "BDEP_SYNCED_CONFIGS";
 
   // Check if the specified configuration directory is already (being)
   // synchronized. If it is not and add is true, then add it to the
   // BDEP_SYNCED_CONFIGS environment variable.
-  //
   //
   static bool
   synced (const dir_path& d, bool implicit, bool add = true)
@@ -678,16 +677,37 @@ namespace bdep
     {
       // Implicit sync without an originating project.
       //
+      // Here, besides the BDEP_SYNCED_CONFIGS we also check BPKG_OPEN_CONFIG
+      // which will be set if we are called by bpkg while it has the database
+      // open.
+      //
+      // The question, of course, is whether it's a good idea to suppress sync
+      // in this case. Currently, this is a problem for two operations (others
+      // like pkg-update/test are careful enough to close the database before
+      // executing the build system): pkg-checkout which uses dist to checkout
+      // a new package and pkg-disfigure which uses clean to clean a package.
+      // In both cases it seems harmless to suppress sync.
+      //
+      // @@ Maybe it makes sense for bpkg to run 'b noop' in order to "flush"
+      //    the callbacks before certain commands (like pkg-build)? Note that
+      //    noop loads the buildfiles. Maybe need something like bootstrap
+      //    and load meta-operation?
+      //
+      const char* open (getenv ("BPKG_OPEN_CONFIG"));
+
       for (dir_path d: o.config ())
       {
         d.complete ();
         d.normalize ();
 
-        if (!synced (d, o.implicit (), false /* add */))
-        {
-          cfgs.push_back (nullptr);
-          cfg_dirs.push_back (move (d));
-        }
+        if (open != nullptr && d.string () == open)
+          continue;
+
+        if (synced (d, o.implicit (), false /* add */))
+          continue;
+
+        cfgs.push_back (nullptr);
+        cfg_dirs.push_back (move (d));
       }
 
       if (cfgs.empty ())
