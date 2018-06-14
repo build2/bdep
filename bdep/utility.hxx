@@ -50,6 +50,10 @@ namespace bdep
   using butl::make_guard;
   using butl::make_exception_guard;
 
+  using butl::getenv;
+  using butl::setenv;
+  using butl::unsetenv;
+
   // <libbutl/filesystem.mxx>
   //
   using butl::auto_rmfile;

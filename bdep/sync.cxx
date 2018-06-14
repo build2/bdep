@@ -4,8 +4,6 @@
 
 #include <bdep/sync.hxx>
 
-#include <stdlib.h> // getenv() setenv()/_putenv()
-
 #include <cstring>  // strchr()
 
 #include <bdep/database.hxx>
@@ -489,8 +487,8 @@ namespace bdep
     string v;
     const string& p (d.string ());
 
-    if (const char* e = getenv (synced_name))
-      v = e;
+    if (optional<string> e = getenv (synced_name))
+      v = move (*e);
 
     for (size_t b (0), e (0);
          (e = v.find ('"', e)) != string::npos; // Skip leading ' '.
@@ -514,12 +512,7 @@ namespace bdep
     if (add)
     {
       v += (v.empty () ? "\"" : " \"") + p + '"';
-
-#ifndef _WIN32
-      setenv (synced_name, v.c_str (), 1 /* overwrite */);
-#else
-      _putenv ((string (synced_name) + '=' + v).c_str ());
-#endif
+      setenv (synced_name, v);
     }
 
     return false;
@@ -693,14 +686,14 @@ namespace bdep
       //    noop loads the buildfiles. Maybe need something like bootstrap
       //    and load meta-operation?
       //
-      const char* open (getenv ("BPKG_OPEN_CONFIG"));
+      optional<string> open (getenv ("BPKG_OPEN_CONFIG"));
 
       for (dir_path d: o.config ())
       {
         d.complete ();
         d.normalize ();
 
-        if (open != nullptr && d.string () == open)
+        if (open && d.string () == *open)
           continue;
 
         if (synced (d, o.implicit (), false /* add */))

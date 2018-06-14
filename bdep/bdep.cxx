@@ -4,8 +4,6 @@
 
 #ifndef _WIN32
 #  include <signal.h> // signal()
-#else
-#  include <stdlib.h> // getenv(), _putenv()
 #endif
 
 #include <cstring>  // strcmp()
@@ -35,6 +33,12 @@
 
 using namespace std;
 using namespace bdep;
+
+namespace bdep
+{
+  int
+  main (int argc, char* argv[]);
+}
 
 // Initialize the command option class O with the common options and then
 // parse the rest of the command line placing non-option arguments to args.
@@ -122,7 +126,7 @@ init (const common_options& co, cli::group_scanner& scan, strings& args)
   return o;
 }
 
-int
+int bdep::
 main (int argc, char* argv[])
 try
 {
@@ -143,15 +147,15 @@ try
   //
 #ifdef _WIN32
   {
-    string mp ("PATH=");
-    if (const char* p = getenv ("PATH"))
+    string mp;
+    if (optional<string> p = getenv ("PATH"))
     {
-      mp += p;
+      mp = move (*p);
       mp += ';';
     }
     mp += "/bin";
 
-    _putenv (mp.c_str ());
+    setenv ("PATH", mp);
   }
 #endif
 
@@ -313,3 +317,9 @@ catch (const std::exception& e)
   return 1;
 }
 */
+
+int
+main (int argc, char* argv[])
+{
+  return bdep::main (argc, argv);
+}
