@@ -12,8 +12,8 @@ src-url: https://git.build2.org/cgit/bdep/tree/
 email: users@build2.org
 build-email: builds@build2.org
 requires: c++14
-depends: * build2 >= 0.7.0-
-depends: * bpkg >= 0.7.0-
+depends: * build2 >= 0.8.0-
+depends: * bpkg >= 0.8.0-
 # @@ Should probably become conditional dependency.
 requires: ? cli ; Only required if changing .cli files.
 depends: libodb [2.5.0-b.8.1 2.5.0-b.9)
