@@ -224,8 +224,14 @@ namespace bdep
 
   "\h|ENVIRONMENT|
 
-   To avoid recursive re-synchronization, the \cb{sync} command maintains the
-   \cb{BDEP_SYNCED_CONFIGS} environment variable. It contains a
+   The \cb{BDEP_SYNC} environment variable can be used to suppress automatic
+   synchronization on build system invocation. If set, auto-synchronization
+   will only be performed if the variable's value is \cb{true} or \cb{1}. The
+   ability to suppress auto-synchronization can be useful when you don't have
+   usable \cb{bdep} and/or \cb{bpkg}.
+
+   To avoid recursive re-synchronization, the \cb{sync} command also maintains
+   the \cb{BDEP_SYNCED_CONFIGS} environment variable. It contains a
    space-separated, \cb{\"}-quoted list of configuration paths that have been
    or are being synchronized by the current \cb{bdep} invocation chain. The
    \cb{sync} command examines this variable and silently ignores

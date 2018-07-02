@@ -436,14 +436,22 @@ namespace bdep
             // if! $null($cfgs)
             //   cfgs = [dir_paths] $regex.split($cfgs, ' *"([^"]*)" *', '\1')
             //
+            // Also note that we try to avoid setting any variables in order
+            // not to pollute the configuration's root scope.
+            //
             os << "# Created automatically by bdep."                   << endl
                << "#"                                                  << endl
                << "if ($build.meta_operation != 'info'      && \\"     << endl
                << "    $build.meta_operation != 'configure' && \\"     << endl
                << "    $build.meta_operation != 'disfigure')"          << endl
-               << "  run '" << argv0 << "' sync --hook=1 "             <<
+               << "{"                                                  << endl
+               << "  if ($getenv('BDEP_SYNC') == [null] || \\"         << endl
+               << "      $getenv('BDEP_SYNC') == true   || \\"         << endl
+               << "      $getenv('BDEP_SYNC') == 1)"                   << endl
+               << "    run '" << argv0 << "' sync --hook=1 "           <<
               "--verbose $build.verbosity "                            <<
-              "--config \"$out_root\""                                 << endl;
+              "--config \"$out_root\""                                 << endl
+               << "}"                                                  << endl;
 
             os.close ();
           }
