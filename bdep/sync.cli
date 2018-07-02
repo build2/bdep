@@ -213,15 +213,7 @@ namespace bdep
        this mode assumes that no configuration flags (see \l{bdep-config(1)})
        have changed since the last explicit synchronization. It also does not
        search for a project in the current working directory \- if any, its
-       directory should be specified explicitly with \c{\b{--config}|\b{-c}}.
-
-       To avoid recursive re-synchronization, the \cb{sync} command maintains
-       the \cb{BDEP_SYNCED_CONFIGS} environment variable. It contains a
-       space-separated, \cb{\"}-quoted list of configuration paths that have
-       been or are being synchronized by the current \cb{bdep} invocation
-       chain. The \cb{sync} command in the implicit mode also examines this
-       variable and silently ignores synchronization requests that have been
-       or are already being performed."
+       directory should be specified explicitly with \c{\b{--config}|\b{-c}}."
     }
 
     // The build system hook protocol version. Internal, undocumented, and
@@ -229,4 +221,14 @@ namespace bdep
     //
     uint16_t --hook = 0;
   };
+
+  "\h|ENVIRONMENT|
+
+   To avoid recursive re-synchronization, the \cb{sync} command maintains the
+   \cb{BDEP_SYNCED_CONFIGS} environment variable. It contains a
+   space-separated, \cb{\"}-quoted list of configuration paths that have been
+   or are being synchronized by the current \cb{bdep} invocation chain. The
+   \cb{sync} command examines this variable and silently ignores
+   synchronization requests that have been or are already being performed.
+  "
 }
