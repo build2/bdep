@@ -5,6 +5,7 @@
 #include <bdep/new.hxx>
 
 #include <bdep/project.hxx>
+#include <bdep/project-email.hxx>
 #include <bdep/database.hxx>
 #include <bdep/diagnostics.hxx>
 
@@ -172,7 +173,8 @@ namespace bdep
       fail << "directory " << out << " already exists";
 
     // Initialize the version control system. Do it before writing anything
-    // ourselves in case it fails.
+    // ourselves in case it fails. Also, the email discovery may do the VCS
+    // detection.
     //
     if (!pkg)
     {
@@ -257,6 +259,12 @@ namespace bdep
 
       // manifest
       //
+      string email;
+      {
+        optional<string> r (project_email (prj));
+        email = r ? move (*r) : "you@example.org";
+      }
+
       os.open (f = out / "manifest");
       os << ": 1"                                                      << endl
          << "name: " << n                                              << endl
@@ -264,7 +272,7 @@ namespace bdep
          << "summary: " << s << " " << t                               << endl
          << "license: TODO"                                            << endl
          << "url: https://example.org/" << n                           << endl
-         << "email: you@example.org"                                   << endl
+         << "email: " << email                                         << endl
          << "depends: * build2 >= 0.8.0-"                              << endl
          << "depends: * bpkg >= 0.8.0-"                                << endl
          << "#depends: libhello ^1.0.0"                                << endl;
