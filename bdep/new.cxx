@@ -110,21 +110,31 @@ namespace bdep
     // We use the full name for filesystem directories and preprocessor macros
     // while the stem for modules, namespaces, etc.
     //
-    string s;
-    if (t == type::lib)
+    string s (n);
+    switch (t)
     {
-      if (n.compare (0, 3, "lib") != 0)
+    case type::exe:
       {
-        warn << "library name does not start with 'lib'" <<
-          info << "this package may not be acceptable to some repositories";
+        if (n.compare (0, 3, "lib") == 0)
+          warn << "executable name starts with 'lib'" <<
+            info << "this package may not be acceptable to some repositories";
 
-        s = n;
+        break;
       }
-      else
-        s.assign (n, 3, string::npos);
+    case type::lib:
+      {
+        if (n.compare (0, 3, "lib") == 0)
+          s.erase (0, 3);
+        else
+          warn << "library name does not start with 'lib'" <<
+            info << "this package may not be acceptable to some repositories";
+
+        break;
+      }
+    case type::bare:
+    case type::empty:
+      break;
     }
-    else
-      s = n;
 
     dir_path out;           // Project/package output directory.
     dir_path prj;           // Project.
