@@ -426,7 +426,7 @@ namespace bdep
           {
           case lang::c:
             {
-              os << "exe{" << n << "}: {h c}{*} $libs"                 <<
+              os << "exe{" << n << "}: {h c}{**} $libs"                <<
                 (tests ? " testscript" : "")                           << endl;
 
               x = "c";
@@ -434,7 +434,7 @@ namespace bdep
             }
           case lang::cxx:
             {
-              os << "exe{" << n << "}: {hxx ixx txx cxx}{*} $libs"     <<
+              os << "exe{" << n << "}: {hxx ixx txx cxx}{**} $libs"    <<
                 (tests ? " testscript" : "")                           << endl;
 
               x = "cxx";
@@ -689,7 +689,7 @@ namespace bdep
           {
           case lang::c:
             {
-              os << "lib{" <<  s << "}: {h c}{* -version} h{version}"  << endl;
+              os << "lib{" <<  s << "}: {h c}{** -version} h{version}" << endl;
 
               x  = "c";
               h  = "h";
@@ -698,7 +698,7 @@ namespace bdep
             }
           case lang::cxx:
             {
-              os << "lib{" <<  s << "}: {hxx ixx txx cxx}{* -version} hxx{version} $imp_libs $int_libs" << endl;
+              os << "lib{" <<  s << "}: {hxx ixx txx cxx}{** -version} hxx{version} $imp_libs $int_libs" << endl;
 
               x  = "cxx";
               h  = "hxx";
@@ -965,12 +965,12 @@ namespace bdep
           {
           case lang::c:
             {
-              os << "exe{driver}: {h c}{*} $libs"                      << endl;
+              os << "exe{driver}: {h c}{**} $libs"                     << endl;
               break;
             }
           case lang::cxx:
             {
-              os << "exe{driver}: {hxx ixx txx cxx}{*} $libs"          << endl;
+              os << "exe{driver}: {hxx ixx txx cxx}{**} $libs"         << endl;
               break;
             }
           }
