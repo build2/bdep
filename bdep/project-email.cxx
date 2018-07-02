@@ -79,7 +79,7 @@ namespace bdep
 
           if ((p2 = l.rfind ('>'    )) == string::npos ||
               (p1 = l.rfind ('<', p2)) == string::npos)
-            fail << "no email in git-var output";
+            fail << "no email in git-var output" << endf;
 
           if (++p1 != p2)
             r = string (l, p1, p2 - p1);
