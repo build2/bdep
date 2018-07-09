@@ -4,8 +4,7 @@
 
 #include <bdep/project-email.hxx>
 
-#include <libbutl/filesystem.mxx>
-
+#include <bdep/git.hxx>
 #include <bdep/diagnostics.hxx>
 
 using namespace butl;
@@ -28,12 +27,7 @@ namespace bdep
 
     // See if this is a VCS repository we recognize.
     //
-
-    // .git can be either a directory or a file in case of a submodule.
-    //
-    if (entry_exists (prj / ".git",
-                      true /* follow_symlinks */,
-                      true /* ignore_errors */))
+    if (git (prj))
     {
       // In git the author email can be specified with the GIT_AUTHOR_EMAIL
       // environment variable after which things fall back to the committer
@@ -41,26 +35,10 @@ namespace bdep
       // resolved value can be queried with the GIT_AUTHOR_IDENT logical
       // variable.
       //
-      process pr;
-      bool io (false);
-      try
+      if (optional<string> l = git_line (prj,
+                                         true /* ignore_error */,
+                                         "var", "GIT_AUTHOR_IDENT"))
       {
-        fdpipe pipe (fdopen_pipe ());
-
-        // If git cannot determine the author name/email, it fails verbosely
-        // so we suppress all diagnostics.
-        //
-        pr = start (0         /* stdin  */,
-                    pipe      /* stdout */,
-                    fdnull () /* stderr */,
-                    "git",
-                    "-C", prj,
-                    "var",
-                    "GIT_AUTHOR_IDENT");
-
-        pipe.out.close ();
-        ifdstream is (move (pipe.in), ifdstream::badbit);
-
         // The output should be a single line in this form:
         //
         // NAME <EMAIL> TIME ZONE
@@ -72,40 +50,15 @@ namespace bdep
         // The <> delimiters are there even if the email is empty so we use
         // them as anchors.
         //
-        string l;
-        if (!eof (getline (is, l)))
-        {
-          size_t p1, p2;
+        size_t p1, p2;
 
-          if ((p2 = l.rfind ('>'    )) == string::npos ||
-              (p1 = l.rfind ('<', p2)) == string::npos)
-            fail << "no email in git-var output" << endf;
+        if ((p2 = l->rfind ('>'    )) == string::npos ||
+            (p1 = l->rfind ('<', p2)) == string::npos)
+          fail << "no email in GIT_AUTHOR_IDENT" << endf;
 
-          if (++p1 != p2)
-            r = string (l, p1, p2 - p1);
-        }
-
-        is.close (); // Detect errors.
+        if (++p1 != p2)
+          return string (*l, p1, p2 - p1);
       }
-      catch (const io_error&)
-      {
-        io = true; // Presumably git failed so check that first.
-      }
-
-      if (!pr.wait ())
-      {
-        const process_exit& e (*pr.exit);
-
-        if (!e.normal ())
-          fail << "process git " << e;
-
-        r = nullopt;
-      }
-      else if (io)
-        fail << "unable to read git-var output";
-
-      if (r)
-        return r;
     }
 
     if ((r = getenv ("EMAIL")))

@@ -21,6 +21,13 @@ namespace bdep
     struct parser;
 
     template <>
+    struct parser<url>
+    {
+      static void
+      parse (url&, bool&, scanner&);
+    };
+
+    template <>
     struct parser<path>
     {
       static void

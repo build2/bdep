@@ -109,23 +109,6 @@ namespace bdep
       : "bpkg" BDEP_EXE_SUFFIX;
   }
 
-  void
-  finish_bpkg (const common_options& co, process& pr, bool io)
-  {
-    if (!pr.wait ())
-    {
-      const process_exit& e (*pr.exit);
-
-      if (e.normal ())
-        throw failed (); // Assume the child issued diagnostics.
-
-      fail << "process " << name_bpkg (co) << " " << e;
-    }
-
-    if (io)
-      fail << "error reading " << name_bpkg (co) << " output";
-  }
-
   const char*
   name_b (const common_options& co)
   {

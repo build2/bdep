@@ -25,6 +25,7 @@
 #include <bdep/sync.hxx>
 #include <bdep/fetch.hxx>
 #include <bdep/status.hxx>
+#include <bdep/publish.hxx>
 #include <bdep/deinit.hxx>
 #include <bdep/config.hxx>
 #include <bdep/test.hxx>
@@ -265,16 +266,17 @@ try
       break;                                                                \
     }
 
-    COMMAND_IMPL (new_,   new,    "new");
-    COMMAND_IMPL (init,   init,   "init");
-    COMMAND_IMPL (sync,   sync,   "sync");
-    COMMAND_IMPL (fetch,  fetch,  "fetch");
-    COMMAND_IMPL (status, status, "status");
-    COMMAND_IMPL (deinit, deinit, "deinit");
-    COMMAND_IMPL (config, config, "config");
-    COMMAND_IMPL (test,   test,   "test");
-    COMMAND_IMPL (update, update, "update");
-    COMMAND_IMPL (clean,  clean,  "clean");
+    COMMAND_IMPL (new_,    new,     "new");
+    COMMAND_IMPL (init,    init,    "init");
+    COMMAND_IMPL (sync,    sync,    "sync");
+    COMMAND_IMPL (fetch,   fetch,   "fetch");
+    COMMAND_IMPL (status,  status,  "status");
+    COMMAND_IMPL (publish, publish, "publish");
+    COMMAND_IMPL (deinit,  deinit,  "deinit");
+    COMMAND_IMPL (config,  config,  "config");
+    COMMAND_IMPL (test,    test,    "test");
+    COMMAND_IMPL (update,  update,  "update");
+    COMMAND_IMPL (clean,   clean,   "clean");
 
     assert (false);
     fail << "unhandled command";

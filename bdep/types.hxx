@@ -22,6 +22,7 @@
 
 #include <odb/sqlite/forward.hxx>
 
+#include <libbutl/url.mxx>
 #include <libbutl/path.mxx>
 #include <libbutl/process.mxx>
 #include <libbutl/optional.mxx>
@@ -76,6 +77,10 @@ namespace bdep
   //
   using butl::optional;
   using butl::nullopt;
+
+  // <libbutl/url.mxx>
+  //
+  using butl::url;
 
   // <libbutl/path.mxx>
   //

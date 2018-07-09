@@ -1,0 +1,131 @@
+// file      : bdep/publish.cli
+// copyright : Copyright (c) 2014-2018 Code Synthesis Ltd
+// license   : MIT; see accompanying LICENSE file
+
+include <bdep/project.cli>;
+
+"\section=1"
+"\name=bdep-publish"
+"\summary=publish project to archive repository"
+
+namespace bdep
+{
+  {
+    "<options>
+     <prj-spec> <prj-dir>
+     <pkg-spec> <pkg-dir>
+     <cfg-spec> <cfg-name> <cfg-dir>",
+
+    "\h|SYNOPSIS|
+
+     \c{\b{bdep publish} [<options>] [<cfg-spec>] [<pkg-spec>]}
+
+     \c{<pkg-spec> = (\b{--directory}|\b{-d} <pkg-dir>)... | <prj-spec>\n
+        <prj-spec> = \b{--directory}|\b{-d} <prj-dir>\n
+        <cfg-spec> = \b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>}
+
+     \h|DESCRIPTION|
+
+     The \cb{publish} command published the project packages to an
+     archive-based repository.
+
+     If no project or package directory is specified, then the current working
+     directory is assumed. If no configuration is specified, then the default
+     configuration is used to prepare the package distributions. See
+     \l{bdep-projects-configs(1)} for details on specifying projects and
+     configurations.
+
+     For each specified package the \cb{publish} command prepares a package
+     archive and sends it as part of the package submission request to an
+     archive-based repository. If the repository is not explicitly specified
+     with the \cb{--repository} option, packages are published to
+     \cb{cppget.org} by default.
+
+     Along with the package archive, the submission request specifies the
+     project the package belongs to, the repository section to publish the
+     package under, the control repository URL to use for authorization, and
+     the publisher's email address for notifications.  While the exact usage
+     and interpretation of this information depends on the specific
+     repository, the following semantics apply when submitting to
+     \cb{cppget.org}.
+
+     The project information is used to group related packages together. For
+     example, \cb{hello} and \cb{libhello} are likely to be part of the same
+     project called \cb{hello}. @@ TODO.
+
+     The section specifies the desired repository section to publish the
+     project under. If not explicitly specified with the \cb{--section}
+     option, one of the \cb{alpha}, \cb{beta}, or \cb{stable} values are
+     automatically derived from the package version.
+
+     The control repository URL is a publicly accessible, read-only URL to a
+     version control repository (normally the same as the project's) that is
+     used to authenticate the publisher as someone authorized to publish under
+     this package name (currently only \cb{git(1)} is supported).
+
+     Prior to sending the submission request, the \cb{publish} command adds
+     the package archive checksum to the \cb{build2-control} branch of the
+     project's version control repository. Upon receiving the submission
+     request, the archive repository either (1) associates the control
+     repository with the package name if this is the first time this package
+     name is published or (2) compares the submitted control repository to the
+     previously associated and, if matching, queries the \cb{build2-control}
+     branch to verify that the submitter is authorized to publish this archive
+     under this package name.
+
+     Unless the control repository URL is specified with the \cb{--control}
+     option, it will be automatically derived from the version control's
+     \"remote\" URL. In case of \cb{git(1)}, it will be based on the
+     \cb{remote.origin.url} configuration value unless overridden with
+     \cb{remote.origin.build2ControlUrl}. The special \cb{none} value to the
+     \cb{--control} option can be used to disable this functionality.
+
+     See \l{brep#submit Package Submission} for details on the submission
+     request handling by archive repositories.
+     "
+  }
+
+  class cmd_publish_options: project_options
+  {
+    "\h|PUBLISH OPTIONS|"
+
+    bool --yes|-y
+    {
+      "Don't prompt for confirmation before publishing."
+    }
+
+    string --control
+    {
+      "<url>",
+      "Control repository URL for the packages being published."
+    }
+
+    url --repository = "https://cppget.org"
+    {
+      "<url>",
+      "Repository to publish the packages to."
+    }
+
+    string --section
+    {
+      "<name>",
+      "Repository section to publish the packages under."
+    }
+
+    string --email
+    {
+      "<email>",
+      "Publisher's email address for notifications. If unspecified, one will be
+       obtained from the environment and/or version control system. See the
+       ENVIRONMENT section for details."
+    }
+  };
+
+  "\h|ENVIRONMENT|
+
+   The \cb{BDEP_EMAIL} environment variable can be used to specify the
+   publisher's email address. If not set, the \cb{publish} command will first
+   try to obtain the email from the version control system (if used) and then
+   from the \cb{EMAIL} environment variable. See also the \cb{--email} option.
+  "
+}

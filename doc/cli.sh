@@ -42,6 +42,7 @@ man-prologue.xhtml --html-epilogue-file man-epilogue.xhtml --html-suffix .xhtml 
 --link-regex '%b([-.].+)%../../build2/doc/b$1%' \
 --link-regex '%bpkg([-.].+)%../../bpkg/doc/bpkg$1%' \
 --link-regex '%bpkg(#.+)?%../../bpkg/doc/build2-package-manager-manual.xhtml$1%' \
+--link-regex '%brep(#.+)?%../../brep/doc/build2-repository-interface-manual.xhtml$1%' \
 --link-regex '%bdep(#.+)?%build2-project-manager-manual.xhtml$1%' \
 ../bdep/$n.cli
 
@@ -49,6 +50,7 @@ man-prologue.xhtml --html-epilogue-file man-epilogue.xhtml --html-suffix .xhtml 
 --include-base-last "${o[@]}" --generate-man --man-prologue-file \
 man-prologue.1 --man-epilogue-file man-epilogue.1 --man-suffix .1 \
 --link-regex '%bpkg(#.+)?%$1%' \
+--link-regex '%brep(#.+)?%$1%' \
 --link-regex '%bdep(#.+)?%$1%' \
 ../bdep/$n.cli
 }
@@ -60,7 +62,8 @@ o="--suppress-undocumented --output-prefix bdep- --class-doc bdep::common_option
 compile "common" $o --output-suffix "-options" --class-doc bdep::common_options=long
 compile "bdep" $o --output-prefix "" --class-doc bdep::commands=short --class-doc bdep::topics=short
 
-pages="new help init sync fetch status deinit config test update clean projects-configs"
+pages="new help init sync fetch status publish deinit config test update \
+clean projects-configs"
 
 for p in $pages; do
   compile $p $o

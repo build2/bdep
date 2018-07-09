@@ -443,6 +443,11 @@ namespace bdep
       "\l{bdep-status(1)} \- print status of project and/or its dependencies"
     }
 
+    bool publish
+    {
+      "\l{bdep-publish(1)} \- publish project to archive repository"
+    }
+
     bool deinit
     {
       "\l{bdep-deinit(1)} \- deinitialize project in build configurations"

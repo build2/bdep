@@ -15,6 +15,7 @@
 #include <libbutl/ft/lang.hxx>
 
 #include <libbutl/utility.mxx>    // casecmp(), reverse_iterate(), etc
+#include <libbutl/prompt.mxx>
 #include <libbutl/fdstream.mxx>
 #include <libbutl/filesystem.mxx>
 
@@ -53,6 +54,10 @@ namespace bdep
   using butl::getenv;
   using butl::setenv;
   using butl::unsetenv;
+
+  // <libbutl/prompt.mxx>
+  //
+  using butl::yn_prompt;
 
   // <libbutl/filesystem.mxx>
   //
@@ -114,6 +119,10 @@ namespace bdep
   process
   start (I&& in, O&& out, E&& err, const P& prog, A&&... args);
 
+  template <typename P>
+  void
+  finish (const P& prog, process&, bool io_read = false, bool io_write = false);
+
   template <typename P, typename... A>
   void
   run (const P& prog, A&&... args);
@@ -131,8 +140,11 @@ namespace bdep
               E&& err,
               A&&... args);
 
-  void
-  finish_bpkg (const common_options&, process&, bool io_error = false);
+  inline void
+  finish_bpkg (const common_options& co, process& pr, bool io_read = false)
+  {
+    finish (name_bpkg (co), pr, io_read);
+  }
 
   template <typename... A>
   void
@@ -146,6 +158,12 @@ namespace bdep
   template <typename O, typename E, typename... A>
   process
   start_b (const common_options&, O&& out, E&& err, A&&... args);
+
+  inline void
+  finish_b (const common_options& co, process& pr, bool io_read = false)
+  {
+    finish (name_b (co), pr, io_read);
+  }
 
   template <typename... A>
   void

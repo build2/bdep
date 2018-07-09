@@ -10,6 +10,28 @@ namespace bdep
 {
   namespace cli
   {
+    void parser<url>::
+    parse (url& x, bool& xs, scanner& s)
+    {
+      const char* o (s.next ());
+
+      if (!s.more ())
+        throw missing_value (o);
+
+      const char* v (s.next ());
+
+      try
+      {
+        x = url (v);
+      }
+      catch (const invalid_argument& e)
+      {
+        throw invalid_value (o, v, e.what ());
+      }
+
+      xs = true;
+    }
+
     template <typename T>
     static void
     parse_path (T& x, scanner& s)

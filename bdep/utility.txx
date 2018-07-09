@@ -35,15 +35,10 @@ namespace bdep
     }
   }
 
-  template <typename P, typename... A>
+  template <typename P>
   void
-  run (const P& prog, A&&... args)
+  finish (const P& prog, process& pr, bool io_read, bool io_write)
   {
-    process pr (start (0 /* stdin  */,
-                       1 /* stdout */,
-                       2 /* stderr */,
-                       prog,
-                       forward<A> (args)...));
     if (!pr.wait ())
     {
       const process_exit& e (*pr.exit);
@@ -53,6 +48,25 @@ namespace bdep
 
       fail << "process " << prog << " " << e;
     }
+
+    if (io_read)
+      fail << "error reading " << prog << " output";
+
+    if (io_write)
+      fail << "error writing " << prog << " input";
+  }
+
+  template <typename P, typename... A>
+  void
+  run (const P& prog, A&&... args)
+  {
+    process pr (start (0 /* stdin  */,
+                       1 /* stdout */,
+                       2 /* stderr */,
+                       prog,
+                       forward<A> (args)...));
+
+    finish (prog, pr);
   }
 
   // *_bpkg()
@@ -215,15 +229,7 @@ namespace bdep
                          1 /* stdout */,
                          2 /* stderr */,
                          forward<A> (args)...));
-    if (!pr.wait ())
-    {
-      const process_exit& e (*pr.exit);
-
-      if (e.normal ())
-        throw failed (); // Assume the child issued diagnostics.
-
-      fail << "process " << name_b (co) << " " << e;
-    }
+    finish_b (co, pr);
   }
 
   // *_manifest()
