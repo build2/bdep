@@ -733,6 +733,8 @@ namespace bdep
         dr << "updated configuration ";
         print_configuration (dr, c);
       }
+
+      info << "explicit bdep-sync is required for changes to take effect";
     }
 
     return 0;

@@ -316,6 +316,7 @@ deinit += -d prj
 
   $* set @cfg2 --default --forward --no-auto-sync 2>>/"EOE";
     updated configuration @cfg2 $~/prj-cfg2/ 2 default,forwarded
+    info: explicit bdep-sync is required for changes to take effect
     EOE
 
   $* list >>/"EOO";
