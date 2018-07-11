@@ -1,9 +1,10 @@
 : 1
 name: bdep
 version: 0.8.0-a.0.z
+project: build2
 summary: build2 project dependency manager
 license: MIT
-tags: build2, c++, project, dependency, manager
+tags: c++, project, dependency, manager
 description-file: README
 changes-file: NEWS
 url: https://build2.org
