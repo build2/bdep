@@ -56,24 +56,30 @@ status += -d prj
 
   : name
   :
-  : Test that the package name is validated.
+  : Test that the package/project name is validated.
   :
   {
-    : project
+    : package
     :
     $* x 2>'error: invalid package name: length is less than two characters' != 0
 
-    : separate
+    : project
     :
-    : Here we also test that the project name is not validated as a package.
+    : Here we also test that the project name is also validated as a package.
     :
-    {
-      $* -t empty x 2>>/"EOE" &x/***;
-        created new empty project x in $~/x/
-        EOE
+    $* -t empty x 2>'error: invalid project name: length is less than two characters' != 0
 
-      $* --package y -d x 2>'error: invalid package name: length is less than two characters' != 0
-    }
+    : project-derived
+    :
+    $* -t empty xx 2>>/"EOE";
+      created new empty project xx in $~/xx/
+      EOE
+    mv xx x &x/***;
+    $* --package pkg -d x 2>>/"EOE"
+      warning: project name 'x' is invalid: length is less than two characters
+        info: leaving the 'project' manifest value empty
+      created new executable package pkg in $~/x/pkg/
+      EOE
   }
 }
 

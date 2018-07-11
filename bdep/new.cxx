@@ -16,6 +16,8 @@ using namespace std;
 
 namespace bdep
 {
+  using bpkg::package_name;
+
   using type = cmd_new_type;
   using lang = cmd_new_lang;
   using vcs  = cmd_new_vcs;
@@ -90,21 +92,22 @@ namespace bdep
       fail << "project name argument expected";
 
     // If the project type is not empty then the project name is also a package
-    // name.
+    // name. But even if it is empty, verify it is a valid package name since
+    // it will most likely end up in the 'project' manifest value.
     //
-    bpkg::package_name pn;
+    package_name pkgn;
 
-    if (t != type::empty)
     try
     {
-      pn = bpkg::package_name (move (a));
+      pkgn = package_name (move (a));
     }
     catch (const invalid_argument& e)
     {
-      fail << "invalid package name: " << e;
+      fail << "invalid " << (t == type::empty ? "project" : "package")
+           << " name: " << e;
     }
 
-    const string& n (t != type::empty ? pn.string () : a);
+    const string& n (pkgn.string ());
 
     // Full name vs the name stem (e.g, 'hello' in 'libhello').
     //
@@ -164,8 +167,8 @@ namespace bdep
       prj = out;
     }
 
-    // If the directory already exists, make sure it is empty. Otherwise
-    // create it.
+    // If the output directory already exists, make sure it is
+    // empty. Otherwise create it.
     //
     if (!exists (out))
       mk (out);
@@ -259,6 +262,49 @@ namespace bdep
 
       // manifest
       //
+
+      // Project name.
+      //
+      // If this is a package in a project (--package mode), then use the
+      // project directory name as the project name. Otherwise, the project
+      // name is the same as the package and is therefore omitted.
+      //
+      // In case of a library, we could have used either the full name or the
+      // stem without the lib prefix. And it could go either way: if a library
+      // is (likely to be) accompanied by an executable (or some other extra
+      // packages), then its project should probably be the stem. Otherwise,
+      // if it is a standalone library, then the full library name is probably
+      // preferred. The stem also has another problem: it could be an invalid
+      // project name. So using the full name seems like a simpler and more
+      // robust approach.
+      //
+      // There was also an idea to warn if the project name ends with a digit
+      // (think libfoo and libfoo2).
+      //
+      optional<string> prjn;
+
+      if (o.package ())
+      {
+        string p (prj.leaf ().string ());
+
+        if (p != n) // Omit if the same as the package name.
+        {
+          try
+          {
+            prjn = package_name (move (p)).string (); // Roundtrip.
+          }
+          catch (const invalid_argument& e)
+          {
+            warn << "project name '" << p << "' is invalid: " << e <<
+              info << "leaving the 'project' manifest value empty";
+
+            prjn = "";
+          }
+        }
+      }
+
+      // Project email.
+      //
       string email;
       {
         optional<string> r (project_email (prj));
@@ -268,8 +314,10 @@ namespace bdep
       os.open (f = out / "manifest");
       os << ": 1"                                                      << endl
          << "name: " << n                                              << endl
-         << "version: 0.1.0-a.0.z"                                     << endl
-         << "summary: " << s << " " << t                               << endl
+         << "version: 0.1.0-a.0.z"                                     << endl;
+      if (prjn)
+        os << "project: " << *prjn                                     << endl;
+      os << "summary: " << s << " " << t                               << endl
          << "license: TODO"                                            << endl
          << "url: https://example.org/" << n                           << endl
          << "email: " << email                                         << endl
@@ -1024,7 +1072,7 @@ namespace bdep
       package_locations pkgs;
 
       if (t != type::empty) // prj == pkg
-        pkgs.push_back (package_location {move (pn), dir_path ()});
+        pkgs.push_back (package_location {move (pkgn), dir_path ()});
 
       configurations cfgs {
         cmd_init_config (
