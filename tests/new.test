@@ -69,6 +69,8 @@ status += -d prj
     :
     $* -t empty x 2>'error: invalid project name: length is less than two characters' != 0
 
+    #\
+    @@ mv
     : project-derived
     :
     $* -t empty xx 2>>/"EOE";
@@ -80,6 +82,7 @@ status += -d prj
         info: leaving the 'project' manifest value empty
       created new executable package pkg in $~/x/pkg/
       EOE
+   #\
   }
 }
 
