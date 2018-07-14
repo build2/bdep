@@ -150,14 +150,8 @@ deinit += -d prj
   #
   mkdir --no-cleanup prj/prj.pkg;
 
-  # @@ Shouldn't we add mv builtin?
-  #
-  fs = prj/prj/ prj/build/ prj/buildfile prj/manifest prj/.gitignore;
-  cp --no-cleanup -p -r $fs prj/prj.pkg/;
-  rm -r $fs;
-
-  cp --no-cleanup -p -r prj/prj.pkg/ prj/prj;
-  rm -r prj/prj.pkg/;
+  mv prj/prj prj/build prj/buildfile prj/manifest prj/.gitignore prj/prj.pkg/;
+  mv prj/prj.pkg prj/prj;
 
   cat <<EOI >=prj/packages.manifest;
     : 1

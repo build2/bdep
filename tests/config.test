@@ -211,7 +211,7 @@ deinit += -d prj
 {
   $clone_root_prj;
 
-  $* create -- @cfg $cxx 2>>/"EOE";
+  $* create -- @cfg $cxx &prj-cfg/*** 2>>/"EOE";
     created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
     EOE
 
@@ -221,8 +221,7 @@ deinit += -d prj
     %  new prj.+19700101000000%
     EOE
 
-  cp --no-cleanup -r prj-cfg prj-cfg2 &prj-cfg2/***;
-  rm -r prj-cfg;
+  mv prj-cfg prj-cfg2;
 
   $* move @cfg prj-cfg2 2>>/"EOE";
     moved configuration @cfg $~/prj-cfg/ 1 to $~/prj-cfg2/
