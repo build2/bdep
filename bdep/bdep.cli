@@ -335,7 +335,7 @@ namespace bdep
          <...>
          \
 
-         It is also possible for several projects to shared a build
+         It is also possible for several projects to share a build
          configuration. In this case all the projects are synchronized at once
          regardless of the originating project. For example, if we were also
          the authors of \cb{libhello} and hosted it in a separate version
@@ -355,7 +355,7 @@ namespace bdep
 
          The \l{bdep-sync(1)} command is also used to upgrade or downgrade
          dependencies (and it is also executed as the last step of \cb{init}).
-         Let's say we learned a new version of \cb{libhello} was release and
+         Let's say we learned a new version of \cb{libhello} was released and
          we would like to try it out.
 
          To refresh the list of available dependency packages we use the
