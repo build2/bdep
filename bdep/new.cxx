@@ -158,6 +158,26 @@ namespace bdep
         fail << "package directory " << out << " is not a subdirectory of "
              << "project directory " << prj;
 
+      // As a sanity check, verify none of the directories between us and the
+      // project look like packages.
+      //
+      project_package pp (
+        find_project_package (out, true /* ignore_not_found */));
+
+      if (!pp.project.empty ())
+      {
+        if (pp.project != prj)
+          fail << prj << " is not a project directory" <<
+            info << pp.project << " looks like a project directory";
+
+        if (pp.package)
+          fail << "package directory " << out << " is inside another "
+               << "package directory " << prj / *pp.package <<
+            info << "nested packages are not allowed";
+      }
+      else
+        warn << prj << " does not look like a project directory";
+
       pkg = out.leaf (prj);
     }
     else
@@ -167,8 +187,8 @@ namespace bdep
       prj = out;
     }
 
-    // If the output directory already exists, make sure it is
-    // empty. Otherwise create it.
+    // If the output directory already exists, make sure it is empty.
+    // Otherwise create it.
     //
     if (!exists (out))
       mk (out);

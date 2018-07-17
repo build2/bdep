@@ -125,20 +125,8 @@ namespace bdep
     return r;
   }
 
-  // Given a directory which can be a project root, a package root, or one of
-  // their subdirectories, return the absolute project (first) and relative
-  // package (second) directories. The package directory may be absent if the
-  // given directory is not within a package root or empty if the project and
-  // package roots are the same.
-  //
-  struct project_package
-  {
-    dir_path           project;
-    optional<dir_path> package;
-  };
-
-  static project_package
-  find_project_packages (const dir_path& start)
+  project_package
+  find_project_package (const dir_path& start, bool ignore_nf)
   {
     dir_path prj;
     optional<dir_path> pkg;
@@ -168,7 +156,7 @@ namespace bdep
       }
 
       // Check for the database file first since an (initialized) simple
-      // project mosl likely won't have any *.manifest files.
+      // project most likely won't have any *.manifest files.
       //
       if (exists (d / bdep_file, true)     ||
           exists (d / packages_file, true) ||
@@ -188,7 +176,12 @@ namespace bdep
     if (prj.empty ())
     {
       if (!pkg)
+      {
+        if (ignore_nf)
+          return project_package ();
+
         fail << start << " is not a (sub)directory of a package or project";
+      }
 
       // Project and package are the same.
       //
@@ -277,7 +270,7 @@ namespace bdep
     {
       for (const dir_path& d: po.directory ())
       {
-        project_package p (find_project_packages (d));
+        project_package p (find_project_package (d));
 
         // We only work on one project at a time.
         //
@@ -313,7 +306,7 @@ namespace bdep
     }
     else
     {
-      project_package p (find_project_packages (path::current_directory ()));
+      project_package p (find_project_package (path::current_directory ()));
 
       r.project = move (p.project);
 
