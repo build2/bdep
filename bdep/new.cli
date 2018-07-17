@@ -56,7 +56,7 @@ namespace bdep
      The last form adds the new package to the \cb{packages.manifest} file
      creating it if necessary. If no project directory is explicitly specified
      with \c{\b{--directory}|\b{-d}}, then the current working directory is
-     assumed.
+     assumed. Note that nested packages are not allowed.
 
      The project parameters such as type (executable, library, etc), language,
      and version control system can be customized as described next. Some of
