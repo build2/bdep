@@ -123,6 +123,25 @@ namespace bdep
        multiple build options."
     }
 
+    path --curl = "curl"
+    {
+      "<path>",
+      "The curl program to be used for network operations. You can also
+       specify additional options that should be passed to the curl program
+       with \cb{--curl-option}.
+
+       If the curl program is not explicitly specified, then \cb{bdep} will use
+       \cb{curl} by default."
+    }
+
+    strings --curl-option
+    {
+      "<opt>",
+      "Additional option to be passed to the curl program. See \cb{--curl} for
+       more information on the curl program. Repeat this option to specify
+       multiple curl options."
+    }
+
     string --pager // String to allow empty value.
     {
       "<path>",

@@ -23,15 +23,16 @@ test.options += --build $build
 # (for example, to make sure that configuration post-test state is valid and is
 # as expected).
 #
-clean  = $* clean
-deinit = $* deinit
-init   = $* init
-fetch  = $* fetch
-new    = $* new --no-checks
-status = $* status
-sync   = $* sync
-update = $* update
-config = $* config
+clean   = $* clean
+deinit  = $* deinit
+init    = $* init
+fetch   = $* fetch
+new     = $* new --no-checks
+status  = $* status
+sync    = $* sync
+update  = $* update
+config  = $* config
+publish = $* publish
 
 # All testscripts are named after bdep commands, for example sync.test. So the
 # testscript scope id is a name of the command being tested.

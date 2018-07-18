@@ -119,6 +119,16 @@ namespace bdep
        obtained from the environment and/or version control system. See the
        ENVIRONMENT section for details."
     }
+
+    string --simulate
+    {
+      "<outcome>",
+      "Simulate the specified outcome of the submission process without
+       actually performing any externally visible actions (such as publishing
+       the package). The commonly used outcome value is \cb{success}. For
+       other recognized outcomes refer to the submission service
+       documentation."
+    }
   };
 
   "\h|ENVIRONMENT|

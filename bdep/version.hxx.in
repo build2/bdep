@@ -53,4 +53,43 @@ $libodb.check(LIBODB_VERSION, LIBODB_SNAPSHOT)$
 
 $libodb-sqlite.check(LIBODB_SQLITE_VERSION, LIBODB_SQLITE_SNAPSHOT)$
 
+// User agent.
+//
+#if   defined(_WIN32)
+# if defined(__MINGW32__)
+#  define BDEP_OS "MinGW"
+# else
+#  define BDEP_OS "Windows"
+# endif
+#elif defined(__linux)
+#  define BDEP_OS "GNU/Linux"
+#elif defined(__APPLE__)
+#  define BDEP_OS "MacOS"
+#elif defined(__CYGWIN__)
+#  define BDEP_OS "Cygwin"
+#elif defined(__FreeBSD__)
+#  define BDEP_OS "FreeBSD"
+#elif defined(__OpenBSD__)
+#  define BDEP_OS "OpenBSD"
+#elif defined(__NetBSD__)
+#  define BDEP_OS "NetBSD"
+#elif defined(__sun)
+#  define BDEP_OS "Solaris"
+#elif defined(__hpux)
+#  define BDEP_OS "HP-UX"
+#elif defined(_AIX)
+#  define BDEP_OS "AIX"
+#elif defined(__unix)
+#  define BDEP_OS "Unix"
+#elif defined(__posix)
+#  define BDEP_OS "Posix"
+#else
+#  define BDEP_OS "Other"
+#endif
+
+#define BDEP_USER_AGENT                                             \
+  "bdep/" BDEP_VERSION_ID " (" BDEP_OS "; +https://build2.org)"     \
+  " libbpkg/" LIBBPKG_VERSION_ID                                    \
+  " libbutl/" LIBBUTL_VERSION_ID
+
 #endif // BDEP_VERSION

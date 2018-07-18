@@ -17,7 +17,7 @@ namespace bdep
   {
     try
     {
-      return process_start_callback (
+      return butl::process_start_callback (
         [] (const char* const args[], size_t n)
         {
           if (verb >= 2)

@@ -1,0 +1,210 @@
+# file      : tests/publish.test
+# copyright : Copyright (c) 2014-2018 Code Synthesis Ltd
+# license   : MIT; see accompanying LICENSE file
+
+.include common.test project.test
+
+# By default simulate the package submissions to the stage repository.
+#
+repository = ($config.bdep.test.repository != [null] \
+              ? "$config.bdep.test.repository" \
+	      : 'https://stage.build2.org')
+
+test.arguments += --repository "$repository" --control 'none' --yes
+
+cxx = cc "config.cxx=$config.cxx"
+
+new  += 2>!
+init += $cxx -d prj 2>! &prj/**/bootstrap/***
+
+# Note that using the same package name and version for tests may result in
+# duplicate submissions. We will use unique version for each test,
+# incrementing the patch version for 1.0.X.
+#
+# Next version to use: 1.0.8
+#
+: single-pkg
+:
+{
+  test.arguments += --simulate 'success'
+
+  : basic
+  :
+  {
+    $clone_root_prj;
+    $init -C @cfg &prj-cfg/***;
+    sed -i -e 's/^(version:) .*$/\1 1.0.1/' prj/manifest;
+
+    $* 2>>~%EOE%
+      synchronizing:
+        upgrade prj/1.0.1
+      submitting prj-1.0.1.tar.gz
+      %.
+      %.*prj/1.0.1 submission is queued \(.{12}\)%
+      EOE
+  }
+
+  : no-cfg
+  :
+  {
+    $clone_root_prj;
+
+    $* 2>>~%EOE% != 0
+      %error: no default configuration in project .+%
+        info: use (@<cfg-name> | --config|-c <cfg-dir> | --all|-a) to specify configuration explicitly
+      EOE
+  }
+
+  : multi-cfg
+  :
+  {
+    $clone_root_prj;
+    $init -C @cfg1 &prj-cfg1/***;
+    $init -C @cfg2 &prj-cfg2/***;
+
+    $* --all 2>'error: multiple configurations specified for publish' != 0
+  }
+}
+
+: multi-pkg
+:
+{
+  test.arguments += --simulate 'success'
+
+  +$new -t empty prj &prj/***
+  +$new --package -t lib libprj -d prj
+  +$new --package -t exe prj    -d prj
+
+  : both
+  :
+  {
+    $clone_prj;
+    sed -i -e 's/^(version:) .*$/\1 1.0.2/' prj/libprj/manifest;
+    sed -i -e 's/^(version:) .*$/\1 1.0.2/' prj/prj/manifest;
+    $init -C @cfg &prj-cfg/***;
+
+    $* 2>>~%EOE%
+      submitting libprj-1.0.2.tar.gz
+      %.
+      %.*libprj/1.0.2 submission is queued \(.{12}\)%
+      submitting prj-1.0.2.tar.gz
+      %.
+      %.*prj/1.0.2 submission is queued \(.{12}\)%
+      EOE
+  }
+
+  : single
+  :
+  {
+    $clone_prj;
+    sed -i -e 's/^(version:) .*$/\1 1.0.3/' prj/libprj/manifest;
+    $init -C @cfg &prj-cfg/***;
+
+    # Publish the single libprj package rather than the whole prj project.
+    #
+    test.arguments = $regex.apply($test.arguments, '^(prj)$', '\1/libprj');
+
+    $* 2>>~%EOE%
+      submitting libprj-1.0.3.tar.gz
+      %.
+      %.*libprj/1.0.3 submission is queued \(.{12}\)%
+      EOE
+  }
+
+  : prompt
+  :
+  {
+    $clone_prj;
+    sed -i -e 's/^(version:) .*$/\1 1.0.4/' prj/libprj/manifest;
+    sed -i -e 's/^(version:) .*$/\1 1.0.4/' prj/prj/manifest;
+    $init -C @cfg &prj-cfg/***;
+
+    # Suppress the --yes option.
+    #
+    test.arguments = $regex.apply($test.arguments, '^(--yes)$', '');
+
+    $* <'y' 2>>~"%EOE%"
+      publishing:
+        to:      $repository
+      %  as:      .+@.+%
+
+        package: libprj
+        version: 1.0.4
+        project: prj
+        section: stable
+
+        package: prj
+        version: 1.0.4
+        project: prj
+        section: stable
+      continue? [y/n] submitting libprj-1.0.4.tar.gz
+      %.
+      %.*libprj/1.0.4 submission is queued \\\(.{12}\\\)%
+      submitting prj-1.0.4.tar.gz
+      %.
+      %.*prj/1.0.4 submission is queued \\\(.{12}\\\)%
+      EOE
+  }
+}
+
+: failure
+:
+{
+  : duplicate-archive
+  :
+  {
+    test.arguments += --simulate 'duplicate-archive'
+
+    $clone_root_prj;
+    $init -C @cfg &prj-cfg/***;
+    sed -i -e 's/^(version:) .*$/\1 1.0.5/' prj/manifest;
+
+    $* 2>>~%EOE% != 0
+      synchronizing:
+        upgrade prj/1.0.5
+      submitting prj-1.0.5.tar.gz
+      %.
+      %.*error: duplicate submission%
+      EOE
+  }
+
+  : internal-error-text
+  :
+  {
+    test.arguments += --simulate 'internal-error-text'
+
+    $clone_root_prj;
+    $init -C @cfg &prj-cfg/***;
+    sed -i -e 's/^(version:) .*$/\1 1.0.6/' prj/manifest;
+
+    $* 2>>~%EOE% != 0
+      synchronizing:
+        upgrade prj/1.0.6
+      submitting prj-1.0.6.tar.gz
+      %.
+      %.*error: submission handling failed%
+      %  info: consider reporting this to .+ repository maintainers%
+      %  info: checksum: .{64}%
+      EOE
+  }
+
+  : internal-error-html
+  :
+  {
+    test.arguments += --simulate 'internal-error-html'
+
+    $clone_root_prj;
+    $init -C @cfg &prj-cfg/***;
+    sed -i -e 's/^(version:) .*$/\1 1.0.7/' prj/manifest;
+
+    $* 2>>~%EOE% != 0
+      synchronizing:
+        upgrade prj/1.0.7
+      submitting prj-1.0.7.tar.gz
+      %.
+      %.*error: HTTP status code 500 \(internal server error\)%
+      %  info: consider reporting this to .+ repository maintainers%
+      %  info: checksum: .{64}%
+      EOE
+  }
+}
