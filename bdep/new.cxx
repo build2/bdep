@@ -170,6 +170,7 @@ namespace bdep
     // Do some sanity check (nested packages, etc; you would be surprised what
     // people come up with).
     //
+    if (!o.no_checks ())
     {
       project_package pp (
         find_project_package (out, true /* ignore_not_found */));
@@ -366,8 +367,10 @@ namespace bdep
       // build/bootstrap.build
       //
       os.open (f = bd / "bootstrap.build");
-      os << "project = " << n                                          << endl
-         <<                                                               endl
+      os << "project = " << n                                          << endl;
+      if (o.no_amalgamation ())
+        os << "amalgamation = # Disabled."                             << endl;
+      os <<                                                               endl
          << "using version"                                            << endl
          << "using config"                                             << endl;
       if (tests)

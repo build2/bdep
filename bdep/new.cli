@@ -195,16 +195,17 @@ namespace bdep
        new project."
     }
 
-    dir_path --config-add|-A
+    dir_path --output-dir|-o
     {
       "<dir>",
-      "Add an existing build configuration <dir>."
+      "Create the project in the specified directory."
     }
 
-    dir_path --config-create|-C
+    dir_path --directory|-d
     {
       "<dir>",
-      "Create a new build configuration in <dir>."
+      "Assume the project is in the specified directory rather than in the
+       current working directory. Only used with \cb{--package}."
     }
 
     cmd_new_type --type|-t
@@ -232,17 +233,28 @@ namespace bdep
        system-specific."
     }
 
-    dir_path --output-dir|-o
+    bool --no-amalgamation
     {
-      "<dir>",
-      "Create the project in the specified directory."
+      "Create a project with disabled amalgamation support. This option is
+       normally only used for testing."
     }
 
-    dir_path --directory|-d
+    bool --no-checks
+    {
+      "Suppress nested project/package checks. This option is normally only
+       used for testing."
+    }
+
+    dir_path --config-add|-A
     {
       "<dir>",
-      "Assume project is in the specified directory rather than in the current
-       working directory."
+      "Add an existing build configuration <dir>."
+    }
+
+    dir_path --config-create|-C
+    {
+      "<dir>",
+      "Create a new build configuration in <dir>."
     }
   };
 

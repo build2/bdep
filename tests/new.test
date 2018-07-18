@@ -4,6 +4,10 @@
 
 .include common.test
 
+# Disable nesting checks and amalgamation support in the created projects.
+#
+test.arguments += --no-checks --no-amalgamation
+
 cxx = "config.cxx=$config.cxx"
 
 status += -d prj
