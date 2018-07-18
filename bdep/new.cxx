@@ -158,26 +158,6 @@ namespace bdep
         fail << "package directory " << out << " is not a subdirectory of "
              << "project directory " << prj;
 
-      // As a sanity check, verify none of the directories between us and the
-      // project look like packages.
-      //
-      project_package pp (
-        find_project_package (out, true /* ignore_not_found */));
-
-      if (!pp.project.empty ())
-      {
-        if (pp.project != prj)
-          fail << prj << " is not a project directory" <<
-            info << pp.project << " looks like a project directory";
-
-        if (pp.package)
-          fail << "package directory " << out << " is inside another "
-               << "package directory " << prj / *pp.package <<
-            info << "nested packages are not allowed";
-      }
-      else
-        warn << prj << " does not look like a project directory";
-
       pkg = out.leaf (prj);
     }
     else
@@ -185,6 +165,38 @@ namespace bdep
       out = o.output_dir_specified () ? o.output_dir () : dir_path (n);
       out.complete ().normalize ();
       prj = out;
+    }
+
+    // Do some sanity check (nested packages, etc; you would be surprised what
+    // people come up with).
+    //
+    {
+      project_package pp (
+        find_project_package (out, true /* ignore_not_found */));
+
+      if (o.package ())
+      {
+        if (!pp.project.empty ())
+        {
+          if (pp.project != prj)
+            fail << prj << " is not a project directory" <<
+              info << pp.project << " looks like a project directory";
+
+          if (pp.package)
+            fail << "package directory " << out << " is inside another "
+                 << "package directory " << prj / *pp.package <<
+              info << "nested packages are not allowed";
+        }
+        else
+          warn << prj << " does not look like a project directory";
+      }
+      else
+      {
+        if (!pp.project.empty ())
+          fail << "project directory " << out << " is inside another "
+               << "project directory " << pp.project <<
+            info << "nested projects are not allowed";
+      }
     }
 
     // If the output directory already exists, make sure it is empty.
