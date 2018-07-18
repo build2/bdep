@@ -84,6 +84,28 @@ namespace bdep
   extern const path repositories_file;   // repositories.manifest
   extern const path configurations_file; // configurations.manifest
 
+  // Temporary directory facility.
+  //
+  // This is normally .bdep/tmp/ but can also be some system-wide directory
+  // (e.g., /tmp/bdep-XXX/) if there is no bdep project. This directory
+  // is automatically created and cleaned up for most commands in main() so
+  // you don't need to call init_tmp() explicitly except for certain special
+  // commands (like new).
+  //
+  extern dir_path temp_dir;
+
+  auto_rmfile
+  tmp_file (const string& prefix);
+
+  auto_rmdir
+  tmp_dir (const string& prefix);
+
+  void
+  init_tmp (const dir_path& prj);
+
+  void
+  clean_tmp (bool ignore_errors);
+
   // Process path (argv[0]).
   //
   extern const char* argv0;
@@ -112,6 +134,14 @@ namespace bdep
 
   void
   rm (const path&, uint16_t verbosity = 3);
+
+  enum class rm_error_mode {ignore, warn, fail};
+
+  void
+  rm_r (const dir_path&,
+        bool dir_itself = true,
+        uint16_t verbosity = 3,
+        rm_error_mode = rm_error_mode::fail);
 
   // Run a process.
   //

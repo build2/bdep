@@ -656,6 +656,10 @@ namespace bdep
                                !dep_pkgs.empty () /* ignore_packages */,
                                false              /* load_packages   */));
 
+      // Initialize tmp directory.
+      //
+      init_tmp (pp.project);
+
       // Load project configurations.
       //
       {
@@ -713,6 +717,10 @@ namespace bdep
 
       if (cfgs.empty ())
         return 0; // All configuration are already (being) synchronized.
+
+      // Initialize tmp directory.
+      //
+      init_tmp (empty_dir_path);
     }
 
     // Synchronize each configuration.

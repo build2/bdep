@@ -1105,6 +1105,10 @@ namespace bdep
     //
     mk (prj / bdep_dir);
 
+    // Initialize tmp directory.
+    //
+    init_tmp (prj);
+
     // Everything else requires a database.
     //
     database db (open (prj, trace, true /* create */));

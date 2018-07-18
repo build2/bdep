@@ -333,7 +333,7 @@ namespace bdep
     // Prepare package archives and calculate their checksums. Also verify
     // each archive with bpkg-pkg-verify for good measure.
     //
-    auto_rmdir dr_rm (dir_path ("/tmp/publish")); //@@ TODO tmp facility like in bpkg.
+    auto_rmdir dr_rm (tmp_dir ("publish"));
     const dir_path& dr (dr_rm.path);   // dist.root
     mk (dr);
 

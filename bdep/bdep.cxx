@@ -12,6 +12,7 @@
 #include <bdep/types.hxx>
 #include <bdep/utility.hxx>
 
+#include <bdep/project.hxx>         // find_project()
 #include <bdep/diagnostics.hxx>
 #include <bdep/bdep-options.hxx>
 #include <bdep/project-options.hxx>
@@ -68,9 +69,25 @@ cfg_name (...)
   return false;
 }
 
+// Find the project directory if it is possible for the option class O and
+// return empty path otherwise.
+//
+template <typename O>
+static inline auto
+prj_dir (const O* o) -> decltype(find_project (*o))
+{
+  return find_project (*o);
+}
+
+static inline auto
+prj_dir (...) -> const dir_path& {return empty_dir_path;}
+
 template <typename O>
 static O
-init (const common_options& co, cli::group_scanner& scan, strings& args)
+init (const common_options& co,
+      cli::group_scanner& scan,
+      strings& args,
+      bool tmp)
 {
   O o;
   static_cast<common_options&> (o) = co;
@@ -123,6 +140,11 @@ init (const common_options& co, cli::group_scanner& scan, strings& args)
   verb = o.verbose_specified ()
     ? o.verbose ()
     : o.V () ? 3 : o.v () ? 2 : o.quiet () ? 0 : 1;
+
+  // Temporary directory.
+  //
+  if (tmp)
+    init_tmp (dir_path (prj_dir (&o)));
 
   return o;
 }
@@ -196,7 +218,7 @@ try
   const common_options& co (o);
 
   if (o.help ())
-    return help (init<help_options> (co, scan, argsv), "", nullptr);
+    return help (init<help_options> (co, scan, argsv, false), "", nullptr);
 
   // The next argument should be a command.
   //
@@ -211,7 +233,7 @@ try
 
   if (h)
   {
-    ho = init<help_options> (co, scan, argsv);
+    ho = init<help_options> (co, scan, argsv, false);
 
     if (args.more ())
     {
@@ -255,28 +277,31 @@ try
     //  break;
     // }
     //
-#define COMMAND_IMPL(ON, FN, SN)                                            \
-    if (cmd.ON ())                                                          \
-    {                                                                       \
-      if (h)                                                                \
-        r = help (ho, SN, print_bdep_##FN##_usage);                         \
-      else                                                                  \
-        r = cmd_##FN (init<cmd_##FN##_options> (co, scan, argsv), args);    \
-                                                                            \
-      break;                                                                \
+#define COMMAND_IMPL(ON, FN, SN, TMP)                                         \
+    if (cmd.ON ())                                                            \
+    {                                                                         \
+      if (h)                                                                  \
+        r = help (ho, SN, print_bdep_##FN##_usage);                           \
+      else                                                                    \
+        r = cmd_##FN (init<cmd_##FN##_options> (co, scan, argsv, TMP), args); \
+                                                                              \
+      break;                                                                  \
     }
 
-    COMMAND_IMPL (new_,    new,     "new");
-    COMMAND_IMPL (init,    init,    "init");
-    COMMAND_IMPL (sync,    sync,    "sync");
-    COMMAND_IMPL (fetch,   fetch,   "fetch");
-    COMMAND_IMPL (status,  status,  "status");
-    COMMAND_IMPL (publish, publish, "publish");
-    COMMAND_IMPL (deinit,  deinit,  "deinit");
-    COMMAND_IMPL (config,  config,  "config");
-    COMMAND_IMPL (test,    test,    "test");
-    COMMAND_IMPL (update,  update,  "update");
-    COMMAND_IMPL (clean,   clean,   "clean");
+    // Temp dir is initialized manually for these commands.
+    //
+    COMMAND_IMPL (new_,    new,     "new",     false);
+    COMMAND_IMPL (sync,    sync,    "sync",    false);
+
+    COMMAND_IMPL (init,    init,    "init",    true);
+    COMMAND_IMPL (fetch,   fetch,   "fetch",   true);
+    COMMAND_IMPL (status,  status,  "status",  true);
+    COMMAND_IMPL (publish, publish, "publish", true);
+    COMMAND_IMPL (deinit,  deinit,  "deinit",  true);
+    COMMAND_IMPL (config,  config,  "config",  true);
+    COMMAND_IMPL (test,    test,    "test",    true);
+    COMMAND_IMPL (update,  update,  "update",  true);
+    COMMAND_IMPL (clean,   clean,   "clean",   true);
 
     assert (false);
     fail << "unhandled command";
@@ -286,6 +311,8 @@ try
     r = 1;
     break;
   }
+
+  clean_tmp (true /* ignore_error */);
 
   if (r != 0)
     return r;
