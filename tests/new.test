@@ -4,86 +4,94 @@
 
 .include common.test
 
-# Disable nesting checks and amalgamation support in the created projects.
+# Disable nesting checks in the created projects.
 #
-test.arguments += --no-checks --no-amalgamation
+test.arguments += --no-checks
 
 cxx = "config.cxx=$config.cxx"
 
 status += -d prj
 
-: exe
-{
-  $* -t exe -l c++ prj 2>>/"EOE" &prj/***;
-    created new executable project prj in $~/prj/
-    EOE
-
-  $build prj/ $cxx 2>>/EOE
-    c++ prj/prj/cxx{prj}
-    ld prj/prj/exe{prj}
-    EOE
-}
-
-: lib
-{
-  $* -t lib -l c++ libprj 2>>/"EOE" &libprj/***;
-    created new library project libprj in $~/libprj/
-    EOE
-
-  $build libprj/ $cxx 2>>/~%EOE%
-    %.{4}
-    %ld libprj/.+%{3}
-    EOE
-}
-
-: pkg
+: no-cfg
 :
 {
-  : add
-  :
-  : Test creating a library as a separate package in the project.
-  :
+  # Disable amalgamation support in the created projects.
+  #
+  test.arguments += --no-amalgamation
+
+  : exe
   {
-    $* -t empty prj 2>>/"EOE" &prj/***;
-      created new empty project prj in $~/prj/
+    $* --no-amalgamation -t exe -l c++ prj 2>>/"EOE" &prj/***;
+      created new executable project prj in $~/prj/
       EOE
 
-    $* --package -t lib libprj -d prj 2>>/"EOE";
-      created new library package libprj in $~/prj/libprj/
-      EOE
-
-    $build prj/libprj/ $cxx 2>>/~%EOE%
-      %.{4}
-      %ld prj/libprj/.+%{3}
+    $build prj/ $cxx 2>>/EOE
+      c++ prj/prj/cxx{prj}
+      ld prj/prj/exe{prj}
       EOE
   }
 
-  : name
-  :
-  : Test that the package/project name is validated.
+  : lib
+  {
+    $* --no-amalgamation -t lib -l c++ libprj 2>>/"EOE" &libprj/***;
+      created new library project libprj in $~/libprj/
+      EOE
+
+    $build libprj/ $cxx 2>>/~%EOE%
+      %.{4}
+      %ld libprj/.+%{3}
+      EOE
+  }
+
+  : pkg
   :
   {
-    : package
+    : add
     :
-    $* x 2>'error: invalid package name: length is less than two characters' != 0
+    : Test creating a library as a separate package in the project.
+    :
+    {
+      $* -t empty prj 2>>/"EOE" &prj/***;
+        created new empty project prj in $~/prj/
+        EOE
 
-    : project
-    :
-    : Here we also test that the project name is also validated as a package.
-    :
-    $* -t empty x 2>'error: invalid project name: length is less than two characters' != 0
+      $* --package -t lib libprj -d prj 2>>/"EOE";
+        created new library package libprj in $~/prj/libprj/
+        EOE
 
-    : project-derived
+      $build prj/libprj/ $cxx 2>>/~%EOE%
+        %.{4}
+        %ld prj/libprj/.+%{3}
+        EOE
+    }
+
+    : name
     :
-    $* -t empty xx &xx/*** 2>>/"EOE";
-      created new empty project xx in $~/xx/
-      EOE
-    mv xx x;
-    $* --package pkg -d x 2>>/"EOE"
-      warning: project name 'x' is invalid: length is less than two characters
-        info: leaving the 'project' manifest value empty
-      created new executable package pkg in $~/x/pkg/
-      EOE
+    : Test that the package/project name is validated.
+    :
+    {
+      : package
+      :
+      $* x 2>'error: invalid package name: length is less than two characters' != 0
+
+      : project
+      :
+      : Here we also test that the project name is also validated as a package.
+      :
+      $* -t empty x 2>'error: invalid project name: length is less than two characters' != 0
+
+      : project-derived
+      :
+      $* -t empty xx &xx/*** 2>>/"EOE";
+        created new empty project xx in $~/xx/
+        EOE
+      mv xx x;
+      $* --package pkg -d x 2>>/"EOE"
+        warning: project name 'x' is invalid: length is less than two characters
+          info: leaving the 'project' manifest value empty
+        created new executable package pkg in $~/x/pkg/
+        EOE
+    }
   }
 }
 
