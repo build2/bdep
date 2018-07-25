@@ -4,6 +4,8 @@
 
 #include <bdep/new.hxx>
 
+#include <libbutl/project-name.mxx>
+
 #include <bdep/project.hxx>
 #include <bdep/project-email.hxx>
 #include <bdep/database.hxx>
@@ -16,7 +18,7 @@ using namespace std;
 
 namespace bdep
 {
-  using bpkg::package_name;
+  using butl::project_name;
 
   using type = cmd_new_type;
   using lang = cmd_new_lang;
@@ -83,7 +85,7 @@ namespace bdep
 
     // Validate vcs options.
     //
-    const vcs& v (o.vcs ());
+    const vcs& vc (o.vcs ());
 
     // Validate argument.
     //
@@ -116,6 +118,7 @@ namespace bdep
     //
     const string& n (pkgn.string ());
     const string& b (pkgn.base ());
+    const string& v (pkgn.variable ());
 
     string s (b);
     switch (t)
@@ -217,7 +220,7 @@ namespace bdep
     //
     if (!pkg)
     {
-      switch (v)
+      switch (vc)
       {
       case vcs::git:  run ("git", "init", "-q", out); break;
       case vcs::none:                                 break;
@@ -233,7 +236,7 @@ namespace bdep
       //
       // See also tests/.gitignore below.
       //
-      if (v == vcs::git)
+      if (vc == vcs::git)
       {
         // Use POSIX directory separators here.
         //
@@ -317,7 +320,7 @@ namespace bdep
       // There was also an idea to warn if the project name ends with a digit
       // (think libfoo and libfoo2).
       //
-      optional<string> prjn;
+      optional<project_name> prjn;
 
       if (o.package ())
       {
@@ -327,14 +330,14 @@ namespace bdep
         {
           try
           {
-            prjn = package_name (move (p)).string (); // Roundtrip.
+            prjn = project_name (move (p));
           }
           catch (const invalid_argument& e)
           {
             warn << "project name '" << p << "' is invalid: " << e <<
               info << "leaving the 'project' manifest value empty";
 
-            prjn = "";
+            prjn = project_name ();
           }
         }
       }
@@ -348,18 +351,18 @@ namespace bdep
       }
 
       os.open (f = out / "manifest");
-      os << ": 1"                                                      << endl
-         << "name: " << n                                              << endl
-         << "version: 0.1.0-a.0.z"                                     << endl;
+      os << ": 1"                                                       << endl
+         << "name: " << n                                               << endl
+         << "version: 0.1.0-a.0.z"                                      << endl;
       if (prjn)
-        os << "project: " << *prjn                                     << endl;
-      os << "summary: " << s << " " << t                               << endl
-         << "license: TODO"                                            << endl
-         << "url: https://example.org/" << (prjn ? *prjn : n)          << endl
-         << "email: " << email                                         << endl
-         << "depends: * build2 >= 0.8.0-"                              << endl
-         << "depends: * bpkg >= 0.8.0-"                                << endl
-         << "#depends: libhello ^1.0.0"                                << endl;
+        os << "project: " << *prjn                                      << endl;
+      os << "summary: " << s << " " << t                                << endl
+         << "license: TODO"                                             << endl
+         << "url: https://example.org/" << (prjn ? prjn->string () : n) << endl
+         << "email: " << email                                          << endl
+         << "depends: * build2 >= 0.8.0-"                               << endl
+         << "depends: * bpkg >= 0.8.0-"                                 << endl
+         << "#depends: libhello ^1.0.0"                                 << endl;
       os.close ();
 
       // build/
@@ -425,7 +428,7 @@ namespace bdep
 
       // build/.gitignore
       //
-      if (v == vcs::git)
+      if (vc == vcs::git)
       {
         os.open (f = bd / ".gitignore");
         os << "config.build"                                           << endl
@@ -542,7 +545,7 @@ namespace bdep
 
           // <base>/.gitignore
           //
-          if (v == vcs::git)
+          if (vc == vcs::git)
           {
             os.open (f = sd / ".gitignore");
             os << s                                                    << endl;
@@ -733,6 +736,7 @@ namespace bdep
           // version.h[??].in
           //
           os.open (f = sd / ver + ".in");
+
           os << "#pragma once"                                         << endl
              <<                                                           endl
              << "// The numeric version format is AAABBBCCCDDDE where:"<< endl
@@ -754,19 +758,18 @@ namespace bdep
              << "// 3.0.0-b.2    0029999995020"                        << endl
              << "// 2.2.0-a.1.z  0020019990011"                        << endl
              << "//"                                                   << endl
-            //@@ TODO: these need to be sanitized like we do in config.import.*
-             << "#define " << m << "_VERSION       $" << n << ".version.project_number$ULL"   << endl
-             << "#define " << m << "_VERSION_STR   \"$" << n << ".version.project$\""         << endl
-             << "#define " << m << "_VERSION_ID    \"$" << n << ".version.project_id$\""      << endl
+             << "#define " << m << "_VERSION       $" << v << ".version.project_number$ULL"   << endl
+             << "#define " << m << "_VERSION_STR   \"$" << v << ".version.project$\""         << endl
+             << "#define " << m << "_VERSION_ID    \"$" << v << ".version.project_id$\""      << endl
              <<                                                                                  endl
-             << "#define " << m << "_VERSION_MAJOR $" << n << ".version.major$" << endl
-             << "#define " << m << "_VERSION_MINOR $" << n << ".version.minor$" << endl
-             << "#define " << m << "_VERSION_PATCH $" << n << ".version.patch$" << endl
+             << "#define " << m << "_VERSION_MAJOR $" << v << ".version.major$" << endl
+             << "#define " << m << "_VERSION_MINOR $" << v << ".version.minor$" << endl
+             << "#define " << m << "_VERSION_PATCH $" << v << ".version.patch$" << endl
              <<                                                                    endl
-             << "#define " << m << "_PRE_RELEASE   $" << n << ".version.pre_release$" << endl
+             << "#define " << m << "_PRE_RELEASE   $" << v << ".version.pre_release$" << endl
              <<                                                                          endl
-             << "#define " << m << "_SNAPSHOT_SN   $" << n << ".version.snapshot_sn$ULL"  << endl
-             << "#define " << m << "_SNAPSHOT_ID   \"$" << n << ".version.snapshot_id$\"" << endl;
+             << "#define " << m << "_SNAPSHOT_SN   $" << v << ".version.snapshot_sn$ULL"  << endl
+             << "#define " << m << "_SNAPSHOT_ID   \"$" << v << ".version.snapshot_id$\"" << endl;
           os.close ();
 
           // buildfile
@@ -839,7 +842,7 @@ namespace bdep
 
           // <base>/.gitignore
           //
-          if (v == vcs::git)
+          if (vc == vcs::git)
           {
             os.open (f = sd / ".gitignore");
             os << "# Generated version header."                      << endl
@@ -926,7 +929,7 @@ namespace bdep
 
           // tests/build/.gitignore
           //
-          if (v == vcs::git)
+          if (vc == vcs::git)
           {
             os.open (f = tbd / ".gitignore");
             os << "config.build"                                       << endl
@@ -943,7 +946,7 @@ namespace bdep
 
           // tests/.gitignore
           //
-          if (v == vcs::git)
+          if (vc == vcs::git)
           {
             os.open (f = td / ".gitignore");
             os << "# Test executables."                                << endl
