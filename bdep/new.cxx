@@ -107,19 +107,22 @@ namespace bdep
            << " name: " << e;
     }
 
-    const string& n (pkgn.string ());
-
-    // Full name vs the name stem (e.g, 'hello' in 'libhello').
+    // Full package name vs base name (e.g., libhello in libhello.bash) vs the
+    // name stem (e.g, hello in libhello).
     //
-    // We use the full name for filesystem directories and preprocessor macros
+    // We use the full name in the manifest and the top-level directory, the
+    // base name for inner filesystem directories and preprocessor macros,
     // while the stem for modules, namespaces, etc.
     //
-    string s (n);
+    const string& n (pkgn.string ());
+    const string& b (pkgn.base ());
+
+    string s (b);
     switch (t)
     {
     case type::exe:
       {
-        if (n.compare (0, 3, "lib") == 0)
+        if (s.compare (0, 3, "lib") == 0)
           warn << "executable name starts with 'lib'" <<
             info << "this package may not be acceptable to some repositories";
 
@@ -127,7 +130,7 @@ namespace bdep
       }
     case type::lib:
       {
-        if (n.compare (0, 3, "lib") == 0)
+        if (s.compare (0, 3, "lib") == 0)
           s.erase (0, 3);
         else
           warn << "library name does not start with 'lib'" <<
@@ -352,7 +355,7 @@ namespace bdep
         os << "project: " << *prjn                                     << endl;
       os << "summary: " << s << " " << t                               << endl
          << "license: TODO"                                            << endl
-         << "url: https://example.org/" << n                           << endl
+         << "url: https://example.org/" << (prjn ? *prjn : n)          << endl
          << "email: " << email                                         << endl
          << "depends: * build2 >= 0.8.0-"                              << endl
          << "depends: * bpkg >= 0.8.0-"                                << endl
@@ -445,9 +448,9 @@ namespace bdep
       if (t == type::bare)
         break;
 
-      // <name>/ (source subdirectory).
+      // <base>/ (source subdirectory).
       //
-      dir_path sd (dir_path (out) /= n);
+      dir_path sd (dir_path (out) /= b);
       mk (sd);
 
       switch (t)
@@ -458,9 +461,9 @@ namespace bdep
           {
           case lang::c:
             {
-              // <name>/<name>.c
+              // <base>/<stem>.c
               //
-              os.open (f = sd / n + ".c");
+              os.open (f = sd / s + ".c");
               os << "#include <stdio.h>"                               << endl
                  <<                                                       endl
                  << "int main (int argc, char *argv[])"                << endl
@@ -482,9 +485,9 @@ namespace bdep
             {
               string x (l.cxx_opt.cpp () ? "pp" : "xx");
 
-              // <name>/<name>.c(xx|pp)
+              // <base>/<stem>.c(xx|pp)
               //
-              os.open (f = sd / n + ".c" + x);
+              os.open (f = sd / s + ".c" + x);
               os << "#include <iostream>"                              << endl
                  <<                                                       endl
                  << "int main (int argc, char* argv[])"                << endl
@@ -505,7 +508,7 @@ namespace bdep
             }
           }
 
-          // <name>/buildfile
+          // <base>/buildfile
           //
           os.open (f = sd / "buildfile");
           os << "libs ="                                           << endl
@@ -517,7 +520,7 @@ namespace bdep
           {
           case lang::c:
             {
-              os << "exe{" << n << "}: {h c}{**} $libs"                <<
+              os << "exe{" << s << "}: {h c}{**} $libs"                <<
                 (tests ? " testscript" : "")                           << endl;
 
               x = "c";
@@ -525,7 +528,7 @@ namespace bdep
             }
           case lang::cxx:
             {
-              os << "exe{" << n << "}: {hxx ixx txx cxx}{**} $libs"    <<
+              os << "exe{" << s << "}: {hxx ixx txx cxx}{**} $libs"    <<
                 (tests ? " testscript" : "")                           << endl;
 
               x = "cxx";
@@ -537,21 +540,21 @@ namespace bdep
              << x << ".poptions =+ \"-I$out_root\" \"-I$src_root\""    << endl;
           os.close ();
 
-          // <name>/.gitignore
+          // <base>/.gitignore
           //
           if (v == vcs::git)
           {
             os.open (f = sd / ".gitignore");
-            os << n                                                    << endl;
+            os << s                                                    << endl;
             if (tests)
               os <<                                                       endl
                  << "# Testscript output directory (can be symlink)."  << endl
                  << "#"                                                << endl
-                 << "test-" << n                                       << endl;
+                 << "test-" << s                                       << endl;
             os.close ();
           }
 
-          // <name>/testscript
+          // <base>/testscript
           //
           if (!tests)
             break;
@@ -574,7 +577,7 @@ namespace bdep
         {
           string m; // Macro prefix.
           transform (
-            n.begin (), n.end (), back_inserter (m),
+            b.begin (), b.end (), back_inserter (m),
             [] (char c)
             {
               return (c == '-' || c == '+' || c == '.') ? '_' : ucase (c);
@@ -599,7 +602,7 @@ namespace bdep
                  <<                                                       endl
                  << "#include <stdio.h>"                               << endl
                  <<                                                       endl
-                 << "#include <" << n << "/" << exp << ">"             << endl
+                 << "#include <" << b << "/" << exp << ">"             << endl
                  <<                                                       endl
                  << "// Print a greeting for the specified name into the specified"  << endl
                  << "// stream. On success, return the number of character printed." << endl
@@ -612,7 +615,7 @@ namespace bdep
               // <stem>.c
               //
               os.open (f = sd / s + ".c");
-              os << "#include <" << n << "/" << hdr << ">"             << endl
+              os << "#include <" << b << "/" << hdr << ">"             << endl
                  <<                                                       endl
                  << "#include <errno.h>"                               << endl
                  <<                                                       endl
@@ -646,7 +649,7 @@ namespace bdep
                  << "#include <iosfwd>"                                << endl
                  << "#include <string>"                                << endl
                  <<                                                       endl
-                 << "#include <" << n << "/" << exp << ">"             << endl
+                 << "#include <" << b << "/" << exp << ">"             << endl
                  <<                                                       endl
                  << "namespace " << s                                  << endl
                  << "{"                                                << endl
@@ -662,7 +665,7 @@ namespace bdep
               // <stem>.c(xx|pp)
               //
               os.open (f = sd / s + ".c" + x);
-              os << "#include <" << n << "/" << hdr << ">"             << endl
+              os << "#include <" << b << "/" << hdr << ">"             << endl
                  <<                                                       endl
                  << "#include <ostream>"                               << endl
                  << "#include <stdexcept>"                             << endl
@@ -751,6 +754,7 @@ namespace bdep
              << "// 3.0.0-b.2    0029999995020"                        << endl
              << "// 2.2.0-a.1.z  0020019990011"                        << endl
              << "//"                                                   << endl
+            //@@ TODO: these need to be sanitized like we do in config.import.*
              << "#define " << m << "_VERSION       $" << n << ".version.project_number$ULL"   << endl
              << "#define " << m << "_VERSION_STR   \"$" << n << ".version.project$\""         << endl
              << "#define " << m << "_VERSION_ID    \"$" << n << ".version.project_id$\""      << endl
@@ -826,14 +830,14 @@ namespace bdep
              << "else"                                                                      << endl
              << "  lib{" << s << "}: bin.lib.version = @\"-$version.major.$version.minor\"" << endl
              <<                                                            endl
-             << "# Install into the " << n << "/ subdirectory of, say, /usr/include/" << endl
+             << "# Install into the " << b << "/ subdirectory of, say, /usr/include/" << endl
              << "# recreating subdirectories."                                        << endl
              << "#"                                                                   << endl
-             << "{" << hs << "}{*}: install         = include/$project/" << endl
+             << "{" << hs << "}{*}: install         = include/" << b << "/" << endl
              << "{" << hs << "}{*}: install.subdirs = true"              << endl;
           os.close ();
 
-          // <name>/.gitignore
+          // <base>/.gitignore
           //
           if (v == vcs::git)
           {
@@ -849,10 +853,10 @@ namespace bdep
           os.open (f = bd / "export.build");
           os << "$out_root/"                                           << endl
              << "{"                                                    << endl
-             << "  include " << n << "/"                               << endl
+             << "  include " << b << "/"                               << endl
              << "}"                                                    << endl
              <<                                                           endl
-             << "export $out_root/" << n << "/lib{" << s << "}"        << endl;
+             << "export $out_root/" << b << "/lib{" << s << "}"        << endl;
           os.close ();
 
           // tests/ (tests subproject).
@@ -970,8 +974,8 @@ namespace bdep
                  << "#include <string.h>"                              << endl
                  << "#include <assert.h>"                              << endl
                  <<                                                       endl
-                 << "#include <" << n << "/" << ver << ">"             << endl
-                 << "#include <" << n << "/" << hdr << ">"             << endl
+                 << "#include <" << b << "/" << ver << ">"             << endl
+                 << "#include <" << b << "/" << hdr << ">"             << endl
                  <<                                                       endl
                  << "int main ()"                                      << endl
                  << "{"                                                << endl
@@ -1011,8 +1015,8 @@ namespace bdep
                  << "#include <sstream>"                               << endl
                  << "#include <stdexcept>"                             << endl
                  <<                                                       endl
-                 << "#include <" << n << "/" << ver << ">"             << endl
-                 << "#include <" << n << "/" << hdr << ">"             << endl
+                 << "#include <" << b << "/" << ver << ">"             << endl
+                 << "#include <" << b << "/" << hdr << ">"             << endl
                  <<                                                       endl
                  << "int main ()"                                      << endl
                  << "{"                                                << endl
