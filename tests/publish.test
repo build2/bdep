@@ -10,7 +10,8 @@ repository = ($config.bdep.test.repository != [null] \
               ? "$config.bdep.test.repository" \
 	      : 'https://stage.build2.org')
 
-test.arguments += --repository "$repository" --control 'none' --yes
+test.arguments += --repository "$repository" --control 'none' --yes \
+--email user@example.com
 
 cxx = cc "config.cxx=$config.cxx"
 
