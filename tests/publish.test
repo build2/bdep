@@ -4,11 +4,16 @@
 
 .include common.test project.test
 
-# By default simulate the package submissions to the stage repository.
+# Repository to use for the package submissions simulation.
 #
-repository = ($config.bdep.test.repository != [null] \
-              ? "$config.bdep.test.repository" \
-	      : 'https://stage.build2.org')
+# Note: could use empty config.bdep.test.repository value to suppress
+# these test (which require network access).
+#
+repository = ($config.bdep.test.repository == [null] \
+              ? ($build.version.stage                \
+	         ? 'https://stage.build2.org'        \
+		 : 'https://cppget.org')             \
+	      : "$config.bdep.test.repository")
 
 test.arguments += --repository "$repository" --control 'none' --yes \
 --email user@example.com
