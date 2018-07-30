@@ -51,7 +51,7 @@ $libodb.check(LIBODB_VERSION, LIBODB_SNAPSHOT)$
 
 #include <odb/sqlite/version.hxx>
 
-$libodb-sqlite.check(LIBODB_SQLITE_VERSION, LIBODB_SQLITE_SNAPSHOT)$
+$libodb_sqlite.check(LIBODB_SQLITE_VERSION, LIBODB_SQLITE_SNAPSHOT)$
 
 // User agent.
 //
