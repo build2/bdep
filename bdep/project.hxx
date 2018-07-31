@@ -188,8 +188,9 @@ namespace bdep
   //
   struct package_location
   {
-    package_name name;
-    dir_path     path;
+    package_name           name;
+    optional<package_name> project; // Same semantics as in package_manifest.
+    dir_path               path;
   };
 
   using package_locations = vector<package_location>;

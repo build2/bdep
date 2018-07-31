@@ -226,11 +226,13 @@ namespace bdep
         dir_path d (path_cast<dir_path> (move (*m.location)));
         d.normalize (false /* actualize */, true /* cur_empty */);
 
-        pls.push_back (package_location {package_name (), move (d)});
+        pls.push_back (package_location {package_name (), nullopt, move (d)});
       }
     }
     else if (exists (prj / manifest_file))
-      pls.push_back (package_location {package_name (), dir_path ()});
+    {
+      pls.push_back (package_location {package_name (), nullopt, dir_path ()});
+    }
     else if (!allow_empty)
       fail << "no packages in project " << prj;
 
@@ -248,6 +250,7 @@ namespace bdep
       path f (prj / pl.path / manifest_file);
       auto m (parse_manifest<bpkg::package_manifest> (f, "package"));
       pl.name = move (m.name);
+      pl.project = move (m.project);
     }
   }
 
@@ -296,10 +299,10 @@ namespace bdep
                          return *p.package == pl.path;
                        }) == r.packages.end ())
           {
-            // Name is to be extracted later.
+            // Name/project is to be extracted later.
             //
             r.packages.push_back (
-              package_location {package_name (), move (*p.package)});
+              package_location {package_name (), nullopt, move (*p.package)});
           }
         }
       }
@@ -312,9 +315,10 @@ namespace bdep
 
       if (!ignore_packages && p.package)
       {
-        // Name is to be extracted later.
+        // Name/project is to be extracted later.
         //
-        r.packages.push_back (package_location {package_name (), *p.package});
+        r.packages.push_back (
+          package_location {package_name (), nullopt, *p.package});
       }
     }
 

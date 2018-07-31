@@ -702,7 +702,7 @@ namespace bdep
     {
       package_name     name;
       standard_version version;
-      string           project;
+      package_name     project;
       string           section; // alpha|beta|stable (or --section)
 
       path             archive;
@@ -713,6 +713,7 @@ namespace bdep
     for (package_location& pl: pkg_locs)
     {
       package_name n (move (pl.name));
+      package_name p (pl.project ? move (*pl.project) : n);
 
       standard_version v (package_version (o, cfg, n));
 
@@ -722,8 +723,6 @@ namespace bdep
       //
       if (v.snapshot ())
         fail << "package " << n << " version " << v << " is a snapshot";
-
-      string p (prj.leaf ().string ()); // @@ TODO/TMP
 
       // Per semver we treat zero major versions as alpha.
       //
@@ -755,9 +754,8 @@ namespace bdep
         if (i != 0)
           dr << '\n';
 
-        // While currently the control repository is the same for all
-        // packages, this could change in the future (e.g., multi-project
-        // publishing).
+        // Currently the control repository is the same for all packages, but
+        // this could change in the future (e.g., multi-project publishing).
         //
         dr << "  package: " << p.name    << '\n'
            << "  version: " << p.version << '\n'

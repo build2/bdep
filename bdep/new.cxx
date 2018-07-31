@@ -1118,7 +1118,7 @@ namespace bdep
       package_locations pkgs;
 
       if (t != type::empty) // prj == pkg
-        pkgs.push_back (package_location {move (pkgn), dir_path ()});
+        pkgs.push_back (package_location {move (pkgn), nullopt, dir_path ()});
 
       configurations cfgs {
         cmd_init_config (
