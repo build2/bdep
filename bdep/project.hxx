@@ -205,7 +205,7 @@ namespace bdep
 
   project_packages
   find_project_packages (const project_options&,
-                         bool ignore_packages = false,
+                         bool ignore_packages,
                          bool load_packages = true);
 
   inline dir_path

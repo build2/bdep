@@ -31,9 +31,10 @@ namespace bdep
 
      If no project or package directory is specified, then the current working
      directory is assumed. If no configuration is specified, then the default
-     configuration is used to prepare the package distributions. See
-     \l{bdep-projects-configs(1)} for details on specifying projects and
-     configurations.
+     configuration is used to prepare the package distributions. If the
+     specified directory is a project directory, then all the packages in the
+     project are published. See \l{bdep-projects-configs(1)} for details on
+     specifying projects and configurations.
 
      For each specified package the \cb{publish} command prepares a package
      archive and sends it as part of the package submission request to an

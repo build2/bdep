@@ -164,7 +164,7 @@ namespace bdep
   static standard_version
   package_version (const common_options& o,
                    const dir_path& cfg,
-                   const string& p)
+                   const package_name& p)
   {
     // We could have used bpkg-pkg-status but then we would have to deal with
     // iterations. So we use the build system's info meta-operation directly.
@@ -180,10 +180,11 @@ namespace bdep
         // Note: the package directory inside the configuration is a bit of an
         // assumption.
         //
-        pr = start_b (o,
-                      pipe /* stdout */,
-                      2    /* stderr */,
-                      "info:", (dir_path (cfg) /= p).representation ());
+        pr = start_b (
+          o,
+          pipe /* stdout */,
+          2    /* stderr */,
+          "info:", (dir_path (cfg) /= p.string ()).representation ());
 
         pipe.out.close ();
         ifdstream is (move (pipe.in), fdstream_mode::skip, ifdstream::badbit);
@@ -194,7 +195,7 @@ namespace bdep
           //
           if (l.compare (0, 9, "project: ") == 0)
           {
-            if (l.compare (9, string::npos, p) != 0)
+            if (l.compare (9, string::npos, p.string ()) != 0)
               fail << "name mismatch for package " << p;
           }
           else if (l.compare (0, 9, "version: ") == 0)
@@ -669,7 +670,7 @@ namespace bdep
   cmd_publish (const cmd_publish_options& o,
                const dir_path& prj,
                const dir_path& cfg,
-               const cstrings& pkg_names)
+               package_locations&& pkg_locs)
   {
     const url& repo (o.repository ());
 
@@ -699,7 +700,7 @@ namespace bdep
     //
     struct package
     {
-      string           name;
+      package_name     name;
       standard_version version;
       string           project;
       string           section; // alpha|beta|stable (or --section)
@@ -709,8 +710,10 @@ namespace bdep
     };
     vector<package> pkgs;
 
-    for (string n: pkg_names)
+    for (package_location& pl: pkg_locs)
     {
+      package_name n (move (pl.name));
+
       standard_version v (package_version (o, cfg, n));
 
       // Should we allow publishing snapshots and, if so, to which section?
@@ -784,7 +787,7 @@ namespace bdep
       // we may want to switch to that.
       //
       run_b (o,
-             "dist:", (dir_path (cfg) /= p.name).representation (),
+             "dist:", (dir_path (cfg) /= p.name.string ()).representation (),
              "config.dist.root=" + dr.representation (),
              "config.dist.archives=tar.gz",
              "config.dist.checksums=sha256");
@@ -792,7 +795,7 @@ namespace bdep
       // This is the canonical package archive name that we expect dist to
       // produce.
       //
-      path a (dr / p.name + '-' + p.version.string () + ".tar.gz");
+      path a (dr / p.name.string () + '-' + p.version.string () + ".tar.gz");
       path c (a + ".sha256");
 
       if (!exists (a))
@@ -865,12 +868,18 @@ namespace bdep
   {
     tracer trace ("publish");
 
-    // The same ignore/load story as in sync.
+    // If we are publishing the entire project, then we have two choices: we
+    // can publish all the packages in the project or we can only do so for
+    // packages that were initialized in the configuration that we are going
+    // to use for the preparation of distributions. Normally, the two sets
+    // will be the same but if they are not, it feels more likely to be a
+    // mistake than the desired behavior. So we will assume it's all the
+    // packages and verify they are all initialized in the configuration.
     //
     project_packages pp (
       find_project_packages (o,
                              false /* ignore_packages */,
-                             false /* load_packages   */));
+                             true  /* load_packages   */));
 
     const dir_path& prj (pp.project);
     database db (open (prj, trace));
@@ -886,17 +895,11 @@ namespace bdep
       if (cfgs.size () > 1)
         fail << "multiple configurations specified for publish";
 
-      shared_ptr<configuration>& c (cfgs[0]);
-
-      // If specified, verify packages are present in the configuration.
-      // Otherwise, make sure the configuration is not empty.
+      // Verify packages are present in the configuration.
       //
-      if (!pp.packages.empty ())
-        verify_project_packages (pp, cfgs);
-      else if (c->packages.empty ())
-        fail << "no packages initialized in configuration " << *c;
+      verify_project_packages (pp, cfgs);
 
-      cfg = move (c);
+      cfg = move (cfgs[0]);
     }
 
     // Pre-sync the configuration to avoid triggering the build system hook
@@ -904,21 +907,6 @@ namespace bdep
     //
     cmd_sync (o, prj, cfg, strings () /* pkg_args */, true /* implicit */);
 
-    // If no packages were explicitly specified, then we publish all that have
-    // been initialized in the configuration.
-    //
-    cstrings pkgs;
-    if (pp.packages.empty ())
-    {
-      for (const package_state& p: cfg->packages)
-        pkgs.push_back (p.name.string ().c_str ());
-    }
-    else
-    {
-      for (const package_location& p: pp.packages)
-        pkgs.push_back (p.name.string ().c_str ());
-    }
-
-    return cmd_publish (o, prj, cfg->path, pkgs);
+    return cmd_publish (o, prj, cfg->path, move (pp.packages));
   }
 }
