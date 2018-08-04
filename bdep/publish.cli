@@ -45,7 +45,7 @@ namespace bdep
      Along with the package archive, the submission request specifies the
      project the package belongs to, the repository section to publish the
      package under, the control repository URL to use for authorization, and
-     the publisher's email address for notifications.  While the exact usage
+     the publisher's email address for notifications. While the exact usage
      and interpretation of this information depends on the specific
      repository, the following semantics apply when submitting to
      \cb{cppget.org}.

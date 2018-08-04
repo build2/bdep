@@ -15,202 +15,448 @@ repository = ($config.bdep.test.repository == [null] \
 		 : 'https://cppget.org')             \
 	      : "$config.bdep.test.repository")
 
-test.arguments += --repository "$repository" --control 'none' --yes \
---email user@example.com
+test.arguments += --repository "$repository"  --yes --email user@example.com
 
 cxx = cc "config.cxx=$config.cxx"
 
 new  += 2>!
 init += $cxx -d prj 2>! &prj/**/bootstrap/***
 
+windows = ($cxx.target.class == 'windows')
+
 # Note that using the same package name and version for tests may result in
 # duplicate submissions. We will use unique version for each test,
 # incrementing the patch version for 1.0.X.
 #
-# Next version to use: 1.0.8
+# Next version to use: 1.0.15
 #
-: single-pkg
+: submit
 :
 {
-  test.arguments += --simulate 'success'
+  test.arguments += --control 'none'
 
-  : basic
+  : single-pkg
   :
   {
-    $clone_root_prj;
-    $init -C @cfg &prj-cfg/***;
-    sed -i -e 's/^(version:) .*$/\1 1.0.1/' prj/manifest;
+    test.arguments += --simulate 'success'
 
-    $* 2>>~%EOE%
-      synchronizing:
-        upgrade prj/1.0.1
-      submitting prj-1.0.1.tar.gz
-      %.
-      %.*prj/1.0.1 submission is queued \(.{12}\)%
-      EOE
+    : basic
+    :
+    {
+      $clone_root_prj;
+      $init -C @cfg &prj-cfg/***;
+      sed -i -e 's/^(version:) .*$/\1 1.0.1/' prj/manifest;
+
+      $* 2>>~%EOE%
+        synchronizing:
+          upgrade prj/1.0.1
+        submitting prj-1.0.1.tar.gz
+        %.*
+        %prj/1\.0\.1 submission is queued \(.{12}\)%
+        EOE
+    }
+
+    : no-cfg
+    :
+    {
+      $clone_root_prj;
+
+      $* 2>>~%EOE% != 0
+        %error: no default configuration in project .+%
+          info: use (@<cfg-name> | --config|-c <cfg-dir> | --all|-a) to specify configuration explicitly
+        EOE
+    }
+
+    : multi-cfg
+    :
+    {
+      $clone_root_prj;
+      $init -C @cfg1 &prj-cfg1/***;
+      $init -C @cfg2 &prj-cfg2/***;
+
+      $* --all 2>'error: multiple configurations specified for publish' != 0
+    }
   }
 
-  : no-cfg
+  : multi-pkg
   :
   {
-    $clone_root_prj;
+    test.arguments += --simulate 'success'
 
-    $* 2>>~%EOE% != 0
-      %error: no default configuration in project .+%
-        info: use (@<cfg-name> | --config|-c <cfg-dir> | --all|-a) to specify configuration explicitly
-      EOE
+    +$new -t empty prj &prj/***
+    +$new --package -t lib libprj -d prj
+    +$new --package -t exe prj    -d prj
+
+    : both
+    :
+    {
+      $clone_prj;
+      sed -i -e 's/^(version:) .*$/\1 1.0.2/' prj/libprj/manifest;
+      sed -i -e 's/^(version:) .*$/\1 1.0.2/' prj/prj/manifest;
+      $init -C @cfg &prj-cfg/***;
+
+      $* 2>>~%EOE%
+        submitting libprj-1.0.2.tar.gz
+        %.*
+        %libprj/1.0.2 submission is queued \(.{12}\)%
+        submitting prj-1.0.2.tar.gz
+        %.*
+        %prj/1\.0\.2 submission is queued \(.{12}\)%
+        EOE
+    }
+
+    : single
+    :
+    {
+      $clone_prj;
+      sed -i -e 's/^(version:) .*$/\1 1.0.3/' prj/libprj/manifest;
+      $init -C @cfg &prj-cfg/***;
+
+      # Publish the single libprj package rather than the whole prj project.
+      #
+      test.arguments = $regex.apply($test.arguments, '^(prj)$', '\1/libprj');
+
+      $* 2>>~%EOE%
+        submitting libprj-1.0.3.tar.gz
+        %.*
+        %libprj/1.0.3 submission is queued \(.{12}\)%
+        EOE
+    }
+
+    : prompt
+    :
+    {
+      $clone_prj;
+      sed -i -e 's/^(version:) .*$/\1 1.0.4/' prj/libprj/manifest;
+      sed -i -e 's/^(version:) .*$/\1 1.0.4/' prj/prj/manifest;
+      $init -C @cfg &prj-cfg/***;
+
+      # Suppress the --yes option.
+      #
+      test.arguments = $regex.apply($test.arguments, '^(--yes)$', '');
+
+      $* <'y' 2>>~"%EOE%"
+        publishing:
+          to:      $repository
+        %  as:      .+@.+%
+
+          package: libprj
+          version: 1.0.4
+          project: prj
+          section: stable
+
+          package: prj
+          version: 1.0.4
+          project: prj
+          section: stable
+        continue? [y/n] submitting libprj-1.0.4.tar.gz
+        %.*
+        %libprj/1.0.4 submission is queued \\\(.{12}\\\)%
+        submitting prj-1.0.4.tar.gz
+        %.*
+        %prj/1\.0\.4 submission is queued \\\(.{12}\\\)%
+        EOE
+    }
   }
 
-  : multi-cfg
+  : failure
   :
   {
-    $clone_root_prj;
-    $init -C @cfg1 &prj-cfg1/***;
-    $init -C @cfg2 &prj-cfg2/***;
+    : duplicate-archive
+    :
+    {
+      test.arguments += --simulate 'duplicate-archive'
 
-    $* --all 2>'error: multiple configurations specified for publish' != 0
+      $clone_root_prj;
+      $init -C @cfg &prj-cfg/***;
+      sed -i -e 's/^(version:) .*$/\1 1.0.5/' prj/manifest;
+
+      $* 2>>~%EOE% != 0
+        synchronizing:
+          upgrade prj/1.0.5
+        submitting prj-1.0.5.tar.gz
+        %.*
+        error: duplicate submission
+        EOE
+    }
+
+    : internal-error-text
+    :
+    {
+      test.arguments += --simulate 'internal-error-text'
+
+      $clone_root_prj;
+      $init -C @cfg &prj-cfg/***;
+      sed -i -e 's/^(version:) .*$/\1 1.0.6/' prj/manifest;
+
+      $* 2>>~%EOE% != 0
+        synchronizing:
+          upgrade prj/1.0.6
+        submitting prj-1.0.6.tar.gz
+        %.*
+        error: submission handling failed
+        %  info: consider reporting this to .+ repository maintainers%
+        %  info: checksum: .{64}%
+        EOE
+    }
+
+    : internal-error-html
+    :
+    {
+      test.arguments += --simulate 'internal-error-html'
+
+      $clone_root_prj;
+      $init -C @cfg &prj-cfg/***;
+      sed -i -e 's/^(version:) .*$/\1 1.0.7/' prj/manifest;
+
+      $* 2>>~%EOE% != 0
+        synchronizing:
+          upgrade prj/1.0.7
+        submitting prj-1.0.7.tar.gz
+        %.*
+        error: HTTP status code 500 (internal server error)
+        %  info: consider reporting this to .+ repository maintainers%
+        %  info: checksum: .{64}%
+        EOE
+    }
   }
 }
 
-: multi-pkg
+: control
 :
 {
-  test.arguments += --simulate 'success'
+  # The control repository URL doesn't really matter for the submission
+  # simulation. We specify it to enable the control branch-related
+  # functionality.
+  #
+  test.arguments += --simulate 'success' --control "http://example.com/rep.git"
 
-  +$new -t empty prj &prj/***
-  +$new --package -t lib libprj -d prj
-  +$new --package -t exe prj    -d prj
+  # Create the remote repository.
+  #
+  +mkdir --no-cleanup prj.git
+  +git -C prj.git init --bar >! &prj.git/***
 
-  : both
+  +$clone_prj
+
+  clone_rep = cp --no-cleanup -r ../prj.git ./ &prj.git/***
+  clone_prj = cp --no-cleanup -r ../prj     ./ &prj/***
+
+  g = git -C prj >! 2>!
+
+  : success
   :
   {
-    $clone_prj;
-    sed -i -e 's/^(version:) .*$/\1 1.0.2/' prj/libprj/manifest;
-    sed -i -e 's/^(version:) .*$/\1 1.0.2/' prj/prj/manifest;
-    $init -C @cfg &prj-cfg/***;
-
-    $* 2>>~%EOE%
-      submitting libprj-1.0.2.tar.gz
-      %.
-      %.*libprj/1.0.2 submission is queued \(.{12}\)%
-      submitting prj-1.0.2.tar.gz
-      %.
-      %.*prj/1.0.2 submission is queued \(.{12}\)%
-      EOE
-  }
-
-  : single
-  :
-  {
-    $clone_prj;
-    sed -i -e 's/^(version:) .*$/\1 1.0.3/' prj/libprj/manifest;
-    $init -C @cfg &prj-cfg/***;
-
-    # Publish the single libprj package rather than the whole prj project.
+    # Setup the remote repository.
     #
-    test.arguments = $regex.apply($test.arguments, '^(prj)$', '\1/libprj');
+    rep = "file://($windows ? "$regex.replace($~, '\\', '/')" : "$~")/prj.git"
+    $clone_rep;
 
-    $* 2>>~%EOE%
-      submitting libprj-1.0.3.tar.gz
-      %.
-      %.*libprj/1.0.3 submission is queued \(.{12}\)%
-      EOE
-  }
-
-  : prompt
-  :
-  {
-    $clone_prj;
-    sed -i -e 's/^(version:) .*$/\1 1.0.4/' prj/libprj/manifest;
-    sed -i -e 's/^(version:) .*$/\1 1.0.4/' prj/prj/manifest;
-    $init -C @cfg &prj-cfg/***;
-
-    # Suppress the --yes option.
+    # Setup the local repository/project.
     #
-    test.arguments = $regex.apply($test.arguments, '^(--yes)$', '');
+    $clone_prj;
+    $init -C @cfg &prj-cfg/***;
+    $g remote add origin "$rep";
 
-    $* <'y' 2>>~"%EOE%"
-      publishing:
-        to:      $repository
-      %  as:      .+@.+%
+    # Publish when neither local nor remote-tracking build2-control branches
+    # are present.
+    #
+    sed -i -e 's/^(version:) .*$/\1 1.0.8/' prj/manifest;
 
-        package: libprj
-        version: 1.0.4
-        project: prj
-        section: stable
-
-        package: prj
-        version: 1.0.4
-        project: prj
-        section: stable
-      continue? [y/n] submitting libprj-1.0.4.tar.gz
-      %.
-      %.*libprj/1.0.4 submission is queued \\\(.{12}\\\)%
-      submitting prj-1.0.4.tar.gz
-      %.
-      %.*prj/1.0.4 submission is queued \\\(.{12}\\\)%
+    $* >&2 2>>~%EOE%;
+      synchronizing:
+        upgrade prj/1.0.8
+      pushing build2-control
+      %.*
+      Branch 'build2-control' set up to track remote branch 'build2-control' from 'origin'.
+      submitting prj-1.0.8.tar.gz
+      %.*
+      %prj/1\.0\.8 submission is queued \(.{12}\)%
       EOE
-  }
-}
 
-: failure
-:
-{
-  : duplicate-archive
+    # Publish when both local and remote-tracking build2-control branches are
+    # present.
+    #
+    sed -i -e 's/^(version:) .*$/\1 1.0.9/' prj/manifest;
+
+    $* 2>>~%EOE%;
+      synchronizing:
+        upgrade prj/1.0.9
+      pushing build2-control
+      %.*
+      submitting prj-1.0.9.tar.gz
+      %.*
+      %prj/1\.0\.9 submission is queued \(.{12}\)%
+      EOE
+
+    # Publish when the local build2-control branch is not present while the
+    # remote-tracking branch is.
+    #
+    sed -i -e 's/^(version:) .*$/\1 1.0.10/' prj/manifest;
+
+    $g branch -D build2-control;
+
+    $* 2>>~%EOE%;
+      synchronizing:
+        upgrade prj/1.0.10
+      pushing build2-control
+      %.*
+      submitting prj-1.0.10.tar.gz
+      %.*
+      %prj/1\.0\.10 submission is queued \(.{12}\)%
+      EOE
+
+    # Check for the build2-control branch commits presence and the files they
+    # add.
+    #
+    $g checkout build2-control;
+    $g log --name-only --pretty='format:%s' >>:~%EOO%
+      Add prj/1.0.10 publish authorization
+      %submit/.{16}%
+
+      Add prj/1.0.9 publish authorization
+      %submit/.{16}%
+
+      Add prj/1.0.8 publish authorization
+      %submit/.{16}%
+
+      Start
+      EOO
+  }
+
+  : failure
   :
   {
-    test.arguments += --simulate 'duplicate-archive'
+    g2 = git -C prj2 >! 2>!
 
-    $clone_root_prj;
+    # Setup the remote repository.
+    #
+    rep = "file://($windows ? "$regex.replace($~, '\\', '/')" : "$~")/prj.git"
+    $clone_rep;
+
+    # Setup the local repository/project.
+    #
+    $clone_prj;
     $init -C @cfg &prj-cfg/***;
-    sed -i -e 's/^(version:) .*$/\1 1.0.5/' prj/manifest;
+    $g remote add origin "$rep";
 
-    $* 2>>~%EOE% != 0
+    # Publish successfully.
+    #
+    sed -i -e 's/^(version:) .*$/\1 1.0.11/' prj/manifest;
+
+    $* >! 2>!;
+
+    # Push into the build2-control branch from another local repository,
+    # making the subsequent publish of prj package impossible until the next
+    # fetch.
+    #
+    git clone "$rep" prj2 &prj2/*** 2>!;
+    $g2 checkout -b build2-control --track origin/build2-control;
+    $g2 commit --allow-empty -m 'Dummy1';
+    $g2 push;
+
+    sed -i -e 's/^(version:) .*$/\1 1.0.12/' prj/manifest;
+
+    # Fail to publish (see above for details).
+    #
+    $* 2>>~%EOE% != 0;
       synchronizing:
-        upgrade prj/1.0.5
-      submitting prj-1.0.5.tar.gz
-      %.
-      %.*error: duplicate submission%
+        upgrade prj/1.0.12
+      pushing build2-control
+      %.*
+      error: unable to push build2-control branch
+        info: run 'git fetch' and try again
       EOE
-  }
 
-  : internal-error-text
-  :
-  {
-    test.arguments += --simulate 'internal-error-text'
+    # Publish successfully after the fetch.
+    #
+    $g fetch;
 
-    $clone_root_prj;
-    $init -C @cfg &prj-cfg/***;
-    sed -i -e 's/^(version:) .*$/\1 1.0.6/' prj/manifest;
+    $* 2>>~%EOE%;
+      pushing build2-control
+      %.*
+      submitting prj-1.0.12.tar.gz
+      %.*
+      %prj/1\.0\.12 submission is queued \(.{12}\)%
+      EOE
 
-    $* 2>>~%EOE% != 0
+    sed -i -e 's/^(version:) .*$/\1 1.0.13/' prj/manifest;
+
+    # Reproduce the situation when the local build2-control branch exists but
+    # the remote-tracking one doesn't (see brep/publish.cxx for details).
+    #
+    $g branch -D -r origin/build2-control;
+
+    $* >&2 2>>~%EOE%;
       synchronizing:
-        upgrade prj/1.0.6
-      submitting prj-1.0.6.tar.gz
-      %.
-      %.*error: submission handling failed%
-      %  info: consider reporting this to .+ repository maintainers%
-      %  info: checksum: .{64}%
+        upgrade prj/1.0.13
+      pushing build2-control
+      %.*
+      Branch 'build2-control' set up to track remote branch 'build2-control' from 'origin'.
+      submitting prj-1.0.13.tar.gz
+      %.*
+      %prj/1\.0\.13 submission is queued \(.{12}\)%
       EOE
-  }
 
-  : internal-error-html
-  :
-  {
-    test.arguments += --simulate 'internal-error-html'
+    # Test publishing after implicit fetches.
+    #
+    # Push again into the build2-control branch from another local repository
+    # (see above for details).
+    #
+    $g2 pull;
+    $g2 commit --allow-empty -m 'Dummy2';
+    $g2 push;
 
-    $clone_root_prj;
-    $init -C @cfg &prj-cfg/***;
-    sed -i -e 's/^(version:) .*$/\1 1.0.7/' prj/manifest;
+    sed -i -e 's/^(version:) .*$/\1 1.0.14/' prj/manifest;
 
-    $* 2>>~%EOE% != 0
+    # Note that the prj repository master branch push doesn't implicitly fetch
+    # the build2-control branch, so the subsequent publishing fails.
+    #
+    $g add '*';
+    $g commit -m 'Create';
+    $g push --set-upstream origin master;
+
+    $* 2>>~%EOE% != 0;
       synchronizing:
-        upgrade prj/1.0.7
-      submitting prj-1.0.7.tar.gz
-      %.
-      %.*error: HTTP status code 500 \(internal server error\)%
-      %  info: consider reporting this to .+ repository maintainers%
-      %  info: checksum: .{64}%
+        upgrade prj/1.0.14
+      pushing build2-control
+      %.*
+      error: unable to push build2-control branch
+        info: run 'git fetch' and try again
       EOE
+
+    # Note that the prj repository master branch pull fetches the
+    # build2-control branch implicitly, so the subsequent publishing succeeds.
+    #
+    $g pull;
+
+    $* 2>>~%EOE%;
+      pushing build2-control
+      %.*
+      submitting prj-1.0.14.tar.gz
+      %.*
+      %prj/1\.0\.14 submission is queued \(.{12}\)%
+      EOE
+
+    # Check the build2-control branch commits presence and the files they add.
+    #
+    $g checkout build2-control;
+    $g log --name-only --pretty='format:%s' >>:~%EOO%
+      %.*
+      Add prj/1.0.14 publish authorization
+      %submit/.{16}%
+
+      Dummy2
+      Add prj/1.0.13 publish authorization
+      %submit/.{16}%
+
+      Add prj/1.0.12 publish authorization
+      %submit/.{16}%
+
+      Dummy1
+      Add prj/1.0.11 publish authorization
+      %submit/.{16}%
+
+      Start
+      EOO
   }
 }

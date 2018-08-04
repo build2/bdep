@@ -6,8 +6,24 @@ using namespace butl;
 
 namespace bdep
 {
-  optional<string>
-  git_line (process&&, fdpipe&&, bool);
+  template <typename... A>
+  inline void
+  run_git (const dir_path& repo, A&&... args)
+  {
+    return run ("git", "-C", repo, forward<A> (args)...);
+  }
+
+  template <typename I, typename O, typename E, typename... A>
+  inline process
+  start_git (I&& in, O&& out, E&& err, const dir_path& repo, A&&... args)
+  {
+    return start (forward<I> (in),
+                  forward<O> (out),
+                  forward<E> (err),
+                  "git",
+                  "-C", repo,
+                  forward<A> (args)...);
+  }
 
   template <typename... A>
   inline optional<string>

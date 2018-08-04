@@ -66,6 +66,7 @@ namespace bdep
 
   // <libbutl/fdstream.mxx>
   //
+  using butl::fdnull;
   using butl::fdopen_pipe;
 
   // Empty string and path.
