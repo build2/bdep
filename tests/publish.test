@@ -238,10 +238,13 @@ windows = ($cxx.target.class == 'windows')
 
   +$clone_prj
 
+  g = git -C prj >! 2>!
+
+  +$g config user.name  "Test Script"
+  +$g config user.email "testscript@example.com"
+
   clone_rep = cp --no-cleanup -r ../prj.git ./ &prj.git/***
   clone_prj = cp --no-cleanup -r ../prj     ./ &prj/***
-
-  g = git -C prj >! 2>!
 
   : success
   :
