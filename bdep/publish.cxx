@@ -1076,7 +1076,7 @@ namespace bdep
       // Note that until this is done the branch can not be checked out in any
       // other worktree.
       //
-      auto worktree_remove = [&prj, &wd, &wd_rm, &worktree_prune] ()
+      auto worktree_remove = [&wd, &wd_rm, &worktree_prune] ()
       {
         if (exists (wd))
         {
