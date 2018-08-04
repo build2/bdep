@@ -353,6 +353,8 @@ windows = ($cxx.target.class == 'windows')
     # fetch.
     #
     git clone "$rep" prj2 &prj2/*** 2>!;
+    $g2 config user.name  "Test Script";
+    $g2 config user.email "testscript@example.com";
     $g2 checkout -b build2-control --track origin/build2-control;
     $g2 commit --allow-empty -m 'Dummy1';
     $g2 push;
