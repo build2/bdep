@@ -351,7 +351,12 @@ windows = ($cxx.target.class == 'windows')
     # making the subsequent publish of prj package impossible until the next
     # fetch.
     #
-    git clone "$rep" prj2 &prj2/*** 2>!;
+    # Convert specific warnings to infos as we expect them to appear. This, in
+    # particular, prevents bbot workers to set task result status to warning.
+    #
+    git clone "$rep" prj2 &prj2/*** 2>&1 | \
+    sed -e 's/warning: (remote HEAD refers to nonexistent .*)/info: \1/' >&2 2>!;
+
     $g2 config user.name  "Test Script";
     $g2 config user.email "testscript@example.com";
     $g2 checkout -b build2-control --track origin/build2-control;
