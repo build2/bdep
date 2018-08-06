@@ -2,7 +2,7 @@
 # copyright : Copyright (c) 2014-2018 Code Synthesis Ltd
 # license   : MIT; see accompanying LICENSE file
 
-.include common.test project.test
+.include common.test project.test git.test
 
 # Repository to use for the package submissions simulation.
 #
@@ -224,6 +224,7 @@ windows = ($cxx.target.class == 'windows')
 
 : control
 :
+if ($git_supported)
 {
   # The control repository URL doesn't really matter for the submission
   # simulation. We specify it to enable the control branch-related
