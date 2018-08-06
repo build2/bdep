@@ -27,7 +27,7 @@ namespace bdep
 
     // See if this is a VCS repository we recognize.
     //
-    if (git (prj))
+    if (git_repository (prj))
     {
       // In git the author email can be specified with the GIT_AUTHOR_EMAIL
       // environment variable after which things fall back to the committer

@@ -44,7 +44,7 @@ namespace bdep
   static url
   control_url (const dir_path& prj)
   {
-    if (git (prj))
+    if (git_repository (prj))
     {
       // First try remote.origin.build2ControlUrl which can be used to specify
       // a custom URL (e.g., if a correct one cannot be automatically derived
@@ -890,7 +890,7 @@ namespace bdep
     //
     // See if this is a VCS repository we recognize.
     //
-    if (ctrl && git (prj))
+    if (ctrl && git_repository (prj))
     {
       // Checkout the build2-control branch into a separate working tree not
       // to interfere with the user's stuff.
@@ -919,10 +919,10 @@ namespace bdep
         bool q (verb < 2);
         auto_fd null (q ? fdnull () : auto_fd ());
 
-        process pr (start_git (0                   /* stdin  */,
+        process pr (start_git (prj,
+                               0                   /* stdin  */,
                                q ? null.get () : 1 /* stdout */,
                                q ? null.get () : 2 /* stderr */,
-                               prj,
                                "worktree",
                                "add",
                                wd,
@@ -1003,15 +1003,15 @@ namespace bdep
           auto_fd null (fdnull ());
           fdpipe pipe (fdopen_pipe ());
 
-          process pr (start_git (null.get () /* stdin  */,
+          process pr (start_git (prj,
+                                 null.get () /* stdin  */,
                                  pipe        /* stdout */,
                                  2           /* stderr */,
-                                 prj,
                                  "hash-object",
                                  "-wt", "tree",
                                  "--stdin"));
 
-          optional<string> tree (git_line (move (pr), move (pipe)));
+          optional<string> tree (git_line (move (pr), move (pipe), false));
 
           if (!tree)
             fail << "unable to create git tree object for build2-control";

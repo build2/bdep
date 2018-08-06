@@ -4,7 +4,8 @@
 
 #include <bdep/git.hxx>
 
-#include <libbutl/filesystem.mxx>
+#include <libbutl/git.mxx>
+#include <libbutl/standard-version.mxx>
 
 #include <bdep/diagnostics.hxx>
 
@@ -12,14 +13,27 @@ using namespace butl;
 
 namespace bdep
 {
-  bool
-  git (const dir_path& d)
+  static optional<standard_version> git_ver;
+
+  void
+  git_check_version ()
   {
-    // .git can be either a directory or a file in case of a submodule.
-    //
-    return entry_exists (d / ".git",
-                         true /* follow_symlinks */,
-                         true /* ignore_errors   */);
+    if (!git_ver)
+    {
+      // Make sure that the getline() function call doesn't end up with an
+      // infinite recursion.
+      //
+      git_ver = standard_version ();
+
+      optional<string> s (git_line (false /* ignore_error */, "--version"));
+
+      if (!s || !(git_ver = git_version (*s)))
+        fail << "unable to obtain git version";
+
+      if (git_ver->version < 20120000000)
+        fail << "unsupported git version " << *git_ver <<
+          info << "minimum supported version is 2.12.0" << endf;
+    }
   }
 
   optional<string>

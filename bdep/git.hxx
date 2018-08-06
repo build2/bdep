@@ -5,28 +5,37 @@
 #ifndef BDEP_GIT_HXX
 #define BDEP_GIT_HXX
 
+#include <libbutl/git.mxx>
+
 #include <bdep/types.hxx>
 #include <bdep/utility.hxx>
 
 namespace bdep
 {
-  // Return true if the specified directory is a git repository root (contains
-  // the .git filesystem entry).
-  //
-  bool
-  git (const dir_path&);
-
-  template <typename... A>
-  inline void
-  run_git (const dir_path& repo, A&&... args);
+  using butl::git_repository;
 
   template <typename I, typename O, typename E, typename... A>
-  inline process
-  start_git (I&& in, O&& out, E&& err, const dir_path& repo, A&&... args);
+  process
+  start_git (I&& in, O&& out, E&& err, A&&... args);
+
+  template <typename I, typename O, typename E, typename... A>
+  process
+  start_git (const dir_path& repo, I&& in, O&& out, E&& err, A&&... args);
+
+  void
+  finish_git (process& pr, bool io_read = false);
+
+  template <typename... A>
+  void
+  run_git (const dir_path& repo, A&&... args);
 
   // Return the first line of the git output. If ignore_error is true, then
   // suppress stderr, ignore (normal) error exit status, and return nullopt.
   //
+  template <typename... A>
+  optional<string>
+  git_line (bool ignore_error, A&&... args);
+
   template <typename... A>
   optional<string>
   git_line (const dir_path& repo, bool ignore_error, A&&... args);
@@ -35,9 +44,10 @@ namespace bdep
   // redirected output pipe.
   //
   optional<string>
-  git_line (process&& pr, fdpipe&& pipe, bool ignore_error = false);
+  git_line (process&& pr, fdpipe&& pipe, bool ignore_error);
 }
 
 #include <bdep/git.ixx>
+#include <bdep/git.txx>
 
 #endif // BDEP_GIT_HXX
