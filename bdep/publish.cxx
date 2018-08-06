@@ -914,7 +914,7 @@ namespace bdep
       // stderr and stdout to /dev/null if the verbosity level is less than
       // two and advise the user to re-run with -v on failure.
       //
-      auto worktree_add = [&prj] (auto&&... args)
+      auto worktree_add = [&prj, &wd] ()
       {
         bool q (verb < 2);
         auto_fd null (q ? fdnull () : auto_fd ());
@@ -925,7 +925,8 @@ namespace bdep
                                prj,
                                "worktree",
                                "add",
-                               forward<decltype(args)> (args)...));
+                               wd,
+                               "build2-control"));
 
         if (pr.wait ())
           return;
@@ -1041,7 +1042,7 @@ namespace bdep
           // Checkout the branch. Note that the upstream branch is not setup
           // for it yet. This will be done by the push operation.
           //
-          worktree_add (wd, "build2-control");
+          worktree_add ();
 
           // Create the checksum files subdirectory.
           //
@@ -1050,13 +1051,18 @@ namespace bdep
           local_new = true;
         }
         else
+        {
           // Create the local branch, setting up the corresponding upstream
           // branch.
           //
-          worktree_add ("--track",
-                        "-b", "build2-control",
-                        wd,
-                        "origin/build2-control");
+          run_git (prj,
+                   "branch",
+                   verb < 2 ? "-q" : nullptr,
+                   "build2-control",
+                   "origin/build2-control");
+
+          worktree_add ();
+        }
       }
       else
       {
@@ -1068,7 +1074,7 @@ namespace bdep
         //
         worktree_prune ();
 
-        worktree_add (wd, "build2-control");
+        worktree_add ();
       }
 
       // "Release" the checked out branch and delete the worktree, if exists.
