@@ -5,6 +5,6 @@
 define common: file
 common{*}: extension = test
 
-commons = common git project
+commons = common project
 
 ./: test{* -{$commons}} common{$commons} $bdep

@@ -15,6 +15,26 @@
 build = $recall($build.path)
 test.options += --build $build
 
+# Check that git version is the minimum supported one (2.12.0) or above.
+#
++git --version | set git_version_out
+
++echo "$git_version_out" | sed -n -e 's/git version (\d+\.\d+\.\d+).*/\1/p' | \
+ set git_version
+
++if ("$git_version" == "")
+  exit "unable to obtain git version from '$git_version_out'"
+end
+
++echo "$git_version" | sed -e 's/(\d+).*/\1/'      | set git_version_major
++echo "$git_version" | sed -e 's/\d+\.(\d+).*/\1/' | set git_version_minor
+
+# This flag must be used by testscripts to decide if they should skip git
+# repository-related tests.
+#
+git_supported = ($git_version_major >  2 || \
+		 $git_version_major == 2 && $git_version_minor >= 12)
+
 # Helper commands that can be used by tests to prepare the testing environment
 # or validate an outcome of the command being tested. They are likely to get
 # additional options and redirects appended prior to use. A common approach
@@ -27,7 +47,7 @@ clean   = $* clean
 deinit  = $* deinit
 init    = $* init
 fetch   = $* fetch
-new     = $* new --no-checks
+new     = $* new --no-checks --vcs ($git_supported ? git : none)
 status  = $* status
 sync    = $* sync
 update  = $* update

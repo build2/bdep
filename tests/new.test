@@ -6,7 +6,7 @@
 
 # Disable nesting checks in the created projects.
 #
-test.arguments += --no-checks
+test.arguments += --no-checks --vcs ($git_supported ? git : none)
 
 cxx = "config.cxx=$config.cxx"
 
@@ -104,10 +104,10 @@ status += -d prj
       created new executable project prj in $~/prj/
       created configuration @cfg $~/prj-config/ 1 default,forwarded,auto-synchronized
       synchronizing:
-      %  new prj.+19700101000000%
+      %  new prj.+%
       EOE
 
-    $status >'prj configured 0.1.0-a.0.19700101000000';
+    $status >~'%prj configured 0\.1\.0-a\.0\..+%';
 
     $build prj/ 2>>/EOE
       mkdir prj-config/prj/fsdir{prj/}
@@ -129,10 +129,10 @@ status += -d prj
       created new executable project prj in $~/prj/
       created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
       synchronizing:
-      %  new prj.+19700101000000%
+      %  new prj.+%
       EOE
 
-    $status >'prj configured 0.1.0-a.0.19700101000000';
+    $status >~'%prj configured 0\.1\.0-a\.0\..+%';
 
     $build prj/ 2>>/EOE
       mkdir prj-cfg/prj/fsdir{prj/}

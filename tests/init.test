@@ -5,11 +5,9 @@
 # Here we test both init and deinit commands.
 #
 
-.include common.test git.test project.test
+.include common.test project.test
 
 cxx = cc "config.cxx=$config.cxx"
-
-snapshot = ($git_supported ? '19700101000000' : 'z')
 
 status += -d prj
 deinit += -d prj
@@ -26,13 +24,13 @@ deinit += -d prj
     initializing in project $~/prj/
     created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
     synchronizing:
-    %  new prj.+$snapshot%
+    %  new prj.+%
     EOE
 
   sed -n -e 's/^config.cc.poptions = (.+)$/\1/p' prj-cfg/build/config.build \
     >'-DTEST';
 
-  $status >"prj configured 0.1.0-a.0.$snapshot";
+  $status >~'%prj configured 0\.1\.0-a\.0\..+%';
 
   $build prj/ 2>>/EOE;
     mkdir prj-cfg/prj/fsdir{prj/}
@@ -74,22 +72,22 @@ deinit += -d prj
     initializing in project $~/prj/
     added configuration @cfg1 $~/prj-cfg1/ 1 default,forwarded,auto-synchronized
     synchronizing:
-    %  new prj.+$snapshot%
+    %  new prj.+%
     EOE
 
   $* -A prj-cfg2 @cfg2 2>>/~"%EOE%";
     initializing in project $~/prj/
     added configuration @cfg2 $~/prj-cfg2/ 2 auto-synchronized
     synchronizing:
-    %  new prj.+$snapshot%
+    %  new prj.+%
     EOE
 
-  $status --all >>"EOO";
+  $status --all >>~%EOO%;
     in configuration @cfg1:
-    prj configured 0.1.0-a.0.$snapshot
+    %prj configured 0\.1\.0-a\.0\..+%
 
     in configuration @cfg2:
-    prj configured 0.1.0-a.0.$snapshot
+    %prj configured 0\.1\.0-a\.0\..+%
     EOO
 
   $build prj-cfg1/ 2>>/~%EOE%;
@@ -136,10 +134,10 @@ deinit += -d prj
     initializing in project $~/prj/
     created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
     synchronizing:
-    %  new prj.+$snapshot%
+    %  new prj.+%
     EOE
 
-  $status >"prj configured 0.1.0-a.0.$snapshot";
+  $status >~'%prj configured 0\.1\.0-a\.0\..+%';
 
   $build prj/ 2>>/EOE;
     mkdir prj-cfg/prj/fsdir{prj/}
@@ -172,8 +170,8 @@ deinit += -d prj
   $init --all -d prj/libprj 2>>/~"%EOE%";
     initializing in project $~/prj/
     synchronizing:
-    %  upgrade prj.+$snapshot#1%
-    %  new libprj.+$snapshot%
+    %  upgrade prj.+#1%
+    %  new libprj.+%
     EOE
 
   # Factor out some of the executable package functionality into the library.
@@ -206,7 +204,7 @@ deinit += -d prj
 
   $build prj-cfg/prj/ 2>>/~"%EOE%";
     synchronizing $~/prj-cfg/:
-    %  upgrade prj.+$snapshot#2%
+    %  upgrade prj.+#2%
     %mkdir prj-cfg/.+%{2}
     %.{3}
     %ld prj-cfg/.+%{2}
