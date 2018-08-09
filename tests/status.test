@@ -2,9 +2,11 @@
 # copyright : Copyright (c) 2014-2018 Code Synthesis Ltd
 # license   : MIT; see accompanying LICENSE file
 
-.include common.test project.test
+.include common.test git.test project.test
 
 cxx = cc "config.cxx=$config.cxx"
+
+snapshot = ($git_supported ? '19700101000000' : 'z')
 
 new    += 2>!
 init   += $cxx -d prj 2>!
@@ -29,7 +31,7 @@ deinit += -d prj
 
   $init -C @cfg &prj-cfg/***;
 
-  $* >'prj configured 0.1.0-a.0.19700101000000';
+  $* >"prj configured 0.1.0-a.0.$snapshot";
 
   $deinit 2>>/"EOE"
     deinitializing in project $~/prj/
@@ -46,14 +48,14 @@ deinit += -d prj
   $init -C @cfg1 &prj-cfg1/***;
   $init -C @cfg2 &prj-cfg2/***;
 
-  $* @cfg2 >'prj configured 0.1.0-a.0.19700101000000';
+  $* @cfg2 >"prj configured 0.1.0-a.0.$snapshot";
 
-  $* --all >>EOO;
+  $* --all >>"EOO";
     in configuration @cfg1:
-    prj configured 0.1.0-a.0.19700101000000
+    prj configured 0.1.0-a.0.$snapshot
 
     in configuration @cfg2:
-    prj configured 0.1.0-a.0.19700101000000
+    prj configured 0.1.0-a.0.$snapshot
     EOO
 
   $deinit 2>>/"EOE"
@@ -83,16 +85,16 @@ deinit += -d prj
     depends: libprj
     EOI
 
-  $* --recursive >>EOO 2>>/"EOE"; # Note: implicitly fetches in cfg.
-    prj configured 0.1.0-a.0.19700101000000 available 0.1.0-a.0.19700101000000#1
+  $* --recursive >>"EOO" 2>>/"EOE"; # Note: implicitly fetches in cfg.
+    prj configured 0.1.0-a.0.$snapshot available 0.1.0-a.0.$snapshot#1
     EOO
     fetching dir:$~/libprj \(prerequisite of dir:$~/prj\)
     EOE
 
   $sync;
 
-  $* --recursive >>~%EOO%;
-    prj configured 0.1.0-a.0.19700101000000#1
+  $* --recursive >>~"%EOO%";
+    prj configured 0.1.0-a.0.$snapshot#1
     %  libprj configured 0.+%
     EOO
 

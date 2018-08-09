@@ -5,9 +5,11 @@
 # Note that we test the list sub-command while testing other sub-commands.
 #
 
-.include common.test project.test
+.include common.test git.test project.test
 
 cxx = cc "config.cxx=$config.cxx"
+
+snapshot = ($git_supported ? '19700101000000' : 'z')
 
 status += -d prj
 init   += -d prj
@@ -31,10 +33,10 @@ deinit += -d prj
     $init @cfg 2>>/~"%EOE%";
       initializing in project $~/prj/
       synchronizing:
-      %  new prj.+19700101000000%
+      %  new prj.+$snapshot%
       EOE
 
-    $status >'prj configured 0.1.0-a.0.19700101000000';
+    $status >"prj configured 0.1.0-a.0.$snapshot";
 
     $* list @cfg >>/"EOO";
       @cfg $~/cfg-dir/ 1 default,forwarded,auto-synchronized
@@ -65,10 +67,10 @@ deinit += -d prj
     $init @cfg 2>>/~"%EOE%";
       initializing in project $~/prj/
       synchronizing:
-      %  new prj.+19700101000000%
+      %  new prj.+$snapshot%
       EOE
 
-    $status >'prj configured 0.1.0-a.0.19700101000000';
+    $status >"prj configured 0.1.0-a.0.$snapshot";
 
     $* list >>/"EOO";
       @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
@@ -99,10 +101,10 @@ deinit += -d prj
     $init -c cfg 2>>/~"%EOE%";
       initializing in project $~/prj/
       synchronizing:
-      %  new prj.+19700101000000%
+      %  new prj.+$snapshot%
       EOE
 
-    $status >'prj configured 0.1.0-a.0.19700101000000';
+    $status >"prj configured 0.1.0-a.0.$snapshot";
 
     $* list >>/"EOO";
       $~/cfg/ 1 default,forwarded,auto-synchronized
@@ -162,19 +164,19 @@ deinit += -d prj
     initializing in project $~/prj/
     in configuration @cfg1:
     synchronizing:
-    %  new prj.+19700101000000%
+    %  new prj.+$snapshot%
 
     in configuration @cfg2:
     synchronizing:
-    %  new prj.+19700101000000%
+    %  new prj.+$snapshot%
     EOE
 
-  $status --all >>EOO;
+  $status --all >>"EOO";
     in configuration @cfg1:
-    prj configured 0.1.0-a.0.19700101000000
+    prj configured 0.1.0-a.0.$snapshot
 
     in configuration @cfg2:
-    prj configured 0.1.0-a.0.19700101000000
+    prj configured 0.1.0-a.0.$snapshot
     EOO
 
   $* list >>/"EOO";
@@ -218,7 +220,7 @@ deinit += -d prj
   $init @cfg 2>>/~"%EOE%";
     initializing in project $~/prj/
     synchronizing:
-    %  new prj.+19700101000000%
+    %  new prj.+$snapshot%
     EOE
 
   mv prj-cfg prj-cfg2;
@@ -252,7 +254,7 @@ deinit += -d prj
   $init @cfg 2>>/~"%EOE%";
     initializing in project $~/prj/
     synchronizing:
-    %  new prj.+19700101000000%
+    %  new prj.+$snapshot%
     EOE
 
   $* rename @cfg cfg2 2>>/"EOE";
@@ -300,8 +302,8 @@ deinit += -d prj
     removed configuration @cfg1 $~/prj-cfg1/ 1
     EOE
 
-  $status --all >>EOO;
-    prj configured 0.1.0-a.0.19700101000000
+  $status --all >>"EOO";
+    prj configured 0.1.0-a.0.$snapshot
     EOO
 
   $* list >>/"EOO";

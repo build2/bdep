@@ -2,6 +2,8 @@
 # copyright : Copyright (c) 2014-2018 Code Synthesis Ltd
 # license   : MIT; see accompanying LICENSE file
 
+.include git.test
+
 # Create and initialize a sample build2 C++ executable project that will be
 # copied by subsequent tests and scopes setup commands. The common approach
 # will be that group scopes copy and modify the parent scope project as
@@ -10,7 +12,9 @@
 # project can not be shared between multiple bdep processes. Also we need to
 # make sure that projects are not cloned while being used by bdep.
 #
-+$new prj 2>- &prj/*** # By default: -t exe -l c++.
+# By default: -t exe -l c++.
+#
++$new prj --vcs ($git_supported ? git : none) 2>- &prj/***
 
 # The most commonly used project cloning command that copies it from the
 # parent scope working directory.

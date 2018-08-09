@@ -5,9 +5,11 @@
 # Here we test both init and deinit commands.
 #
 
-.include common.test project.test
+.include common.test git.test project.test
 
 cxx = cc "config.cxx=$config.cxx"
+
+snapshot = ($git_supported ? '19700101000000' : 'z')
 
 status += -d prj
 deinit += -d prj
@@ -24,13 +26,13 @@ deinit += -d prj
     initializing in project $~/prj/
     created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
     synchronizing:
-    %  new prj.+19700101000000%
+    %  new prj.+$snapshot%
     EOE
 
   sed -n -e 's/^config.cc.poptions = (.+)$/\1/p' prj-cfg/build/config.build \
     >'-DTEST';
 
-  $status >'prj configured 0.1.0-a.0.19700101000000';
+  $status >"prj configured 0.1.0-a.0.$snapshot";
 
   $build prj/ 2>>/EOE;
     mkdir prj-cfg/prj/fsdir{prj/}
@@ -72,22 +74,22 @@ deinit += -d prj
     initializing in project $~/prj/
     added configuration @cfg1 $~/prj-cfg1/ 1 default,forwarded,auto-synchronized
     synchronizing:
-    %  new prj.+19700101000000%
+    %  new prj.+$snapshot%
     EOE
 
   $* -A prj-cfg2 @cfg2 2>>/~"%EOE%";
     initializing in project $~/prj/
     added configuration @cfg2 $~/prj-cfg2/ 2 auto-synchronized
     synchronizing:
-    %  new prj.+19700101000000%
+    %  new prj.+$snapshot%
     EOE
 
-  $status --all >>EOO;
+  $status --all >>"EOO";
     in configuration @cfg1:
-    prj configured 0.1.0-a.0.19700101000000
+    prj configured 0.1.0-a.0.$snapshot
 
     in configuration @cfg2:
-    prj configured 0.1.0-a.0.19700101000000
+    prj configured 0.1.0-a.0.$snapshot
     EOO
 
   $build prj-cfg1/ 2>>/~%EOE%;
@@ -134,10 +136,10 @@ deinit += -d prj
     initializing in project $~/prj/
     created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
     synchronizing:
-    %  new prj.+19700101000000%
+    %  new prj.+$snapshot%
     EOE
 
-  $status >'prj configured 0.1.0-a.0.19700101000000';
+  $status >"prj configured 0.1.0-a.0.$snapshot";
 
   $build prj/ 2>>/EOE;
     mkdir prj-cfg/prj/fsdir{prj/}
@@ -150,7 +152,10 @@ deinit += -d prj
   #
   mkdir --no-cleanup prj/prj.pkg;
 
-  mv prj/prj prj/build prj/buildfile prj/manifest prj/.gitignore prj/prj.pkg/;
+  mv prj/prj prj/build prj/buildfile prj/manifest prj/prj.pkg/;
+  if ($git_supported)
+    mv prj/.gitignore prj/prj.pkg/
+  end;
   mv prj/prj.pkg prj/prj;
 
   cat <<EOI >=prj/packages.manifest;
@@ -167,8 +172,8 @@ deinit += -d prj
   $init --all -d prj/libprj 2>>/~"%EOE%";
     initializing in project $~/prj/
     synchronizing:
-    %  upgrade prj.+19700101000000#1%
-    %  new libprj.+19700101000000%
+    %  upgrade prj.+$snapshot#1%
+    %  new libprj.+$snapshot%
     EOE
 
   # Factor out some of the executable package functionality into the library.
@@ -201,7 +206,7 @@ deinit += -d prj
 
   $build prj-cfg/prj/ 2>>/~"%EOE%";
     synchronizing $~/prj-cfg/:
-    %  upgrade prj.+19700101000000#2%
+    %  upgrade prj.+$snapshot#2%
     %mkdir prj-cfg/.+%{2}
     %.{3}
     %ld prj-cfg/.+%{2}

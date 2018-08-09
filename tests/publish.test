@@ -2,7 +2,7 @@
 # copyright : Copyright (c) 2014-2018 Code Synthesis Ltd
 # license   : MIT; see accompanying LICENSE file
 
-.include common.test project.test git.test
+.include common.test git.test project.test
 
 # Repository to use for the package submissions simulation.
 #
