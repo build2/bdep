@@ -6,11 +6,13 @@ namespace bdep
 {
   template <typename I, typename O, typename E, typename... A>
   inline process
-  start_git (const dir_path& repo, I&& in, O&& out, E&& err, A&&... args)
+  start_git (const standard_version& min_ver,
+             const dir_path& repo,
+             I&& in, O&& out, E&& err,
+             A&&... args)
   {
-    return start_git (forward<I> (in),
-                      forward<O> (out),
-                      forward<E> (err),
+    return start_git (min_ver,
+                      forward<I> (in), forward<O> (out), forward<E> (err),
                       "-C", repo,
                       forward<A> (args)...);
   }
@@ -23,9 +25,13 @@ namespace bdep
 
   template <typename... A>
   inline optional<string>
-  git_line (const dir_path& repo, bool ie, A&&... args)
+  git_line (const standard_version& min_ver,
+            const dir_path& repo,
+            bool ie,
+            A&&... args)
   {
-    return git_line (ie,
+    return git_line (min_ver,
+                     ie,
                      "-C", repo,
                      forward<A> (args)...);
   }

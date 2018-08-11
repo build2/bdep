@@ -28,6 +28,7 @@
 #include <libbutl/optional.mxx>
 #include <libbutl/fdstream.mxx>
 #include <libbutl/small-vector.mxx>
+#include <libbutl/standard-version.mxx>
 
 namespace bdep
 {
@@ -109,6 +110,10 @@ namespace bdep
   using butl::ofdstream;
   using butl::fdopen_mode;
   using butl::fdstream_mode;
+
+  // <libbutl/standard-version.mxx>
+  //
+  using butl::standard_version;
 }
 
 // In order to be found (via ADL) these have to be either in std:: or in

@@ -8,7 +8,6 @@
 
 #include <libbutl/fdstream.mxx>         // fdterm()
 #include <libbutl/manifest-parser.mxx>
-#include <libbutl/standard-version.mxx>
 #include <libbutl/manifest-serializer.mxx>
 
 #include <libbpkg/manifest.hxx>
@@ -26,6 +25,12 @@ using namespace butl;
 
 namespace bdep
 {
+  // The minimum supported git version must be at least 2.5 due to the git
+  // worktree command used. We also use bpkg that caps the git version at
+  // 2.12, so let's use is as the lowest common denominator.
+  //
+  const standard_version git_ver ("2.12.0");
+
   static inline url
   parse_url (const string& s, const char* what)
   {
@@ -50,7 +55,8 @@ namespace bdep
       // a custom URL (e.g., if a correct one cannot be automatically derived
       // from remote.origin.url).
       //
-      if (optional<string> l = git_line (prj,
+      if (optional<string> l = git_line (git_ver,
+                                         prj,
                                          true /* ignore_error */,
                                          "config",
                                          "--get",
@@ -62,7 +68,8 @@ namespace bdep
       // Otherwise, get remote.origin.url and try to derive an HTTPS URL from
       // it.
       //
-      if (optional<string> l = git_line (prj,
+      if (optional<string> l = git_line (git_ver,
+                                         prj,
                                          true /* ignore_error */,
                                          "config",
                                          "--get",
@@ -790,7 +797,7 @@ namespace bdep
     // contains.
     //
     auto_rmdir dr_rm (tmp_dir ("publish"));
-    const dir_path& dr (dr_rm.path);   // dist.root
+    const dir_path& dr (dr_rm.path);        // dist.root
     mk (dr);
 
     for (package& p: pkgs)
@@ -919,7 +926,8 @@ namespace bdep
         bool q (verb < 2);
         auto_fd null (q ? fdnull () : auto_fd ());
 
-        process pr (start_git (prj,
+        process pr (start_git (git_ver,
+                               prj,
                                0                   /* stdin  */,
                                q ? null.get () : 1 /* stdout */,
                                q ? null.get () : 2 /* stderr */,
@@ -947,7 +955,7 @@ namespace bdep
 
       auto worktree_prune = [&prj] ()
       {
-        run_git (prj, "worktree", "prune", verb > 2 ? "-v" : nullptr);
+        run_git (git_ver, prj, "worktree", "prune", verb > 2 ? "-v" : nullptr);
       };
 
       // Create the build2-control branch if it doesn't exist, from scratch if
@@ -962,7 +970,8 @@ namespace bdep
       // pull. In the rare conflict cases we will advise the user to run the
       // fetch command and re-try.
       //
-      bool local_exists (git_line (prj,
+      bool local_exists (git_line (git_ver,
+                                   prj,
                                    false /* ignore_error */,
                                    "branch",
                                    "--list",
@@ -971,7 +980,8 @@ namespace bdep
       // @@ Should we allow using the remote name other than origin (here and
       //    everywhere) via the --remote option or smth? Maybe later.
       //
-      bool remote_exists (git_line (prj,
+      bool remote_exists (git_line (git_ver,
+                                    prj,
                                     false /* ignore_error */,
                                     "branch",
                                     "--list",
@@ -1003,7 +1013,8 @@ namespace bdep
           auto_fd null (fdnull ());
           fdpipe pipe (fdopen_pipe ());
 
-          process pr (start_git (prj,
+          process pr (start_git (git_ver,
+                                 prj,
                                  null.get () /* stdin  */,
                                  pipe        /* stdout */,
                                  2           /* stderr */,
@@ -1018,7 +1029,8 @@ namespace bdep
 
           // Create the (empty) root commit.
           //
-          optional<string> commit (git_line (prj,
+          optional<string> commit (git_line (git_ver,
+                                             prj,
                                              false,
                                              "commit-tree",
                                              "-m", "Start",
@@ -1033,7 +1045,8 @@ namespace bdep
           // are creating does not exist. It should be impossible but let's
           // tighten things up a bit.
           //
-          run_git (prj,
+          run_git (git_ver,
+                   prj,
                    "update-ref",
                    "refs/heads/build2-control",
                    *commit,
@@ -1055,7 +1068,8 @@ namespace bdep
           // Create the local branch, setting up the corresponding upstream
           // branch.
           //
-          run_git (prj,
+          run_git (git_ver,
+                   prj,
                    "branch",
                    verb < 2 ? "-q" : nullptr,
                    "build2-control",
@@ -1129,7 +1143,8 @@ namespace bdep
         // the use to deal with.
         //
         if (local_exists && remote_exists)
-          run_git (wd,
+          run_git (git_ver,
+                   wd,
                    "merge",
                    verb < 2 ? "-q" : verb > 2 ? "-v" : nullptr,
                    "--ff-only",
@@ -1168,7 +1183,8 @@ namespace bdep
             fail << "unable to write " << mf << ": " << e;
           }
 
-          run_git (wd,
+          run_git (git_ver,
+                   wd,
                    "add",
                    verb > 2 ? "-v" : nullptr,
                    submit_dir / ac);
@@ -1205,7 +1221,8 @@ namespace bdep
             }
           }
 
-          run_git (wd,
+          run_git (git_ver,
+                   wd,
                    "commit",
                    verb < 2 ? "-q" : verb > 2 ? "-v" : nullptr,
                    "-m", m);
@@ -1234,14 +1251,16 @@ namespace bdep
                 {
                   worktree_remove (); // Release the branch before removal.
 
-                  run_git (prj,
+                  run_git (git_ver,
+                           prj,
                            "branch",
                            verb < 2 ? "-q" : nullptr,
                            "-D",
                            "build2-control");
                 }
                 else
-                  run_git (wd,
+                  run_git (git_ver,
+                           wd,
                            "reset",
                            verb < 2 ? "-q" : nullptr,
                            "--hard",
@@ -1266,7 +1285,8 @@ namespace bdep
         // the verbosity level is 1. However, we still want to see the
         // progress in this case.
         //
-        run_git (wd,
+        run_git (git_ver,
+                 wd,
                  "push",
 
                  verb < 2 ? "-q" : verb > 3 ? "-v" : nullptr,

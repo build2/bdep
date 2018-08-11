@@ -24,6 +24,12 @@ init += $cxx -d prj 2>! &prj/**/bootstrap/***
 
 windows = ($cxx.target.class == 'windows')
 
+# bdep-publish requirements for the minimum supported git version are higher
+# then the default 2.1 (see bdep/publish.cxx for details).
+#
+git_supported = ($git_version_major >  2 || \
+		 $git_version_major == 2 && $git_version_minor >= 12)
+
 # Note that using the same package name and version for tests may result in
 # duplicate submissions. We will use unique version for each test,
 # incrementing the patch version for 1.0.X.

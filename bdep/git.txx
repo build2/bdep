@@ -6,41 +6,41 @@ namespace bdep
 {
   template <typename... A>
   void
-  run_git (const dir_path& repo, A&&... args)
+  run_git (const standard_version& min_ver, const dir_path& repo, A&&... args)
   {
-    process pr (start_git (repo,
-                           0 /* stdin  */,
-                           1 /* stdout */,
-                           2 /* stderr */,
+    process pr (start_git (min_ver,
+                           repo,
+                           0 /* stdin  */, 1 /* stdout */, 2 /* stderr */,
                            forward<A> (args)...));
 
     finish_git (pr);
   }
 
   void
-  git_check_version ();
+  git_check_version (const standard_version& min_ver);
 
   template <typename I, typename O, typename E, typename... A>
   process
-  start_git (I&& in, O&& out, E&& err, A&&... args)
+  start_git (const standard_version& min_ver,
+             I&& in, O&& out, E&& err,
+             A&&... args)
   {
-    git_check_version ();
+    git_check_version (min_ver);
 
-    return start (forward<I> (in),
-                  forward<O> (out),
-                  forward<E> (err),
+    return start (forward<I> (in), forward<O> (out), forward<E> (err),
                   "git",
                   forward<A> (args)...);
   }
 
   template <typename... A>
   optional<string>
-  git_line (bool ie, A&&... args)
+  git_line (const standard_version& min_ver, bool ie, A&&... args)
   {
     fdpipe pipe (fdopen_pipe ());
     auto_fd null (ie ? fdnull () : auto_fd ());
 
-    process pr (start_git (0                    /* stdin  */,
+    process pr (start_git (min_ver,
+                           0                    /* stdin  */,
                            pipe                 /* stdout */,
                            ie ? null.get () : 2 /* stderr */,
                            forward<A> (args)...));

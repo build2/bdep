@@ -15,7 +15,8 @@
 build = $recall($build.path)
 test.options += --build $build
 
-# Check that git version is the minimum supported one (2.12.0) or above.
+# Check that git version is the minimum supported one or above. The lowest
+# common denominator for bdep commands is 2.1.
 #
 +git --version | set git_version_out
 
@@ -30,10 +31,12 @@ end
 +echo "$git_version" | sed -e 's/\d+\.(\d+).*/\1/' | set git_version_minor
 
 # This flag must be used by testscripts to decide if they should skip git
-# repository-related tests.
+# repository-related tests or adjust bdep commands. Note that specific command
+# tests may still adjust this flag to express the higher requirements for the
+# minimum supported git version.
 #
 git_supported = ($git_version_major >  2 || \
-		 $git_version_major == 2 && $git_version_minor >= 12)
+		 $git_version_major == 2 && $git_version_minor >= 1)
 
 # Helper commands that can be used by tests to prepare the testing environment
 # or validate an outcome of the command being tested. They are likely to get

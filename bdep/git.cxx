@@ -5,7 +5,6 @@
 #include <bdep/git.hxx>
 
 #include <libbutl/git.mxx>
-#include <libbutl/standard-version.mxx>
 
 #include <bdep/diagnostics.hxx>
 
@@ -15,8 +14,11 @@ namespace bdep
 {
   static optional<standard_version> git_ver;
 
+  // On the first call check that git is at least of the specified minimum
+  // supported version.
+  //
   void
-  git_check_version ()
+  git_check_version (const standard_version& min_ver)
   {
     if (!git_ver)
     {
@@ -25,14 +27,16 @@ namespace bdep
       //
       git_ver = standard_version ();
 
-      optional<string> s (git_line (false /* ignore_error */, "--version"));
+      optional<string> s (git_line (min_ver,
+                                    false /* ignore_error */,
+                                    "--version"));
 
       if (!s || !(git_ver = git_version (*s)))
         fail << "unable to obtain git version";
 
-      if (git_ver->version < 20120000000)
+      if (*git_ver < min_ver)
         fail << "unsupported git version " << *git_ver <<
-          info << "minimum supported version is 2.12.0" << endf;
+          info << "minimum supported version is " << min_ver << endf;
     }
   }
 
