@@ -11,7 +11,7 @@ using namespace butl;
 
 namespace bdep
 {
-  const standard_version git_ver ("2.1.0");
+  static const standard_version git_ver ("2.1.0");
 
   optional<string>
   project_email (const dir_path& prj)

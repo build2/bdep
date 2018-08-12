@@ -29,7 +29,7 @@ namespace bdep
   // worktree command used. We also use bpkg that caps the git version at
   // 2.12, so let's use is as the lowest common denominator.
   //
-  const standard_version git_ver ("2.12.0");
+  static const standard_version git_ver ("2.12.0");
 
   static inline url
   parse_url (const string& s, const char* what)
