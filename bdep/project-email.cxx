@@ -11,8 +11,6 @@ using namespace butl;
 
 namespace bdep
 {
-  static const standard_version git_ver ("2.1.0");
-
   optional<string>
   project_email (const dir_path& prj)
   {
@@ -37,7 +35,7 @@ namespace bdep
       // resolved value can be queried with the GIT_AUTHOR_IDENT logical
       // variable.
       //
-      if (optional<string> l = git_line (git_ver,
+      if (optional<string> l = git_line (semantic_version {2, 1, 0},
                                          prj,
                                          true /* ignore_error */,
                                          "var", "GIT_AUTHOR_IDENT"))

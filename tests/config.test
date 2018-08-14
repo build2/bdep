@@ -31,10 +31,10 @@ deinit += -d prj
     $init @cfg 2>>/~"%EOE%";
       initializing in project $~/prj/
       synchronizing:
-      %  new prj.+%
+      %  new prj.+19700101000000%
       EOE
 
-    $status >~'%prj configured 0\.1\.0-a\.0\..+%';
+    $status >'prj configured 0.1.0-a.0.19700101000000';
 
     $* list @cfg >>/"EOO";
       @cfg $~/cfg-dir/ 1 default,forwarded,auto-synchronized
@@ -65,10 +65,10 @@ deinit += -d prj
     $init @cfg 2>>/~"%EOE%";
       initializing in project $~/prj/
       synchronizing:
-      %  new prj.+%
+      %  new prj.+19700101000000%
       EOE
 
-    $status >~'%prj configured 0\.1\.0-a\.0\..+%';
+    $status >'prj configured 0.1.0-a.0.19700101000000';
 
     $* list >>/"EOO";
       @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
@@ -99,10 +99,10 @@ deinit += -d prj
     $init -c cfg 2>>/~"%EOE%";
       initializing in project $~/prj/
       synchronizing:
-      %  new prj.+%
+      %  new prj.+19700101000000%
       EOE
 
-    $status >~'%prj configured 0\.1\.0-a\.0\..+%';
+    $status >'prj configured 0.1.0-a.0.19700101000000';
 
     $* list >>/"EOO";
       $~/cfg/ 1 default,forwarded,auto-synchronized
@@ -162,19 +162,19 @@ deinit += -d prj
     initializing in project $~/prj/
     in configuration @cfg1:
     synchronizing:
-    %  new prj.+%
+    %  new prj.+19700101000000%
 
     in configuration @cfg2:
     synchronizing:
-    %  new prj.+%
+    %  new prj.+19700101000000%
     EOE
 
-  $status --all >>~%EOO%;
+  $status --all >>EOO;
     in configuration @cfg1:
-    %prj configured 0\.1\.0-a\.0\..+%
+    prj configured 0.1.0-a.0.19700101000000
 
     in configuration @cfg2:
-    %prj configured 0\.1\.0-a\.0\..+%
+    prj configured 0.1.0-a.0.19700101000000
     EOO
 
   $* list >>/"EOO";
@@ -218,7 +218,7 @@ deinit += -d prj
   $init @cfg 2>>/~"%EOE%";
     initializing in project $~/prj/
     synchronizing:
-    %  new prj.+%
+    %  new prj.+19700101000000%
     EOE
 
   mv prj-cfg prj-cfg2;
@@ -252,7 +252,7 @@ deinit += -d prj
   $init @cfg 2>>/~"%EOE%";
     initializing in project $~/prj/
     synchronizing:
-    %  new prj.+%
+    %  new prj.+19700101000000%
     EOE
 
   $* rename @cfg cfg2 2>>/"EOE";
@@ -300,8 +300,8 @@ deinit += -d prj
     removed configuration @cfg1 $~/prj-cfg1/ 1
     EOE
 
-  $status --all >>~%EOO%;
-    %prj configured 0\.1\.0-a\.0\..+%
+  $status --all >>EOO;
+    prj configured 0.1.0-a.0.19700101000000
     EOO
 
   $* list >>/"EOO";

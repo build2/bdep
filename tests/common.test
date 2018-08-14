@@ -30,13 +30,10 @@ end
 +echo "$git_version" | sed -e 's/(\d+).*/\1/'      | set git_version_major
 +echo "$git_version" | sed -e 's/\d+\.(\d+).*/\1/' | set git_version_minor
 
-# This flag must be used by testscripts to decide if they should skip git
-# repository-related tests or adjust bdep commands. Note that specific command
-# tests may still adjust this flag to express the higher requirements for the
-# minimum supported git version.
-#
-git_supported = ($git_version_major >  2 || \
-		 $git_version_major == 2 && $git_version_minor >= 1)
++if! ($git_version_major >  2 || \
+      $git_version_major == 2 && $git_version_minor >= 1)
+  exit "minimum supported git version is 2.1"
+end
 
 # Helper commands that can be used by tests to prepare the testing environment
 # or validate an outcome of the command being tested. They are likely to get
@@ -50,7 +47,7 @@ clean   = $* clean
 deinit  = $* deinit
 init    = $* init
 fetch   = $* fetch
-new     = $* new --no-checks --vcs ($git_supported ? git : none)
+new     = $* new --no-checks
 status  = $* status
 sync    = $* sync
 update  = $* update

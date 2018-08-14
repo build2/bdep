@@ -6,7 +6,7 @@ namespace bdep
 {
   template <typename I, typename O, typename E, typename... A>
   inline process
-  start_git (const standard_version& min_ver,
+  start_git (const semantic_version& min_ver,
              const dir_path& repo,
              I&& in, O&& out, E&& err,
              A&&... args)
@@ -25,7 +25,7 @@ namespace bdep
 
   template <typename... A>
   inline optional<string>
-  git_line (const standard_version& min_ver,
+  git_line (const semantic_version& min_ver,
             const dir_path& repo,
             bool ie,
             A&&... args)

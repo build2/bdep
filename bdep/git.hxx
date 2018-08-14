@@ -21,11 +21,11 @@ namespace bdep
   //
   template <typename I, typename O, typename E, typename... A>
   process
-  start_git (const standard_version&, I&& in, O&& out, E&& err, A&&... args);
+  start_git (const semantic_version&, I&& in, O&& out, E&& err, A&&... args);
 
   template <typename I, typename O, typename E, typename... A>
   process
-  start_git (const standard_version&,
+  start_git (const semantic_version&,
              const dir_path& repo,
              I&& in, O&& out, E&& err,
              A&&... args);
@@ -39,18 +39,18 @@ namespace bdep
   //
   template <typename... A>
   void
-  run_git (const standard_version&, const dir_path& repo, A&&... args);
+  run_git (const semantic_version&, const dir_path& repo, A&&... args);
 
   // Return the first line of the git output. If ignore_error is true, then
   // suppress stderr, ignore (normal) error exit status, and return nullopt.
   //
   template <typename... A>
   optional<string>
-  git_line (const standard_version&, bool ignore_error, A&&... args);
+  git_line (const semantic_version&, bool ignore_error, A&&... args);
 
   template <typename... A>
   optional<string>
-  git_line (const standard_version&,
+  git_line (const semantic_version&,
             const dir_path& repo,
             bool ignore_error,
             A&&... args);

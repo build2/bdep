@@ -55,11 +55,11 @@ deinit += -d prj
     fetching dir:$~/libprj \(prerequisite of dir:$~/prj\)
     synchronizing:
     %  new libprj.+ \\\(required by prj\\\)%
-    %  upgrade prj.+#1%
+    %  upgrade prj.+19700101000000#1%
     EOE
 
-  $status >>~"%EOO%";
-    %prj configured 0\.1\.0-a\.0\..+#1%
+  $status >>~%EOO%;
+    prj configured 0.1.0-a.0.19700101000000#1
     %  libprj configured 0.+%
     EOO
 
@@ -140,19 +140,19 @@ deinit += -d prj
     fetching dir:$~/libprj \(prerequisite of dir:$~/prj\)
     synchronizing:
     %  new libprj.+ \\\(required by pkg1\\\)%
-    %  upgrade pkg1.+#1%
-    %  upgrade pkg2.+#1%
+    %  upgrade pkg1.+19700101000000#1%
+    %  upgrade pkg2.+19700101000000#1%
     EOE
 
   $status >>~%EOO% 2>>/~"%EOE%"; # Note: implicitly fetches into cfg2.
     in configuration @cfg1:
-    %pkg1 configured 0\.1\.0-a\.0\..+#1%
+    pkg1 configured 0.1.0-a.0.19700101000000#1
     %  libprj configured 0.+%
-    %pkg2 configured 0\.1\.0-a\.0\..+#1%
+    pkg2 configured 0.1.0-a.0.19700101000000#1
 
     in configuration @cfg2:
-    %pkg1 configured 0\.1\.0-a\.0\..+ available 0\.1\.0-a\.0\..+#1%
-    %pkg2 configured 0\.1\.0-a\.0\..+ available 0\.1\.0-a\.0\..+#1%
+    pkg1 configured 0.1.0-a.0.19700101000000 available 0.1.0-a.0.19700101000000#1
+    pkg2 configured 0.1.0-a.0.19700101000000 available 0.1.0-a.0.19700101000000#1
     EOO
     fetching dir:$~/libprj \(prerequisite of dir:$~/prj\)
     EOE
@@ -165,20 +165,20 @@ deinit += -d prj
     in configuration @cfg2:
     synchronizing:
     %  new libprj.+ \(required by pkg1\)%
-    %  upgrade pkg1/0\.1\.0-a\.0\..+#1%
-    %  upgrade pkg2/0\.1\.0-a\.0\..+#1%
+      upgrade pkg1/0.1.0-a.0.19700101000000#1
+      upgrade pkg2/0.1.0-a.0.19700101000000#1
     EOE
 
   $status >>~%EOE%;
     in configuration @cfg1:
-    %pkg1 configured 0\.1\.0-a\.0\..+#1%
+    pkg1 configured 0.1.0-a.0.19700101000000#1
     %  libprj configured 0.+%
-    %pkg2 configured 0\.1\.0-a\.0\..+#1%
+    pkg2 configured 0.1.0-a.0.19700101000000#1
 
     in configuration @cfg2:
-    %pkg1 configured 0\.1\.0-a\.0\..+#1%
+    pkg1 configured 0.1.0-a.0.19700101000000#1
     %  libprj configured 0.+%
-    %pkg2 configured 0\.1\.0-a\.0\..+#1%
+    pkg2 configured 0.1.0-a.0.19700101000000#1
     EOE
 
   $build prj/pkg1/ 2>>/~%EOE%;

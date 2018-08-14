@@ -29,7 +29,7 @@ deinit += -d prj
 
   $init -C @cfg &prj-cfg/***;
 
-  $* >~'%prj configured 0\.1\.0-a\.0\..+%';
+  $* >'prj configured 0.1.0-a.0.19700101000000';
 
   $deinit 2>>/"EOE"
     deinitializing in project $~/prj/
@@ -46,14 +46,14 @@ deinit += -d prj
   $init -C @cfg1 &prj-cfg1/***;
   $init -C @cfg2 &prj-cfg2/***;
 
-  $* @cfg2 >~'%prj configured 0\.1\.0-a\.0\..+%';
+  $* @cfg2 >'prj configured 0.1.0-a.0.19700101000000';
 
-  $* --all >>~%EOO%;
+  $* --all >>EOO;
     in configuration @cfg1:
-    %prj configured 0\.1\.0-a\.0\..+%
+    prj configured 0.1.0-a.0.19700101000000
 
     in configuration @cfg2:
-    %prj configured 0\.1\.0-a\.0\..+%
+    prj configured 0.1.0-a.0.19700101000000
     EOO
 
   $deinit 2>>/"EOE"
@@ -83,8 +83,8 @@ deinit += -d prj
     depends: libprj
     EOI
 
-  $* --recursive >>~%EOO% 2>>/"EOE"; # Note: implicitly fetches in cfg.
-    %prj configured 0\.1\.0-a\.0\..+ available 0\.1\.0-a\.0\..+#1%
+  $* --recursive >>EOO 2>>/"EOE"; # Note: implicitly fetches in cfg.
+    prj configured 0.1.0-a.0.19700101000000 available 0.1.0-a.0.19700101000000#1
     EOO
     fetching dir:$~/libprj \(prerequisite of dir:$~/prj\)
     EOE
@@ -92,7 +92,7 @@ deinit += -d prj
   $sync;
 
   $* --recursive >>~%EOO%;
-    %prj configured 0\.1\.0-a\.0\..+#1%
+    prj configured 0.1.0-a.0.19700101000000#1
     %  libprj configured 0.+%
     EOO
 

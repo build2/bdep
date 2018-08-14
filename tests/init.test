@@ -24,13 +24,13 @@ deinit += -d prj
     initializing in project $~/prj/
     created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
     synchronizing:
-    %  new prj.+%
+    %  new prj.+19700101000000%
     EOE
 
   sed -n -e 's/^config.cc.poptions = (.+)$/\1/p' prj-cfg/build/config.build \
     >'-DTEST';
 
-  $status >~'%prj configured 0\.1\.0-a\.0\..+%';
+  $status >'prj configured 0.1.0-a.0.19700101000000';
 
   $build prj/ 2>>/EOE;
     mkdir prj-cfg/prj/fsdir{prj/}
@@ -72,22 +72,22 @@ deinit += -d prj
     initializing in project $~/prj/
     added configuration @cfg1 $~/prj-cfg1/ 1 default,forwarded,auto-synchronized
     synchronizing:
-    %  new prj.+%
+    %  new prj.+19700101000000%
     EOE
 
   $* -A prj-cfg2 @cfg2 2>>/~"%EOE%";
     initializing in project $~/prj/
     added configuration @cfg2 $~/prj-cfg2/ 2 auto-synchronized
     synchronizing:
-    %  new prj.+%
+    %  new prj.+19700101000000%
     EOE
 
-  $status --all >>~%EOO%;
+  $status --all >>EOO;
     in configuration @cfg1:
-    %prj configured 0\.1\.0-a\.0\..+%
+    prj configured 0.1.0-a.0.19700101000000
 
     in configuration @cfg2:
-    %prj configured 0\.1\.0-a\.0\..+%
+    prj configured 0.1.0-a.0.19700101000000
     EOO
 
   $build prj-cfg1/ 2>>/~%EOE%;
@@ -134,10 +134,10 @@ deinit += -d prj
     initializing in project $~/prj/
     created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
     synchronizing:
-    %  new prj.+%
+    %  new prj.+19700101000000%
     EOE
 
-  $status >~'%prj configured 0\.1\.0-a\.0\..+%';
+  $status >'prj configured 0.1.0-a.0.19700101000000';
 
   $build prj/ 2>>/EOE;
     mkdir prj-cfg/prj/fsdir{prj/}
@@ -150,10 +150,7 @@ deinit += -d prj
   #
   mkdir --no-cleanup prj/prj.pkg;
 
-  mv prj/prj prj/build prj/buildfile prj/manifest prj/prj.pkg/;
-  if ($git_supported)
-    mv prj/.gitignore prj/prj.pkg/
-  end;
+  mv prj/prj prj/build prj/buildfile prj/manifest prj/.gitignore prj/prj.pkg/;
   mv prj/prj.pkg prj/prj;
 
   cat <<EOI >=prj/packages.manifest;
@@ -170,8 +167,8 @@ deinit += -d prj
   $init --all -d prj/libprj 2>>/~"%EOE%";
     initializing in project $~/prj/
     synchronizing:
-    %  upgrade prj.+#1%
-    %  new libprj.+%
+    %  upgrade prj.+19700101000000#1%
+    %  new libprj.+19700101000000%
     EOE
 
   # Factor out some of the executable package functionality into the library.
@@ -204,7 +201,7 @@ deinit += -d prj
 
   $build prj-cfg/prj/ 2>>/~"%EOE%";
     synchronizing $~/prj-cfg/:
-    %  upgrade prj.+#2%
+    %  upgrade prj.+19700101000000#2%
     %mkdir prj-cfg/.+%{2}
     %.{3}
     %ld prj-cfg/.+%{2}

@@ -6,7 +6,7 @@ namespace bdep
 {
   template <typename... A>
   void
-  run_git (const standard_version& min_ver, const dir_path& repo, A&&... args)
+  run_git (const semantic_version& min_ver, const dir_path& repo, A&&... args)
   {
     process pr (start_git (min_ver,
                            repo,
@@ -17,11 +17,11 @@ namespace bdep
   }
 
   void
-  git_check_version (const standard_version& min_ver);
+  git_check_version (const semantic_version& min_ver);
 
   template <typename I, typename O, typename E, typename... A>
   process
-  start_git (const standard_version& min_ver,
+  start_git (const semantic_version& min_ver,
              I&& in, O&& out, E&& err,
              A&&... args)
   {
@@ -34,7 +34,7 @@ namespace bdep
 
   template <typename... A>
   optional<string>
-  git_line (const standard_version& min_ver, bool ie, A&&... args)
+  git_line (const semantic_version& min_ver, bool ie, A&&... args)
   {
     fdpipe pipe (fdopen_pipe ());
     auto_fd null (ie ? fdnull () : auto_fd ());

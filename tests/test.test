@@ -85,8 +85,8 @@ deinit += -d prj
     fetching dir:$~/libprj \(prerequisite of dir:$~/prj\)
     synchronizing:
     %  new libprj.+ \\\(required by pkg1\\\)%
-    %  upgrade pkg1.+#1%
-    %  upgrade pkg2.+#1%
+    %  upgrade pkg1.+19700101000000#1%
+    %  upgrade pkg2.+19700101000000#1%
     mkdir prj-cfg1/pkg2/fsdir{pkg2/}
     c++ prj/pkg2/pkg2/cxx{pkg2}@prj-cfg1/pkg2/pkg2/
     ld prj-cfg1/pkg2/pkg2/exe{pkg2}
@@ -97,8 +97,8 @@ deinit += -d prj
     fetching dir:$~/libprj \(prerequisite of dir:$~/prj\)
     synchronizing:
     %  new libprj.+ \\\(required by pkg1\\\)%
-    %  upgrade pkg1.+#1%
-    %  upgrade pkg2.+#1%
+    %  upgrade pkg1.+19700101000000#1%
+    %  upgrade pkg2.+19700101000000#1%
     mkdir prj-cfg2/pkg2/fsdir{pkg2/}
     c++ prj/pkg2/pkg2/cxx{pkg2}@prj-cfg2/pkg2/pkg2/
     ld prj-cfg2/pkg2/pkg2/exe{pkg2}

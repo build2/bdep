@@ -12,32 +12,36 @@ using namespace butl;
 
 namespace bdep
 {
-  static optional<standard_version> git_ver;
+  static optional<semantic_version> git_ver;
 
-  // On the first call check that git is at least of the specified minimum
-  // supported version.
+  // Check that git is at least of the specified minimum supported version.
   //
   void
-  git_check_version (const standard_version& min_ver)
+  git_check_version (const semantic_version& min_ver)
   {
+    // Query and cache git version on the first call.
+    //
     if (!git_ver)
     {
       // Make sure that the getline() function call doesn't end up with an
       // infinite recursion.
       //
-      git_ver = standard_version ();
+      git_ver = semantic_version ();
 
-      optional<string> s (git_line (min_ver,
+      optional<string> s (git_line (*git_ver,
                                     false /* ignore_error */,
                                     "--version"));
 
       if (!s || !(git_ver = git_version (*s)))
         fail << "unable to obtain git version";
-
-      if (*git_ver < min_ver)
-        fail << "unsupported git version " << *git_ver <<
-          info << "minimum supported version is " << min_ver << endf;
     }
+
+    // Note that we don't expect the min_ver to contain the build component,
+    // that doesn't matter functionality-wise for git.
+    //
+    if (*git_ver < min_ver)
+      fail << "unsupported git version " << *git_ver <<
+        info << "minimum supported version is " << min_ver << endf;
   }
 
   optional<string>

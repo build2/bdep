@@ -4,6 +4,14 @@
 
 .include common.test project.test
 
+# bdep-publish requirements for the minimum supported git version are higher
+# then the default 2.1 (see bdep/publish.cxx for details).
+#
++if! ($git_version_major >  2 || \
+      $git_version_major == 2 && $git_version_minor >= 12)
+  exit
+end
+
 # Repository to use for the package submissions simulation.
 #
 # Note: could use empty config.bdep.test.repository value to suppress
@@ -23,12 +31,6 @@ new  += 2>!
 init += $cxx -d prj 2>! &prj/**/bootstrap/***
 
 windows = ($cxx.target.class == 'windows')
-
-# bdep-publish requirements for the minimum supported git version are higher
-# then the default 2.1 (see bdep/publish.cxx for details).
-#
-git_supported = ($git_version_major >  2 || \
-		 $git_version_major == 2 && $git_version_minor >= 12)
 
 # Note that using the same package name and version for tests may result in
 # duplicate submissions. We will use unique version for each test,
@@ -230,7 +232,6 @@ git_supported = ($git_version_major >  2 || \
 
 : control
 :
-if ($git_supported)
 {
   # The control repository URL doesn't really matter for the submission
   # simulation. We specify it to enable the control branch-related
