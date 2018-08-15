@@ -21,25 +21,25 @@ status += -d prj
 
   : exe
   {
-    $* --no-amalgamation -t exe -l c++ prj 2>>/"EOE" &prj/***;
-      created new executable project prj in $~/prj/
+    $* --no-amalgamation -t exe -l c++ prj-foo 2>>/"EOE" &prj-foo/***;
+      created new executable project prj-foo in $~/prj-foo/
       EOE
 
-    $build prj/ $cxx 2>>/EOE
-      c++ prj/prj/cxx{prj}
-      ld prj/prj/exe{prj}
+    $build prj-foo/ $cxx 2>>/EOE
+      c++ prj-foo/prj-foo/cxx{prj-foo}
+      ld prj-foo/prj-foo/exe{prj-foo}
       EOE
   }
 
   : lib
   {
-    $* --no-amalgamation -t lib -l c++ libprj 2>>/"EOE" &libprj/***;
-      created new library project libprj in $~/libprj/
+    $* --no-amalgamation -t lib -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***;
+      created new library project libprj-foo in $~/libprj-foo/
       EOE
 
-    $build libprj/ $cxx 2>>/~%EOE%
+    $build libprj-foo/ $cxx 2>>/~%EOE%
       %.{4}
-      %ld libprj/.+%{3}
+      %ld libprj-foo/.+%{3}
       EOE
   }
 

@@ -114,7 +114,7 @@ namespace bdep
     //
     // We use the full name in the manifest and the top-level directory, the
     // base name for inner filesystem directories and preprocessor macros,
-    // while the stem for modules, namespaces, etc.
+    // while the (sanitized) stem for modules, namespaces, etc.
     //
     const string& n (pkgn.string ());
     const string& b (pkgn.base ());
@@ -134,7 +134,12 @@ namespace bdep
     case type::lib:
       {
         if (s.compare (0, 3, "lib") == 0)
+        {
           s.erase (0, 3);
+
+          if (s.empty ())
+            fail << "empty library name stem in '" << b << "'";
+        }
         else
           warn << "library name does not start with 'lib'" <<
             info << "this package may not be acceptable to some repositories";
@@ -145,6 +150,25 @@ namespace bdep
     case type::empty:
       break;
     }
+
+    // Sanitize the stem to be a valid language identifier.
+    //
+    string id;
+    switch (l)
+    {
+    case lang::c:
+    case lang::cxx:
+      {
+        auto sanitize = [] (char c)
+        {
+          return (c == '-' || c == '+' || c == '.') ? '_' : c;
+        };
+
+        transform (s.begin (), s.end (), back_inserter (id), sanitize);
+        break;
+      }
+    }
+
 
     dir_path out;           // Project/package output directory.
     dir_path prj;           // Project.
@@ -654,7 +678,7 @@ namespace bdep
                  <<                                                       endl
                  << "#include <" << b << "/" << exp << ">"             << endl
                  <<                                                       endl
-                 << "namespace " << s                                  << endl
+                 << "namespace " << id                                 << endl
                  << "{"                                                << endl
                  << "  // Print a greeting for the specified name into the specified" << endl
                  << "  // stream. Throw std::invalid_argument if the name is empty."  << endl
@@ -675,7 +699,7 @@ namespace bdep
                  <<                                                       endl
                  << "using namespace std;"                             << endl
                  <<                                                       endl
-                 << "namespace " << s                                  << endl
+                 << "namespace " << id                                 << endl
                  << "{"                                                << endl
                  << "  void say_hello (ostream& o, const string& n)"   << endl
                  << "  {"                                              << endl
@@ -1024,7 +1048,7 @@ namespace bdep
                  << "int main ()"                                      << endl
                  << "{"                                                << endl
                  << "  using namespace std;"                           << endl
-                 << "  using namespace " << s << ";"                   << endl
+                 << "  using namespace " << id << ";"                  << endl
                  <<                                                       endl
                  << "  // Basics."                                     << endl
                  << "  //"                                             << endl
