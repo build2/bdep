@@ -26,9 +26,9 @@ using namespace butl;
 
 namespace bdep
 {
-  // The minimum supported git version must be at least 2.5 due to the git
+  // The minimum supported git version must be at least 2.5.0 due to the git
   // worktree command used. We also use bpkg that caps the git version at
-  // 2.12, so let's use is as the lowest common denominator.
+  // 2.12.0, so let's use is as the lowest common denominator.
   //
   static const semantic_version git_ver {2, 12, 0};
 

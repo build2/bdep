@@ -5,7 +5,7 @@
 .include common.test project.test
 
 # bdep-publish requirements for the minimum supported git version are higher
-# then the default 2.1 (see bdep/publish.cxx for details).
+# then the default 2.1.0 (see bdep/publish.cxx for details).
 #
 +if! ($git_version_major >  2 || \
       $git_version_major == 2 && $git_version_minor >= 12)

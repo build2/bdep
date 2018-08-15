@@ -16,7 +16,7 @@ build = $recall($build.path)
 test.options += --build $build
 
 # Check that git version is the minimum supported one or above. The lowest
-# common denominator for bdep commands is 2.1.
+# common denominator for bdep commands is 2.1.0.
 #
 +git --version | set git_version_out
 
@@ -32,7 +32,7 @@ end
 
 +if! ($git_version_major >  2 || \
       $git_version_major == 2 && $git_version_minor >= 1)
-  exit "minimum supported git version is 2.1"
+  exit "minimum supported git version is 2.1.0"
 end
 
 # Helper commands that can be used by tests to prepare the testing environment
