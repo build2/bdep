@@ -272,6 +272,7 @@ namespace bdep
     // phrase.
     //
     string message;
+    optional<uint16_t> status;  // Submission result manifest status value.
     optional<string> reference; // Must be present on the submission success.
 
     // None of the 3XX redirect code semantics assume automatic re-posting. We
@@ -541,8 +542,6 @@ namespace bdep
       //
       is.exceptions (ifdstream::badbit);
 
-      bool manifest (false);
-
       if (ctype)
       {
         if (casecmp ("text/manifest", *ctype, 13) == 0)
@@ -600,7 +599,7 @@ namespace bdep
           //
           for (nv = p.next (); !nv.empty (); nv = p.next ()) ;
 
-          manifest = true;
+          status = c;
         }
         else if (casecmp ("text/plain", *ctype, 10) == 0)
           getline (is, message); // Can result in the empty message.
@@ -613,7 +612,7 @@ namespace bdep
       // unable to interpret any other cases and so report them as a bad
       // response.
       //
-      if (!manifest)
+      if (!status)
       {
         if (rs.code == 200)
           bad_response ("manifest expected");
@@ -673,6 +672,13 @@ namespace bdep
 
       if (location)
         dr << info << "new repository location: " << *location;
+
+      // In case of a server error advise the user to re-try later, assuming
+      // that the issue is temporary (service overload, network connectivity
+      // loss, etc.).
+      //
+      if (status && *status >= 500 && *status < 600)
+        dr << info << "try again later";
     }
 
     return make_pair (move (*reference), message);
