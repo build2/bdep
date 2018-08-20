@@ -405,8 +405,8 @@ namespace bdep
          << "using config"                                             << endl;
       if (tests)
         os << "using test"                                             << endl;
-      os << "using dist"                                               << endl
-         << "using install"                                            << endl;
+      os << "using install"                                            << endl
+         << "using dist"                                               << endl;
       os.close ();
 
       // build/root.build
