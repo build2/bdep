@@ -40,10 +40,8 @@ deinit += -d prj
       @cfg $~/cfg-dir/ 1 default,forwarded,auto-synchronized
       EOO
 
-    $update @cfg 2>>/EOE;
-      mkdir cfg-dir/prj/fsdir{prj/}
-      c++ prj/prj/cxx{prj}@cfg-dir/prj/prj/
-      ld cfg-dir/prj/prj/exe{prj}
+    $update @cfg 2>>~%EOE%;
+      %(mkdir|c\+\+|ld) .+%{3}
       EOE
 
     $deinit @cfg 2>>/"EOE"
@@ -74,10 +72,8 @@ deinit += -d prj
       @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
       EOO
 
-    $update @cfg 2>>/EOE;
-      mkdir prj-cfg/prj/fsdir{prj/}
-      c++ prj/prj/cxx{prj}@prj-cfg/prj/prj/
-      ld prj-cfg/prj/prj/exe{prj}
+    $update @cfg 2>>~%EOE%;
+      %(mkdir|c\+\+|ld) .+%{3}
       EOE
 
     $deinit @cfg 2>>/"EOE"
@@ -108,10 +104,8 @@ deinit += -d prj
       $~/cfg/ 1 default,forwarded,auto-synchronized
       EOO
 
-    $update -c cfg 2>>/EOE;
-      mkdir cfg/prj/fsdir{prj/}
-      c++ prj/prj/cxx{prj}@cfg/prj/prj/
-      ld cfg/prj/prj/exe{prj}
+    $update -c cfg 2>>~%EOE%;
+      %(mkdir|c\+\+|ld) .+%{3}
       EOE
 
     $deinit -c cfg 2>>/"EOE"
@@ -182,16 +176,12 @@ deinit += -d prj
     @cfg2 $~/prj-cfg2/ 2 auto-synchronized
     EOO
 
-  $update --all 2>>/EOE;
+  $update --all 2>>~%EOE%;
     in configuration @cfg1:
-    mkdir prj-cfg1/prj/fsdir{prj/}
-    c++ prj/prj/cxx{prj}@prj-cfg1/prj/prj/
-    ld prj-cfg1/prj/prj/exe{prj}
+    %(mkdir|c\+\+|ld) .+%{3}
 
     in configuration @cfg2:
-    mkdir prj-cfg2/prj/fsdir{prj/}
-    c++ prj/prj/cxx{prj}@prj-cfg2/prj/prj/
-    ld prj-cfg2/prj/prj/exe{prj}
+    %(mkdir|c\+\+|ld) .+%{3}
     EOE
 
   $deinit --all 2>>/"EOE"
@@ -227,10 +217,8 @@ deinit += -d prj
     moved configuration @cfg $~/prj-cfg/ 1 to $~/prj-cfg2/
     EOE
 
-  $update --all 2>>/EOE;
-    mkdir prj-cfg2/prj/fsdir{prj/}
-    c++ prj/prj/cxx{prj}@prj-cfg2/prj/prj/
-    ld prj-cfg2/prj/prj/exe{prj}
+  $update --all 2>>~%EOE%;
+    %(mkdir|c\+\+|ld) .+%{3}
     EOE
 
   $deinit 2>>/"EOE"
@@ -259,10 +247,8 @@ deinit += -d prj
     renamed configuration @cfg $~/prj-cfg/ 1 to @cfg2
     EOE
 
-  $update @cfg2 2>>/EOE;
-    mkdir prj-cfg/prj/fsdir{prj/}
-    c++ prj/prj/cxx{prj}@prj-cfg/prj/prj/
-    ld prj-cfg/prj/prj/exe{prj}
+  $update @cfg2 2>>~%EOE%;
+    %(mkdir|c\+\+|ld) .+%{3}
     EOE
 
   $deinit 2>>/"EOE"
@@ -322,10 +308,8 @@ deinit += -d prj
     @cfg2 $~/prj-cfg2/ 2 default,forwarded
     EOO
 
-  $update 2>>/EOE;
-    mkdir prj-cfg2/prj/fsdir{prj/}
-    c++ prj/prj/cxx{prj}@prj-cfg2/prj/prj/
-    ld prj-cfg2/prj/prj/exe{prj}
+  $update 2>>~%EOE%;
+    %(mkdir|c\+\+|ld) .+%{3}
     EOE
 
   $deinit --all 2>>/"EOE"

@@ -32,11 +32,8 @@ deinit += -d prj
 
   $status >'prj configured 0.1.0-a.0.19700101000000';
 
-  $build prj/ 2>>/EOE;
-    mkdir prj-cfg/prj/fsdir{prj/}
-    c++ prj/prj/cxx{prj}@prj-cfg/prj/prj/
-    ld prj-cfg/prj/prj/exe{prj}
-    ln prj-cfg/prj/prj/exe{prj} -> prj/prj/
+  $build prj/ 2>>~%EOE%;
+    %(mkdir|c\+\+|ld|ln) .+%{4}
     EOE
 
   prj/prj/prj 'testscript' >'Hello, testscript!'; # Make sure is forwarded.
@@ -45,10 +42,8 @@ deinit += -d prj
     info: prj-cfg/dir{prj/} is up to date
     EOE
 
-  $build 'clean:' prj/ 2>>/EOE;
-    rm prj-cfg/prj/prj/exe{prj}
-    rm prj-cfg/prj/prj/obje{prj}
-    rm prj-cfg/prj/fsdir{prj/}
+  $build 'clean:' prj/ 2>>~%EOE%;
+    %rm .+%{3}
     EOE
 
   $deinit 2>>/"EOE"
@@ -90,27 +85,20 @@ deinit += -d prj
     prj configured 0.1.0-a.0.19700101000000
     EOO
 
-  $build prj-cfg1/ 2>>/~%EOE%;
-    %mkdir prj-cfg1/.+%{2}
-    %c\+\+ .+%{2}
-    %ld prj-cfg1/.+%{2}
+  $build prj-cfg1/ 2>>~%EOE%;
+    %(mkdir|c\+\+|ld) .+%{6}
     EOE
 
-  $build prj-cfg2/ 2>>/~%EOE%;
-    %mkdir prj-cfg2/.+%{2}
-    %c\+\+ .+%{2}
-    %ld prj-cfg2/.+%{2}
+  $build prj-cfg2/ 2>>~%EOE%;
+    %(mkdir|c\+\+|ld) .+%{6}
     EOE
 
-  $build prj/ 2>>/EOE;
-    ln prj-cfg1/prj/prj/exe{prj} -> prj/prj/
-    info: prj-cfg1/dir{prj/} is up to date
+  $build prj/ 2>>~%EOE%;
+    %(ln|info:) .+%{2}
     EOE
 
-  $build 'clean:' prj/ 2>>/EOE;
-    rm prj-cfg1/prj/prj/exe{prj}
-    rm prj-cfg1/prj/prj/obje{prj}
-    rm prj-cfg1/prj/fsdir{prj/}
+  $build 'clean:' prj/ 2>>~%EOE%;
+    %rm .+%{3}
     EOE
 
   $deinit 2>>/"EOE"
@@ -139,11 +127,8 @@ deinit += -d prj
 
   $status >'prj configured 0.1.0-a.0.19700101000000';
 
-  $build prj/ 2>>/EOE;
-    mkdir prj-cfg/prj/fsdir{prj/}
-    c++ prj/prj/cxx{prj}@prj-cfg/prj/prj/
-    ld prj-cfg/prj/prj/exe{prj}
-    ln prj-cfg/prj/prj/exe{prj} -> prj/prj/
+  $build prj/ 2>>~%EOE%;
+    %(mkdir|c\+\+|ld|ln) .+%{4}
     EOE
 
   # Move the executable package into a separate directory.
@@ -202,9 +187,7 @@ deinit += -d prj
   $build prj-cfg/prj/ 2>>/~"%EOE%";
     synchronizing $~/prj-cfg/:
     %  upgrade prj.+19700101000000#2%
-    %mkdir prj-cfg/.+%{2}
-    %.{3}
-    %ld prj-cfg/.+%{2}
+    %\(mkdir|version\\.in|c\\+\\+|ld) .+%{7}
     EOE
 
   $deinit 2>>/"EOE"

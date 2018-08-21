@@ -25,9 +25,8 @@ status += -d prj
       created new executable project prj-foo in $~/prj-foo/
       EOE
 
-    $build prj-foo/ $cxx 2>>/EOE
-      c++ prj-foo/prj-foo/cxx{prj-foo}
-      ld prj-foo/prj-foo/exe{prj-foo}
+    $build prj-foo/ $cxx 2>>~%EOE%
+      %(c\+\+|ld) .+%{2}
       EOE
   }
 
@@ -37,9 +36,8 @@ status += -d prj
       created new library project libprj-foo in $~/libprj-foo/
       EOE
 
-    $build libprj-foo/ $cxx 2>>/~%EOE%
-      %.{4}
-      %ld libprj-foo/.+%{3}
+    $build libprj-foo/ $cxx 2>>~%EOE%
+      %(version\.in|c\+\+|ar|ld) .+%{7}
       EOE
   }
 
@@ -59,9 +57,8 @@ status += -d prj
         created new library package libprj in $~/prj/libprj/
         EOE
 
-      $build prj/libprj/ $cxx 2>>/~%EOE%
-        %.{4}
-        %ld prj/libprj/.+%{3}
+      $build prj/libprj/ $cxx 2>>~%EOE%
+        %(version\.in|c\+\+|ar|ld) .+%{7}
         EOE
     }
 
@@ -109,11 +106,8 @@ status += -d prj
 
     $status >'prj configured 0.1.0-a.0.19700101000000';
 
-    $build prj/ 2>>/EOE
-      mkdir prj-config/prj/fsdir{prj/}
-      c++ prj/prj/cxx{prj}@prj-config/prj/prj/
-      ld prj-config/prj/prj/exe{prj}
-      ln prj-config/prj/prj/exe{prj} -> prj/prj/
+    $build prj/ 2>>~%EOE%
+      %(mkdir|c\+\+|ld|ln) .+%{4}
       EOE
   }
 
@@ -134,11 +128,8 @@ status += -d prj
 
     $status >'prj configured 0.1.0-a.0.19700101000000';
 
-    $build prj/ 2>>/EOE
-      mkdir prj-cfg/prj/fsdir{prj/}
-      c++ prj/prj/cxx{prj}@prj-cfg/prj/prj/
-      ld prj-cfg/prj/prj/exe{prj}
-      ln prj-cfg/prj/prj/exe{prj} -> prj/prj/
+    $build prj/ 2>>~%EOE%
+      %(mkdir|c\+\+|ld|ln) .+%{4}
       EOE
   }
 }

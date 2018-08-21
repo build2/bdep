@@ -18,16 +18,12 @@ deinit += -d prj
 {
   $new -C @cfg prj $cxx &prj/*** &prj-cfg/***;
 
-  $* -d prj 2>>/EOE;
-    mkdir prj-cfg/prj/fsdir{prj/}
-    c++ prj/prj/cxx{prj}@prj-cfg/prj/prj/
-    ld prj-cfg/prj/prj/exe{prj}
+  $* -d prj 2>>~%EOE%;
+    %(mkdir|c\+\+|ld) .+%{3}
     EOE
 
-  $clean -d prj 2>>/EOE;
-    rm prj-cfg/prj/prj/exe{prj}
-    rm prj-cfg/prj/prj/obje{prj}
-    rm prj-cfg/prj/fsdir{prj/}
+  $clean -d prj 2>>~%EOE%;
+    %rm .+%{3}
     EOE
 
   $deinit 2>>/"EOE"
@@ -50,58 +46,38 @@ deinit += -d prj
 
   # Update.
   #
-  $* -d prj/pkg1 2>>/EOE;           # Default (cfg1).
-    mkdir prj-cfg1/pkg1/fsdir{pkg1/}
-    c++ prj/pkg1/pkg1/cxx{pkg1}@prj-cfg1/pkg1/pkg1/
-    ld prj-cfg1/pkg1/pkg1/exe{pkg1}
+  $* -d prj/pkg1 2>>~%EOE%;           # Default (cfg1).
+    %(mkdir|c\+\+|ld) .+%{3}
     EOE
 
-  $* @cfg2 -d prj/pkg1 2>>/EOE;     # By name (cfg2).
-    mkdir prj-cfg2/pkg1/fsdir{pkg1/}
-    c++ prj/pkg1/pkg1/cxx{pkg1}@prj-cfg2/pkg1/pkg1/
-    ld prj-cfg2/pkg1/pkg1/exe{pkg1}
+  $* @cfg2 -d prj/pkg1 2>>~%EOE%;     # By name (cfg2).
+    %(mkdir|c\+\+|ld) .+%{3}
     EOE
 
-  $* --all -d prj 2>>/EOE;          # All configs (and packages).
+  $* --all -d prj 2>>~%EOE%;          # All configs (and packages).
     in configuration @cfg1:
-    mkdir prj-cfg1/pkg2/fsdir{pkg2/}
-    c++ prj/pkg2/pkg2/cxx{pkg2}@prj-cfg1/pkg2/pkg2/
-    ld prj-cfg1/pkg2/pkg2/exe{pkg2}
-    info: prj-cfg1/dir{pkg1/} is up to date
+    %(mkdir|c\+\+|ld|info:) .+%{4}
 
     in configuration @cfg2:
-    mkdir prj-cfg2/pkg2/fsdir{pkg2/}
-    c++ prj/pkg2/pkg2/cxx{pkg2}@prj-cfg2/pkg2/pkg2/
-    ld prj-cfg2/pkg2/pkg2/exe{pkg2}
-    info: prj-cfg2/dir{pkg1/} is up to date
+    %(mkdir|c\+\+|ld|info:) .+%{4}
     EOE
 
   # Clean.
   #
-  $clean -d prj/pkg1 2>>/EOE;       # Default (cfg1).
-    rm prj-cfg1/pkg1/pkg1/exe{pkg1}
-    rm prj-cfg1/pkg1/pkg1/obje{pkg1}
-    rm prj-cfg1/pkg1/fsdir{pkg1/}
+  $clean -d prj/pkg1 2>>~%EOE%;       # Default (cfg1).
+    %rm .+%{3}
     EOE
 
-  $clean @cfg2 -d prj/pkg1 2>>/EOE; # By name (cfg2).
-    rm prj-cfg2/pkg1/pkg1/exe{pkg1}
-    rm prj-cfg2/pkg1/pkg1/obje{pkg1}
-    rm prj-cfg2/pkg1/fsdir{pkg1/}
+  $clean @cfg2 -d prj/pkg1 2>>~%EOE%; # By name (cfg2).
+    %rm .+%{3}
     EOE
 
-  $clean --all -d prj 2>>/EOE;      # All configs (and packages).
+  $clean --all -d prj 2>>~%EOE%;      # All configs (and packages).
     in configuration @cfg1:
-    rm prj-cfg1/pkg2/pkg2/exe{pkg2}
-    rm prj-cfg1/pkg2/pkg2/obje{pkg2}
-    rm prj-cfg1/pkg2/fsdir{pkg2/}
-    info: prj-cfg1/dir{pkg1/} is clean
+    %(rm|info:) .+%{4}
 
     in configuration @cfg2:
-    rm prj-cfg2/pkg2/pkg2/exe{pkg2}
-    rm prj-cfg2/pkg2/pkg2/obje{pkg2}
-    rm prj-cfg2/pkg2/fsdir{pkg2/}
-    info: prj-cfg2/dir{pkg1/} is clean
+    %(rm|info:) .+%{4}
     EOE
 
   $deinit 2>>/"EOE"

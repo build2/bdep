@@ -15,11 +15,8 @@ deinit += -d prj
 {
   $new -C @cfg prj $cxx &prj/*** &prj-cfg/***;
 
-  $* -d prj 2>>/EOE;
-    mkdir prj-cfg/prj/fsdir{prj/}
-    c++ prj/prj/cxx{prj}@prj-cfg/prj/prj/
-    ld prj-cfg/prj/prj/exe{prj}
-    test prj/prj/test{testscript}@prj-cfg/prj/prj/ prj-cfg/prj/prj/exe{prj}
+  $* -d prj 2>>~%EOE%;
+    %(mkdir|c\+\+|ld|test) .+%{4}
     EOE
 
   $deinit 2>>/"EOE"
@@ -87,10 +84,7 @@ deinit += -d prj
     %  new libprj.+ \\\(required by pkg1\\\)%
     %  upgrade pkg1.+19700101000000#1%
     %  upgrade pkg2.+19700101000000#1%
-    mkdir prj-cfg1/pkg2/fsdir{pkg2/}
-    c++ prj/pkg2/pkg2/cxx{pkg2}@prj-cfg1/pkg2/pkg2/
-    ld prj-cfg1/pkg2/pkg2/exe{pkg2}
-    test prj/pkg2/pkg2/test{testscript}@prj-cfg1/pkg2/pkg2/ prj-cfg1/pkg2/pkg2/exe{pkg2}
+    %\(mkdir|c\\+\\+|ld|test\) .+%{4}
     EOE
 
   $* @cfg2 -d prj/pkg2 2>>/~"%EOE%";         # By name (cfg2).
@@ -99,21 +93,14 @@ deinit += -d prj
     %  new libprj.+ \\\(required by pkg1\\\)%
     %  upgrade pkg1.+19700101000000#1%
     %  upgrade pkg2.+19700101000000#1%
-    mkdir prj-cfg2/pkg2/fsdir{pkg2/}
-    c++ prj/pkg2/pkg2/cxx{pkg2}@prj-cfg2/pkg2/pkg2/
-    ld prj-cfg2/pkg2/pkg2/exe{pkg2}
-    test prj/pkg2/pkg2/test{testscript}@prj-cfg2/pkg2/pkg2/ prj-cfg2/pkg2/pkg2/exe{pkg2}
+    %\(mkdir|c\\+\\+|ld|test\) .+%{4}
     EOE
 
-  $* -a --recursive -d prj/pkg1 2>>/~%EOE%   # All configs recursive.
+  $* -a --recursive -d prj/pkg1 2>>~%EOE%   # All configs recursive.
     in configuration @cfg1:
-    %mkdir prj-cfg1/.+%{3}
-    %.{7}
-    %test prj.+%{2}
+    %(mkdir|version\.in|c\+\+|ld|test) .+%{12}
 
     in configuration @cfg2:
-    %mkdir prj-cfg2/.+%{3}
-    %.{7}
-    %test prj.+%{2}
+    %(mkdir|version\.in|c\+\+|ld|test) .+%{12}
     EOE
 }

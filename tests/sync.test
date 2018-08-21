@@ -63,17 +63,12 @@ deinit += -d prj
     %  libprj configured 0.+%
     EOO
 
-  $build prj/ 2>>/~%EOE%;
-    %mkdir prj-cfg/.+%{2}
-    %.{3}
-    %ld prj-cfg/.+%{2}
-    ln prj-cfg/prj/prj/exe{prj} -> prj/prj/
+  $build prj/ 2>>~%EOE%;
+    %(mkdir|version\.in|c\+\+|ld|ln) .+%{8}
     EOE
 
-  $build 'clean:' prj/ 2>>/EOE;
-    rm prj-cfg/prj/prj/exe{prj}
-    rm prj-cfg/prj/prj/obje{prj}
-    rm prj-cfg/prj/fsdir{prj/}
+  $build 'clean:' prj/ 2>>~%EOE%;
+    %rm .+%{3}
     EOE
 
   $deinit 2>>/"EOE"
@@ -181,30 +176,20 @@ deinit += -d prj
     pkg2 configured 0.1.0-a.0.19700101000000#1
     EOE
 
-  $build prj/pkg1/ 2>>/~%EOE%;
-    %mkdir prj-cfg1/.+%{2}
-    %.{3}
-    %ld prj-cfg1/.+%{2}
-    ln prj-cfg1/pkg1/pkg1/exe{pkg1} -> prj/pkg1/pkg1/
+  $build prj/pkg1/ 2>>~%EOE%;
+    %(mkdir|version\.in|c\+\+|ld|ln) .+%{8}
     EOE
 
-  $build prj/pkg2/ 2>>/EOE;
-    mkdir prj-cfg1/pkg2/fsdir{pkg2/}
-    c++ prj/pkg2/pkg2/cxx{pkg2}@prj-cfg1/pkg2/pkg2/
-    ld prj-cfg1/pkg2/pkg2/exe{pkg2}
-    ln prj-cfg1/pkg2/pkg2/exe{pkg2} -> prj/pkg2/pkg2/
+  $build prj/pkg2/ 2>>~%EOE%;
+    %(mkdir|c\+\+|ld|ln) .+%{4}
     EOE
 
-  $build 'clean:' prj/pkg1/ 2>>/EOE;
-    rm prj-cfg1/pkg1/pkg1/exe{pkg1}
-    rm prj-cfg1/pkg1/pkg1/obje{pkg1}
-    rm prj-cfg1/pkg1/fsdir{pkg1/}
+  $build 'clean:' prj/pkg1/ 2>>~%EOE%;
+    %rm .+%{3}
     EOE
 
-  $build 'clean:' prj/pkg2/ 2>>/EOE;
-    rm prj-cfg1/pkg2/pkg2/exe{pkg2}
-    rm prj-cfg1/pkg2/pkg2/obje{pkg2}
-    rm prj-cfg1/pkg2/fsdir{pkg2/}
+  $build 'clean:' prj/pkg2/ 2>>~%EOE%;
+    %rm .+%{3}
     EOE
 
   $deinit 2>>/"EOE"
