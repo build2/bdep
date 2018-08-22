@@ -15,7 +15,7 @@
 
 #include <bdep/git.hxx>
 #include <bdep/project.hxx>
-#include <bdep/project-email.hxx>
+#include <bdep/project-author.hxx>
 #include <bdep/database.hxx>
 #include <bdep/diagnostics.hxx>
 
@@ -249,7 +249,7 @@ namespace bdep
           const path& archive,
           const string& checksum,
           const string& section,
-          const string& email,
+          const project_author& author,
           const optional<url>& ctrl)
   {
     using parser     = manifest_parser;
@@ -338,10 +338,11 @@ namespace bdep
                   //
                   "--include",
 
-                  "--form",        "archive=@"  + archive.string (),
-                  "--form-string", "sha256sum=" + checksum,
-                  "--form-string", "section="   + section,
-                  "--form-string", "email="     + email,
+                  "--form",        "archive=@"     + archive.string (),
+                  "--form-string", "sha256sum="    + checksum,
+                  "--form-string", "section="      + section,
+                  "--form-string", "author-name="  + *author.name,
+                  "--form-string", "author-email=" + *author.email,
 
                   ctrl
                   ? strings ({"--form-string", "control=" + ctrl->string ()})
@@ -694,6 +695,8 @@ namespace bdep
 
     const url& repo (o.repository ());
 
+    // Control repository URL.
+    //
     optional<url> ctrl;
     if (o.control_specified ())
     {
@@ -703,14 +706,28 @@ namespace bdep
     else
       ctrl = control_url (prj);
 
-    string email;
-    if (o.email_specified ())
-      email = o.email ();
-    else if (optional<string> r = project_email (prj))
-      email = move (*r);
-    else
+    // Publisher's name/email.
+    //
+    project_author author;
+
+    if (o.author_name_specified  ()) author.name  = o.author_name  ();
+    if (o.author_email_specified ()) author.email = o.author_email ();
+
+    if (!author.name || !author.email)
+    {
+      project_author a (find_project_author (prj));
+
+      if (!author.name)  author.name  = move (a.name);
+      if (!author.email) author.email = move (a.email);
+    }
+
+    if (!author.name || author.name->empty ())
+      fail << "unable to obtain publisher's name" <<
+        info << "use --author-name to specify explicitly";
+
+    if (!author.email || author.email->empty ())
       fail << "unable to obtain publisher's email" <<
-        info << "use --email to specify explicitly";
+        info << "use --author-email to specify explicitly";
 
     // Collect package information (version, project, section, archive
     // path/checksum, and manifest).
@@ -768,7 +785,7 @@ namespace bdep
     {
       text << "publishing:" << '\n'
            << "  to:      " << repo << '\n'
-           << "  as:      " << email
+           << "  as:      " << *author.name << " <" << *author.email << '>'
            << '\n';
 
       for (size_t i (0); i != pkgs.size (); ++i)
@@ -1318,7 +1335,7 @@ namespace bdep
         text << "submitting " << p.archive.leaf ();
 
       pair<string, string> r (
-        submit (o, p.archive, p.checksum, p.section, email, ctrl));
+        submit (o, p.archive, p.checksum, p.section, author, ctrl));
 
       if (verb)
         text << r.second << " (" << r.first << ")";

@@ -23,7 +23,8 @@ repository = ($config.bdep.test.repository == [null] \
 		 : 'https://cppget.org')             \
 	      : "$config.bdep.test.repository")
 
-test.arguments += --repository "$repository"  --yes --email user@example.com
+test.arguments += --repository "$repository"  --yes \
+ --author-name user --author-email user@example.com
 
 cxx = cc "config.cxx=$config.cxx"
 

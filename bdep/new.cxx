@@ -7,7 +7,7 @@
 #include <libbutl/project-name.mxx>
 
 #include <bdep/project.hxx>
-#include <bdep/project-email.hxx>
+#include <bdep/project-author.hxx>
 #include <bdep/database.hxx>
 #include <bdep/diagnostics.hxx>
 
@@ -370,7 +370,7 @@ namespace bdep
       //
       string email;
       {
-        optional<string> r (project_email (prj));
+        optional<string> r (find_project_author_email (prj));
         email = r ? move (*r) : "you@example.org";
       }
 

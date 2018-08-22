@@ -260,10 +260,10 @@ namespace bdep
 
   "\h|ENVIRONMENT|
 
-   The \cb{BDEP_EMAIL} environment variable can be used to specify the package
-   email address. If not set, the \cb{new} command will first try to obtain
-   the email from the version control system (if used) and then from the
-   \cb{EMAIL} environment variable. If all these methods fail, a dummy
+   The \cb{BDEP_AUTHOR_EMAIL} environment variable can be used to specify the
+   package email address. If not set, the \cb{new} command will first try to
+   obtain the email from the version control system (if used) and then from
+   the \cb{EMAIL} environment variable. If all these methods fail, a dummy
    \cb{@example.org} email is used.
   "
 }

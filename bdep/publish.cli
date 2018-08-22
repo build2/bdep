@@ -45,8 +45,8 @@ namespace bdep
      Along with the package archive, the submission request specifies the
      project the package belongs to, the repository section to publish the
      package under, the control repository URL to use for authorization, and
-     the publisher's email address for notifications. While the exact usage
-     and interpretation of this information depends on the specific
+     the publisher's name and email address for the record. While the exact
+     usage and interpretation of this information depends on the specific
      repository, the following semantics apply when submitting to
      \cb{cppget.org}.
 
@@ -113,12 +113,20 @@ namespace bdep
       "Repository section to publish the packages under."
     }
 
-    string --email
+    string --author-name
+    {
+      "<name>",
+      "Publisher's name. If unspecified, it will be obtained from the
+       environment and/or version control system. See the ENVIRONMENT
+       section for details."
+    }
+
+    string --author-email
     {
       "<email>",
-      "Publisher's email address for notifications. If unspecified, one will be
-       obtained from the environment and/or version control system. See the
-       ENVIRONMENT section for details."
+      "Publisher's email address. If unspecified, it will be obtained from the
+       environment and/or version control system. See the ENVIRONMENT section
+       for details."
     }
 
     string --simulate
@@ -134,9 +142,11 @@ namespace bdep
 
   "\h|ENVIRONMENT|
 
-   The \cb{BDEP_EMAIL} environment variable can be used to specify the
-   publisher's email address. If not set, the \cb{publish} command will first
-   try to obtain the email from the version control system (if used) and then
-   from the \cb{EMAIL} environment variable. See also the \cb{--email} option.
+   The \cb{BDEP_AUTHOR_NAME} and \cb{BDEP_AUTHOR_EMAIL} environment variables
+   can be used to specify the publisher's name and email address,
+   respectively. If not set, the \cb{publish} command will first try to obtain
+   the name and email from the version control system (if used) and then from
+   the \cb{USER} and \cb{EMAIL} environment variables, respectively. See also
+   the \cb{--author-name} and \cb{--author-email} options.
   "
 }
