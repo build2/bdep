@@ -61,7 +61,7 @@ windows = ($cxx.target.class == 'windows')
           upgrade prj/1.0.1
         submitting prj-1.0.1.tar.gz
         %.*
-        %prj/1\.0\.1 submission is queued \(.{12}\)%
+        %(prj/1\.0\.1 )?submission is queued \(.{12}\)%
         EOE
     }
 
@@ -186,6 +186,7 @@ windows = ($cxx.target.class == 'windows')
         submitting prj-1.0.5.tar.gz
         %.*
         error: duplicate submission
+        %  info: reference: .{12}%?
         EOE
     }
 
@@ -205,7 +206,6 @@ windows = ($cxx.target.class == 'windows')
         %.*
         error: submission handling failed
         %  info: consider reporting this to .+ repository maintainers%
-        %  info: checksum: .{64}%
         EOE
     }
 
@@ -225,7 +225,6 @@ windows = ($cxx.target.class == 'windows')
         %.*
         error: HTTP status code 500 (internal server error)
         %  info: consider reporting this to .+ repository maintainers%
-        %  info: checksum: .{64}%
         EOE
     }
   }

@@ -585,20 +585,26 @@ namespace bdep
 
           message = move (v);
 
-          // Get the reference if the submission succeeded.
+          // Try to get an optional reference and make sure it is present if
+          // the submission succeeded.
           //
-          if (c == 200)
+          nv = p.next ();
+
+          if (n == "reference")
           {
-            nv = p.next ();
-            if (n != "reference" || v.empty ())
-              bad_value ("no reference specified");
+            if (v.empty ())
+              bad_value ("empty reference specified");
 
             reference = move (v);
+
+            nv = p.next ();
           }
+          else if (c == 200)
+            bad_value ("no reference specified");
 
           // Skip the remaining name/value pairs.
           //
-          for (nv = p.next (); !nv.empty (); nv = p.next ()) ;
+          for (; !nv.empty (); nv = p.next ()) ;
 
           status = c;
         }
@@ -656,8 +662,6 @@ namespace bdep
 
       if (reference)
         dr << info << "reference: " << *reference;
-      else
-        dr << info << "checksum: " << checksum;
     }
 
     finish (o.curl (), pr, io);
@@ -666,10 +670,13 @@ namespace bdep
 
     // Print the submission failure reason and fail.
     //
-    if (!reference)
+    if (!status || *status != 200)
     {
       diag_record dr (fail);
       dr << message;
+
+      if (reference)
+        dr << info << "reference: " << *reference;
 
       if (location)
         dr << info << "new repository location: " << *location;
@@ -682,7 +689,9 @@ namespace bdep
         dr << info << "try again later";
     }
 
-    return make_pair (move (*reference), message);
+    assert (reference); // Should be present if the submission succeeded.
+
+    return make_pair (move (*reference), move (message));
   }
 
   static int
