@@ -26,7 +26,7 @@ namespace bdep
 
      \h|DESCRIPTION|
 
-     The \cb{publish} command published the project packages to an
+     The \cb{publish} command publishes the project packages to an
      archive-based repository.
 
      If no project or package directory is specified, then the current working
@@ -78,8 +78,9 @@ namespace bdep
      option, it will be automatically derived from the version control's
      \"remote\" URL. In case of \cb{git(1)}, it will be based on the
      \cb{remote.origin.url} configuration value unless overridden with
-     \cb{remote.origin.build2ControlUrl}. The special \cb{none} value to the
-     \cb{--control} option can be used to disable this functionality.
+     \cb{remote.origin.build2ControlUrl} or \cb{remote.origin.build2Url}. The
+     special \cb{none} value to the \cb{--control} option can be used to
+     disable this functionality.
 
      See \l{brep#submit Package Submission} for details on the submission
      request handling by archive repositories.

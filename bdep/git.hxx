@@ -30,7 +30,7 @@ namespace bdep
              I&& in, O&& out, E&& err,
              A&&... args);
 
-  // Wait git process to terminate.
+  // Wait for git process to terminate.
   //
   void
   finish_git (process& pr, bool io_read = false);
@@ -60,6 +60,17 @@ namespace bdep
   //
   optional<string>
   git_line (process&& pr, fdpipe&& pipe, bool ignore_error);
+
+  // Try to derive a remote HTTPS repository URL from the optionally specified
+  // custom git config value falling back to remote.origin.build2Url and then
+  // remote.origin.url. Issue diagnostics (including a suggestion to use
+  // option opt, if specified) and fail if unable to.
+  //
+  url
+  git_remote_url (const dir_path& repo,
+                  const char* opt = nullptr,
+                  const char* what = "remote repository URL",
+                  const char* cfg = nullptr);
 }
 
 #include <bdep/git.ixx>

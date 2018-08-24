@@ -1,0 +1,96 @@
+// file      : bdep/ci.cli
+// copyright : Copyright (c) 2014-2018 Code Synthesis Ltd
+// license   : MIT; see accompanying LICENSE file
+
+include <bdep/project.cli>;
+
+"\section=1"
+"\name=bdep-ci"
+"\summary=submit project test request to CI server"
+
+namespace bdep
+{
+  {
+    "<options>
+     <prj-spec> <prj-dir>
+     <pkg-spec> <pkg-dir>
+     <cfg-spec> <cfg-name> <cfg-dir>",
+
+    "\h|SYNOPSIS|
+
+     \c{\b{bdep ci} [<options>] [<cfg-spec>] [<pkg-spec>]}
+
+     \c{<pkg-spec> = (\b{--directory}|\b{-d} <pkg-dir>)... | <prj-spec>\n
+        <prj-spec> = \b{--directory}|\b{-d} <prj-dir>\n
+        <cfg-spec> = \b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>}
+
+     \h|DESCRIPTION|
+
+     The \cb{ci} command submits the project packages test request to a CI
+     server.
+
+     If no project or package directory is specified, then the current working
+     directory is assumed. If no configuration is specified, then the default
+     configuration is used. If the specified directory is a project directory,
+     then all the packages initialized in the configuration are submitted. See
+     \l{bdep-projects-configs(1)} for details on specifying projects and
+     configurations.
+
+     A CI request consists of the specified packages and their versions as
+     well as the project's remote version control repository URL corresponding
+     to the current (local) state of the project. The CI server should be able
+     fetch these package versions from this repository as well as any
+     dependencies from this repository or its prerequisites/complements
+     (according to \cb{repositories.manifest}).
+
+     If the CI server is not explicitly specified with the \cb{--server}
+     option, the request is submitted to \cb{ci.cppget.org} by default.
+
+     Unless the remote repository URL is specified with the \cb{--repository}
+     option, it will be automatically derived from the version control's
+     \"remote\" URL. In case of \cb{git(1)}, it will be based on the
+     \cb{remote.origin.url} configuration value unless overridden with
+     \cb{remote.origin.build2Url}. The repository URL is then adjusted to
+     corresponding to the current (local) state of the project. In case of
+     \cb{git(1)}, the current branch and commit id are added as the repository
+     URL fragment (see \l{bpkg-repository-types(1)} for details).
+
+     While the exact interpretation of the CI request depends on the specific
+     service, normally, the CI server will respond with a reference that can
+     be used to query the results. See \l{brep#ci Package CI} for details on
+     the CI request handling.
+     "
+  }
+
+  class cmd_ci_options: project_options
+  {
+    "\h|CI OPTIONS|"
+
+    bool --yes|-y
+    {
+      "Don't prompt for confirmation before submitting."
+    }
+
+    url --server = "https://ci.cppget.org"
+    {
+      "<url>",
+      "CI server to submit the request to."
+    }
+
+    url --repository
+    {
+      "<url>",
+      "Remote repository URL for the project."
+    }
+
+    string --simulate
+    {
+      "<outcome>",
+      "Simulate the specified outcome of the CI process without actually
+       performing any externally visible actions (such as testing the packages
+       or publishing the result). The commonly used outcome value is
+       \cb{success}. For other recognized outcomes refer to the CI service
+       documentation."
+    }
+  };
+}

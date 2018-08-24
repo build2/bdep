@@ -43,6 +43,7 @@ namespace bdep
   // package_name
   //
   using bpkg::package_name;
+  using package_names = vector<package_name>;
 
   #pragma db value(package_name) type("TEXT") options("COLLATE NOCASE")
 
@@ -219,6 +220,13 @@ namespace bdep
   //
   void
   verify_project_packages (const project_packages&, const configurations&);
+
+  // Determine the version of a package in the specified configuration.
+  //
+  standard_version
+  package_version (const common_options&,
+                   const dir_path& cfg,
+                   const package_name&);
 }
 
 #endif // BDEP_PROJECT_HXX

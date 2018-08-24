@@ -29,6 +29,7 @@
 #include <libbutl/fdstream.mxx>
 #include <libbutl/small-vector.mxx>
 #include <libbutl/semantic-version.mxx>
+#include <libbutl/standard-version.mxx>
 
 namespace bdep
 {
@@ -112,8 +113,10 @@ namespace bdep
   using butl::fdstream_mode;
 
   // <libbutl/semantic-version.mxx>
+  // <libbutl/standard-version.mxx>
   //
   using butl::semantic_version;
+  using butl::standard_version;
 }
 
 // In order to be found (via ADL) these have to be either in std:: or in

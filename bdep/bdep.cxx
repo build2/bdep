@@ -26,6 +26,7 @@
 #include <bdep/sync.hxx>
 #include <bdep/fetch.hxx>
 #include <bdep/status.hxx>
+#include <bdep/ci.hxx>
 #include <bdep/publish.hxx>
 #include <bdep/deinit.hxx>
 #include <bdep/config.hxx>
@@ -296,6 +297,7 @@ try
     COMMAND_IMPL (init,    init,    "init",    true);
     COMMAND_IMPL (fetch,   fetch,   "fetch",   true);
     COMMAND_IMPL (status,  status,  "status",  true);
+    COMMAND_IMPL (ci,      ci,      "ci",      true);
     COMMAND_IMPL (publish, publish, "publish", true);
     COMMAND_IMPL (deinit,  deinit,  "deinit",  true);
     COMMAND_IMPL (config,  config,  "config",  true);

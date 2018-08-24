@@ -8,7 +8,6 @@
 
 #include <libbutl/fdstream.mxx>         // fdterm()
 #include <libbutl/manifest-parser.mxx>
-#include <libbutl/standard-version.mxx>
 #include <libbutl/manifest-serializer.mxx>
 
 #include <libbpkg/manifest.hxx>
@@ -27,23 +26,10 @@ using namespace butl;
 namespace bdep
 {
   // The minimum supported git version must be at least 2.5.0 due to the git
-  // worktree command used. We also use bpkg that caps the git version at
-  // 2.12.0, so let's use is as the lowest common denominator.
+  // worktree command used. However, there were quite a few bugs in the early
+  // implementation so let's cap it at a more recent and widely used 2.11.0.
   //
-  static const semantic_version git_ver {2, 12, 0};
-
-  static inline url
-  parse_url (const string& s, const char* what)
-  {
-    try
-    {
-      return url (s);
-    }
-    catch (const invalid_argument& e)
-    {
-      fail << "invalid " << what << " value '" << s << "': " << e << endf;
-    }
-  };
+  static const semantic_version git_ver {2, 11, 0};
 
   // Get the project's control repository URL.
   //
@@ -53,191 +39,16 @@ namespace bdep
     if (git_repository (prj))
     {
       // First try remote.origin.build2ControlUrl which can be used to specify
-      // a custom URL (e.g., if a correct one cannot be automatically derived
-      // from remote.origin.url).
+      // a completely different control repository URL.
       //
-      if (optional<string> l = git_line (git_ver,
-                                         prj,
-                                         true /* ignore_error */,
-                                         "config",
-                                         "--get",
-                                         "remote.origin.build2ControlUrl"))
-      {
-        return parse_url (*l, "remote.origin.build2ControlUrl");
-      }
-
-      // Otherwise, get remote.origin.url and try to derive an HTTPS URL from
-      // it.
-      //
-      if (optional<string> l = git_line (git_ver,
-                                         prj,
-                                         true /* ignore_error */,
-                                         "config",
-                                         "--get",
-                                         "remote.origin.url"))
-      {
-        string& s (*l);
-
-        // This one will be fuzzy and hairy. Here are some representative
-        // examples of what we can encounter:
-        //
-        //            example.org:/path/to/repo.git
-        //       user@example.org:/path/to/repo.git
-        //       user@example.org:~user/path/to/repo.git
-        // ssh://user@example.org/path/to/repo.git
-        //
-        // git://example.org/path/to/repo.git
-        //
-        // http://example.org/path/to/repo.git
-        // https://example.org/path/to/repo.git
-        //
-        //        /path/to/repo.git
-        // file:///path/to/repo.git
-        //
-        // Note that git seem to always make remote.origin.url absolute in
-        // case of a local filesystem path.
-        //
-        // So the algorithm will be as follows:
-        //
-        // 1. If there is scheme, then parse as URL.
-        //
-        // 2. Otherwise, check if this is an absolute path.
-        //
-        // 3. Otherwise, assume SSH <host>:<path> thing.
-        //
-        url u;
-
-        // Find the scheme.
-        //
-        // Note that in example.org:/path/... example.org is a valid scheme.
-        // To distinguish this, we check if the scheme contains any dots (none
-        // of the schemes recognized by git currently do and probably never
-        // will).
-        //
-        size_t p (s.find (':'));
-        if (p != string::npos                  && // Has ':'.
-            url::traits::find (s, p) == 0      && // Scheme starts at 0.
-            s.rfind ('.', p - 1) == string::npos) // No dots in scheme.
-        {
-          u = parse_url (s, "remote.origin.url");
-        }
-        else
-        {
-          // Absolute path or the SSH thing.
-          //
-          if (path::traits::absolute (s))
-          {
-            // This is what we want to end up with:
-            //
-            // file:///tmp
-            // file:///c:/tmp
-            //
-            const char* h (s[0] == '/' ? "file://" : "file:///");
-            u = parse_url (h + s, "remote.origin.url");
-          }
-          else if (p != string::npos)
-          {
-            // This can still include user (user@host) so let's add the
-            // scheme, replace/erase ':', and parse it as a string
-            // representation of a URL.
-            //
-            if (s[p + 1] == '/') // POSIX notation.
-              s.erase (p, 1);
-            else
-              s[p] = '/';
-
-            u = parse_url ("ssh://" + s, "remote.origin.url");
-          }
-          else
-            fail << "invalid remote.origin.url value '" << s << "': not a URL";
-        }
-
-        if (u.scheme == "http" || u.scheme == "https")
-          return u;
-
-        // Derive an HTTPS URL from a remote URL (and hope for the best).
-        //
-        if (u.scheme != "file" && u.authority && u.path)
-          return url ("https", u.authority->host, *u.path);
-
-        fail << "unable to derive control repository URL from " << u <<
-          info << "consider setting remote.origin.build2ControlUrl" <<
-          info << "or use --control to specify explicitly";
-      }
-
-      fail << "unable to discover control repository URL: no git "
-           << "remote.origin.url value";
+      return git_remote_url (prj,
+                             "--control",
+                             "control repository URL",
+                             "remote.origin.build2ControlUrl");
     }
 
     fail << "unable to discover control repository URL" <<
       info << "use --control to specify explicitly" << endf;
-  }
-
-  static standard_version
-  package_version (const common_options& o,
-                   const dir_path& cfg,
-                   const package_name& p)
-  {
-    // We could have used bpkg-pkg-status but then we would have to deal with
-    // iterations. So we use the build system's info meta-operation directly.
-    //
-    string v;
-    {
-      process pr;
-      bool io (false);
-      try
-      {
-        fdpipe pipe (fdopen_pipe ()); // Text mode seems appropriate.
-
-        // Note: the package directory inside the configuration is a bit of an
-        // assumption.
-        //
-        pr = start_b (
-          o,
-          pipe /* stdout */,
-          2    /* stderr */,
-          "info:", (dir_path (cfg) /= p.string ()).representation ());
-
-        pipe.out.close ();
-        ifdstream is (move (pipe.in), fdstream_mode::skip, ifdstream::badbit);
-
-        for (string l; !eof (getline (is, l)); )
-        {
-          // Verify the name for good measure (comes before version).
-          //
-          if (l.compare (0, 9, "project: ") == 0)
-          {
-            if (l.compare (9, string::npos, p.string ()) != 0)
-              fail << "name mismatch for package " << p;
-          }
-          else if (l.compare (0, 9, "version: ") == 0)
-          {
-            v = string (l, 9);
-            break;
-          }
-        }
-
-        is.close (); // Detect errors.
-      }
-      catch (const io_error&)
-      {
-        // Presumably the child process failed and issued diagnostics so let
-        // finish_b() try to deal with that first.
-        //
-        io = true;
-      }
-
-      finish_b (o, pr, io);
-    }
-
-    try
-    {
-      return standard_version (v);
-    }
-    catch (const invalid_argument& e)
-    {
-      fail << "invalid package " << p << " version " << v << ": " << e << endf;
-    }
   }
 
   // Submit package archive using the curl program and parse the response
@@ -707,13 +518,19 @@ namespace bdep
     // Control repository URL.
     //
     optional<url> ctrl;
-    if (o.control_specified ())
+    if (!o.control_specified ())
     {
-      if (o.control () != "none")
-        ctrl = parse_url (o.control (), "--control option");
-    }
-    else
       ctrl = control_url (prj);
+    }
+    else if (o.control () != "none")
+    try
+    {
+      ctrl = url (o.control ());
+    }
+    catch (const invalid_argument& e)
+    {
+      fail << "invalid --control option value '" << o.control () << "': " << e;
+    }
 
     // Publisher's name/email.
     //
@@ -794,18 +611,15 @@ namespace bdep
     {
       text << "publishing:" << '\n'
            << "  to:      " << repo << '\n'
-           << "  as:      " << *author.name << " <" << *author.email << '>'
-           << '\n';
+           << "  as:      " << *author.name << " <" << *author.email << '>';
 
-      for (size_t i (0); i != pkgs.size (); ++i)
+      for (const package& p: pkgs)
       {
-        const package& p (pkgs[i]);
-
         diag_record dr (text);
 
         // If printing multiple packages, separate them with a blank line.
         //
-        if (i != 0)
+        if (pkgs.size () > 1)
           dr << '\n';
 
         // Currently the control repository is the same for all packages, but

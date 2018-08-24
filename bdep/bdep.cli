@@ -443,6 +443,11 @@ namespace bdep
       "\l{bdep-status(1)} \- print status of project and/or its dependencies"
     }
 
+    bool ci
+    {
+      "\l{bdep-ci(1)} \- submit project test request to CI server"
+    }
+
     bool publish
     {
       "\l{bdep-publish(1)} \- publish project to archive repository"
