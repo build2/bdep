@@ -1,0 +1,198 @@
+# file      : tests/ci.test
+# copyright : Copyright (c) 2014-2018 Code Synthesis Ltd
+# license   : MIT; see accompanying LICENSE file
+
+.include common.test project.test
+
+# bdep-ci requirements for the minimum supported git version are higher then
+# the default 2.1.0 (see bdep/ci.cxx for details).
+#
++if! ($git_version_major >  2 || \
+      $git_version_major == 2 && $git_version_minor >= 11)
+  exit
+end
+
+# Server to use for the CI request submissions simulation.
+#
+# Note that the empty config.bdep.test.repository value is used to suppress
+# these tests (which require network access).
+#
+server = ($config.bdep.test.repository == [null] \
+          ? ($build.version.stage                \
+	     ? 'https://stage.build2.org'        \
+	     : 'https://ci.cppget.org')          \
+	  : "$config.bdep.test.repository")
+
++if ("$server" == '')
+  exit
+end
+
+# Create the remote repository.
+#
++mkdir --no-cleanup prj.git
++git -C prj.git init --bare 2>! >&2 &prj.git/***
+
+# Adjust the local repository and push it to the remote one.
+#
++sed -i -e 's/^(version:) .*$/\1 1.0.1/' prj/manifest
+
+g = git -C prj 2>! >&2
+
++$g remote add origin $~/prj.git
++$g add '*'
++$g commit -m 'Create'
++$g push --set-upstream origin master
+
+# Repository the CI-ed packages come from.
+#
+repository='http://example.com/prj.git'
+
+test.arguments += --yes --repository "$repository" --server "$server" \
+--simulate 'success'
+
+cxx = cc "config.cxx=$config.cxx"
+
+new  += 2>!
+init += $cxx -d prj 2>! &prj/**/bootstrap/***
+
+windows = ($cxx.target.class == 'windows')
+
+: single-pkg
+:
+{
+  : single-cfg
+  :
+  {
+    $clone_root_prj;
+    $init -C @cfg &prj-cfg/***;
+
+    $* 2>>~"%EOE%"
+      submitting to $server
+      %.*
+      %CI request is queued \(.+\)%
+      EOE
+  }
+
+  : no-cfg
+  :
+  {
+    $new prj &prj/***;
+
+    $* 2>>~%EOE% != 0
+      %error: no default configuration in project .+%
+      %  info: use .+%
+      EOE
+  }
+
+  : multi-cfg
+  :
+  {
+    $clone_root_prj;
+    $init -C @cfg1 &prj-cfg1/***;
+    $init -C @cfg2 &prj-cfg2/***;
+
+    $* --all 2>'error: multiple configurations specified for ci' != 0
+  }
+
+  : no-commits
+  :
+  {
+    $new prj &prj/***;
+    $init -C @cfg &prj-cfg/***;
+
+    $* 2>>~%EOE% != 0
+      error: no commits in project repository
+      %  info: run .+%
+      EOE
+  }
+
+  : invalid-repo
+  :
+  {
+    test.arguments += --repository "$repository#frag"
+
+    $clone_root_prj;
+    $init -C @cfg &prj-cfg/***;
+
+    $* 2>>"EOE" != 0
+      error: remote git repository URL '$repository#frag' already has fragment
+      EOE
+  }
+}
+
+: multi-pkg
+:
+{
+  # Create the remote repository.
+  #
+  +mkdir --no-cleanup prj.git
+  +git -C prj.git init --bare 2>! >&2 &prj.git/***
+
+  # Create the local repository and push it to the remote one.
+  #
+  +$new -t empty prj &prj/***
+  +$new --package -t lib libprj -d prj
+  +$new --package -t exe prj    -d prj
+  +sed -i -e 's/^(version:) .*$/\1 1.0.1/' prj/libprj/manifest
+  +sed -i -e 's/^(version:) .*$/\1 1.0.1/' prj/prj/manifest
+
+  +$g remote add origin $~/prj.git
+  +$g add '*'
+  +$g commit -m 'Create'
+  +$g push --set-upstream origin master
+
+  : both
+  :
+  {
+    $clone_prj;
+    $init -C @cfg &prj-cfg/***;
+
+    $* 2>>~"%EOE%"
+      submitting to $server
+      %.*
+      %CI request is queued \(.+\)%
+      EOE
+  }
+
+  : single
+  :
+  {
+    $clone_prj;
+    $init -C @cfg &prj-cfg/***;
+
+    # CI the single libprj package rather than the whole prj project.
+    #
+    test.arguments = $regex.apply($test.arguments, '^(prj)$', '\1/libprj');
+
+    $* 2>>~"%EOE%"
+      submitting to $server
+      %.*
+      %CI request is queued \(.+\)%
+      EOE
+  }
+
+  : prompt
+  :
+  {
+    $clone_prj;
+    $init -C @cfg &prj-cfg/***;
+
+    # Suppress the --yes option.
+    #
+    test.arguments = $regex.apply($test.arguments, '^(--yes)$', '');
+
+    $* <'y' 2>>~"%EOE%"
+      submitting:
+        to:      $server
+      %  in:      $repository#master@.{40}%
+
+        package: libprj
+        version: 1.0.1
+
+        package: prj
+        version: 1.0.1
+      %.*
+      %CI request is queued \(.+\)%
+      EOE
+  }
+}

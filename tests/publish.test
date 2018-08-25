@@ -14,14 +14,18 @@ end
 
 # Repository to use for the package submissions simulation.
 #
-# Note: could use empty config.bdep.test.repository value to suppress
-# these test (which require network access).
+# Note that the empty config.bdep.test.repository value is used to suppress
+# these tests (which require network access).
 #
 repository = ($config.bdep.test.repository == [null] \
               ? ($build.version.stage                \
 	         ? 'https://stage.build2.org'        \
 		 : 'https://cppget.org')             \
 	      : "$config.bdep.test.repository")
+
++if ("$repository" == '')
+  exit
+end
 
 test.arguments += --repository "$repository"  --yes \
  --author-name user --author-email user@example.com
@@ -49,7 +53,7 @@ windows = ($cxx.target.class == 'windows')
   {
     test.arguments += --simulate 'success'
 
-    : basic
+    : single-cfg
     :
     {
       $clone_root_prj;
@@ -205,7 +209,7 @@ windows = ($cxx.target.class == 'windows')
         submitting prj-1.0.6.tar.gz
         %.*
         error: submission handling failed
-        %  info: consider reporting this to .+ repository maintainers%
+        %  info: consider reporting this to .+ maintainers%
         EOE
     }
 
@@ -224,7 +228,7 @@ windows = ($cxx.target.class == 'windows')
         submitting prj-1.0.7.tar.gz
         %.*
         error: HTTP status code 500 (internal server error)
-        %  info: consider reporting this to .+ repository maintainers%
+        %  info: consider reporting this to .+ maintainers%
         EOE
     }
   }
@@ -237,19 +241,19 @@ windows = ($cxx.target.class == 'windows')
   # simulation. We specify it to enable the control branch-related
   # functionality.
   #
-  test.arguments += --simulate 'success' --control "http://example.com/rep.git"
+  test.arguments += --simulate 'success' --control 'http://example.com/rep.git'
 
   # Create the remote repository.
   #
   +mkdir --no-cleanup prj.git
-  +git -C prj.git init --bar >! &prj.git/***
+  +git -C prj.git init --bare >! &prj.git/***
 
   +$clone_prj
 
   g = git -C prj >! 2>!
 
-  +$g config user.name  "Test Script"
-  +$g config user.email "testscript@example.com"
+  +$g config user.name  'Test Script'
+  +$g config user.email 'testscript@example.com'
 
   clone_rep = cp --no-cleanup -r ../prj.git ./ &prj.git/***
   clone_prj = cp --no-cleanup -r ../prj     ./ &prj/***
@@ -365,8 +369,8 @@ windows = ($cxx.target.class == 'windows')
     git clone "$rep" prj2 &prj2/*** 2>&1 | \
     sed -e 's/warning: (remote HEAD refers to nonexistent .*)/info: \1/' >&2 2>!;
 
-    $g2 config user.name  "Test Script";
-    $g2 config user.email "testscript@example.com";
+    $g2 config user.name  'Test Script';
+    $g2 config user.email 'testscript@example.com';
     $g2 checkout -b build2-control --track origin/build2-control;
     $g2 commit --allow-empty -m 'Dummy1';
     $g2 push;

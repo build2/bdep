@@ -4,21 +4,26 @@
 
 #include <bdep/ci.hxx>
 
+#include <libbpkg/manifest.hxx>
+
 #include <bdep/git.hxx>
 #include <bdep/project.hxx>
 #include <bdep/database.hxx>
 #include <bdep/diagnostics.hxx>
+#include <bdep/http-service.hxx>
 
 using namespace std;
 using namespace butl;
 
 namespace bdep
 {
-  // Get the project's remote repository URL corresponding to the current
+  using bpkg::repository_location;
+
+  // Get the project's remote repository location corresponding to the current
   // (local) state of the repository. Fail if the working directory is not
   // clean or if the local state isn't in sync with the remote.
   //
-  static url
+  static repository_location
   git_repository_url (const cmd_ci_options& o, const dir_path& prj)
   {
     // This is what we need to do:
@@ -142,23 +147,41 @@ namespace bdep
     // We treat the URL specified with --repository as a "base", that is, we
     // still add the fragment.
     //
-    url r (o.repository_specified ()
+    url u (o.repository_specified ()
            ? o.repository ()
            : git_remote_url (prj, "--repository"));
 
-    if (r.fragment)
-      fail << "remote git repository URL '" << r << "' already has fragment";
+    if (u.fragment)
+      fail << "remote git repository URL '" << u << "' already has fragment";
 
-    // We specify both the branch and the commit to give bpkg every chance to
-    // minimize the amount of history to fetch (see bpkg-repository-types(1)
-    // for details).
+    // Try to construct the remote repository location out of the URL and fail
+    // if that's not possible.
     //
-    r.fragment = branch + '@' + commit;
+    try
+    {
+      // We specify both the branch and the commit to give bpkg every chance
+      // to minimize the amount of history to fetch (see
+      // bpkg-repository-types(1) for details).
+      //
+      repository_location r (
+        bpkg::repository_url (u.string () + '#' + branch + '@' + commit),
+        bpkg::repository_type::git);
 
-    return r;
+      if (!r.local ())
+        return r;
+
+      // Fall through.
+    }
+    catch (const invalid_argument&)
+    {
+      // Fall through.
+    }
+
+    fail << "unable to derive bpkg repository location from git repository "
+         << "URL '" << u << "'" << endf;
   }
 
-  static url
+  static repository_location
   repository_url (const cmd_ci_options& o, const dir_path& prj)
   {
     if (git_repository (prj))
@@ -249,7 +272,7 @@ namespace bdep
     // Get the server and repository URLs.
     //
     const url& srv (o.server ());
-    const url  rep (repository_url (o, prj));
+    const repository_location rep (repository_url (o, prj));
 
     // Print the plan and ask for confirmation.
     //
@@ -284,10 +307,30 @@ namespace bdep
       if (verb && o.yes ())
         text << "submitting to " << srv;
 
-      //@@ TODO call submit()
+      url u (srv);
+      u.query = "ci";
+
+      using namespace http_service;
+
+      parameters params ({{parameter::text, "repository", rep.string ()}});
+
+      for (const package& p: pkgs)
+        params.push_back ({parameter::text,
+                           "package",
+                           p.name.string () + '/' + p.version.string ()});
+
+      if (o.simulate_specified ())
+        params.push_back ({parameter::text, "simulate", o.simulate ()});
+
+      // Disambiguates with odb::result.
+      //
+      http_service::result r (post (o, u, params));
+
+      if (!r.reference)
+        fail << "no reference specified";
 
       if (verb)
-        text << "@@ TODO: print response";
+        text << r.message << " (" << *r.reference << ")";
     }
 
     return 0;
