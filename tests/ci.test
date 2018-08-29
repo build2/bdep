@@ -50,7 +50,7 @@ repository='http://example.com/prj.git'
 test.arguments += --yes --repository "$repository" --server "$server" \
 --simulate 'success'
 
-cxx = cc "config.cxx=$config.cxx"
+cxx = cc config.cxx="$recall($cxx.path)"
 
 new  += 2>!
 init += $cxx -d prj 2>! &prj/**/bootstrap/***

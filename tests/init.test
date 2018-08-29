@@ -7,7 +7,7 @@
 
 .include common.test project.test
 
-cxx = cc "config.cxx=$config.cxx"
+cxx = cc config.cxx="$recall($cxx.path)"
 
 status += -d prj
 deinit += -d prj

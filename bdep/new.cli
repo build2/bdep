@@ -76,6 +76,8 @@ namespace bdep
          project options:
 
          \cb{no-tests} \- Don't add support for functional/integration testing.
+
+         \cb{unit-tests} \- Add support for unit testing.
          |
 
      \li|\cb{lib}
@@ -84,14 +86,16 @@ namespace bdep
          options:
 
          \cb{no-tests} \- Don't add support for functional/integration testing.
-        |
+
+         \cb{unit-tests} \- Add support for unit testing.
+         |
 
      \li|\cb{bare}
 
          A project without any source code. Recognized bare project options:
 
-        \cb{no-tests} \- Don't add support for functional/integration testing.
-        |
+         \cb{no-tests} \- Don't add support for testing.
+         |
 
      \li|\cb{empty}
 
@@ -142,11 +146,13 @@ namespace bdep
   class cmd_new_exe_options
   {
     bool no-tests;
+    bool unit-tests;
   };
 
   class cmd_new_lib_options
   {
     bool no-tests;
+    bool unit-tests;
   };
 
   class cmd_new_bare_options

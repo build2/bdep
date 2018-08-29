@@ -7,7 +7,7 @@
 
 .include common.test
 
-cxx = cc "config.cxx=$config.cxx"
+cxx = cc config.cxx="$recall($cxx.path)"
 
 new    += 2>!
 init   += $cxx -d prj 2>!

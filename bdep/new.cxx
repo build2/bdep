@@ -58,9 +58,12 @@ namespace bdep
     //
     const type& t (o.type ());
 
-    bool tests (t == type::exe  ? !t.exe_opt.no_tests ()  :
+    bool itest (t == type::exe  ? !t.exe_opt.no_tests ()  :
                 t == type::lib  ? !t.lib_opt.no_tests ()  :
                 t == type::bare ? !t.bare_opt.no_tests () : false);
+
+    bool utest (t == type::exe  ? t.exe_opt.unit_tests () :
+                t == type::lib  ? t.lib_opt.unit_tests () : false);
 
     // Validate language options.
     //
@@ -168,7 +171,6 @@ namespace bdep
         break;
       }
     }
-
 
     dir_path out;           // Project/package output directory.
     dir_path prj;           // Project.
@@ -403,7 +405,7 @@ namespace bdep
       os <<                                                               endl
          << "using version"                                            << endl
          << "using config"                                             << endl;
-      if (tests)
+      if (itest || utest)
         os << "using test"                                             << endl;
       os << "using install"                                            << endl
          << "using dist"                                               << endl;
@@ -414,10 +416,20 @@ namespace bdep
       // Note: see also tests/build/root.build below.
       //
       os.open (f = bd / "root.build");
+
+      const char* x  (nullptr); // Language module/source target type.
+      const char* h  (nullptr); // Header target type.
+      const char* hs (nullptr); // All header target types.
+      string      es;           // Source file extension suffix (pp, xx).
+
       switch (l)
       {
       case lang::c:
         {
+          x  = "c";
+          h  = "h";
+          hs = "h";
+
           // @@ TODO: 'latest' in c.std.
           //
           os //<< "c.std = latest"                                       << endl
@@ -430,24 +442,29 @@ namespace bdep
         }
       case lang::cxx:
         {
-          const char* s (l.cxx_opt.cpp () ? "pp" : "xx");
+          x  = "cxx";
+          h  = "hxx";
+          hs = "hxx ixx txx";
+          es = l.cxx_opt.cpp () ? "pp" : "xx";
 
           os << "cxx.std = latest"                                     << endl
              <<                                                           endl
              << "using cxx"                                            << endl
              <<                                                           endl
-             << "hxx{*}: extension = h" << s                           << endl
-             << "ixx{*}: extension = i" << s                           << endl
-             << "txx{*}: extension = t" << s                           << endl
-             << "cxx{*}: extension = c" << s                           << endl;
+             << "hxx{*}: extension = h" << es                          << endl
+             << "ixx{*}: extension = i" << es                          << endl
+             << "txx{*}: extension = t" << es                          << endl
+             << "cxx{*}: extension = c" << es                          << endl;
           break;
         }
       }
-      if (tests)
+
+      if ((itest || utest) && x != nullptr)
         os <<                                                           endl
            << "# The test target for cross-testing (running tests under Wine, etc)." << endl
            << "#"                                                    << endl
-           << "test.target = $cxx.target"                            << endl;
+           << "test.target = $" << x << ".target"                    << endl;
+
       os.close ();
 
       // build/.gitignore
@@ -465,7 +482,7 @@ namespace bdep
       //
       os.open (f = out / "buildfile");
       os << "./: {*/ -build/} manifest"                                << endl;
-      if (tests && t == type::lib) // Have tests/ subproject.
+      if (itest && t == type::lib) // Have tests/ subproject.
         os <<                                                             endl
            << "# Don't install tests."                                 << endl
            << "#"                                                      << endl
@@ -510,11 +527,9 @@ namespace bdep
             }
           case lang::cxx:
             {
-              string x (l.cxx_opt.cpp () ? "pp" : "xx");
-
               // <base>/<stem>.c(xx|pp)
               //
-              os.open (f = sd / s + ".c" + x);
+              os.open (f = sd / s + ".c" + es);
               os << "#include <iostream>"                              << endl
                  <<                                                       endl
                  << "int main (int argc, char* argv[])"                << endl
@@ -538,30 +553,36 @@ namespace bdep
           // <base>/buildfile
           //
           os.open (f = sd / "buildfile");
-          os << "libs ="                                           << endl
-             << "#import libs += libhello%lib{hello}"              << endl
-             <<                                                       endl;
+          os << "libs ="                                               << endl
+             << "#import libs += libhello%lib{hello}"                  << endl
+             <<                                                           endl;
 
-          const char* x (nullptr); // Language module.
-          switch (l)
-          {
-          case lang::c:
-            {
-              os << "exe{" << s << "}: {h c}{**} $libs"                <<
-                (tests ? " testscript" : "")                           << endl;
-
-              x = "c";
-              break;
-            }
-          case lang::cxx:
-            {
-              os << "exe{" << s << "}: {hxx ixx txx cxx}{**} $libs"    <<
-                (tests ? " testscript" : "")                           << endl;
-
-              x = "cxx";
-              break;
-            }
-          }
+          if (!utest)
+            os << "exe{" << s << "}: "                                 <<
+              "{" << hs << ' ' << x << "}{**} "                        <<
+              "$libs"                                                  <<
+              (itest ? " testscript" : "")                             << endl;
+          else
+            os << "./: exe{" << s << "}"                               << endl
+               << "exe{" << s << "}: libue{" << s << "}"               <<
+              (itest ? " testscript" : "")                             << endl
+               << "libue{" << s << "}: "                               <<
+              "{" << hs << ' ' << x << "}{** -**.test...} $libs"       << endl
+               <<                                                         endl
+               << "# Unit tests."                                      << endl
+               << "#"                                                  << endl
+               << "exe{*.test}: test = true"                           << endl
+               << "exe{*.test}: install = false"                       << endl
+               <<                                                         endl
+               << "for t: " << x << "{**.test...}"                     << endl
+               << "{"                                                  << endl
+               << "  d = $directory($t)"                               << endl
+               << "  n = $name($t)..."                                 << endl
+               <<                                                         endl
+               << "  ./: $d/exe{$n}"                                   << endl
+               << "  $d/exe{$n}: $t $d/{" << hs << "}{+$n} $d/test{+$n}" << endl
+               << "  $d/exe{$n}: libue{" << s << "}: bin.whole = false"<< endl
+               << "}"                                                  << endl;
 
           os <<                                                           endl
              << x << ".poptions =+ \"-I$out_root\" \"-I$src_root\""    << endl;
@@ -573,30 +594,76 @@ namespace bdep
           {
             os.open (f = sd / ".gitignore");
             os << s                                                    << endl;
-            if (tests)
+            if (utest)
+              os << "*.test"                                           << endl;
+            if (itest || utest)
               os <<                                                       endl
                  << "# Testscript output directory (can be symlink)."  << endl
-                 << "#"                                                << endl
-                 << "test-" << s                                       << endl;
+                 << "#"                                                << endl;
+            if (itest)
+              os << "test-" << s                                       << endl;
+            if (utest)
+              os << "test-*.test"                                      << endl;
             os.close ();
           }
 
           // <base>/testscript
           //
-          if (!tests)
-            break;
+          if (itest)
+          {
+            os.open (f = sd / "testscript");
+            os << ": basics"                                           << endl
+               << ":"                                                  << endl
+               << "$* 'World' >'Hello, World!'"                        << endl
+               <<                                                         endl
+               << ": missing-name"                                     << endl
+               << ":"                                                  << endl
+               << "$* 2>>EOE != 0"                                     << endl
+               << "error: missing name"                                << endl
+               << "EOE"                                                << endl;
+            os.close ();
+          }
 
-          os.open (f = sd / "testscript");
-          os << ": basics"                                             << endl
-             << ":"                                                    << endl
-             << "$* 'World' >'Hello, World!'"                          << endl
-             <<                                                           endl
-             << ": missing-name"                                       << endl
-             << ":"                                                    << endl
-             << "$* 2>>EOE != 0"                                       << endl
-             << "error: missing name"                                  << endl
-             << "EOE"                                                  << endl;
-          os.close ();
+          // <base>/<stem>.test.*
+          //
+          if (utest)
+          {
+            switch (l)
+            {
+            case lang::c:
+              {
+                // <base>/<stem>.test.c
+                //
+                os.open (f = sd / s + ".test.c");
+                os << "#include <stdio.h>"                             << endl
+                   << "#include <assert.h>"                            << endl
+                   <<                                                     endl
+                   << "int main ()"                                    << endl
+                   << "{"                                              << endl
+                   << "  return 0;"                                    << endl
+                   << "}"                                              << endl;
+                os.close ();
+
+                break;
+              }
+            case lang::cxx:
+              {
+                // <base>/<stem>.test.c(xx|pp)
+                //
+                os.open (f = sd / s + ".test.c" + es);
+                os << "#include <cassert>"                             << endl
+                   << "#include <iostream>"                            << endl
+                   <<                                                     endl
+                   << "int main ()"                                    << endl
+                   << "{"                                              << endl
+                   <<                                                     endl
+                   << "}"                                              << endl;
+                os.close ();
+
+                break;
+              }
+            }
+          }
 
           break;
         }
@@ -662,11 +729,9 @@ namespace bdep
             }
           case lang::cxx:
             {
-              string x (l.cxx_opt.cpp () ? "pp" : "xx");
-
-              hdr = s + ".h" + x;
-              exp = "export.h" + x;
-              ver = "version.h" + x;
+              hdr = s + ".h" + es;
+              exp = "export.h" + es;
+              ver = "version.h" + es;
 
               // <stem>.h(xx|pp)
               //
@@ -691,7 +756,7 @@ namespace bdep
 
               // <stem>.c(xx|pp)
               //
-              os.open (f = sd / s + ".c" + x);
+              os.open (f = sd / s + ".c" + es);
               os << "#include <" << b << "/" << hdr << ">"             << endl
                  <<                                                       endl
                  << "#include <ostream>"                               << endl
@@ -804,30 +869,32 @@ namespace bdep
              << "#import imp_libs += libhello%lib{hello}"              << endl
              <<                                                           endl;
 
-          const char* x  (nullptr); // Language module.
-          const char* h  (nullptr); // Header target type.
-          const char* hs (nullptr); // All header target types.
-          switch (l)
-          {
-          case lang::c:
-            {
-              os << "lib{" <<  s << "}: {h c}{** -version} h{version}" << endl;
-
-              x  = "c";
-              h  = "h";
-              hs = "h";
-              break;
-            }
-          case lang::cxx:
-            {
-              os << "lib{" <<  s << "}: {hxx ixx txx cxx}{** -version} hxx{version} $imp_libs $int_libs" << endl;
-
-              x  = "cxx";
-              h  = "hxx";
-              hs = "hxx ixx txx";
-              break;
-            }
-          }
+          if (!utest)
+            os << "lib{" << s << "}: "                                   <<
+              "{" << hs << ' ' << x << "}{** -version} "                 <<
+              h << "{version} $imp_libs $int_libs"                       << endl;
+          else
+            os << "./: lib{" << s << "}"                               << endl
+               << "lib{" << s << "}: libul{" << s << "}"               << endl
+               << "libul{" << s << "}: "                               <<
+              "{" << hs << ' ' << x << "}{** -version -**.test...} "   <<
+              h << "{version} \\"                                      << endl
+               << "  $imp_libs $int_libs"                              << endl
+               <<                                                         endl
+               << "# Unit tests."                                      << endl
+               << "#"                                                  << endl
+               << "exe{*.test}: test = true"                           << endl
+               << "exe{*.test}: install = false"                       << endl
+               <<                                                         endl
+               << "for t: " << x << "{**.test...}"                     << endl
+               << "{"                                                  << endl
+               << "  d = $directory($t)"                               << endl
+               << "  n = $name($t)..."                                 << endl
+               <<                                                         endl
+               << "  ./: $d/exe{$n}"                                   << endl
+               << "  $d/exe{$n}: $t $d/{" << hs << "}{+$n} $d/test{+$n}" << endl
+               << "  $d/exe{$n}: libul{" << s << "}: bin.whole = false"<< endl
+               << "}"                                                  << endl;
 
           os <<                                                            endl
              << "# Include the generated version header into the distribution (so that we don't" << endl
@@ -869,10 +936,62 @@ namespace bdep
           if (vc == vcs::git)
           {
             os.open (f = sd / ".gitignore");
-            os << "# Generated version header."                      << endl
-               << "#"                                                << endl
-               << ver                                                << endl;
+            os << "# Generated version header."                        << endl
+               << "#"                                                  << endl
+               << ver                                                  << endl;
+            if (utest)
+              os <<                                                       endl
+                 << "# Unit test executables and Testscript output directories" << endl
+                 << "# (can be symlinks)."                             << endl
+                 << "#"                                                << endl
+                 << "*.test"                                           << endl
+                 << "test-*.test"                                      << endl;
             os.close ();
+          }
+
+          // <base>/<stem>.test.*
+          //
+          if (utest)
+          {
+            switch (l)
+            {
+            case lang::c:
+              {
+                // <base>/<stem>.test.c
+                //
+                os.open (f = sd / s + ".test.c");
+                os << "#include <stdio.h>"                             << endl
+                   << "#include <assert.h>"                            << endl
+                   <<                                                     endl
+                   << "#include <" << b << "/" << hdr << ">"           << endl
+                   <<                                                     endl
+                   << "int main ()"                                    << endl
+                   << "{"                                              << endl
+                   << "  return 0;"                                    << endl
+                   << "}"                                              << endl;
+                os.close ();
+
+                break;
+              }
+            case lang::cxx:
+              {
+                // <base>/<stem>.test.c(xx|pp)
+                //
+                os.open (f = sd / s + ".test.c" + es);
+                os << "#include <cassert>"                             << endl
+                   << "#include <iostream>"                            << endl
+                   <<                                                     endl
+                   << "#include <" << b << "/" << hdr << ">"           << endl
+                   <<                                                     endl
+                   << "int main ()"                                    << endl
+                   << "{"                                              << endl
+                   <<                                                     endl
+                   << "}"                                              << endl;
+                os.close ();
+
+                break;
+              }
+            }
           }
 
           // build/export.build
@@ -888,7 +1007,7 @@ namespace bdep
 
           // tests/ (tests subproject).
           //
-          if (!tests)
+          if (!itest)
             break;
 
           dir_path td (dir_path (out) /= "tests");
@@ -928,16 +1047,14 @@ namespace bdep
             }
           case lang::cxx:
             {
-              const char* s (l.cxx_opt.cpp () ? "pp" : "xx");
-
               os << "cxx.std = latest"                                 << endl
                  <<                                                       endl
                  << "using cxx"                                        << endl
                  <<                                                       endl
-                 << "hxx{*}: extension = h" << s                       << endl
-                 << "ixx{*}: extension = i" << s                       << endl
-                 << "txx{*}: extension = t" << s                       << endl
-                 << "cxx{*}: extension = c" << s                       << endl;
+                 << "hxx{*}: extension = h" << es                      << endl
+                 << "ixx{*}: extension = i" << es                      << endl
+                 << "txx{*}: extension = t" << es                      << endl
+                 << "cxx{*}: extension = c" << es                      << endl;
               break;
             }
           }
@@ -948,7 +1065,7 @@ namespace bdep
              <<                                                           endl
              << "# The test target for cross-testing (running tests under Wine, etc)." << endl
              << "#"                                                    << endl
-             << "test.target = $cxx.target"                            << endl;
+             << "test.target = $" << x << ".target"                    << endl;
           os.close ();
 
           // tests/build/.gitignore
@@ -1033,11 +1150,9 @@ namespace bdep
             }
           case lang::cxx:
             {
-              string x (l.cxx_opt.cpp () ? "pp" : "xx");
-
               // tests/basics/driver.c(xx|pp)
               //
-              os.open (f = td / "driver.c" + x);
+              os.open (f = td / "driver.c" + es);
               os << "#include <cassert>"                               << endl
                  << "#include <sstream>"                               << endl
                  << "#include <stdexcept>"                             << endl
@@ -1081,23 +1196,10 @@ namespace bdep
           //
           os.open (f = td / "buildfile");
           os << "import libs = " << n << "%lib{" << s << "}"           << endl
-             <<                                                           endl;
-
-          switch (l)
-          {
-          case lang::c:
-            {
-              os << "exe{driver}: {h c}{**} $libs"                     << endl;
-              break;
-            }
-          case lang::cxx:
-            {
-              os << "exe{driver}: {hxx ixx txx cxx}{**} $libs"         << endl;
-              break;
-            }
-          }
-          //os <<                                                         endl
-          //   << x << ".poptions =+ \"-I$out_root\" \"-I$src_root\""  << endl;
+             <<                                                           endl
+             << "exe{driver}: {" << hs << ' ' << x << "}{**} $libs test{**}" << endl;
+          // <<                                                         endl
+          // << x << ".poptions =+ \"-I$out_root\" \"-I$src_root\""  << endl;
           os.close ();
 
           break;

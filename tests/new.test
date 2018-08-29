@@ -8,7 +8,8 @@
 #
 test.arguments += --no-checks
 
-cxx = "config.cxx=$config.cxx"
+c = config.c="$recall($c.path)"
+cxx = config.cxx="$recall($cxx.path)"
 
 status += -d prj
 
@@ -21,7 +22,7 @@ status += -d prj
 
   : exe
   {
-    $* --no-amalgamation -t exe -l c++ prj-foo 2>>/"EOE" &prj-foo/***;
+    $* -t exe -l c++ prj-foo 2>>/"EOE" &prj-foo/***;
       created new executable project prj-foo in $~/prj-foo/
       EOE
 
@@ -30,14 +31,80 @@ status += -d prj
       EOE
   }
 
+  : exe-c
+  {
+    $* -t exe -l c prj-foo 2>>/"EOE" &prj-foo/***;
+      created new executable project prj-foo in $~/prj-foo/
+      EOE
+
+    $build prj-foo/ $c 2>>~%EOE%
+      %(c|ld) .+%{2}
+      EOE
+  }
+
   : lib
   {
-    $* --no-amalgamation -t lib -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***;
+    $* -t lib -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***;
       created new library project libprj-foo in $~/libprj-foo/
       EOE
 
     $build libprj-foo/ $cxx 2>>~%EOE%
       %(version\.in|c\+\+|ar|ld) .+%{7}
+      EOE
+  }
+
+  : lib-c
+  {
+    $* -t lib -l c libprj-foo 2>>/"EOE" &libprj-foo/***;
+      created new library project libprj-foo in $~/libprj-foo/
+      EOE
+
+    $build libprj-foo/ $c 2>>~%EOE%
+      %(version\.in|c|ar|ld) .+%{7}
+      EOE
+  }
+
+  : exe-unit-tests
+  {
+    $* -t exe,unit-tests -l c++ foo 2>>/"EOE" &foo/***;
+      created new executable project foo in $~/foo/
+      EOE
+
+    $build foo/ $cxx 2>>~%EOE%
+      %(c\+\+|ld|ar) .+%{5}
+      EOE
+  }
+
+  : exe-c-unit-tests
+  {
+    $* -t exe,unit-tests -l c foo 2>>/"EOE" &foo/***;
+      created new executable project foo in $~/foo/
+      EOE
+
+    $build foo/ $c 2>>~%EOE%
+      %(c|ld|ar) .+%{5}
+      EOE
+  }
+
+  : lib-unit-tests
+  {
+    $* -t lib,unit-tests -l c++ libfoo 2>>/"EOE" &libfoo/***;
+      created new library project libfoo in $~/libfoo/
+      EOE
+
+    $build libfoo/ $cxx 2>>~%EOE%
+      %(version\.in|c\+\+|ar|ld) .+%{11}
+      EOE
+  }
+
+  : lib-c-unit-tests
+  {
+    $* -t lib,unit-tests -l c libfoo 2>>/"EOE" &libfoo/***;
+      created new library project libfoo in $~/libfoo/
+      EOE
+
+    $build libfoo/ $c 2>>~%EOE%
+      %(version\.in|c|ar|ld) .+%{11}
       EOE
   }
 
