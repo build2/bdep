@@ -38,6 +38,8 @@ end
 
 g = git -C prj 2>! >&2
 
++$g config user.name 'Test Script'
++$g config user.email 'testscript@example.com'
 +$g remote add origin $~/prj.git
 +$g add '*'
 +$g commit -m 'Create'
@@ -136,6 +138,8 @@ windows = ($cxx.target.class == 'windows')
   +sed -i -e 's/^(version:) .*$/\1 1.0.1/' prj/libprj/manifest
   +sed -i -e 's/^(version:) .*$/\1 1.0.1/' prj/prj/manifest
 
+  +$g config user.name 'Test Script'
+  +$g config user.email 'testscript@example.com'
   +$g remote add origin $~/prj.git
   +$g add '*'
   +$g commit -m 'Create'
