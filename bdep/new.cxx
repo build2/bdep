@@ -1002,7 +1002,7 @@ namespace bdep
              << "  include " << b << "/"                               << endl
              << "}"                                                    << endl
              <<                                                           endl
-             << "export $out_root/" << b << "/lib{" << s << "}"        << endl;
+             << "export $out_root/" << b << "/$import.target"          << endl;
           os.close ();
 
           // tests/ (tests subproject).
