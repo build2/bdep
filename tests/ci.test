@@ -71,7 +71,7 @@ windows = ($cxx.target.class == 'windows')
     $* 2>>~"%EOE%"
       submitting to $server
       %.*
-      %CI request is queued \(.+\)%
+      %CI request is queued\(.+\)%
       EOE
   }
 
@@ -154,7 +154,7 @@ windows = ($cxx.target.class == 'windows')
     $* 2>>~"%EOE%"
       submitting to $server
       %.*
-      %CI request is queued \(.+\)%
+      %CI request is queued\(.+\)%
       EOE
   }
 
@@ -171,7 +171,7 @@ windows = ($cxx.target.class == 'windows')
     $* 2>>~"%EOE%"
       submitting to $server
       %.*
-      %CI request is queued \(.+\)%
+      %CI request is queued\(.+\)%
       EOE
   }
 
@@ -196,7 +196,7 @@ windows = ($cxx.target.class == 'windows')
         package: prj
         version: 1.0.1
       %.*
-      %CI request is queued \(.+\)%
+      %CI request is queued\(.+\)%
       EOE
   }
 }
