@@ -917,7 +917,8 @@ namespace bdep
              << "lib{" << s << "}: " << x << ".export.libs = $int_libs" << endl
              <<                                                            endl
              << "# For pre-releases use the complete version to make sure they cannot be used" << endl
-             << "# in place of another pre-release or the final version."                      << endl
+             << "# in place of another pre-release or the final version. See the version module" << endl
+             << "# for details on the version.* variable values."       << endl
              << "#"                                                                            << endl
              << "if $version.pre_release"                                                   << endl
              << "  lib{" << s << "}: bin.lib.version = @\"-$version.project_id\""           << endl
