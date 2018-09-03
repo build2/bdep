@@ -906,13 +906,14 @@ namespace bdep
              << h << "{version}: clean = ($src_root != $out_root)"      << endl
              <<                                                            endl
              << x << ".poptions =+ \"-I$out_root\" \"-I$src_root\""     << endl
+             <<                                                            endl
+             << "obja{*}: " << x << ".poptions += -D" << m << "_STATIC_BUILD" << endl
+             << "objs{*}: " << x << ".poptions += -D" << m << "_SHARED_BUILD" << endl
+             <<                                                            endl
              << "lib{" <<  s << "}: " << x << ".export.poptions = \"-I$out_root\" \"-I$src_root\"" << endl
              <<                                                            endl
              << "liba{" << s << "}: " << x << ".export.poptions += -D" << m << "_STATIC" << endl
              << "libs{" << s << "}: " << x << ".export.poptions += -D" << m << "_SHARED" << endl
-             <<                                                            endl
-             << "obja{*}: " << x << ".poptions += -D" << m << "_STATIC_BUILD" << endl
-             << "objs{*}: " << x << ".poptions += -D" << m << "_SHARED_BUILD" << endl
              <<                                                            endl
              << "lib{" << s << "}: " << x << ".export.libs = $int_libs" << endl
              <<                                                            endl
