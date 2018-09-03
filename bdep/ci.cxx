@@ -327,10 +327,11 @@ namespace bdep
       http_service::result r (post (o, u, params));
 
       if (!r.reference)
-        fail << "no reference specified";
+        fail << "no reference in response";
 
       if (verb)
-        text << r.message << " (" << *r.reference << ")";
+        text << r.message << '\n'
+             << "reference: " << *r.reference;
     }
 
     return 0;
