@@ -1,4 +1,4 @@
-# file      : tests/common.test
+# file      : tests/common.testscript
 # copyright : Copyright (c) 2014-2018 Code Synthesis Ltd
 # license   : MIT; see accompanying LICENSE file
 
@@ -54,8 +54,8 @@ update  = $* update
 config  = $* config
 publish = $* publish
 
-# All testscripts are named after bdep commands, for example sync.test. So the
-# testscript scope id is a name of the command being tested.
+# All testscripts are named after bdep commands, for example sync.testscript.
+# So the testscript scope id is a name of the command being tested.
 #
 cmd = [string] $@
 test.arguments = $cmd

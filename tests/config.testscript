@@ -1,11 +1,11 @@
-# file      : tests/config.test
+# file      : tests/config.testscript
 # copyright : Copyright (c) 2014-2018 Code Synthesis Ltd
 # license   : MIT; see accompanying LICENSE file
 
 # Note that we test the list sub-command while testing other sub-commands.
 #
 
-.include common.test project.test
+.include common.testscript project.testscript
 
 cxx = cc config.cxx="$recall($cxx.path)"
 

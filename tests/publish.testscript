@@ -1,8 +1,8 @@
-# file      : tests/publish.test
+# file      : tests/publish.testscript
 # copyright : Copyright (c) 2014-2018 Code Synthesis Ltd
 # license   : MIT; see accompanying LICENSE file
 
-.include common.test project.test
+.include common.testscript project.testscript
 
 # bdep-publish requirements for the minimum supported git version are higher
 # then the default 2.1.0 (see bdep/publish.cxx for details).

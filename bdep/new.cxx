@@ -580,7 +580,8 @@ namespace bdep
                << "  n = $name($t)..."                                 << endl
                <<                                                         endl
                << "  ./: $d/exe{$n}"                                   << endl
-               << "  $d/exe{$n}: $t $d/{" << hs << "}{+$n} $d/test{+$n}" << endl
+               << "  $d/exe{$n}: $t $d/{" << hs                        <<
+              "}{+$n} $d/testscript{+$n}"                              << endl
                << "  $d/exe{$n}: libue{" << s << "}: bin.whole = false"<< endl
                << "}"                                                  << endl;
 
@@ -892,7 +893,8 @@ namespace bdep
                << "  n = $name($t)..."                                 << endl
                <<                                                         endl
                << "  ./: $d/exe{$n}"                                   << endl
-               << "  $d/exe{$n}: $t $d/{" << hs << "}{+$n} $d/test{+$n}" << endl
+               << "  $d/exe{$n}: $t $d/{" << hs                        <<
+              "}{+$n} $d/testscript{+$n}"                              << endl
                << "  $d/exe{$n}: libul{" << s << "}: bin.whole = false"<< endl
                << "}"                                                  << endl;
 
@@ -1199,7 +1201,8 @@ namespace bdep
           os.open (f = td / "buildfile");
           os << "import libs = " << n << "%lib{" << s << "}"           << endl
              <<                                                           endl
-             << "exe{driver}: {" << hs << ' ' << x << "}{**} $libs test{**}" << endl;
+             << "exe{driver}: {" << hs << ' ' << x                     <<
+            "}{**} $libs testscript{**}"                               << endl;
           // <<                                                         endl
           // << x << ".poptions =+ \"-I$out_root\" \"-I$src_root\""  << endl;
           os.close ();

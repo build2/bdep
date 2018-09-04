@@ -10,7 +10,7 @@ using cxx
 # Setup the bdep that we are testing.
 #
 import bdep = bdep%exe{bdep}
-test{*}: test = $bdep
+testscript{*}: test = $bdep
 
 # Specify the test target for cross-testing.
 #

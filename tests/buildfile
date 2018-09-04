@@ -3,8 +3,8 @@
 # license   : MIT; see accompanying LICENSE file
 
 define common: file
-common{*}: extension = test
+common{*}: extension = testscript
 
 commons = common project
 
-./: test{* -{$commons}} common{$commons} $bdep
+./: testscript{* -{$commons}} common{$commons} $bdep

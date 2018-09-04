@@ -1,11 +1,11 @@
-# file      : tests/init.test
+# file      : tests/init.testscript
 # copyright : Copyright (c) 2014-2018 Code Synthesis Ltd
 # license   : MIT; see accompanying LICENSE file
 
 # Here we test both init and deinit commands.
 #
 
-.include common.test project.test
+.include common.testscript project.testscript
 
 cxx = cc config.cxx="$recall($cxx.path)"
 
