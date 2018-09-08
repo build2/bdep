@@ -43,16 +43,11 @@ namespace bdep
      \cb{cppget.org} by default.
 
      Along with the package archive, the submission request specifies the
-     project the package belongs to, the repository section to publish the
-     package under, the control repository URL to use for authorization, and
-     the publisher's name and email address for the record. While the exact
-     usage and interpretation of this information depends on the specific
-     repository, the following semantics apply when submitting to
-     \cb{cppget.org}.
-
-     The project information is used to group related packages together. For
-     example, \cb{hello} and \cb{libhello} are likely to be part of the same
-     project called \cb{hello}. @@ TODO.
+     repository section to publish the package under, the control repository
+     URL to use for authorization, and the publisher's name and email address
+     for the record. While the exact usage and interpretation of this
+     information depends on the specific repository, the following semantics
+     apply when submitting to \cb{cppget.org}.
 
      The section specifies the desired repository section to publish the
      project under. If not explicitly specified with the \cb{--section}

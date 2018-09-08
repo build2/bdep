@@ -39,9 +39,9 @@ namespace bdep
      A CI request consists of the specified packages and their versions as
      well as the project's remote version control repository URL corresponding
      to the current (local) state of the project. The CI server should be able
-     fetch these package versions from this repository as well as any
-     dependencies from this repository or its prerequisites/complements
-     (according to \cb{repositories.manifest}).
+     to fetch these package versions from this repository as well as any
+     dependencies from this repository or its prerequisite/complement
+     repositories, according to each package's \cb{repositories.manifest}.
 
      If the CI server is not explicitly specified with the \cb{--server}
      option, the request is submitted to \cb{ci.cppget.org} by default.
