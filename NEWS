@@ -1,3 +1,24 @@
+Version 0.8.0
+
+  * New bdep-ci command for submitting package test requests to CI servers.
+    See bdep-ci(1) for details.
+
+  * New bdep-publish command for publishing packages to archive-based
+    repositories. See bdep-publish(1) for details.
+
+  * New unit-tests project type option for the bdep-new command.
+
+    If specified (-t exe,unit-tests or -t lib,unit-tests) then generate build
+    infrastructure for unit testing.
+
+  * Ability to suppress auto-synchronization via the BDEP_SYNC environment
+    variable.
+
+    If BDEP_SYNC is set, auto-synchronization will only be performed if its
+    value is true or 1. So to suppress, run:
+
+    $ BDEP_SYNC=0 b
+
 Version 0.7.0
 
   * First public release.
