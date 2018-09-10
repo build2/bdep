@@ -65,7 +65,7 @@ windows = ($cxx.target.class == 'windows')
           upgrade prj/1.0.1
         submitting prj-1.0.1.tar.gz
         %.*
-        %(prj/1\.0\.1 )?submission is queued%
+        %package submission is queued(: .*prj/1\.0\.1)?%
         %reference: .{12}%
         EOE
     }
@@ -112,11 +112,11 @@ windows = ($cxx.target.class == 'windows')
       $* 2>>~%EOE%
         submitting libprj-1.0.2.tar.gz
         %.*
-        %(libprj/1\.0\.2 )?submission is queued%
+        %package submission is queued(: .*libprj/1\.0\.2)?%
         %reference: .{12}%
         submitting prj-1.0.2.tar.gz
         %.*
-        %(prj/1\.0\.2 )?submission is queued%
+        %package submission is queued(: .*prj/1\.0\.2)?%
         %reference: .{12}%
         EOE
     }
@@ -135,7 +135,7 @@ windows = ($cxx.target.class == 'windows')
       $* 2>>~%EOE%
         submitting libprj-1.0.3.tar.gz
         %.*
-        %(libprj/1\.0\.3 )?submission is queued%
+        %package submission is queued(: .*prj/1\.0\.3)?%
         %reference: .{12}%
         EOE
     }
@@ -168,11 +168,11 @@ windows = ($cxx.target.class == 'windows')
           section: stable
         continue? [y/n] submitting libprj-1.0.4.tar.gz
         %.*
-        %\(libprj/1\\.0\\.4 \)?submission is queued%
+        %package submission is queued\(: .*libprj/1\\.0\\.4\)?%
         %reference: .{12}%
         submitting prj-1.0.4.tar.gz
         %.*
-        %\(prj/1\\.0\\.4 \)?submission is queued%
+        %package submission is queued\(: .*prj/1\\.0\\.4\)?%
         %reference: .{12}%
         EOE
     }
@@ -290,7 +290,7 @@ windows = ($cxx.target.class == 'windows')
       %.*
       submitting prj-1.0.8.tar.gz
       %.*
-      %(prj/1\.0\.8 )?submission is queued%
+      %package submission is queued(: .*prj/1\.0\.8)?%
       %reference: .{12}%
       EOE
 
@@ -306,7 +306,7 @@ windows = ($cxx.target.class == 'windows')
       %.*
       submitting prj-1.0.9.tar.gz
       %.*
-      %(prj/1\.0\.9 )?submission is queued%
+      %package submission is queued(: .*prj/1\.0\.9)?%
       %reference: .{12}%
       EOE
 
@@ -324,7 +324,7 @@ windows = ($cxx.target.class == 'windows')
       %.*
       submitting prj-1.0.10.tar.gz
       %.*
-      %(prj/1\.0\.10 )?submission is queued%
+      %package submission is queued(: .*prj/1\.0\.10)?%
       %reference: .{12}%
       EOE
 
@@ -406,7 +406,7 @@ windows = ($cxx.target.class == 'windows')
       %.*
       submitting prj-1.0.12.tar.gz
       %.*
-      %(prj/1\.0\.12 )?submission is queued%
+      %package submission is queued(: .*prj/1\.0\.12)?%
       %reference: .{12}%
       EOE
 
@@ -424,7 +424,7 @@ windows = ($cxx.target.class == 'windows')
       %.*
       submitting prj-1.0.13.tar.gz
       %.*
-      %(prj/1\.0\.13 )?submission is queued%
+      %package submission is queued(: .*prj/1\.0\.13)?%
       %reference: .{12}%
       EOE
 
@@ -465,7 +465,7 @@ windows = ($cxx.target.class == 'windows')
       %.*
       submitting prj-1.0.14.tar.gz
       %.*
-      %(prj/1\.0\.14 )?submission is queued%
+      %package submission is queued(: .*prj/1\.0\.14)?%
       %reference: .{12}%
       EOE
 
