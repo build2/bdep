@@ -129,8 +129,7 @@ namespace bdep
     case type::exe:
       {
         if (s.compare (0, 3, "lib") == 0)
-          warn << "executable name starts with 'lib'" <<
-            info << "this package may not be acceptable to some repositories";
+          warn << "executable name starts with 'lib'";
 
         break;
       }
@@ -144,8 +143,7 @@ namespace bdep
             fail << "empty library name stem in '" << b << "'";
         }
         else
-          warn << "library name does not start with 'lib'" <<
-            info << "this package may not be acceptable to some repositories";
+          warn << "library name does not start with 'lib'";
 
         break;
       }
