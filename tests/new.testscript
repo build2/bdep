@@ -68,6 +68,30 @@ status += -d prj
       EOE
   }
 
+  : lib-binless
+  :
+  {
+    $* -t lib -l c++,binless libfoo 2>>/"EOE" &libfoo/***;
+      created new library project libfoo in $~/libfoo/
+      EOE
+
+    $build libfoo/ $cxx 2>>~%EOE%
+      %(version\.in|c\+\+|ld) .+%{3}
+      EOE
+  }
+
+  : lib-binless-unit-tests
+  :
+  {
+    $* -t lib,unit-tests -l c++,binless libfoo 2>>/"EOE" &libfoo/***;
+      created new library project libfoo in $~/libfoo/
+      EOE
+
+    $build libfoo/ $cxx 2>>~%EOE%
+      %(version\.in|c\+\+|ld) .+%{5}
+      EOE
+  }
+
   # C versions of the above.
   #
   : exe-c

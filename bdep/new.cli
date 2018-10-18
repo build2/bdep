@@ -121,7 +121,9 @@ namespace bdep
          \cb{.mxx} source file extensions (default).
 
          \cb{cpp} \- Use the \cb{.cpp}, \cb{.hpp}, \cb{.ipp}, \cb{.tpp}, and
-         \cb{.mpp} source file extensions.||
+         \cb{.mpp} source file extensions.
+
+         \cb{binless} \- Create a header-only library.||
 
      The project version control system can be specified with the
      \c{\b{--vcs}|\b{-s}} option. Valid values for this option and their
@@ -174,6 +176,7 @@ namespace bdep
   {
     bool cpp;
     bool cxx;
+    bool binless;
   };
 
   // --vcs options

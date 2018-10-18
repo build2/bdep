@@ -82,6 +82,9 @@ namespace bdep
         if (o.cpp () && o.cxx ())
           fail << "'cxx' and 'cpp' are mutually exclusive c++ options";
 
+        if (o.binless () && t != type::lib)
+          fail << "'binless' is only valid for libraries";
+
         break;
       }
     }
@@ -415,15 +418,17 @@ namespace bdep
       //
       os.open (f = bd / "root.build");
 
-      const char* x  (nullptr); // Language module/source target type.
-      const char* h  (nullptr); // Header target type.
-      const char* hs (nullptr); // All header target types.
-      string      es;           // Source file extension suffix (pp, xx).
+      string m;  // Language module.
+      string x;  // Source target type.
+      string h;  // Header target type.
+      string hs; // All header target types.
+      string es; // Source file extension suffix (pp, xx).
 
       switch (l)
       {
       case lang::c:
         {
+          m  = "c";
           x  = "c";
           h  = "h";
           hs = "h";
@@ -440,6 +445,7 @@ namespace bdep
         }
       case lang::cxx:
         {
+          m  = "cxx";
           x  = "cxx";
           h  = "hxx";
           hs = "hxx ixx txx";
@@ -457,11 +463,11 @@ namespace bdep
         }
       }
 
-      if ((itest || utest) && x != nullptr)
+      if ((itest || utest) && !m.empty ())
         os <<                                                           endl
            << "# The test target for cross-testing (running tests under Wine, etc)." << endl
            << "#"                                                    << endl
-           << "test.target = $" << x << ".target"                    << endl;
+           << "test.target = $" << m << ".target"                    << endl;
 
       os.close ();
 
@@ -584,7 +590,7 @@ namespace bdep
                << "}"                                                  << endl;
 
           os <<                                                           endl
-             << x << ".poptions =+ \"-I$out_root\" \"-I$src_root\""    << endl;
+             << m << ".poptions =+ \"-I$out_root\" \"-I$src_root\""    << endl;
           os.close ();
 
           // <base>/.gitignore
@@ -668,16 +674,16 @@ namespace bdep
         }
       case type::lib:
         {
-          string m; // Macro prefix.
+          string mp; // Macro prefix.
           transform (
-            b.begin (), b.end (), back_inserter (m),
+            b.begin (), b.end (), back_inserter (mp),
             [] (char c)
             {
               return (c == '-' || c == '+' || c == '.') ? '_' : ucase (c);
             });
 
           string hdr; // API header name.
-          string exp; // Export header name.
+          string exp; // Export header name (empty if binless).
           string ver; // Version header name.
 
           switch (l)
@@ -701,7 +707,7 @@ namespace bdep
                  << "// stream. On success, return the number of character printed." << endl
                  << "// On failure, set errno and return a negative value."          << endl
                  << "//"                                                             << endl
-                 << m << "_SYMEXPORT int"                              << endl
+                 << mp << "_SYMEXPORT int"                             << endl
                  << "say_hello (FILE *, const char *name);"            << endl;
               os.close ();
 
@@ -727,6 +733,41 @@ namespace bdep
               break;
             }
           case lang::cxx:
+            if (l.cxx_opt.binless ())
+            {
+              hdr = s + ".h" + es;
+              ver = "version.h" + es;
+
+              // <stem>.h(xx|pp)
+              //
+              os.open (f = sd / hdr);
+              os << "#pragma once"                                     << endl
+                 <<                                                       endl
+                 << "#include <string>"                                << endl
+                 << "#include <ostream>"                               << endl
+                 << "#include <stdexcept>"                             << endl
+                 <<                                                       endl
+                 << "namespace " << id                                 << endl
+                 << "{"                                                << endl
+                 << "  // Print a greeting for the specified name into the specified" << endl
+                 << "  // stream. Throw std::invalid_argument if the name is empty."  << endl
+                 << "  //"                                                            << endl
+                 << "  inline void"                                    << endl
+                 << "  say_hello (std::ostream& o, const std::string& name)" << endl
+                 << "  {"                                              << endl
+                 << "    using namespace std;"                         << endl
+                 <<                                                       endl
+                 << "    if (name.empty ())"                           << endl
+                 << "      throw invalid_argument (\"empty name\");"   << endl
+                 <<                                                       endl
+                 << "    o << \"Hello, \" << name << '!' << endl;"     << endl
+                 << "  }"                                              << endl
+                 << "}"                                                << endl;
+              os.close ();
+
+              break;
+            }
+            else
             {
               hdr = s + ".h" + es;
               exp = "export.h" + es;
@@ -747,9 +788,8 @@ namespace bdep
                  << "  // Print a greeting for the specified name into the specified" << endl
                  << "  // stream. Throw std::invalid_argument if the name is empty."  << endl
                  << "  //"                                                            << endl
-                 << "  " << m << "_SYMEXPORT void"                     << endl
-                 << "  say_hello (std::ostream&, "                     <<
-                "const std::string& name);"                            << endl
+                 << "  " << mp << "_SYMEXPORT void"                    << endl
+                 << "  say_hello (std::ostream&, const std::string& name);" << endl
                  << "}"                                                << endl;
               os.close ();
 
@@ -781,45 +821,48 @@ namespace bdep
 
           // export.h[??]
           //
-          os.open (f = sd / exp);
-          os << "#pragma once"                                     << endl
-             <<                                                       endl;
-          if (l == lang::cxx)
+          if (!exp.empty ())
           {
-            os << "// Normally we don't export class templates (but do complete specializations)," << endl
-               << "// inline functions, and classes with only inline member functions. Exporting"  << endl
-               << "// classes that inherit from non-exported/imported bases (e.g., std::string)"   << endl
-               << "// will end up badly. The only known workarounds are to not inherit or to not"  << endl
-               << "// export. Also, MinGW GCC doesn't like seeing non-exported functions being"     << endl
-               << "// used before their inline definition. The workaround is to reorder code. In"  << endl
-               << "// the end it's all trial and error."                                           << endl
-               <<                                                                                     endl;
+            os.open (f = sd / exp);
+            os << "#pragma once"                                       << endl
+               <<                                                         endl;
+            if (l == lang::cxx)
+            {
+              os << "// Normally we don't export class templates (but do complete specializations)," << endl
+                 << "// inline functions, and classes with only inline member functions. Exporting"  << endl
+                 << "// classes that inherit from non-exported/imported bases (e.g., std::string)"   << endl
+                 << "// will end up badly. The only known workarounds are to not inherit or to not"  << endl
+                 << "// export. Also, MinGW GCC doesn't like seeing non-exported functions being"    << endl
+                 << "// used before their inline definition. The workaround is to reorder code. In"  << endl
+                 << "// the end it's all trial and error."                                           << endl
+                 <<                                                                                     endl;
+            }
+            os << "#if defined(" << mp << "_STATIC)         // Using static."    << endl
+               << "#  define " << mp << "_SYMEXPORT"                             << endl
+               << "#elif defined(" << mp << "_STATIC_BUILD) // Building static." << endl
+               << "#  define " << mp << "_SYMEXPORT"                             << endl
+               << "#elif defined(" << mp << "_SHARED)       // Using shared."    << endl
+               << "#  ifdef _WIN32"                                             << endl
+               << "#    define " << mp << "_SYMEXPORT __declspec(dllimport)"     << endl
+               << "#  else"                                                     << endl
+               << "#    define " << mp << "_SYMEXPORT"                           << endl
+               << "#  endif"                                                    << endl
+               << "#elif defined(" << mp << "_SHARED_BUILD) // Building shared." << endl
+               << "#  ifdef _WIN32"                                             << endl
+               << "#    define " << mp << "_SYMEXPORT __declspec(dllexport)"     << endl
+               << "#  else"                                                     << endl
+               << "#    define " << mp << "_SYMEXPORT"                           << endl
+               << "#  endif"                                                    << endl
+               << "#else"                                                       << endl
+               << "// If none of the above macros are defined, then we assume we are being used"  << endl
+               << "// by some third-party build system that cannot/doesn't signal the library"    << endl
+               << "// type. Note that this fallback works for both static and shared but in case" << endl
+               << "// of shared will be sub-optimal compared to having dllimport."                << endl
+               << "//"                                                                            << endl
+               << "#  define " << mp << "_SYMEXPORT         // Using static or shared." << endl
+               << "#endif"                                                             << endl;
+            os.close ();
           }
-          os << "#if defined(" << m << "_STATIC)         // Using static."    << endl
-             << "#  define " << m << "_SYMEXPORT"                             << endl
-             << "#elif defined(" << m << "_STATIC_BUILD) // Building static." << endl
-             << "#  define " << m << "_SYMEXPORT"                             << endl
-             << "#elif defined(" << m << "_SHARED)       // Using shared."    << endl
-             << "#  ifdef _WIN32"                                             << endl
-             << "#    define " << m << "_SYMEXPORT __declspec(dllimport)"     << endl
-             << "#  else"                                                     << endl
-             << "#    define " << m << "_SYMEXPORT"                           << endl
-             << "#  endif"                                                    << endl
-             << "#elif defined(" << m << "_SHARED_BUILD) // Building shared." << endl
-             << "#  ifdef _WIN32"                                             << endl
-             << "#    define " << m << "_SYMEXPORT __declspec(dllexport)"     << endl
-             << "#  else"                                                     << endl
-             << "#    define " << m << "_SYMEXPORT"                           << endl
-             << "#  endif"                                                    << endl
-             << "#else"                                                       << endl
-             << "// If none of the above macros are defined, then we assume we are being used"  << endl
-             << "// by some third-party build system that cannot/doesn't signal the library"    << endl
-             << "// type. Note that this fallback works for both static and shared but in case" << endl
-             << "// of shared will be sub-optimal compared to having dllimport."                << endl
-             << "//"                                                                            << endl
-             << "#  define " << m << "_SYMEXPORT         // Using static or shared." << endl
-             << "#endif"                                                             << endl;
-          os.close ();
 
           // version.h[??].in
           //
@@ -846,19 +889,21 @@ namespace bdep
              << "// 3.0.0-b.2    0029999995020"                        << endl
              << "// 2.2.0-a.1.z  0020019990011"                        << endl
              << "//"                                                   << endl
-             << "#define " << m << "_VERSION       $" << v << ".version.project_number$ULL"   << endl
-             << "#define " << m << "_VERSION_STR   \"$" << v << ".version.project$\""         << endl
-             << "#define " << m << "_VERSION_ID    \"$" << v << ".version.project_id$\""      << endl
+             << "#define " << mp << "_VERSION       $" << v << ".version.project_number$ULL"   << endl
+             << "#define " << mp << "_VERSION_STR   \"$" << v << ".version.project$\""         << endl
+             << "#define " << mp << "_VERSION_ID    \"$" << v << ".version.project_id$\""      << endl
              <<                                                                                  endl
-             << "#define " << m << "_VERSION_MAJOR $" << v << ".version.major$" << endl
-             << "#define " << m << "_VERSION_MINOR $" << v << ".version.minor$" << endl
-             << "#define " << m << "_VERSION_PATCH $" << v << ".version.patch$" << endl
+             << "#define " << mp << "_VERSION_MAJOR $" << v << ".version.major$" << endl
+             << "#define " << mp << "_VERSION_MINOR $" << v << ".version.minor$" << endl
+             << "#define " << mp << "_VERSION_PATCH $" << v << ".version.patch$" << endl
              <<                                                                    endl
-             << "#define " << m << "_PRE_RELEASE   $" << v << ".version.pre_release$" << endl
+             << "#define " << mp << "_PRE_RELEASE   $" << v << ".version.pre_release$" << endl
              <<                                                                          endl
-             << "#define " << m << "_SNAPSHOT_SN   $" << v << ".version.snapshot_sn$ULL"  << endl
-             << "#define " << m << "_SNAPSHOT_ID   \"$" << v << ".version.snapshot_id$\"" << endl;
+             << "#define " << mp << "_SNAPSHOT_SN   $" << v << ".version.snapshot_sn$ULL"  << endl
+             << "#define " << mp << "_SNAPSHOT_ID   \"$" << v << ".version.snapshot_id$\"" << endl;
           os.close ();
+
+          bool binless (l == lang::cxx && l.cxx_opt.binless ());
 
           // buildfile
           //
@@ -869,17 +914,33 @@ namespace bdep
              <<                                                           endl;
 
           if (!utest)
-            os << "lib{" << s << "}: "                                   <<
-              "{" << hs << ' ' << x << "}{** -version} "                 <<
-              h << "{version} $imp_libs $int_libs"                       << endl;
+          {
+            os << "lib{" << s << "}: "                                 <<
+              "{" << hs << (binless ? "" : ' ' + x) << "}"             <<
+              "{** -version} "                                         <<
+              h << "{version} $imp_libs $int_libs"                     << endl;
+          }
           else
-            os << "./: lib{" << s << "}"                               << endl
-               << "lib{" << s << "}: libul{" << s << "}"               << endl
-               << "libul{" << s << "}: "                               <<
-              "{" << hs << ' ' << x << "}{** -version -**.test...} "   <<
-              h << "{version} \\"                                      << endl
-               << "  $imp_libs $int_libs"                              << endl
-               <<                                                         endl
+          {
+            os << "./: lib{" << s << "}"                               << endl;
+
+            if (binless)
+            {
+              os << "lib{" << s << "}: "                               <<
+                "{" << hs << "}{** -version -**.test...} "             <<
+                h << "{version} \\"                                    << endl
+                 << "  $imp_libs $int_libs"                            << endl;
+            }
+            else
+            {
+              os << "lib{" << s << "}: libul{" << s << "}"             << endl
+                 << "libul{" << s << "}: "                             <<
+                "{" << hs << ' ' << x << "}{** -version -**.test...} " <<
+                h << "{version} \\"                                    << endl
+                 << "  $imp_libs $int_libs"                            << endl;
+            }
+
+            os <<                                                         endl
                << "# Unit tests."                                      << endl
                << "#"                                                  << endl
                << "exe{*.test}: test = true"                           << endl
@@ -891,10 +952,16 @@ namespace bdep
                << "  n = $name($t)..."                                 << endl
                <<                                                         endl
                << "  ./: $d/exe{$n}"                                   << endl
-               << "  $d/exe{$n}: $t $d/{" << hs                        <<
-              "}{+$n} $d/testscript{+$n}"                              << endl
-               << "  $d/exe{$n}: libul{" << s << "}: bin.whole = false"<< endl
-               << "}"                                                  << endl;
+               << "  $d/exe{$n}: $t $d/{" << hs << "}{+$n} $d/testscript{+$n}";
+
+            if (binless)
+              os << ' ' << "lib{" << s << "}"                          << endl;
+            else
+              os << '\n'
+                 << "  $d/exe{$n}: libul{" << s << "}: bin.whole = false" << endl;
+
+            os << "}"                                                  << endl;
+          }
 
           os <<                                                            endl
              << "# Include the generated version header into the distribution (so that we don't" << endl
@@ -903,34 +970,48 @@ namespace bdep
              << "#"                                                                              << endl
              << h << "{version}: in{version} $src_root/manifest"        << endl
              << h << "{version}: dist  = true"                          << endl
-             << h << "{version}: clean = ($src_root != $out_root)"      << endl
-             <<                                                            endl
-             << x << ".poptions =+ \"-I$out_root\" \"-I$src_root\""     << endl
-             <<                                                            endl
-             << "obja{*}: " << x << ".poptions += -D" << m << "_STATIC_BUILD" << endl
-             << "objs{*}: " << x << ".poptions += -D" << m << "_SHARED_BUILD" << endl
-             <<                                                            endl
-             << "lib{" <<  s << "}: " << x << ".export.poptions = \"-I$out_root\" \"-I$src_root\"" << endl
-             <<                                                            endl
-             << "liba{" << s << "}: " << x << ".export.poptions += -D" << m << "_STATIC" << endl
-             << "libs{" << s << "}: " << x << ".export.poptions += -D" << m << "_SHARED" << endl
-             <<                                                            endl
-             << "lib{" << s << "}: " << x << ".export.libs = $int_libs" << endl
-             <<                                                            endl
-             << "# For pre-releases use the complete version to make sure they cannot be used" << endl
-             << "# in place of another pre-release or the final version. See the version module" << endl
-             << "# for details on the version.* variable values."       << endl
-             << "#"                                                                            << endl
-             << "if $version.pre_release"                                                   << endl
-             << "  lib{" << s << "}: bin.lib.version = @\"-$version.project_id\""           << endl
-             << "else"                                                                      << endl
-             << "  lib{" << s << "}: bin.lib.version = @\"-$version.major.$version.minor\"" << endl
-             <<                                                            endl
+             << h << "{version}: clean = ($src_root != $out_root)"      << endl;
+
+          // Build.
+          //
+          os <<                                                            endl
+             << m << ".poptions =+ \"-I$out_root\" \"-I$src_root\""     << endl;
+
+          if (!binless)
+            os <<                                                          endl
+               << "obja{*}: " << m << ".poptions += -D" << mp << "_STATIC_BUILD" << endl
+               << "objs{*}: " << m << ".poptions += -D" << mp << "_SHARED_BUILD" << endl;
+
+          // Export.
+          //
+          os <<                                                            endl
+             << "lib{" <<  s << "}: " << m << ".export.poptions = \"-I$out_root\" \"-I$src_root\"" << endl;
+
+          if (!binless)
+            os <<                                                          endl
+               << "liba{" << s << "}: " << m << ".export.poptions += -D" << mp << "_STATIC" << endl
+               << "libs{" << s << "}: " << m << ".export.poptions += -D" << mp << "_SHARED" << endl;
+
+          os <<                                                            endl
+             << "lib{" << s << "}: " << m << ".export.libs = $int_libs" << endl;
+
+          if (!binless)
+            os <<                                                          endl
+               << "# For pre-releases use the complete version to make sure they cannot be used" << endl
+               << "# in place of another pre-release or the final version. See the version module" << endl
+               << "# for details on the version.* variable values."     << endl
+               << "#"                                                                            << endl
+               << "if $version.pre_release"                                                   << endl
+               << "  lib{" << s << "}: bin.lib.version = @\"-$version.project_id\""           << endl
+               << "else"                                                                      << endl
+               << "  lib{" << s << "}: bin.lib.version = @\"-$version.major.$version.minor\"" << endl;
+
+          os <<                                                            endl
              << "# Install into the " << b << "/ subdirectory of, say, /usr/include/" << endl
              << "# recreating subdirectories."                                        << endl
              << "#"                                                                   << endl
              << "{" << hs << "}{*}: install         = include/" << b << "/" << endl
-             << "{" << hs << "}{*}: install.subdirs = true"              << endl;
+             << "{" << hs << "}{*}: install.subdirs = true"            << endl;
           os.close ();
 
           // <base>/.gitignore
@@ -1067,7 +1148,7 @@ namespace bdep
              <<                                                           endl
              << "# The test target for cross-testing (running tests under Wine, etc)." << endl
              << "#"                                                    << endl
-             << "test.target = $" << x << ".target"                    << endl;
+             << "test.target = $" << m << ".target"                    << endl;
           os.close ();
 
           // tests/build/.gitignore
@@ -1202,7 +1283,7 @@ namespace bdep
              << "exe{driver}: {" << hs << ' ' << x                     <<
             "}{**} $libs testscript{**}"                               << endl;
           // <<                                                         endl
-          // << x << ".poptions =+ \"-I$out_root\" \"-I$src_root\""  << endl;
+          // << m << ".poptions =+ \"-I$out_root\" \"-I$src_root\""  << endl;
           os.close ();
 
           break;
