@@ -179,6 +179,10 @@ namespace bdep
              << "  control: " << *ctrl;
       }
 
+#ifdef BDEP_STAGE
+      warn << "publishing using staged build2 toolchain";
+#endif
+
       if (!yn_prompt ("continue? [y/n]"))
         return 1;
     }

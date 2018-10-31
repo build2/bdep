@@ -166,6 +166,7 @@ windows = ($cxx.target.class == 'windows')
           version: 1.0.4
           project: prj
           section: stable
+        %warning: publishing using staged build2 toolchain%?
         continue? [y/n] submitting libprj-1.0.4.tar.gz
         %.*
         %package submission is queued\(: .*libprj/1\\.0\\.4\)?%
