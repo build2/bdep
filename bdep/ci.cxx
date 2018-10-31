@@ -19,6 +19,14 @@ namespace bdep
 {
   using bpkg::repository_location;
 
+  static const url default_server (
+#ifdef BDEP_STAGE
+    "https://ci.stage.build2.org"
+#else
+    "https://ci.cppget.org"
+#endif
+  );
+
   // Get the project's remote repository location corresponding to the current
   // (local) state of the repository. Fail if the working directory is not
   // clean or if the local state isn't in sync with the remote.
@@ -271,7 +279,7 @@ namespace bdep
 
     // Get the server and repository URLs.
     //
-    const url& srv (o.server ());
+    const url& srv (o.server_specified () ? o.server () : default_server);
     const repository_location rep (repository_url (o, prj));
 
     // Print the plan and ask for confirmation.

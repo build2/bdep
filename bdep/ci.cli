@@ -71,7 +71,7 @@ namespace bdep
       "Don't prompt for confirmation before submitting."
     }
 
-    url --server = "https://ci.cppget.org"
+    url --server
     {
       "<url>",
       "CI server to submit the request to."
