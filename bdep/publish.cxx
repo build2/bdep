@@ -228,11 +228,16 @@ namespace bdep
       {
         fdpipe pipe (fdopen_pipe ()); // Text mode seems appropriate.
 
+        // Pass the --deep option to make sure that the *-file manifest values
+        // are resolvable, so rep-create will not fail due to this package
+        // down the road.
+        //
         pr = start_bpkg (2    /* verbosity */,
                          o,
                          pipe /* stdout */,
                          2    /* stderr */,
                          "pkg-verify",
+                         "--deep",
                          "--manifest",
                          a);
 
