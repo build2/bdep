@@ -6,6 +6,8 @@
 
 #include <cstring>  // strchr()
 
+#include <libbpkg/manifest.hxx>
+
 #include <bdep/database.hxx>
 #include <bdep/diagnostics.hxx>
 #include <bdep/project-odb.hxx>
@@ -24,6 +26,9 @@ namespace bdep
                           const dir_path& cfg,
                           const dir_path& prj)
   {
+    using bpkg::repository_type;
+    using bpkg::repository_location;
+
     dir_paths r;
 
     // Use bpkg-rep-list to discover the list of project directories.
@@ -46,24 +51,41 @@ namespace bdep
 
       for (string l; !eof (getline (is, l)); )
       {
-        // The repository type must be 'dir'.
+        // Skip repository locations other than dir (who knows what else the
+        // user might have added).
         //
         if (l.compare (0, 4, "dir:") != 0)
           continue;
 
-        size_t p (l.find (' '));
+        // Note that the dir repository type can not be guessed and so its URL
+        // is always typed. Thus, it has a URL notation and so can't contain
+        // the space characters (unlike the canonical name). That's why we can
+        // just search for the rightmost space to find the beginning of the
+        // repository URL.
+        //
+        size_t p (l.rfind (' '));
         if (p == string::npos)
           fail << "invalid bpkg-rep-list output: no repository location";
 
-        // Paths that we add are absolute and normilized but who knows what
-        // else the user might have added.
-        //
-        dir_path d (l, p + 1, string::npos);
+        dir_path d;
 
-        if (d.relative ())
-          continue;
+        try
+        {
+          repository_location rl (string (l, p + 1));
 
-        d.normalize (); // For good measure.
+          assert (rl.type () == repository_type::dir);
+
+          // Note that the directory is absolute and normalized (see
+          // <libbpkg/manifest.hxx> for details).
+          //
+          d = path_cast<dir_path> (rl.path ());
+
+          assert (d.absolute ());
+        }
+        catch (const invalid_argument& e)
+        {
+          fail << "invalid bpkg-rep-list output: " << e;
+        }
 
         if (d == prj)
           continue;
