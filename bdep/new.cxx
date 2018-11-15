@@ -200,46 +200,48 @@ namespace bdep
       prj = out;
     }
 
-    // Do some sanity check (nested packages, etc; you would be surprised what
-    // people come up with).
+    // Create the output directory and do some sanity check (empty if exists,
+    // nested packages, etc; you would be surprised what people come up with).
     //
-    if (!o.no_checks ())
     {
-      project_package pp (
-        find_project_package (out, true /* ignore_not_found */));
+      bool e (exists (out));
 
-      if (o.package ())
+      if (e && !empty (out))
+        fail << "directory " << out << " already exists and is not empty";
+
+      if (!o.no_checks ())
       {
-        if (!pp.project.empty ())
-        {
-          if (pp.project != prj)
-            fail << prj << " is not a project directory" <<
-              info << pp.project << " looks like a project directory";
+        project_package pp (
+          find_project_package (out, true /* ignore_not_found */));
 
-          if (pp.package)
-            fail << "package directory " << out << " is inside another "
-                 << "package directory " << prj / *pp.package <<
-              info << "nested packages are not allowed";
+        if (o.package ())
+        {
+          if (!pp.project.empty ())
+          {
+            if (pp.project != prj)
+              fail << prj << " is not a project directory" <<
+                info << pp.project << " looks like a project directory";
+
+            if (pp.package)
+              fail << "package directory " << out << " is inside another "
+                   << "package directory " << prj / *pp.package <<
+                info << "nested packages are not allowed";
+          }
+          else
+            warn << prj << " does not look like a project directory";
         }
         else
-          warn << prj << " does not look like a project directory";
+        {
+          if (!pp.project.empty ())
+            fail << "project directory " << out << " is inside another "
+                 << "project directory " << pp.project <<
+              info << "nested projects are not allowed";
+        }
       }
-      else
-      {
-        if (!pp.project.empty ())
-          fail << "project directory " << out << " is inside another "
-               << "project directory " << pp.project <<
-            info << "nested projects are not allowed";
-      }
-    }
 
-    // If the output directory already exists, make sure it is empty.
-    // Otherwise create it.
-    //
-    if (!exists (out))
-      mk (out);
-    else if (!empty (out))
-      fail << "directory " << out << " already exists";
+      if (!e)
+        mk (out);
+    }
 
     // Initialize the version control system. Do it before writing anything
     // ourselves in case it fails. Also, the email discovery may do the VCS
