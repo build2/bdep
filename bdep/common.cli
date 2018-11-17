@@ -79,6 +79,17 @@ namespace bdep
        \li|Even more detailed information.||"
     }
 
+    size_t --jobs|-j
+    {
+      "<num>",
+      "Number of jobs to perform in parallel. If this option is not
+       specified or specified with the \c{0} value, then the number of
+       available hardware threads is used. This option is also propagated
+       when executing package manager commands such as \l{bpkg-pkg-update(1)},
+       \l{bpkg-pkg-test(1)}, etc., which in turn propagate it to the build
+       system."
+    }
+
     path --bpkg
     {
       "<path>",

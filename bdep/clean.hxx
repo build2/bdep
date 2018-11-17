@@ -19,7 +19,15 @@ namespace bdep
              const cstrings& pkgs,
              const strings& cfg_vars)
   {
-    run_bpkg (2, o, "clean", "-d", c->path, cfg_vars, pkgs);
+    run_bpkg (2,
+              o,
+              (o.jobs_specified ()
+               ? strings ({"-j", to_string (o.jobs ())})
+               : strings ()),
+              "clean",
+              "-d", c->path,
+              cfg_vars,
+              pkgs);
   }
 
   inline int
