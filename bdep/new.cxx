@@ -569,24 +569,26 @@ namespace bdep
               "$libs"                                                  <<
               (itest ? " testscript" : "")                             << endl;
           else
-            os << "./: exe{" << s << "}"                               << endl
-               << "exe{" << s << "}: libue{" << s << "}"               <<
+            os << "./: exe{" << s << "}: libue{" << s << "}"           <<
               (itest ? " testscript" : "")                             << endl
                << "libue{" << s << "}: "                               <<
               "{" << hs << ' ' << x << "}{** -**.test...} $libs"       << endl
                <<                                                         endl
                << "# Unit tests."                                      << endl
                << "#"                                                  << endl
-               << "exe{*.test}: test = true"                           << endl
-               << "exe{*.test}: install = false"                       << endl
+
+               << "exe{*.test}:"                                       << endl
+               << "{"                                                  << endl
+               << "  test = true"                                      << endl
+               << "  install = false"                                  << endl
+               << "}"                                                  << endl
                <<                                                         endl
                << "for t: " << x << "{**.test...}"                     << endl
                << "{"                                                  << endl
                << "  d = $directory($t)"                               << endl
                << "  n = $name($t)..."                                 << endl
                <<                                                         endl
-               << "  ./: $d/exe{$n}"                                   << endl
-               << "  $d/exe{$n}: $t $d/{" << hs                        <<
+               << "  ./: $d/exe{$n}: $t $d/{" << hs                    <<
               "}{+$n} $d/testscript{+$n}"                              << endl
                << "  $d/exe{$n}: libue{" << s << "}: bin.whole = false"<< endl
                << "}"                                                  << endl;
@@ -924,37 +926,35 @@ namespace bdep
           }
           else
           {
-            os << "./: lib{" << s << "}"                               << endl;
-
             if (binless)
             {
-              os << "lib{" << s << "}: "                               <<
+              os << "./: lib{" << s << "}: "                           <<
                 "{" << hs << "}{** -version -**.test...} "             <<
                 h << "{version} \\"                                    << endl
                  << "  $imp_libs $int_libs"                            << endl;
             }
             else
             {
-              os << "lib{" << s << "}: libul{" << s << "}"             << endl
-                 << "libul{" << s << "}: "                             <<
-                "{" << hs << ' ' << x << "}{** -version -**.test...} " <<
-                h << "{version} \\"                                    << endl
-                 << "  $imp_libs $int_libs"                            << endl;
+              os << "./: lib{" << s << "}: libul{" << s << "}: "       <<
+                "{" << hs << ' ' << x << "}{** -version -**.test...} \\" << endl
+                 << "  " << h << "{version} $imp_libs $int_libs"       << endl;
             }
 
             os <<                                                         endl
                << "# Unit tests."                                      << endl
                << "#"                                                  << endl
-               << "exe{*.test}: test = true"                           << endl
-               << "exe{*.test}: install = false"                       << endl
+               << "exe{*.test}:"                                       << endl
+               << "{"                                                  << endl
+               << "  test = true"                                      << endl
+               << "  install = false"                                  << endl
+               << "}"                                                  << endl
                <<                                                         endl
                << "for t: " << x << "{**.test...}"                     << endl
                << "{"                                                  << endl
                << "  d = $directory($t)"                               << endl
                << "  n = $name($t)..."                                 << endl
                <<                                                         endl
-               << "  ./: $d/exe{$n}"                                   << endl
-               << "  $d/exe{$n}: $t $d/{" << hs << "}{+$n} $d/testscript{+$n}";
+               << "  ./: $d/exe{$n}: $t $d/{" << hs << "}{+$n} $d/testscript{+$n}";
 
             if (binless)
               os << ' ' << "lib{" << s << "}"                          << endl;
@@ -965,55 +965,70 @@ namespace bdep
             os << "}"                                                  << endl;
           }
 
-          os <<                                                            endl
+          os <<                                                           endl
              << "# Include the generated version header into the distribution (so that we don't" << endl
              << "# pick up an installed one) and don't remove it when cleaning in src (so that"  << endl
              << "# clean results in a state identical to distributed)."                          << endl
              << "#"                                                                              << endl
-             << h << "{version}: in{version} $src_root/manifest"        << endl
-             << h << "{version}: dist  = true"                          << endl
-             << h << "{version}: clean = ($src_root != $out_root)"      << endl;
+             << h << "{version}: in{version} $src_root/manifest"       << endl
+             << h << "{version}:"                                      << endl
+             << "{"                                                    << endl
+             << "  dist  = true"                                       << endl
+             << "  clean = ($src_root != $out_root)"                   << endl
+             << "}"                                                    << endl;
 
           // Build.
           //
-          os <<                                                            endl
-             << m << ".poptions =+ \"-I$out_root\" \"-I$src_root\""     << endl;
+          os <<                                                           endl
+             << "# Build options."                                     << endl
+             << "#"                                                    << endl
+             << m << ".poptions =+ \"-I$out_root\" \"-I$src_root\""    << endl;
 
           if (!binless)
-            os <<                                                          endl
+            os <<                                                         endl
                << "obja{*}: " << m << ".poptions += -D" << mp << "_STATIC_BUILD" << endl
                << "objs{*}: " << m << ".poptions += -D" << mp << "_SHARED_BUILD" << endl;
 
           // Export.
           //
-          os <<                                                            endl
-             << "lib{" <<  s << "}: " << m << ".export.poptions = \"-I$out_root\" \"-I$src_root\"" << endl;
+          os <<                                                           endl
+             << "# Export options."                                    << endl
+             << "#"                                                    << endl
+             << "lib{" <<  s << "}:"                                   << endl
+             << "{"                                                    << endl
+             << "  " << m << ".export.poptions = \"-I$out_root\" \"-I$src_root\"" << endl
+             << "  " << m << ".export.libs = $int_libs"                << endl
+             << "}"                                                    << endl;
 
           if (!binless)
-            os <<                                                          endl
+            os <<                                                         endl
                << "liba{" << s << "}: " << m << ".export.poptions += -D" << mp << "_STATIC" << endl
                << "libs{" << s << "}: " << m << ".export.poptions += -D" << mp << "_SHARED" << endl;
 
-          os <<                                                            endl
-             << "lib{" << s << "}: " << m << ".export.libs = $int_libs" << endl;
-
+          // Library versioning.
+          //
           if (!binless)
-            os <<                                                          endl
+            os <<                                                         endl
                << "# For pre-releases use the complete version to make sure they cannot be used" << endl
                << "# in place of another pre-release or the final version. See the version module" << endl
-               << "# for details on the version.* variable values."     << endl
+               << "# for details on the version.* variable values."    << endl
                << "#"                                                                            << endl
                << "if $version.pre_release"                                                   << endl
                << "  lib{" << s << "}: bin.lib.version = @\"-$version.project_id\""           << endl
                << "else"                                                                      << endl
                << "  lib{" << s << "}: bin.lib.version = @\"-$version.major.$version.minor\"" << endl;
 
-          os <<                                                            endl
+          // Installation.
+          //
+          os <<                                                           endl
              << "# Install into the " << b << "/ subdirectory of, say, /usr/include/" << endl
              << "# recreating subdirectories."                                        << endl
              << "#"                                                                   << endl
-             << "{" << hs << "}{*}: install         = include/" << b << "/" << endl
-             << "{" << hs << "}{*}: install.subdirs = true"            << endl;
+             << "{" << hs << "}{*}:"                                   << endl
+             << "{"                                                    << endl
+             << "  install         = include/" << b << "/"             << endl
+             << "  install.subdirs = true"                             << endl
+             << "}"                                                    << endl;
           os.close ();
 
           // <base>/.gitignore
