@@ -569,11 +569,14 @@ namespace bdep
               "$libs"                                                  <<
               (itest ? " testscript" : "")                             << endl;
           else
-            os << "./: exe{" << s << "}: libue{" << s << "}"           <<
-              (itest ? " testscript" : "")                             << endl
-               << "libue{" << s << "}: "                               <<
-              "{" << hs << ' ' << x << "}{** -**.test...} $libs"       << endl
-               <<                                                         endl
+          {
+            os << "./: exe{" << s << "}: libue{" << s << "}: "         <<
+              "{" << hs << ' ' << x << "}{** -**.test...} $libs"       << endl;
+
+            if (itest)
+              os << "exe{" << s << "}: testscript"                     << endl;
+
+            os <<                                                         endl
                << "# Unit tests."                                      << endl
                << "#"                                                  << endl
 
@@ -592,6 +595,7 @@ namespace bdep
               "}{+$n} $d/testscript{+$n}"                              << endl
                << "  $d/exe{$n}: libue{" << s << "}: bin.whole = false"<< endl
                << "}"                                                  << endl;
+          }
 
           os <<                                                           endl
              << m << ".poptions =+ \"-I$out_root\" \"-I$src_root\""    << endl;
