@@ -65,7 +65,7 @@ namespace bdep
   cmd_config_validate_add (const configuration_name_options& o,
                            const char* what,
                            optional<string>& name,
-                           optional<uint64_t> id)
+                           optional<uint64_t>& id)
   {
     name = nullopt;
     id = nullopt;
