@@ -71,6 +71,28 @@ namespace bdep
                   const char* opt = nullptr,
                   const char* what = "remote repository URL",
                   const char* cfg = nullptr);
+
+  // Repository status.
+  //
+  struct git_repository_status
+  {
+    string commit;   // Current commit or empty if initial.
+    string branch;   // Local branch or empty if detached.
+    string upstream; // Upstream in <remote>/<branch> form or empty if not set.
+
+    // Note that unmerged and untracked entries are considered as unstaged.
+    //
+    bool staged   = false; // Repository has staged changes.
+    bool unstaged = false; // Repository has unstaged changes.
+
+    // Note that we can be both ahead and behind.
+    //
+    bool ahead  = false; // Local branch is ahead of upstream.
+    bool behind = false; // Local branch is behind of upstream.
+  };
+
+  git_repository_status
+  git_status (const dir_path& repo);
 }
 
 #include <bdep/git.ixx>

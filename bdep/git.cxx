@@ -248,4 +248,123 @@ namespace bdep
     fail << "unable to discover " << what << ": no git remote.origin.url "
          << "value" << endf;
   }
+
+  git_repository_status
+  git_status (const dir_path& repo)
+  {
+    git_repository_status r;
+
+    // git-status --porcelain=2 (available since git 2.11.0) gives us all the
+    // information with a single invocation.
+    //
+    process pr;
+    bool io (false);
+    try
+    {
+      fdpipe pipe (fdopen_pipe ()); // Text mode seems appropriate.
+
+      pr = start_git (semantic_version {2, 11, 0},
+                      repo,
+                      0    /* stdin  */,
+                      pipe /* stdout */,
+                      2    /* stderr */,
+                      "status",
+                      "--porcelain=2",
+                      "--branch");
+
+      pipe.out.close ();
+      ifdstream is (move (pipe.in), fdstream_mode::skip, ifdstream::badbit);
+
+      // Lines starting with '#' are headers (come first) with any other line
+      // indicating some kind of change.
+      //
+      // The headers we are interested in are:
+      //
+      // # branch.oid <commit>  | (initial)       Current commit.
+      // # branch.head <branch> | (detached)      Current branch.
+      // # branch.upstream <upstream_branch>      If upstream is set.
+      // # branch.ab +<ahead> -<behind>           If upstream is set and
+      //                                          the commit is present.
+      //
+      // Note that if we are in the detached HEAD state, then we will only
+      // see the first two with branch.head being '(detached)'.
+      //
+      for (string l; !eof (getline (is, l)); )
+      {
+        char c (l[0]);
+
+        if (c == '#')
+        {
+          if (l.compare (2, 10, "branch.oid") == 0)
+          {
+            r.commit = string (l, 13);
+
+            if (r.commit == "(initial)")
+              r.commit.clear ();
+          }
+          else if (l.compare (2, 11, "branch.head") == 0)
+          {
+            r.branch = string (l, 14);
+
+            if (r.branch == "(detached)")
+              r.branch.clear ();
+          }
+          else if (l.compare (2, 15, "branch.upstream") == 0)
+          {
+            r.upstream = string (l, 18);
+          }
+          else if (l.compare (2, 9, "branch.ab") == 0)
+          {
+            // Both +<ahead> and -<behind> are always present, even if 0.
+            //
+            size_t a (l.find ('+', 12)); assert (a != string::npos);
+            size_t b (l.find ('-', 12)); assert (b != string::npos);
+
+            if (l[a + 1] != '0') r.ahead  = true;
+            if (l[b + 1] != '0') r.behind = true;
+          }
+
+          continue; // Some other header.
+        }
+
+        // Change line. For tracked entries it has the following format:
+        //
+        // 1 <XY> ...
+        // 2 <XY> ...
+        //
+        // Where <XY> is a two-character field with X describing the staged
+        // status and Y -- unstaged and with '.' indicating no change.
+        //
+        // All other lines (untracked/unmerged entries) we treat as an
+        // indication of an unstaged change (see git-status(1) for details).
+        //
+        if (c == '1' || c == '2')
+        {
+          if (l[2] != '.') r.staged   = true;
+          if (l[3] != '.') r.unstaged = true;
+        }
+        else
+          r.unstaged = true;
+
+        // Skip the rest if we already know the outcome (remember, headers
+        // always come first).
+        //
+        if (r.staged && r.unstaged)
+          break;
+      }
+
+      is.close (); // Detect errors.
+    }
+    catch (const io_error&)
+    {
+      // Presumably the child process failed and issued diagnostics so let
+      // finish_git() try to deal with that.
+      //
+      io = true;
+    }
+
+    finish_git (pr, io);
+
+    return r;
+  }
 }

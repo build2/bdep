@@ -44,112 +44,43 @@ namespace bdep
     //
     // 4. Get the current commit id.
     //
-    // And aren't we in luck today: git-status --porcelain=2 (available since
-    // git 2.11.0) gives us all this information with a single invocation.
-    //
     string branch;
     string commit;
     {
-      string head;
-      string upstream;
+      git_repository_status s (git_status (prj));
 
-      process pr;
-      bool io (false);
-      try
-      {
-        fdpipe pipe (fdopen_pipe ()); // Text mode seems appropriate.
-
-        pr = start_git (semantic_version {2, 11, 0},
-                        prj,
-                        0    /* stdin  */,
-                        pipe /* stdout */,
-                        2    /* stderr */,
-                        "status",
-                        "--porcelain=2",
-                        "--branch");
-
-        pipe.out.close ();
-        ifdstream is (move (pipe.in), fdstream_mode::skip, ifdstream::badbit);
-
-        // Lines starting with '#' are headers with any other line indicating
-        // some kind of change.
-        //
-        // The headers we are interested in are:
-        //
-        // # branch.oid <commit>  | (initial)       Current commit.
-        // # branch.head <branch> | (detached)      Current branch.
-        // # branch.upstream <upstream_branch>      If upstream is set.
-        // # branch.ab +<ahead> -<behind>           If upstream is set and
-        //                                          the commit is present.
-        //
-        // Note that if we are in the detached HEAD state, then we will only
-        // see the first two with branch.head being '(detached)'.
-        //
-        for (string l; !eof (getline (is, l)); )
-        {
-          if (l[0] != '#')
-            fail << "project directory has uncommitted changes" <<
-              info << "run 'git status' for details";
-
-          if (l.compare (2, 10, "branch.oid") == 0)
-          {
-            commit = string (l, 13);
-
-            if (commit == "(initial)")
-              fail << "no commits in project repository" <<
-                info << "run 'git status' for details";
-          }
-          else if (l.compare (2, 11, "branch.head") == 0)
-          {
-            head = string (l, 14);
-
-            if (head == "(detached)")
-              fail << "project directory is in the detached HEAD state" <<
-                info << "run 'git status' for details";
-          }
-          else if (l.compare (2, 15, "branch.upstream") == 0)
-          {
-            // This is normally in the <remote>/<branch> form, for example
-            // 'origin/master'.
-            //
-            upstream = string (l, 18);
-            size_t p (path::traits::rfind_separator (upstream));
-            branch = p != string::npos ? string (upstream, p + 1) : upstream;
-          }
-          else if (l.compare (2, 9, "branch.ab") == 0)
-          {
-            // We definitely don't want to be ahead (upstream doesn't have
-            // this commit) but there doesn't seem be anything wrong with
-            // being behind.
-            //
-            if (l.compare (12, 3, "+0 ") != 0)
-              fail << "local branch '" << head << "' is ahead of '"
-                   << upstream << "'" <<
-                info << "run 'git push' to update";
-          }
-        }
-
-        is.close (); // Detect errors.
-      }
-      catch (const io_error&)
-      {
-        // Presumably the child process failed and issued diagnostics so let
-        // finish_git() try to deal with that.
-        //
-        io = true;
-      }
-
-      finish_git (pr, io);
-
-      // Make sure we've got everything we need.
-      //
-      if (commit.empty ())
-        fail << "unable to obtain current commit" <<
+      if (s.commit.empty ())
+        fail << "no commits in project repository" <<
           info << "run 'git status' for details";
 
-      if (branch.empty ())
-        fail << "no upstream branch set for local branch '" << head << "'" <<
+      commit = move (s.commit);
+
+      if (s.branch.empty ())
+        fail << "project directory is in the detached HEAD state" <<
+          info << "run 'git status' for details";
+
+      // Upstream is normally in the <remote>/<branch> form, for example
+      // 'origin/master'.
+      //
+      if (s.upstream.empty ())
+        fail << "no upstream branch set for local branch '"
+             << s.branch << "'" <<
           info << "run 'git push --set-upstream' to set";
+
+      size_t p (path::traits::rfind_separator (s.upstream));
+      branch = p != string::npos ? string (s.upstream, p + 1) : s.upstream;
+
+      if (s.staged || s.unstaged)
+        fail << "project directory has uncommitted changes" <<
+          info << "run 'git status' for details";
+
+      // We definitely don't want to be ahead (upstream doesn't have this
+      // commit) but there doesn't seem be anything wrong with being behind.
+      //
+      if (s.ahead)
+        fail << "local branch '" << s.branch << "' is ahead of '"
+             << s.upstream << "'" <<
+          info << "run 'git push' to update";
     }
 
     // We treat the URL specified with --repository as a "base", that is, we
