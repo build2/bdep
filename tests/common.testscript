@@ -53,6 +53,7 @@ sync    = $* sync
 update  = $* update
 config  = $* config
 publish = $* publish
+release = $* release
 
 # All testscripts are named after bdep commands, for example sync.testscript.
 # So the testscript scope id is a name of the command being tested.

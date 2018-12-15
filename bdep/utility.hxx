@@ -19,6 +19,9 @@
 #include <libbutl/fdstream.mxx>
 #include <libbutl/filesystem.mxx>
 
+#include <libbutl/manifest-parser.mxx>     // manifest_parser::filter_function
+#include <libbutl/manifest-serializer.mxx> // manifest_serializer::filter_function
+
 #include <bdep/types.hxx>
 #include <bdep/version.hxx>
 #include <bdep/common-options.hxx>
@@ -208,25 +211,33 @@ namespace bdep
   T
   parse_manifest (const path&,
                   const char* what,
-                  bool ignore_unknown = false);
+                  bool ignore_unknown = false,
+                  function<butl::manifest_parser::filter_function> = {});
 
   template <typename T>
   T
   parse_manifest (istream&,
                   const string& name,
                   const char* what,
-                  bool ignore_unknown = false);
+                  bool ignore_unknown = false,
+                  function<butl::manifest_parser::filter_function> = {});
 
   template <typename T>
   void
-  serialize_manifest (const T&, const path&, const char* what);
+  serialize_manifest (
+    const T&,
+    const path&,
+    const char* what,
+    function<butl::manifest_serializer::filter_function> = {});
 
   template <typename T>
   void
-  serialize_manifest (const T&,
-                      ostream&,
-                      const string& name,
-                      const char* what);
+  serialize_manifest (
+    const T&,
+    ostream&,
+    const string& name,
+    const char* what,
+    function<butl::manifest_serializer::filter_function> = {});
 
   // CLI (sub)command parsing helper.
   //

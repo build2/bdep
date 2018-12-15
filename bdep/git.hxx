@@ -91,6 +91,8 @@ namespace bdep
     bool behind = false; // Local branch is behind of upstream.
   };
 
+  // Note: requires git 2.11.0 or higher.
+  //
   git_repository_status
   git_status (const dir_path& repo);
 }

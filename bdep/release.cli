@@ -1,0 +1,166 @@
+// file      : bdep/release.cli
+// copyright : Copyright (c) 2014-2018 Code Synthesis Ltd
+// license   : MIT; see accompanying LICENSE file
+
+include <bdep/common.cli>;
+
+"\section=1"
+"\name=bdep-release"
+"\summary=manage project's version during release"
+
+namespace bdep
+{
+  {
+    "<options>
+     <prj-spec> <prj-dir>
+     <pkg-spec> <pkg-dir>",
+
+    "\h|SYNOPSIS|
+
+     \c{\b{bdep release} [<options>] [<prj-spec>]}
+
+     \c{<prj-spec> = \b{--directory}|\b{-d} <prj-dir> | <pkg-spec>\n
+        <pkg-spec> = (\b{--directory}|\b{-d} <pkg-dir>)...}
+
+     \h|DESCRIPTION|
+
+     The \cb{release} command manages the project's version during the
+     release. Specifically, it first changes the snapshot version to the
+     corresponding release version in each project package's \cb{manifest}
+     file, commits these changes (unless \cb{--no-commit} is specified), tags
+     this commit (unless \cb{--no-tag} is specified), and, if \cb{--push} is
+     specified, pushes the changes to the remote. Unless \cb{--no-open} is
+     specified, the \cb{release} command then opens the next development cycle
+     by changing the version to a snapshot, committing these changes (unless
+     \cb{--no-commit} is specified), and, if \cb{--push} is specified, pushing
+     them to the remote. Note that committing, tagging, and pushing is
+     currently only supported for \cb{git(1)} project repositories.
+
+     The \cb{release} command can also be used to release a new package
+     revision by passing the \cb{--revision} option. In this mode \cb{release}
+     increments the current version's revision component in each project
+     package's \cb{manifest} file, commits these changes (unless
+     \cb{--no-commit} is specified), tags this commit (unless \cb{--no-tag} is
+     specified), and, if \cb{--push} is specified, pushes the changes to the
+     remote. Note that in this case the project's repository index is expected
+     to already contain other changes since for a revision all the associated
+     changes, including to version, must belong to a single commit. In this
+     mode \cb{release} will also silently replace an existing tag for the same
+     version.
+
+     The \cb{release} command also has a number of \i{continue modes} that
+     allow the completion of steps that were previously suppressed with the
+     \cb{--no-*} options in the above main modes. These are \cb{--tag} which
+     tags the release commit and, if \cb{--push} is specified, pushes it to
+     the remote as well as \cb{--open} which performs the opening of the next
+     development cycle as described above.
+
+     Normally, \cb{release} operates on all the packages in a project. If no
+     project directory is specified, then the current working directory is
+     assumed and all the packages are released, even if the current directory
+     is a package directory. If, however, one or more package directories are
+     specified explicitly with \c{\b{--directory}|\b{-d}}, then \cb{release}
+     assumes you know what you are doing and only releases these packages.
+     All the packages being released must have the same version but may have
+     different revisions.
+     "
+  }
+
+  class cmd_release_options: common_options
+  {
+    "\h|RELEASE OPTIONS|"
+
+    bool --revision
+    {
+      "Release a new package revision instead of a new version."
+    }
+
+    bool --no-commit
+    {
+      "Don't commit the changes. Implies \cb{--no-tag} and, in the version
+       release mode, \cb{--no-open}."
+    }
+
+    bool --no-tag
+    {
+      "Don't tag the release commit. Tagging can be performed later using the
+       \cb{--tag} mode option."
+    }
+
+    bool --tag
+    {
+      "Tag the already released version instead of releasing a new one."
+    }
+
+    bool --push
+    {
+      "Push the committed changes and tags to the remote."
+    }
+
+    bool --no-open
+    {
+      "Don't open the next development cycle. Opening can be performed later
+       using the \cb{--open} mode option."
+    }
+
+    bool --open
+    {
+      "Open the next development cycle instead of releasing a new version."
+    }
+
+    bool --alpha
+    {
+      "Release an alpha instead of the final version."
+    }
+
+    bool --beta
+    {
+      "Release a beta version instead of the final version."
+    }
+
+    bool --minor
+    {
+      "Release the next minor version instead of the current patch."
+    }
+
+    bool --major
+    {
+      "Release the next major version instead of the current minor or patch."
+    }
+
+    bool --open-beta
+    {
+      "Open the development cycle with the next beta version."
+    }
+
+    bool --open-patch
+    {
+      "Open the development cycle with the next patch version. This is the
+       default if the current patch version is not \c{0} (bugfix release
+       series)."
+    }
+
+    bool --open-minor
+    {
+      "Open the development cycle with the next minor version. This is the
+       default if the current patch version is \c{0} (feature release series)."
+    }
+
+    bool --open-major
+    {
+      "Open the development cycle with the next major version."
+    }
+
+    bool --yes|-y
+    {
+      "Don't prompt for confirmation before releasing."
+    }
+
+    dir_paths --directory|-d
+    {
+      "<dir>",
+      "Assume project/package is in the specified directory rather than in the
+       current working directory."
+    }
+  };
+}

@@ -205,10 +205,25 @@ namespace bdep
     package_locations packages;
   };
 
+  // Search project packages in the specified directories or the current
+  // directory if none were specified.
+  //
   project_packages
-  find_project_packages (const project_options&,
+  find_project_packages (const dir_paths&,
                          bool ignore_packages,
                          bool load_packages = true);
+
+  inline project_packages
+  find_project_packages (const project_options& po, bool ip, bool lp = true)
+  {
+    return find_project_packages (po.directory (), ip, lp);
+  }
+
+  inline dir_path
+  find_project (const dir_paths& dirs)
+  {
+    return find_project_packages (dirs, true /* ignore_packages */).project;
+  }
 
   inline dir_path
   find_project (const project_options& o)

@@ -4,9 +4,6 @@
 
 #include <iostream> // cin
 
-#include <libbutl/manifest-parser.mxx>
-#include <libbutl/manifest-serializer.mxx>
-
 #include <bdep/diagnostics.hxx>
 
 namespace bdep
@@ -236,7 +233,10 @@ namespace bdep
   //
   template <typename T>
   T
-  parse_manifest (const path& f, const char* what, bool iu)
+  parse_manifest (const path& f,
+                  const char* what,
+                  bool iu,
+                  function<butl::manifest_parser::filter_function> ff)
   {
     using namespace butl;
 
@@ -249,7 +249,7 @@ namespace bdep
         fail << what << " manifest file " << f << " does not exist";
 
       ifdstream ifs (f);
-      return parse_manifest<T> (ifs, f.string (), what, iu);
+      return parse_manifest<T> (ifs, f.string (), what, iu, move (ff));
     }
     catch (const system_error& e) // EACCES, etc.
     {
@@ -260,13 +260,17 @@ namespace bdep
 
   template <typename T>
   T
-  parse_manifest (istream& is, const string& name, const char* what, bool iu)
+  parse_manifest (istream& is,
+                  const string& name,
+                  const char* what,
+                  bool iu,
+                  function<butl::manifest_parser::filter_function> ff)
   {
     using namespace butl;
 
     try
     {
-      manifest_parser p (is, name);
+      manifest_parser p (is, name, move (ff));
       return T (p, iu);
     }
     catch (const manifest_parsing& e)
@@ -283,7 +287,10 @@ namespace bdep
 
   template <typename T>
   void
-  serialize_manifest (const T& m, const path& f, const char* what)
+  serialize_manifest (const T& m,
+                      const path& f,
+                      const char* what,
+                      function<butl::manifest_serializer::filter_function> ff)
   {
     using namespace std;
     using namespace butl;
@@ -293,7 +300,7 @@ namespace bdep
       ofdstream ofs (f, ios::binary);
       auto_rmfile arm (f); // Try to remove on failure ignoring errors.
 
-      serialize_manifest (m, ofs, f.string (), what);
+      serialize_manifest (m, ofs, f.string (), what, move (ff));
 
       ofs.close ();
       arm.cancel ();
@@ -309,13 +316,14 @@ namespace bdep
   serialize_manifest (const T& m,
                       ostream& os,
                       const string& name,
-                      const char* what)
+                      const char* what,
+                      function<butl::manifest_serializer::filter_function> ff)
   {
     using namespace butl;
 
     try
     {
-      manifest_serializer s (os, name);
+      manifest_serializer s (os, name, move (ff));
       m.serialize (s);
       return;
     }

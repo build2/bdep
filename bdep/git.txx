@@ -8,9 +8,16 @@ namespace bdep
   void
   run_git (const semantic_version& min_ver, const dir_path& repo, A&&... args)
   {
+    // We don't expect git to print anything to stdout, as the caller would use
+    // start_git() and pipe otherwise. Thus, let's redirect stdout to stderr
+    // for good measure, as git is known to print some informational messages
+    // to stdout.
+    //
     process pr (start_git (min_ver,
                            repo,
-                           0 /* stdin  */, 1 /* stdout */, 2 /* stderr */,
+                           0 /* stdin  */,
+                           2 /* stdout */,
+                           2 /* stderr */,
                            forward<A> (args)...));
 
     finish_git (pr);

@@ -263,15 +263,15 @@ namespace bdep
   }
 
   project_packages
-  find_project_packages (const project_options& po,
+  find_project_packages (const dir_paths& dirs,
                          bool ignore_packages,
                          bool load_packages)
   {
     project_packages r;
 
-    if (po.directory_specified ())
+    if (!dirs.empty ())
     {
-      for (const dir_path& d: po.directory ())
+      for (const dir_path& d: dirs)
       {
         project_package p (find_project_package (d));
 

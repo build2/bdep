@@ -115,16 +115,19 @@ namespace bdep
 
   // Project to be synchronized.
   //
-  struct project
+  namespace
   {
-    dir_path path;
-    shared_ptr<configuration> config;
+    struct project
+    {
+      dir_path path;
+      shared_ptr<configuration> config;
 
-    bool implicit;
-    bool fetch;
-  };
+      bool implicit;
+      bool fetch;
+    };
 
-  using projects = small_vector<project, 1>;
+    using projects = small_vector<project, 1>;
+  }
 
   // Append the list of additional (to origin, if not empty) projects that are
   // using this configuration.

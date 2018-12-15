@@ -1,0 +1,634 @@
+# file      : tests/release.testscript
+# copyright : Copyright (c) 2014-2018 Code Synthesis Ltd
+# license   : MIT; see accompanying LICENSE file
+
+.include common.testscript project.testscript
+
+# bdep-release requirements for the minimum supported git version are higher
+# then the default 2.1.0 (see bdep/release.cxx for details).
+#
++if! ($git_version_major >  2 || \
+      $git_version_major == 2 && $git_version_minor >= 11)
+  exit
+end
+
+g = git 2>! >&2
+
+# Create the remote repository.
+#
++mkdir --no-cleanup prj.git
++$g -C prj.git init --bare &prj.git/***
+
+clone_rep      = cp --no-cleanup -p -r ../prj.git ./ &prj.git/***
+clone_root_rep = cp --no-cleanup -p -r $~/prj.git ./ &prj.git/***
+
+# Prepare the local repository.
+#
+# Set the origin repository location as a relative path, so we can copy the
+# local/remote repository pair into the testscript scopes.
+#
+gp = $g -C prj
+
++$gp config user.name 'Test Script'
++$gp config user.email 'testscript@example.com'
++$gp remote add origin ../prj.git
++$gp add '*'
++$gp commit -m 'Create'
++$gp push --set-upstream origin master
+
+clone_prj      = cp --no-cleanup -p -r ../prj ./ &prj/***
+clone_root_prj = cp --no-cleanup -p -r $~/prj ./ &prj/***
+
+clone_repos      = $clone_prj && $clone_rep
+clone_root_repos = $clone_root_prj && $clone_root_rep
+
+release += 2>!
+
+# As a common approach we will be using a second local repository to validate
+# the result of the release operation(s), that is normally pushed to the
+# remote repository.
+#
+gp2    = $g -C prj2
+clone2 = $g clone prj.git prj2 &prj2/***
+pull2  = $gp2 pull
+log2   = $gp2 log '--pretty=format:"%d %s"'
+
+: single-pkg
+:
+{
+  test.arguments += --yes -q
+
+  : release
+  :
+  {
+    test.arguments += --push
+
+    : patch
+    :
+    {
+      $clone_root_repos;
+
+      $*;
+
+      $clone2;
+      $log2 >>:~%EOO%;
+        % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
+         (tag: v0.1.0) Release version 0.1.0
+         Create
+        EOO
+
+	cat prj2/manifest >>~%EOO%
+          %.*
+          name: prj
+          version: 0.2.0-a.0.z
+          summary: prj executable
+          %.*
+          EOO
+    }
+
+    : alpha
+    :
+    {
+      $clone_root_repos;
+
+      $* --alpha;
+
+      $clone2;
+      $log2 >>:~%EOO%
+        % \(HEAD -> master, \.*\) Change version to 0.1.0-a.1.z%d
+         (tag: v0.1.0-a.1) Release version 0.1.0-a.1
+         Create
+        EOO
+    }
+
+    : beta
+    :
+    {
+      $clone_root_repos;
+
+      $* --beta;
+
+      $clone2;
+      $log2 >>:~%EOO%
+        % \(HEAD -> master, \.*\) Change version to 0.1.0-b.1.z%d
+         (tag: v0.1.0-b.1) Release version 0.1.0-b.1
+         Create
+        EOO
+    }
+
+    : minor
+    :
+    {
+      $clone_root_repos;
+
+      $* --minor;
+
+      $clone2;
+      $log2 >>:~%EOO%
+        % \(HEAD -> master, \.*\) Change version to 0.3.0-a.0.z%d
+         (tag: v0.2.0) Release version 0.2.0
+         Create
+        EOO
+    }
+
+    : major
+    :
+    {
+      $clone_root_repos;
+
+      $* --major;
+
+      $clone2;
+      $log2 >>:~%EOO%
+        % \(HEAD -> master, \.*\) Change version to 1.1.0-a.0.z%d
+         (tag: v1.0.0) Release version 1.0.0
+         Create
+        EOO
+    }
+
+    : open
+    :
+    {
+      : beta
+      :
+      {
+        $clone_root_repos;
+
+        $* --open-beta 2>'error: --open-beta specified for final current version 0.1.0' != 0;
+
+	$* --alpha --open-beta;
+
+        $clone2;
+        $log2 >>:~%EOO%;
+          % \(HEAD -> master, \.*\) Change version to 0.1.0-b.0.z%d
+           (tag: v0.1.0-a.1) Release version 0.1.0-a.1
+           Create
+          EOO
+
+	$* --beta --open-beta;
+
+        $pull2;
+        $log2 >>:~%EOO%
+          % \(HEAD -> master, \.*\) Change version to 0.1.0-b.1.z%d
+           (tag: v0.1.0-b.1) Release version 0.1.0-b.1
+           Change version to 0.1.0-b.0.z
+           (tag: v0.1.0-a.1) Release version 0.1.0-a.1
+           Create
+          EOO
+      }
+
+      : patch
+      :
+      {
+        $clone_root_repos;
+
+        $* --open-patch;
+
+        $clone2;
+        $log2 >>:~%EOO%;
+          % \(HEAD -> master, \.*\) Change version to 0.1.1-a.0.z%d
+           (tag: v0.1.0) Release version 0.1.0
+           Create
+          EOO
+
+        $*; # --open-patch is implied for bugfix release series.
+
+        $pull2;
+        $log2 >>:~%EOO%
+          % \(HEAD -> master, \.*\) Change version to 0.1.2-a.0.z%d
+           (tag: v0.1.1) Release version 0.1.1
+          % Change version to 0.1.1-a.0.z%
+           (tag: v0.1.0) Release version 0.1.0
+           Create
+          EOO
+      }
+
+      : minor
+      :
+      {
+        $clone_root_repos;
+
+        $* --alpha --open-minor 2>'error: --open-minor specified for alpha current version 0.1.0-a.1' != 0;
+	$* --beta  --open-minor 2>'error: --open-minor specified for beta current version 0.1.0-b.1' != 0;
+
+	$* --open-patch;
+	$*;
+	$* --open-minor;
+
+        $clone2;
+        $log2 >>:~%EOO%
+          % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
+           (tag: v0.1.2) Release version 0.1.2
+           Change version to 0.1.2-a.0.z
+           (tag: v0.1.1) Release version 0.1.1
+           Change version to 0.1.1-a.0.z
+           (tag: v0.1.0) Release version 0.1.0
+           Create
+          EOO
+      }
+
+      : major
+      :
+      {
+        $clone_root_repos;
+
+	$* --open-major;
+
+        $clone2;
+        $log2 >>:~%EOO%
+          % \(HEAD -> master, \.*\) Change version to 1.0.0-a.0.z%d
+           (tag: v0.1.0) Release version 0.1.0
+           Create
+          EOO
+      }
+    }
+
+    : no-open
+    :
+    {
+      $clone_root_repos;
+
+      $* --no-open;
+
+      $clone2;
+      $log2 >>:~%EOO%;
+        % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0%d
+         Create
+        EOO
+
+      $* --open;
+
+      $pull2;
+      $log2 >>:~%EOO%
+        % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
+         (tag: v0.1.0) Release version 0.1.0
+         Create
+        EOO
+    }
+
+    : no-tag
+    :
+    {
+      $clone_root_repos;
+
+      $* --no-tag;
+
+      $clone2;
+      $log2 >>:~%EOO%;
+        % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
+         Release version 0.1.0
+         Create
+        EOO
+
+      $* --tag 2>'error: current version 0.2.0-a.0.z is a snapshot' != 0
+    }
+
+    : no-tag-no-open
+    :
+    {
+      $clone_root_repos;
+
+      $* --no-tag --no-open;
+
+      $clone2;
+      $log2 >>:~%EOO%;
+        % \(HEAD -> master, \.*\) Release version 0.1.0%d
+         Create
+        EOO
+
+      $* --tag;
+
+      $pull2;
+      $log2 >>:~%EOO%;
+        % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0%d
+         Create
+        EOO
+
+      $* --open;
+
+      $pull2;
+      $log2 >>:~%EOO%
+        % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
+         (tag: v0.1.0) Release version 0.1.0
+         Create
+        EOO
+    }
+
+    : no-commit
+    :
+    {
+      $clone_root_repos;
+
+      $* --no-commit 2>'error: both --push and --no-commit specified' != 0
+    }
+
+    : validate-manifest
+    {
+      : file-value
+      :
+      {
+	$clone_root_repos;
+
+        echo 'description-file: README' >+ prj/manifest;
+        $gp commit -a -m 'Add description';
+
+	$* 2>>~%EOE% != 0;
+	  %error: unable to read .+README referenced by description-file manifest value in .+manifest%
+	  EOE
+
+        touch prj/README;
+	$gp add README;
+        $gp commit -m 'Add README file';
+
+	$* 2>>~%EOE% != 0;
+          %error: description-file manifest value in .+manifest references empty file .+README%
+          EOE
+
+        echo '.' >= prj/README;
+        $gp commit -a -m 'Fill README file';
+
+        $*
+      }
+
+      : unknown-value
+      :
+      {
+	$clone_root_repos;
+
+        echo 'some-file: README' >+ prj/manifest;
+        $gp commit -a -m 'Add file';
+
+	$* 2>>~%EOE% != 0
+	  %error: invalid package manifest: .+manifest:.+:1: unknown name 'some-file' in package manifest%
+	  EOE
+      }
+    }
+  }
+
+  : revision
+  :
+  {
+    +$clone_root_repos
+    +$* --no-open --push
+
+    +echo '' >+ prj/manifest
+    +$gp add manifest
+
+    test.arguments += --revision --push
+
+    : default
+    :
+    {
+      $clone_repos;
+
+      $* 2>>~%EOE%;
+        %Updated tag 'v0.1.0' \(was \.*\)%d
+        EOE
+
+      $clone2;
+      $log2 >>:~%EOO%
+        % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0\+1%d
+         Release version 0.1.0
+         Create
+        EOO
+    }
+
+    : no-tag
+    :
+    {
+      $clone_repos;
+
+      $* --no-tag;
+
+      $clone2;
+      $log2 >>:~%EOO%;
+        % \(HEAD -> master, \.*\) Release version 0.1.0\+1%d
+         (tag: v0.1.0) Release version 0.1.0
+         Create
+        EOO
+
+      $release --tag --push --yes -d prj;
+
+      $pull2 --tags; # Updates the existing local tag.
+      $log2 >>:~%EOO%
+        % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0\+1%d
+         Release version 0.1.0
+         Create
+        EOO
+    }
+  }
+
+  : no-commit
+  :
+  {
+    $clone_root_repos;
+
+    $* --no-commit;
+
+    $clone2;
+    $log2 >>:~%EOO%;
+      % \(HEAD -> master, .*\) Create%
+      EOO
+
+    $gp commit -a -m 'Release version';
+
+    $* --tag;
+    $* --open --no-commit;
+
+    $gp commit -a -m 'Change version';
+    $gp push origin HEAD --tags;
+
+    $pull2;
+    $log2 >>:~%EOO%
+      % \(HEAD -> master, .*\) Change version%
+       (tag: v0.1.0) Release version
+       Create
+      EOO
+  }
+}
+
+: multi-pkg
+:
+{
+  # Create the remote repository.
+  #
+  +mkdir --no-cleanup prj.git
+  +git -C prj.git init --bare 2>! >&2 &prj.git/***
+
+  # Create the local repository.
+  #
+  new += 2>-
+  +$new -t empty prj &prj/***
+  +$new -t exe --package prj -d prj
+  +$new -t lib --package libprj -d prj
+
+  +$gp config user.name 'Test Script'
+  +$gp config user.email 'testscript@example.com'
+  +$gp remote add origin ../prj.git
+  +$gp add '*'
+  +$gp commit -m 'Create'
+  +$gp push --set-upstream origin master
+
+  test.arguments += --push -q
+
+  : patch
+  :
+  {
+    $clone_repos;
+
+    $* --yes;
+
+    $clone2;
+    $log2 >>:~%EOO%;
+      % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
+       (tag: v0.1.0) Release version 0.1.0
+       Create
+      EOO
+
+    cat prj2/prj/manifest >>~%EOO%;
+      %.*
+      name: prj
+      version: 0.2.0-a.0.z
+      summary: prj executable
+      %.*
+      EOO
+
+    cat prj2/libprj/manifest >>~%EOO%
+      %.*
+      name: libprj
+      version: 0.2.0-a.0.z
+      project: prj
+      %.*
+      EOO
+  }
+
+  : multiple-revisions
+  :
+  {
+    test.arguments += --yes
+
+    $clone_repos;
+    $* --no-open;
+
+    echo '' >+ prj/prj/manifest;
+    $gp add prj/manifest;
+
+    $release --revision -q --yes -d prj/prj;
+
+    echo '' >+ prj/prj/manifest;
+    $gp add prj/manifest;
+
+    echo '' >+ prj/libprj/manifest;
+    $gp add libprj/manifest;
+
+    $* --revision 2>>~%EOE%;
+      %Updated tag 'v0.1.0' \(was \.*\)%d
+      EOE
+
+    $clone2;
+    $log2 >>:~%EOO%
+      % \(HEAD -> master, tag: v0.1.0, \.*\) Release versions prj/0.1.0\+2, libprj/0.1.0\+1%d
+       Release version 0.1.0+1
+       Release version 0.1.0
+       Create
+      EOO
+  }
+
+  : prompt
+  :
+  {
+    +$clone_repos
+    sp=' '
+
+    : default
+    :
+    {
+      $clone_repos;
+
+      $* <'y' 2>>:"EOE";
+        releasing:
+          package: prj
+          current: 0.1.0-a.0.z
+          release: 0.1.0
+          open:    0.2.0-a.0.z
+
+          package: libprj
+          current: 0.1.0-a.0.z
+          release: 0.1.0
+          open:    0.2.0-a.0.z
+
+          commit:  yes
+          tag:     v0.1.0
+          push:    yes
+        continue? [y/n]$sp
+        EOE
+
+      $clone2;
+      $log2 >>:~%EOO%
+        % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
+         (tag: v0.1.0) Release version 0.1.0
+         Create
+        EOO
+    }
+
+    : no-tag
+    :
+    {
+      $clone_repos;
+
+      $* <'y' --no-tag 2>>:"EOE"
+        releasing:
+          package: prj
+          current: 0.1.0-a.0.z
+          release: 0.1.0
+          open:    0.2.0-a.0.z
+
+          package: libprj
+          current: 0.1.0-a.0.z
+          release: 0.1.0
+          open:    0.2.0-a.0.z
+
+          commit:  yes
+          tag:     no
+          push:    yes
+        continue? [y/n]$sp
+        EOE
+    }
+
+    : no-open
+    :
+    {
+      $clone_repos;
+
+      $* <'y' --no-open 2>>:"EOE"
+        releasing:
+          package: prj
+          current: 0.1.0-a.0.z
+          release: 0.1.0
+
+          package: libprj
+          current: 0.1.0-a.0.z
+          release: 0.1.0
+
+          commit:  yes
+          tag:     v0.1.0
+          push:    yes
+        continue? [y/n]$sp
+        EOE
+    }
+  }
+}
+
+: options-incompatibility
+:
+{
+  $clone_prj;
+
+  $* --revision --open      2>'error: both --revision and --open specified'      != 0;
+  $* --revision --alpha     2>'error: both --revision and --alpha specified'     != 0;
+  $* --revision --no-open   2>'error: both --revision and --no-open specified'   != 0;
+  $* --revision --open-beta 2>'error: both --revision and --open-beta specified' != 0;
+  $* --open     --no-tag    2>'error: both --open and --no-tag specified'        != 0;
+  $* --tag      --no-commit 2>'error: both --tag and --no-commit specified'      != 0;
+  $* --push     --no-commit 2>'error: both --push and --no-commit specified'     != 0
+}

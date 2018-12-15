@@ -448,6 +448,11 @@ namespace bdep
       "\l{bdep-ci(1)} \- submit project test request to CI server"
     }
 
+    bool release
+    {
+      "\l{bdep-release(1)} \- manage project's version during release"
+    }
+
     bool publish
     {
       "\l{bdep-publish(1)} \- publish project to archive repository"

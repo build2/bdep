@@ -28,6 +28,7 @@ sync-options      \
 fetch-options     \
 status-options    \
 ci-options        \
+release-options   \
 publish-options   \
 deinit-options    \
 config-options    \
@@ -79,6 +80,7 @@ if $cli.configured
   cli.cxx{fetch-options}:   cli{fetch}
   cli.cxx{status-options}:  cli{status}
   cli.cxx{ci-options}:      cli{ci}
+  cli.cxx{release-options}: cli{release}
   cli.cxx{publish-options}: cli{publish}
   cli.cxx{deinit-options}:  cli{deinit}
   cli.cxx{config-options}:  cli{config}
