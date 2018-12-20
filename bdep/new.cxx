@@ -272,6 +272,7 @@ namespace bdep
         os.open (f = out / ".gitignore");
         if (!pkg)
           os << bdep_dir.string () << '/'                              << endl
+             << "/.idea/"                                              << endl
              <<                                                           endl;
         if (t != type::empty)
           os << "# Compiler/linker output."                            << endl
