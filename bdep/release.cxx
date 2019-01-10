@@ -494,7 +494,7 @@ namespace bdep
         catch (const io_error& e)
         {
           fail << "unable to read " << vf << " referenced by " << n
-               << " manifest value in " << f << endf;
+               << " manifest value in " << f << ": " << e << endf;
         }
       });
 
