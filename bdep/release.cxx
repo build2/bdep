@@ -56,13 +56,15 @@ namespace bdep
       optional<string> tag;
       bool             replace_tag = false;
     };
+
+    using status = git_repository_status;
   }
 
   // The plan_*() functions calculate and set all the new values in the passed
   // project but don't apply any changes.
   //
   static void
-  plan_tag (const cmd_release_options& o, project& prj)
+  plan_tag (const cmd_release_options& o, project& prj, const status& st)
   {
     // While there is nothing wrong with having uncommitted changes while
     // tagging, in our case we may end up with a wrong tag if the version in
@@ -72,13 +74,9 @@ namespace bdep
     // the project will have some changes staged (see plan_revision() for
     // details).
     //
-    {
-      git_repository_status s (git_status (prj.path));
-
-      if ((s.staged && !o.revision ()) || s.unstaged)
-        fail << "project directory has uncommitted changes" <<
-          info << "run 'git status' for details";
-    }
+    if ((st.staged && !o.revision ()) || st.unstaged)
+      fail << "project directory has uncommitted changes" <<
+        info << "run 'git status' for details";
 
     // All the versions are the same sans the revision. Note that our version
     // can be either current (--tag mode) or release (part of the release).
@@ -101,18 +99,14 @@ namespace bdep
   }
 
   static void
-  plan_open (const cmd_release_options& o, project& prj)
+  plan_open (const cmd_release_options& o, project& prj, const status& st)
   {
     // There could be changes already added to the index but otherwise the
     // repository should be clean.
     //
-    {
-      git_repository_status s (git_status (prj.path));
-
-      if (s.unstaged)
-        fail << "project directory has unstaged changes" <<
-          info << "run 'git status' for details";
-    }
+    if (st.unstaged)
+      fail << "project directory has unstaged changes" <<
+        info << "run 'git status' for details";
 
     // All the versions are the same sans the revision. Note that our version
     // can be either current (--open mode) or release (part of the release).
@@ -210,18 +204,14 @@ namespace bdep
   }
 
   static void
-  plan_version (const cmd_release_options& o, project& prj)
+  plan_version (const cmd_release_options& o, project& prj, const status& st)
   {
     // There could be changes already added to the index but otherwise the
     // repository should be clean.
     //
-    {
-      git_repository_status s (git_status (prj.path));
-
-      if (s.unstaged)
-        fail << "project directory has unstaged changes" <<
-          info << "run 'git status' for details";
-    }
+    if (st.unstaged)
+      fail << "project directory has unstaged changes" <<
+        info << "run 'git status' for details";
 
     // All the current versions are the same sans the revision.
     //
@@ -317,30 +307,26 @@ namespace bdep
       return;
 
     if (!o.no_tag ())
-      plan_tag (o, prj);
+      plan_tag (o, prj, st);
 
     if (!o.no_open ())
-      plan_open (o, prj);
+      plan_open (o, prj, st);
   }
 
   static void
-  plan_revision (const cmd_release_options& o, project& prj)
+  plan_revision (const cmd_release_options& o, project& prj, const status& st)
   {
     // There must be changes already added to the index but otherwise the
     // repository should be clean.
     //
-    {
-      git_repository_status s (git_status (prj.path));
+    if (st.unstaged)
+      fail << "project directory has unstaged changes" <<
+        info << "run 'git status' for details";
 
-      if (s.unstaged)
-        fail << "project directory has unstaged changes" <<
-          info << "run 'git status' for details";
-
-      if (!s.staged)
-        fail << "project directory has no staged changes" <<
-          info << "revision increment must be committed together with "
-             << "associated changes";
-    }
+    if (!st.staged)
+      fail << "project directory has no staged changes" <<
+        info << "revision increment must be committed together with "
+           << "associated changes";
 
     // All the current versions are the same sans the revision.
     //
@@ -363,7 +349,7 @@ namespace bdep
       return;
 
     if (!o.no_tag ())
-      plan_tag (o, prj);
+      plan_tag (o, prj, st);
   }
 
   int
@@ -604,16 +590,21 @@ namespace bdep
 
     // Plan the changes.
     //
+    status st (git_status (prj.path));
+
     const char* mode;
-    if      (o.revision ()) {plan_revision (o, prj); mode = "revising";}
-    else if (o.open     ()) {plan_open     (o, prj); mode = "opening";}
-    else if (o.tag      ()) {plan_tag      (o, prj); mode = "tagging";}
-    else                    {plan_version  (o, prj); mode = "releasing";}
+    if      (o.revision ()) {plan_revision (o, prj, st); mode = "revising";}
+    else if (o.open     ()) {plan_open     (o, prj, st); mode = "opening";}
+    else if (o.tag      ()) {plan_tag      (o, prj, st); mode = "tagging";}
+    else                    {plan_version  (o, prj, st); mode = "releasing";}
 
     const package& pkg (prj.packages.front ()); // Exemplar package.
 
     bool commit (!o.no_commit () && (pkg.release_version || prj.open_version));
-    bool push   (o.push ());
+    bool push (o.push ());
+
+    if (push && st.upstream.empty ())
+      fail << "no upstream branch set for local branch '" << st.branch << "'";
 
     // Print the plan and ask for confirmation.
     //
@@ -644,7 +635,7 @@ namespace bdep
         dr << "  commit:  " << (commit ? "yes" : "no") << '\n';
 
       dr << "  tag:     " << (prj.tag ? prj.tag->c_str () : "no") << '\n'
-         << "  push:    " << (push ? "yes" : "no");
+         << "  push:    " << (push ? st.upstream.c_str () : "no");
 
       dr.flush ();
 
@@ -823,6 +814,21 @@ namespace bdep
         tagspec += *prj.tag;
       }
 
+      // Upstream is normally in the <remote>/<branch> form, for example
+      // 'origin/master'.
+      //
+      string remote;
+      string brspec;
+      {
+        size_t p (path::traits::rfind_separator (st.upstream));
+
+        if (p == string::npos)
+          fail << "unable to extract remote from '" << st.upstream << "'";
+
+        remote  = string (st.upstream, 0, p);
+        brspec  = st.branch + ':' + string (st.upstream, p + 1);
+      }
+
       // Note that we suppress the (too detailed) push command output if
       // the verbosity level is 1. However, we still want to see the
       // progress in this case.
@@ -832,8 +838,8 @@ namespace bdep
                "push",
                verb < 2 ? "-q" : verb > 3 ? "-v" : nullptr,
                verb == 1 ? "--progress" : nullptr,
-               "origin",
-               "HEAD",
+               remote,
+               brspec,
                !tagspec.empty () ? tagspec.c_str () : nullptr);
     }
 

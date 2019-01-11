@@ -559,7 +559,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
 
           commit:  yes
           tag:     v0.1.0
-          push:    yes
+          push:    origin/master
         continue? [y/n]$sp
         EOE
 
@@ -590,7 +590,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
 
           commit:  yes
           tag:     no
-          push:    yes
+          push:    origin/master
         continue? [y/n]$sp
         EOE
     }
@@ -612,7 +612,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
 
           commit:  yes
           tag:     v0.1.0
-          push:    yes
+          push:    origin/master
         continue? [y/n]$sp
         EOE
     }
