@@ -665,36 +665,38 @@ namespace bdep
       // Rewrite each package manifest.
       //
       for (package& p: prj.packages)
-      try
       {
-        manifest_name_value& vv (p.version_pos);
-
-        // Rewrite the version.
-        //
+        try
         {
-          manifest_rewriter rw (p.manifest);
-          vv.value = p.release_version->string ();
-          rw.replace (vv);
-        }
+          manifest_name_value& vv (p.version_pos);
 
-        // If we also need to open the next development cycle, update the
-        // version position for the subsequent manifest rewrite.
+          // Rewrite the version.
+          //
+          {
+            manifest_rewriter rw (p.manifest);
+            vv.value = p.release_version->string ();
+            rw.replace (vv);
+          }
+
+          // If we also need to open the next development cycle, update the
+          // version position for the subsequent manifest rewrite.
+          //
+          if (prj.open_version)
+            vv = parse_manifest (p.manifest);
+        }
+        // The IO failure is unlikely to happen (as we have already read the
+        // manifests) but still possible (write permission is denied, device
+        // is full, etc.). In this case we may potentially leave the project
+        // in an inconsistent state as some of the package manifests could
+        // have already been rewritten. As a result, the subsequent
+        // bdep-release may fail due to unstaged changes.
         //
-        if (prj.open_version)
-          vv = parse_manifest (p.manifest);
-      }
-      // The IO failure is unlikely to happen (as we have already read the
-      // manifests) but still possible (write permission is denied, device is
-      // full, etc.). In this case we may potentially leave the project in an
-      // inconsistent state as some of the package manifests could have
-      // already been rewritten. As a result, the subsequent bdep-release may
-      // fail due to unstaged changes.
-      //
-      catch (const io_error& e)
-      {
-        fail << "unable to read/write " << p.manifest << ": " << e <<
-          info << "run 'git -C " << prj.path << " checkout -- ./' to revert "
+        catch (const io_error& e)
+        {
+          fail << "unable to read/write " << p.manifest << ": " << e <<
+            info << "run 'git -C " << prj.path << " checkout -- ./' to revert "
                << "any changes and try again";
+        }
       }
 
       // If not committing, then we are done.
@@ -767,23 +769,26 @@ namespace bdep
       // Rewrite each package manifest (similar code to above).
       //
       for (package& p: prj.packages)
-      try
       {
-        manifest_rewriter rw (p.manifest);
-        p.version_pos.value = ov;
-        rw.replace (p.version_pos);
-      }
-      catch (const io_error& e)
-      {
-        // If we are releasing, then the release/revision version have already
-        // been written to the manifests and the changes have been committed.
-        // Thus, the user should re-try with the --open option in this case.
-        //
-        fail << "unable to read/write " << p.manifest << ": " << e <<
-          info << "run 'git -C " << prj.path << " checkout -- ./' to revert "
+        try
+        {
+          manifest_rewriter rw (p.manifest);
+          p.version_pos.value = ov;
+          rw.replace (p.version_pos);
+        }
+        catch (const io_error& e)
+        {
+          // If we are releasing, then the release/revision version have
+          // already been written to the manifests and the changes have been
+          // committed.  Thus, the user should re-try with the --open option
+          // in this case.
+          //
+          fail << "unable to read/write " << p.manifest << ": " << e <<
+            info << "run 'git -C " << prj.path << " checkout -- ./' to revert "
                << "any changes and try again" << (pkg.release_version
                                                   ? " with --open"
                                                   : "");
+        }
       }
 
       if (!commit)
