@@ -653,7 +653,7 @@ namespace bdep
       run_git (git_ver,
                prj.path,
                "commit",
-               verb < 2 ? "-q" : verb > 2 ? "-v" : nullptr,
+               verb < 1 ? "-q" : verb >= 2 ? "-v" : nullptr,
                "-a",
                "-m", msg);
     };
@@ -836,8 +836,7 @@ namespace bdep
       run_git (git_ver,
                prj.path,
                "push",
-               verb < 2 ? "-q" : verb > 3 ? "-v" : nullptr,
-               verb == 1 ? "--progress" : nullptr,
+               verb < 1 ? "-q" : verb >= 2 ? "-v" : nullptr,
                remote,
                brspec,
                !tagspec.empty () ? tagspec.c_str () : nullptr);
