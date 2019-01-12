@@ -170,7 +170,7 @@ namespace bdep
       ov = make_snapshot (cv.major (),
                           cv.minor (),
                           cv.patch (),
-                          o.open_beta () ? 500 : cv.pre_release ());
+                          o.open_beta () ? 500 : *cv.pre_release ());
     }
     else if (cv.beta ())
     {
@@ -182,7 +182,7 @@ namespace bdep
       ov = make_snapshot (cv.major (),
                           cv.minor (),
                           cv.patch (),
-                          cv.pre_release () + 500);
+                          *cv.pre_release ());
     }
     else
     {
@@ -241,13 +241,13 @@ namespace bdep
       uint16_t mj (cv.major ());
       uint16_t mi (cv.minor ());
       uint16_t pa (cv.patch ());
-      uint16_t pr (cv.pre_release ());
+      uint16_t pr (*cv.pre_release ());
 
       if      (o.major ()) {mj++; mi =  pa = pr = 0;}
       else if (o.minor ()) {      mi++; pa = pr = 0;}
       else if (o.beta ())
       {
-        pr = (cv.beta () ? pr : 0) + 1 + 500; // Next/first beta.
+        pr = (cv.beta () ? pr : 500) + 1; // Next/first beta.
       }
       else if (o.alpha ())
       {
@@ -261,7 +261,7 @@ namespace bdep
 
       rv = standard_version (cv.epoch, mj, mi, pa, pr);
     }
-    else if (cv.alpha () || cv.beta ())
+    else if (cv.pre_release ())
     {
       // Releasing from alpha/beta. For example, alpha/beta becomes the final
       // release without going through a snapshot.
@@ -271,11 +271,11 @@ namespace bdep
         fail << n << " specified for " << (cv.beta () ? "beta" : "alpha")
              << " current version " << cv;
 
-      uint16_t pr (cv.pre_release ());
+      uint16_t pr (*cv.pre_release ());
 
       if (o.beta ())
       {
-        pr = (cv.beta () ? pr : 0) + 1 + 500; // Next/first beta.
+        pr = (cv.beta () ? pr : 500) + 1; // Next/first beta.
       }
       else if (o.alpha ())
       {
