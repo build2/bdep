@@ -634,8 +634,10 @@ namespace bdep
       if (!o.tag ())
         dr << "  commit:  " << (commit ? "yes" : "no") << '\n';
 
-      dr << "  tag:     " << (prj.tag ? prj.tag->c_str () : "no") << '\n'
-         << "  push:    " << (push ? st.upstream.c_str () : "no");
+      if (!o.open ()) // Does not make sense in the open mode.
+        dr << "  tag:     " << (prj.tag ? prj.tag->c_str () : "no") << '\n';
+
+      dr << "  push:    " << (push ? st.upstream.c_str () : "no");
 
       dr.flush ();
 
