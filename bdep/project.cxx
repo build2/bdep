@@ -5,6 +5,8 @@
 #include <bdep/project.hxx>
 #include <bdep/project-odb.hxx>
 
+#include <libbutl/b.mxx>
+
 #include <libbpkg/manifest.hxx>
 
 #include <bdep/database.hxx>
@@ -387,65 +389,45 @@ namespace bdep
                    const dir_path& cfg,
                    const package_name& p)
   {
+    using namespace butl;
+
     // We could have used bpkg-pkg-status but then we would have to deal with
     // iterations. So we use the build system's info meta-operation directly.
     //
-    string v;
-    {
-      process pr;
-      bool io (false);
-      try
-      {
-        fdpipe pipe (fdopen_pipe ()); // Text mode seems appropriate.
-
-        // Note: the package directory inside the configuration is a bit of an
-        // assumption.
-        //
-        pr = start_b (
-          o,
-          pipe /* stdout */,
-          2    /* stderr */,
-          "info:", (dir_path (cfg) /= p.string ()).representation ());
-
-        pipe.out.close ();
-        ifdstream is (move (pipe.in), fdstream_mode::skip, ifdstream::badbit);
-
-        for (string l; !eof (getline (is, l)); )
-        {
-          // Verify the name for good measure (comes before version).
-          //
-          if (l.compare (0, 9, "project: ") == 0)
-          {
-            if (l.compare (9, string::npos, p.string ()) != 0)
-              fail << "name mismatch for package " << p;
-          }
-          else if (l.compare (0, 9, "version: ") == 0)
-          {
-            v = string (l, 9);
-            break;
-          }
-        }
-
-        is.close (); // Detect errors.
-      }
-      catch (const io_error&)
-      {
-        // Presumably the child process failed and issued diagnostics so let
-        // finish_b() try to deal with that first.
-        //
-        io = true;
-      }
-
-      finish_b (o, pr, io);
-    }
-
     try
     {
-      return standard_version (v);
+      // Note: the package directory inside the configuration is a bit of an
+      // assumption.
+      //
+      b_project_info pi (
+        b_info ((dir_path (cfg) /= p.string ()),
+                verb,
+                [] (const char* const args[], size_t n)
+                {
+                  if (verb >= 3)
+                    print_process (args, n);
+                },
+                path (name_b (o)),
+                exec_dir,
+                o.build_option ()));
+
+      if (pi.version.empty ())
+        fail << "empty version for package " << p;
+
+      // Verify the name for good measure.
+      //
+      if (pi.project != p)
+        fail << "name mismatch for package " << p;
+
+      return move (pi.version);
     }
-    catch (const invalid_argument& e)
+    catch (const b_error& e)
     {
-      fail << "invalid package " << p << " version " << v << ": " << e << endf;
+      if (e.normal ())
+        throw failed (); // Assume the build2 process issued diagnostics.
+
+      fail << "unable to obtain package " << p << " project info: " << e
+           << endf;
     }
   }
 }
