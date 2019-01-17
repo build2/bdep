@@ -61,94 +61,100 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
   : release
   :
   {
-    test.arguments += --push
-
-    : patch
+    : version
     :
     {
-      $clone_root_repos;
+      test.arguments += --push
 
-      $*;
+      : patch
+      :
+      {
+        $clone_root_repos;
 
-      $clone2;
-      $log2 >>:~%EOO%;
-        % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
-         (tag: v0.1.0) Release version 0.1.0
-         Create
-        EOO
+        $*;
 
-	cat prj2/manifest >>~%EOO%
-          %.*
-          name: prj
-          version: 0.2.0-a.0.z
-          summary: prj executable
-          %.*
+        $clone2;
+        $log2 >>:~%EOO%;
+          % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
+           (tag: v0.1.0) Release version 0.1.0
+           Create
           EOO
-    }
 
-    : alpha
-    :
-    {
-      $clone_root_repos;
+  	cat prj2/manifest >>~%EOO%
+            %.*
+            name: prj
+            version: 0.2.0-a.0.z
+            summary: prj executable
+            %.*
+            EOO
+      }
 
-      $* --alpha;
+      : alpha
+      :
+      {
+        $clone_root_repos;
 
-      $clone2;
-      $log2 >>:~%EOO%
-        % \(HEAD -> master, \.*\) Change version to 0.1.0-a.1.z%d
-         (tag: v0.1.0-a.1) Release version 0.1.0-a.1
-         Create
-        EOO
-    }
+        $* --alpha;
 
-    : beta
-    :
-    {
-      $clone_root_repos;
+        $clone2;
+        $log2 >>:~%EOO%
+          % \(HEAD -> master, \.*\) Change version to 0.1.0-a.1.z%d
+           (tag: v0.1.0-a.1) Release version 0.1.0-a.1
+           Create
+          EOO
+      }
 
-      $* --beta;
+      : beta
+      :
+      {
+        $clone_root_repos;
 
-      $clone2;
-      $log2 >>:~%EOO%
-        % \(HEAD -> master, \.*\) Change version to 0.1.0-b.1.z%d
-         (tag: v0.1.0-b.1) Release version 0.1.0-b.1
-         Create
-        EOO
-    }
+        $* --beta;
 
-    : minor
-    :
-    {
-      $clone_root_repos;
+        $clone2;
+        $log2 >>:~%EOO%
+          % \(HEAD -> master, \.*\) Change version to 0.1.0-b.1.z%d
+           (tag: v0.1.0-b.1) Release version 0.1.0-b.1
+           Create
+          EOO
+      }
 
-      $* --minor;
+      : minor
+      :
+      {
+        $clone_root_repos;
 
-      $clone2;
-      $log2 >>:~%EOO%
-        % \(HEAD -> master, \.*\) Change version to 0.3.0-a.0.z%d
-         (tag: v0.2.0) Release version 0.2.0
-         Create
-        EOO
-    }
+        $* --minor;
 
-    : major
-    :
-    {
-      $clone_root_repos;
+        $clone2;
+        $log2 >>:~%EOO%
+          % \(HEAD -> master, \.*\) Change version to 0.3.0-a.0.z%d
+           (tag: v0.2.0) Release version 0.2.0
+           Create
+          EOO
+      }
 
-      $* --major;
+      : major
+      :
+      {
+        $clone_root_repos;
 
-      $clone2;
-      $log2 >>:~%EOO%
-        % \(HEAD -> master, \.*\) Change version to 1.1.0-a.0.z%d
-         (tag: v1.0.0) Release version 1.0.0
-         Create
-        EOO
+        $* --major;
+
+        $clone2;
+        $log2 >>:~%EOO%
+          % \(HEAD -> master, \.*\) Change version to 1.1.0-a.0.z%d
+           (tag: v1.0.0) Release version 1.0.0
+           Create
+          EOO
+      }
     }
 
     : open
     :
     {
+      test.arguments += --push
+
       : beta
       :
       {
@@ -243,87 +249,107 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       }
     }
 
-    : no-open
+    : no
     :
     {
-      $clone_root_repos;
+      test.arguments += --push
 
-      $* --no-open;
+      : open
+      :
+      {
+        $clone_root_repos;
 
-      $clone2;
-      $log2 >>:~%EOO%;
-        % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0%d
-         Create
-        EOO
+        $* --no-open;
 
-      $* --open;
+        $clone2;
+        $log2 >>:~%EOO%;
+          % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0%d
+           Create
+          EOO
 
-      $pull2;
-      $log2 >>:~%EOO%
-        % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
-         (tag: v0.1.0) Release version 0.1.0
-         Create
-        EOO
-    }
+        $* --open;
 
-    : no-tag
-    :
-    {
-      $clone_root_repos;
+        $pull2;
+        $log2 >>:~%EOO%
+          % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
+           (tag: v0.1.0) Release version 0.1.0
+           Create
+          EOO
+      }
 
-      $* --no-tag;
+      : tag
+      :
+      {
+        $clone_root_repos;
 
-      $clone2;
-      $log2 >>:~%EOO%;
-        % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
-         Release version 0.1.0
-         Create
-        EOO
+        $* --no-tag;
 
-      $* --tag 2>'error: current version 0.2.0-a.0.z is a snapshot' != 0
-    }
+        $clone2;
+        $log2 >>:~%EOO%;
+          % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
+           Release version 0.1.0
+           Create
+          EOO
 
-    : no-tag-no-open
-    :
-    {
-      $clone_root_repos;
+        $* --tag 2>>EOE != 0;
+          error: current version 0.2.0-a.0.z is a snapshot
+            info: use --force=snapshot to tag anyway
+          EOE
 
-      $* --no-tag --no-open;
+        $* --tag --force=snapshot;
 
-      $clone2;
-      $log2 >>:~%EOO%;
-        % \(HEAD -> master, \.*\) Release version 0.1.0%d
-         Create
-        EOO
+        $pull2;
+        $log2 >>:~%EOO%
+          % \(HEAD -> master, tag: v0.2.0-a.0.\.*.\.*\) Change version to 0.2.0-a.0.z%d
+           Release version 0.1.0
+           Create
+          EOO
+      }
 
-      $* --tag;
+      : tag-open
+      :
+      {
+        $clone_root_repos;
 
-      $pull2;
-      $log2 >>:~%EOO%;
-        % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0%d
-         Create
-        EOO
+        $* --no-tag --no-open;
 
-      $* --open;
+        $clone2;
+        $log2 >>:~%EOO%;
+          % \(HEAD -> master, \.*\) Release version 0.1.0%d
+           Create
+          EOO
 
-      $pull2;
-      $log2 >>:~%EOO%
-        % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
-         (tag: v0.1.0) Release version 0.1.0
-         Create
-        EOO
-    }
+        $* --tag;
 
-    : no-commit
-    :
-    {
-      $clone_root_repos;
+        $pull2;
+        $log2 >>:~%EOO%;
+          % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0%d
+           Create
+          EOO
 
-      $* --no-commit 2>'error: both --push and --no-commit specified' != 0
+        $* --open;
+
+        $pull2;
+        $log2 >>:~%EOO%
+          % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
+           (tag: v0.1.0) Release version 0.1.0
+           Create
+          EOO
+      }
+
+      : commit
+      :
+      {
+        $clone_root_repos;
+
+        $* --no-commit 2>'error: both --push and --no-commit specified' != 0
+      }
     }
 
     : validate-manifest
     {
+      test.arguments += --push
+
       : file-value
       :
       {
@@ -363,6 +389,31 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
 	  EOE
       }
     }
+
+    : unstaged
+    :
+    {
+      $clone_root_repos;
+      echo '' >+ prj/manifest;
+
+      $* 2>>EOE != 0;
+        error: project directory has unstaged changes
+          info: run 'git status' for details
+          info: use 'git add' to add the changes to this commit
+          info: use 'git stash' to temporarily hide the changes
+        EOE
+
+      $* --no-commit;
+
+      $gp commit -a -m 'Release version';
+      $* --tag --push;
+
+      $clone2;
+      $log2 >>:~%EOO%
+        % \(HEAD -> master, tag: v0.1.0, \.*\) Release version%d
+         Create
+        EOO
+    }
   }
 
   : revision
@@ -371,17 +422,74 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
     +$clone_root_repos
     +$* --no-open --push
 
-    +echo '' >+ prj/manifest
-    +$gp add manifest
+    test.arguments += --revision
 
-    test.arguments += --revision --push
-
-    : default
+    : changes-staged
     :
     {
+      test.arguments += --push
+
+      +$clone_repos
+
+      +echo '' >+ prj/manifest
+      +$gp add manifest
+
+      : default
+      :
+      {
+        $clone_repos;
+
+        $* 2>>~%EOE%;
+          %Updated tag 'v0.1.0' \(was \.*\)%d
+          EOE
+
+        $clone2;
+        $log2 >>:~%EOO%
+          % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0\+1%d
+           Release version 0.1.0
+           Create
+          EOO
+      }
+
+      : no-tag
+      :
+      {
+        $clone_repos;
+
+        $* --no-tag;
+
+        $clone2;
+        $log2 >>:~%EOO%;
+          % \(HEAD -> master, \.*\) Release version 0.1.0\+1%d
+           (tag: v0.1.0) Release version 0.1.0
+           Create
+          EOO
+
+        $release --tag --push --yes -d prj;
+
+        $pull2 --tags; # Updates the existing local tag.
+        $log2 >>:~%EOO%
+          % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0\+1%d
+           Release version 0.1.0
+           Create
+          EOO
+      }
+    }
+
+    : no-changes-staged
+    :
+    {
+      test.arguments += --push
+
       $clone_repos;
 
-      $* 2>>~%EOE%;
+      $* 2>>~%EOE% != 0;
+        error: project directory has no staged changes
+          info: revision increment must be committed together with associated changes
+          info: use --force=unchanged to release anyway
+        EOE
+
+      $* --force=unchanged 2>>~%EOE%;
         %Updated tag 'v0.1.0' \(was \.*\)%d
         EOE
 
@@ -393,26 +501,62 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
         EOO
     }
 
-    : no-tag
+    : unstaged
     :
     {
       $clone_repos;
 
-      $* --no-tag;
+      echo '' >+ prj/manifest;
 
-      $clone2;
-      $log2 >>:~%EOO%;
-        % \(HEAD -> master, \.*\) Release version 0.1.0\+1%d
-         (tag: v0.1.0) Release version 0.1.0
-         Create
-        EOO
+      $* 2>>EOE != 0;
+        error: project directory has unstaged changes
+          info: run 'git status' for details
+          info: use 'git add' to add the changes to this commit
+          info: use 'git stash' to temporarily hide the changes
+        EOE
 
+      $* --no-commit;
+
+      $gp commit -a -m 'Release revision';
       $release --tag --push --yes -d prj;
 
-      $pull2 --tags; # Updates the existing local tag.
+      $clone2;
       $log2 >>:~%EOO%
-        % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0\+1%d
+        % \(HEAD -> master, tag: v0.1.0, \.*\) Release revision%d
          Release version 0.1.0
+         Create
+        EOO
+    }
+  }
+
+  : open
+  :
+  {
+    : unstaged
+    :
+    {
+      $clone_root_repos;
+
+      $* --no-open;
+
+      echo '' >+ prj/manifest;
+
+      $* --open 2>>EOE != 0;
+        error: project directory has unstaged changes
+          info: run 'git status' for details
+          info: use 'git add' to add the changes to this commit
+          info: use 'git stash' to temporarily hide the changes
+        EOE
+
+      $* --open --no-commit;
+
+      $gp commit -a -m 'Open dev cycle';
+      $gp push origin HEAD --tags;
+
+      $clone2;
+      $log2 >>:~%EOO%
+        % \(HEAD -> master, \.*\) Open dev cycle%d
+         (tag: v0.1.0) Release version 0.1.0
          Create
         EOO
     }

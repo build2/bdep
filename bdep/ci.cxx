@@ -55,6 +55,10 @@ namespace bdep
 
       commit = move (s.commit);
 
+      // Note: not forcible. The use case could be to CI some commit from the
+      // past. But in this case we also won't have upstream. So maybe it will
+      // be better to invent the --commit option or some such.
+      //
       if (s.branch.empty ())
         fail << "project directory is in the detached HEAD state" <<
           info << "run 'git status' for details";
@@ -70,9 +74,15 @@ namespace bdep
       size_t p (path::traits::rfind_separator (s.upstream));
       branch = p != string::npos ? string (s.upstream, p + 1) : s.upstream;
 
+      // Note: not forcible (for now). While the use case is valid, the
+      // current and committed package versions are likely to differ (in
+      // snapshot id). Obtaining the committed versions feels too hairy for
+      // now.
+      //
       if (s.staged || s.unstaged)
         fail << "project directory has uncommitted changes" <<
-          info << "run 'git status' for details";
+          info << "run 'git status' for details" <<
+          info << "use 'git stash' to temporarily hide the changes";
 
       // We definitely don't want to be ahead (upstream doesn't have this
       // commit) but there doesn't seem be anything wrong with being behind.

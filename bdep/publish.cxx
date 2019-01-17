@@ -120,6 +120,27 @@ namespace bdep
     };
     vector<package> pkgs;
 
+    // If the project is under recognized VCS, it feels right to fail if it is
+    // uncommitted to decrease chances of publishing package modifications
+    // under the same version. It still make sense to allow submitting
+    // uncommitted packages if requested explicitly, for whatever reason.
+    //
+    bool git_repo (git_repository (prj));
+    optional<bool> uncommitted;           // Absent if unrecognized VCS.
+
+    if (git_repo)
+    {
+      git_repository_status st (git_status (prj));
+      uncommitted = st.unstaged || st.staged;
+
+      if (*uncommitted &&
+          o.force ().find ("uncommitted") == o.force ().end ())
+        fail << "project directory has uncommitted changes" <<
+          info << "run 'git status' for details" <<
+          info << "use 'git stash' to temporarily hide the changes" <<
+          info << "use --force=uncommitted to publish anyway";
+    }
+
     for (package_location& pl: pkg_locs)
     {
       package_name n (move (pl.name));
@@ -131,8 +152,31 @@ namespace bdep
       // For example, is it correct to consider a "between betas" snapshot a
       // beta version?
       //
-      if (v.snapshot ())
-        fail << "package " << n << " version " << v << " is a snapshot";
+      // Seems nothing wrong with submitting snapshots generally. We do this
+      // for staging most of the time. The below logic of choosing a default
+      // section requires no changes. Also, the submission service can
+      // probably have some policy of version acceptance, rejecting some
+      // version types for some sections. For example, rejecting pre-release
+      // for stable section and snapshots for any section.
+      //
+      // Note, however, that if the project is under an unrecognized VCS or
+      // the snapshot is uncommitted, then we make it non-forcible. Failed
+      // that, we might end up publishing distinct snapshots under the same
+      // temporary version. (To be more precise, we should have checked for
+      // the latest snapshot but that would require getting the original
+      // version from the package manifest, which feels too hairy for now).
+      //
+      bool non_forcible;
+      if (v.snapshot () &&
+          ((non_forcible = (!uncommitted || *uncommitted)) ||
+           o.force ().find ("snapshot") == o.force ().end ()))
+      {
+        diag_record dr (fail);
+        dr << "package " << n << " version " << v << " is a snapshot";
+
+        if (!non_forcible)
+          dr << info << "use --force=snapshot to publish anyway";
+      }
 
       // Per semver we treat zero major versions as alpha.
       //
@@ -201,11 +245,18 @@ namespace bdep
       // directly to prepare the distribution. If/when we have bpkg-pkg-dist,
       // we may want to switch to that.
       //
+      // We need to specify config.dist.uncommitted=true for a snapshot since
+      // build2's version module by default does not allow distribution of
+      // uncommitted projects.
+      //
       run_b (o,
              "dist:", (dir_path (cfg) /= p.name.string ()).representation (),
              "config.dist.root=" + dr.representation (),
              "config.dist.archives=tar.gz",
-             "config.dist.checksums=sha256");
+             "config.dist.checksums=sha256",
+             (uncommitted && *uncommitted
+              ? "config.dist.uncommitted=true"
+              : nullptr));
 
       // This is the canonical package archive name that we expect dist to
       // produce.
@@ -297,7 +348,7 @@ namespace bdep
     //
     // See if this is a VCS repository we recognize.
     //
-    if (ctrl && git_repository (prj))
+    if (ctrl && git_repo)
     {
       // Checkout the build2-control branch into a separate working tree not
       // to interfere with the user's stuff.

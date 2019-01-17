@@ -2,6 +2,8 @@
 // copyright : Copyright (c) 2014-2019 Code Synthesis Ltd
 // license   : MIT; see accompanying LICENSE file
 
+include <set>;
+
 include <bdep/common.cli>;
 
 "\section=1"
@@ -149,6 +151,13 @@ namespace bdep
     bool --open-major
     {
       "Open the development cycle with the next major version."
+    }
+
+    std::set<string> --force
+    {
+      "<check>",
+      "Force releasing, disabling the specified check. Repeat this option to
+       disable multiple checks."
     }
 
     bool --yes|-y

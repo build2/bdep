@@ -66,17 +66,19 @@ namespace bdep
   static void
   plan_tag (const cmd_release_options& o, project& prj, const status& st)
   {
-    // While there is nothing wrong with having uncommitted changes while
-    // tagging, in our case we may end up with a wrong tag if the version in
-    // the (modified) manifest does not correspond to the latest commit.
+    // Note: not forcible. While there is nothing wrong with having
+    // uncommitted changes while tagging, in our case we may end up with a
+    // wrong tag if the version in the (modified) manifest does not correspond
+    // to the latest commit.
     //
     // Note that if we are called as part of releasing a new revision, then
-    // the project will have some changes staged (see plan_revision() for
+    // the project may have some changes staged (see plan_revision() for
     // details).
     //
     if ((st.staged && !o.revision ()) || st.unstaged)
       fail << "project directory has uncommitted changes" <<
-        info << "run 'git status' for details";
+        info << "run 'git status' for details" <<
+        info << "use 'git stash' to temporarily hide the changes";
 
     // All the versions are the same sans the revision. Note that our version
     // can be either current (--tag mode) or release (part of the release).
@@ -86,12 +88,26 @@ namespace bdep
                                 ? *pkg.release_version
                                 :  pkg.current_version);
 
-    if (cv.snapshot ())
-      fail << "current version " << cv << " is a snapshot";
+    // It could be desirable to tag a snapshot for some kind of a pseudo-
+    // release. For example, tag a snapshot for QA or some such. Note: can't
+    // happen as part of a release or revision.
+    //
+    if (cv.snapshot () && o.force ().find ("snapshot") == o.force ().end ())
+      fail << "current version " << cv << " is a snapshot"<<
+        info << "use --force=snapshot to tag anyway";
 
     // Canonical version tag without epoch or revision.
     //
-    prj.tag = "v" + cv.string_project ();
+    // For tagging a snapshot we need to use the actual package version
+    // (replacing .z with the actual snapshot information). Note: for
+    // snapshots we are always tagging the current version (see above).
+    //
+    const standard_version& v (
+      cv.latest_snapshot ()
+      ? package_version (o, pkg.manifest.directory ())
+      : cv);
+
+    prj.tag = "v" + v.string_project ();
 
     // Replace the existing tag only if this is a revision.
     //
@@ -104,9 +120,14 @@ namespace bdep
     // There could be changes already added to the index but otherwise the
     // repository should be clean.
     //
-    if (st.unstaged)
+    // Note: not forcible. Generally, we don't touch unstanged changes (which
+    // include untracked files).
+    //
+    if (st.unstaged && !o.no_commit ())
       fail << "project directory has unstaged changes" <<
-        info << "run 'git status' for details";
+        info << "run 'git status' for details" <<
+        info << "use 'git add' to add the changes to this commit" <<
+        info << "use 'git stash' to temporarily hide the changes";
 
     // All the versions are the same sans the revision. Note that our version
     // can be either current (--open mode) or release (part of the release).
@@ -151,10 +172,16 @@ namespace bdep
                                "" /* snapshot_id */);
     };
 
+    // Note: not forcible. The following (till the end of the function) checks
+    // prevent skipping a release. Hard to think of a use case but we probably
+    // could allow this as it doesn't break anything (released versions need
+    // not be contiguous). Let's, however, postpone this until a real use
+    // case comes up in order not to complicate things needlessly.
+    //
     if (cv.snapshot ())
     {
-      // The cv variable refers the current version as the release version
-      // cannot be a snapshot.
+      // The cv variable refers to the current version since the release
+      // version cannot be a snapshot.
       //
       assert (!pkg.release_version);
 
@@ -209,15 +236,23 @@ namespace bdep
     // There could be changes already added to the index but otherwise the
     // repository should be clean.
     //
-    if (st.unstaged)
+    // Note: not forcible. Generally, we don't touch unstanged changes (which
+    // include untracked files).
+    //
+    if (st.unstaged && !o.no_commit ())
       fail << "project directory has unstaged changes" <<
-        info << "run 'git status' for details";
+        info << "run 'git status' for details" <<
+        info << "use 'git add' to add the changes to this commit" <<
+        info << "use 'git stash' to temporarily hide the changes";
 
     // All the current versions are the same sans the revision.
     //
     const standard_version& cv (prj.packages.front ().current_version);
 
     // Change the release version to the next (pre-)release.
+    //
+    // Note: not forcible. The following (till the end of the function) checks
+    // prevent skipping a release. The same reasoning as in plan_open().
     //
     standard_version rv;
     if (cv.snapshot ())
@@ -319,19 +354,35 @@ namespace bdep
     // There must be changes already added to the index but otherwise the
     // repository should be clean.
     //
-    if (st.unstaged)
+    // Note: not forcible. Generally, we don't touch unstanged changes (which
+    // include untracked files).
+    //
+    if (st.unstaged && !o.no_commit ())
       fail << "project directory has unstaged changes" <<
-        info << "run 'git status' for details";
+        info << "run 'git status' for details" <<
+        info << "use 'git add' to add the changes to this commit" <<
+        info << "use 'git stash' to temporarily hide the changes";
 
-    if (!st.staged)
+    // Note: the use-case for forcing would be to create a commit to be
+    // squashed later.
+    //
+    // Also, don't complain if we are not committing.
+    //
+    if (!st.staged      &&
+        !o.no_commit () &&
+        o.force ().find ("unchanged") == o.force ().end ())
       fail << "project directory has no staged changes" <<
         info << "revision increment must be committed together with "
-           << "associated changes";
+           << "associated changes" <<
+        info << "use --force=unchanged to release anyway";
 
     // All the current versions are the same sans the revision.
     //
     const standard_version& cv (prj.packages.front ().current_version);
 
+    // Note: not forcible. Doesn't seem to make sense to release a revision
+    // for snapshot (just release another snapshot).
+    //
     if (cv.snapshot ())
       fail << "current version " << cv << " is a snapshot";
 
@@ -460,7 +511,11 @@ namespace bdep
           return true;
         }));
 
+      //
       // Validate the *-file manifest values expansion.
+      //
+      // Note: not forcible. Allowing releasing broken packages we are just
+      // asking for trouble and long mailing list threads.
       //
       m.load_files ([&f] (const string& n, const path& p)
       {
@@ -696,8 +751,7 @@ namespace bdep
         catch (const io_error& e)
         {
           fail << "unable to read/write " << p.manifest << ": " << e <<
-            info << "run 'git -C " << prj.path << " checkout -- ./' to revert "
-               << "any changes and try again";
+            info << "use 'git checkout' to revert any changes and try again";
         }
       }
 
@@ -782,14 +836,12 @@ namespace bdep
         {
           // If we are releasing, then the release/revision version have
           // already been written to the manifests and the changes have been
-          // committed.  Thus, the user should re-try with the --open option
+          // committed. Thus, the user should re-try with the --open option
           // in this case.
           //
           fail << "unable to read/write " << p.manifest << ": " << e <<
-            info << "run 'git -C " << prj.path << " checkout -- ./' to revert "
-               << "any changes and try again" << (pkg.release_version
-                                                  ? " with --open"
-                                                  : "");
+            info << "use 'git checkout' to revert any changes and try again"
+               << (pkg.release_version ? " with --open" : "");
         }
       }
 

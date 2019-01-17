@@ -236,8 +236,12 @@ namespace bdep
   void
   verify_project_packages (const project_packages&, const configurations&);
 
-  // Determine the version of a package in the specified configuration.
+  // Determine the version of a package in the specified package (first
+  // version) or configuration (second version) directory.
   //
+  standard_version
+  package_version (const common_options&, const dir_path& pkg);
+
   standard_version
   package_version (const common_options&,
                    const dir_path& cfg,

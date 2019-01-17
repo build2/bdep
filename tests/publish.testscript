@@ -37,21 +37,25 @@ init += $cxx -d prj 2>! &prj/**/bootstrap/***
 
 windows = ($cxx.target.class == 'windows')
 
+g = git -C prj >! 2>!
+
 # Note that using the same package name and version for tests may result in
 # duplicate submissions. We will use unique version for each test,
 # incrementing the patch version for 1.0.X.
 #
-# Next version to use: 1.0.15
+# Next version to use: 1.0.19
 #
 : submit
 :
 {
   test.arguments += --control 'none'
 
+  +$clone_prj
+
   : single-pkg
   :
   {
-    test.arguments += --simulate 'success'
+    test.arguments += --force=uncommitted --simulate 'success'
 
     : single-cfg
     :
@@ -65,7 +69,7 @@ windows = ($cxx.target.class == 'windows')
           upgrade prj/1.0.1
         submitting prj-1.0.1.tar.gz
         %.*
-        %package submission is queued(: .*prj/1\.0\.1)?%
+        %package submission is queued(: \.*prj/1.0.1)?%d
         %reference: .{12}%
         EOE
     }
@@ -90,12 +94,30 @@ windows = ($cxx.target.class == 'windows')
 
       $* --all 2>'error: multiple configurations specified for publish' != 0
     }
+
+    : snapshot
+    :
+    {
+      $clone_root_prj;
+      $init -C @cfg &prj-cfg/***;
+      sed -i -e 's/^(version:) .*$/\1 1.0.15-a.0.z/' prj/manifest;
+
+      $* 2>>EOE != 0;
+        synchronizing:
+          upgrade prj/1.0.15-a.0.19700101000000
+        error: package prj version 1.0.15-a.0.19700101000000 is a snapshot
+        EOE
+
+      $* --force=snapshot 2>>~%EOE% != 0
+        error: package prj version 1.0.15-a.0.19700101000000 is a snapshot
+        EOE
+    }
   }
 
   : multi-pkg
   :
   {
-    test.arguments += --simulate 'success'
+    test.arguments += --force=uncommitted --simulate 'success'
 
     +$new -t empty prj &prj/***
     +$new --package -t lib libprj -d prj
@@ -112,11 +134,11 @@ windows = ($cxx.target.class == 'windows')
       $* 2>>~%EOE%
         submitting libprj-1.0.2.tar.gz
         %.*
-        %package submission is queued(: .*libprj/1\.0\.2)?%
+        %package submission is queued(: \.*libprj/1.0.2)?%d
         %reference: .{12}%
         submitting prj-1.0.2.tar.gz
         %.*
-        %package submission is queued(: .*prj/1\.0\.2)?%
+        %package submission is queued(: \.*prj/1.0.2)?%d
         %reference: .{12}%
         EOE
     }
@@ -135,7 +157,7 @@ windows = ($cxx.target.class == 'windows')
       $* 2>>~%EOE%
         submitting libprj-1.0.3.tar.gz
         %.*
-        %package submission is queued(: .*prj/1\.0\.3)?%
+        %package submission is queued(: \.*prj/1.0.3)?%d
         %reference: .{12}%
         EOE
     }
@@ -169,19 +191,118 @@ windows = ($cxx.target.class == 'windows')
         %warning: publishing using staged build2 toolchain%?
         continue? [y/n] submitting libprj-1.0.4.tar.gz
         %.*
-        %package submission is queued\(: .*libprj/1\\.0\\.4\)?%
+        %package submission is queued\(: \\.*libprj/1.0.4\)?%d
         %reference: .{12}%
         submitting prj-1.0.4.tar.gz
         %.*
-        %package submission is queued\(: .*prj/1\\.0\\.4\)?%
+        %package submission is queued\(: \\.*prj/1.0.4\)?%d
         %reference: .{12}%
         EOE
     }
   }
 
+  : commited-prj
+  :
+  {
+    test.arguments += --simulate 'success'
+
+    clone_prj = cp --no-cleanup -p -r ../prj ./ &prj/***
+
+    +$clone_prj
+
+    +$g config user.name  'Test Script'
+    +$g config user.email 'testscript@example.com'
+    +$g add '*'
+    +$g commit -m 'Create'
+
+    : final
+    :
+    {
+      $clone_prj;
+      $init -C @cfg &prj-cfg/***;
+      sed -i -e 's/^(version:) .*$/\1 1.0.16/' prj/manifest;
+
+      $* 2>>~%EOE% != 0;
+        synchronizing:
+          upgrade prj/1.0.16
+        error: project directory has uncommitted changes
+          info: run 'git status' for details
+          info: use 'git stash' to temporarily hide the changes
+          info: use --force=uncommitted to publish anyway
+        EOE
+
+      $g commit -a -m 'Version';
+
+      $* 2>>~%EOE%
+        submitting prj-1.0.16.tar.gz
+        %.*
+        %package submission is queued(: \.*prj/1.0.16)?%d
+        %reference: .{12}%
+        EOE
+    }
+
+    : snapshot
+    :
+    {
+      $clone_prj;
+      $init -C @cfg &prj-cfg/***;
+      sed -i -e 's/^(version:) .*$/\1 1.0.17-a.0.z/' prj/manifest;
+
+      $* 2>>~%EOE% != 0;
+        synchronizing:
+        %  upgrade prj/1.0.17-a.0.\.+%d
+        error: project directory has uncommitted changes
+          info: run 'git status' for details
+          info: use 'git stash' to temporarily hide the changes
+          info: use --force=uncommitted to publish anyway
+        EOE
+
+      $g commit -a -m 'Version';
+
+      $* 2>>~%EOE% != 0;
+        synchronizing:
+        %  upgrade prj/1.0.17-a.0.\.+%d
+        %error: package prj version 1.0.17-a.0.\.+ is a snapshot%d
+          info: use --force=snapshot to publish anyway
+        EOE
+
+      $* --force=snapshot 2>>~%EOE%
+        %submitting prj-1.0.17-a.0.\.+.tar.gz%d
+        %.*
+        %package submission is queued(: \.*prj/1.0.17-a.0.\.+)?%d
+        %reference: .{12}%
+        EOE
+    }
+  }
+
+  : non-vsc-prj
+  :
+  {
+    test.arguments += --simulate 'success'
+
+    clone_prj = cp --no-cleanup -p -r ../prj ./ &prj/***;
+
+    $clone_prj;
+    rm -r -f prj/.git;
+
+    $init -C @cfg &prj-cfg/***;
+    sed -i -e 's/^(version:) .*$/\1 1.0.18/' prj/manifest;
+
+    $* 2>>~%EOE%
+      synchronizing:
+        upgrade prj/1.0.18
+      submitting prj-1.0.18.tar.gz
+      %.*
+      %package submission is queued(: \.*prj/1.0.18)?%d
+      %reference: .{12}%
+      EOE
+  }
+
   : failure
   :
   {
+    test.arguments += --force=uncommitted
+
     : duplicate-archive
     :
     {
@@ -248,7 +369,8 @@ windows = ($cxx.target.class == 'windows')
   # simulation. We specify it to enable the control branch-related
   # functionality.
   #
-  test.arguments += --simulate 'success' --control 'http://example.com/rep.git'
+  test.arguments += --force=uncommitted --simulate 'success' \
+--control 'http://example.com/rep.git'
 
   # Create the remote repository.
   #
@@ -256,8 +378,6 @@ windows = ($cxx.target.class == 'windows')
   +git -C prj.git init --bare >! &prj.git/***
 
   +$clone_prj
-
-  g = git -C prj >! 2>!
 
   +$g config user.name  'Test Script'
   +$g config user.email 'testscript@example.com'
@@ -291,7 +411,7 @@ windows = ($cxx.target.class == 'windows')
       %.*
       submitting prj-1.0.8.tar.gz
       %.*
-      %package submission is queued(: .*prj/1\.0\.8)?%
+      %package submission is queued(: \.*prj/1.0.8)?%d
       %reference: .{12}%
       EOE
 
@@ -307,7 +427,7 @@ windows = ($cxx.target.class == 'windows')
       %.*
       submitting prj-1.0.9.tar.gz
       %.*
-      %package submission is queued(: .*prj/1\.0\.9)?%
+      %package submission is queued(: \.*prj/1.0.9)?%d
       %reference: .{12}%
       EOE
 
@@ -325,7 +445,7 @@ windows = ($cxx.target.class == 'windows')
       %.*
       submitting prj-1.0.10.tar.gz
       %.*
-      %package submission is queued(: .*prj/1\.0\.10)?%
+      %package submission is queued(: \.*prj/1.0.10)?%d
       %reference: .{12}%
       EOE
 
@@ -407,7 +527,7 @@ windows = ($cxx.target.class == 'windows')
       %.*
       submitting prj-1.0.12.tar.gz
       %.*
-      %package submission is queued(: .*prj/1\.0\.12)?%
+      %package submission is queued(: \.*prj/1.0.12)?%d
       %reference: .{12}%
       EOE
 
@@ -425,7 +545,7 @@ windows = ($cxx.target.class == 'windows')
       %.*
       submitting prj-1.0.13.tar.gz
       %.*
-      %package submission is queued(: .*prj/1\.0\.13)?%
+      %package submission is queued(: \.*prj/1.0.13)?%d
       %reference: .{12}%
       EOE
 
@@ -466,7 +586,7 @@ windows = ($cxx.target.class == 'windows')
       %.*
       submitting prj-1.0.14.tar.gz
       %.*
-      %package submission is queued(: .*prj/1\.0\.14)?%
+      %package submission is queued(: \.*prj/1.0.14)?%d
       %reference: .{12}%
       EOE
 

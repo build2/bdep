@@ -2,6 +2,8 @@
 // copyright : Copyright (c) 2014-2019 Code Synthesis Ltd
 // license   : MIT; see accompanying LICENSE file
 
+include <set>;
+
 include <bdep/project.cli>;
 
 "\section=1"
@@ -123,6 +125,13 @@ namespace bdep
       "Publisher's email address. If unspecified, it will be obtained from the
        environment and/or version control system. See the ENVIRONMENT section
        for details."
+    }
+
+    std::set<string> --force
+    {
+      "<check>",
+      "Force publishing, disabling the specified check. Repeat this option to
+       disable multiple checks."
     }
 
     string --simulate

@@ -13,6 +13,7 @@
 #include <bdep/diagnostics.hxx>
 
 using namespace std;
+using namespace butl;
 
 namespace bdep
 {
@@ -384,50 +385,66 @@ namespace bdep
     }
   }
 
-  standard_version
-  package_version (const common_options& o,
-                   const dir_path& cfg,
-                   const package_name& p)
+  // Obtain build2 project info for package source or output directories.
+  //
+  static b_project_info
+  package_info (const common_options& o, const dir_path& d)
   {
-    using namespace butl;
-
-    // We could have used bpkg-pkg-status but then we would have to deal with
-    // iterations. So we use the build system's info meta-operation directly.
-    //
     try
     {
-      // Note: the package directory inside the configuration is a bit of an
-      // assumption.
-      //
-      b_project_info pi (
-        b_info ((dir_path (cfg) /= p.string ()),
-                verb,
-                [] (const char* const args[], size_t n)
-                {
-                  if (verb >= 3)
-                    print_process (args, n);
-                },
-                path (name_b (o)),
-                exec_dir,
-                o.build_option ()));
-
-      if (pi.version.empty ())
-        fail << "empty version for package " << p;
-
-      // Verify the name for good measure.
-      //
-      if (pi.project != p)
-        fail << "name mismatch for package " << p;
-
-      return move (pi.version);
+      return b_info (d,
+                     verb,
+                     [] (const char* const args[], size_t n)
+                     {
+                       if (verb >= 3)
+                         print_process (args, n);
+                     },
+                     path (name_b (o)),
+                     exec_dir,
+                     o.build_option ());
     }
     catch (const b_error& e)
     {
       if (e.normal ())
         throw failed (); // Assume the build2 process issued diagnostics.
 
-      fail << "unable to obtain package " << p << " project info: " << e
-           << endf;
+      fail << "unable to obtain project info for package directory " << d
+           << ": " << e << endf;
     }
+  }
+
+  standard_version
+  package_version (const common_options& o, const dir_path& d)
+  {
+    b_project_info pi (package_info (o, d));
+
+    if (pi.version.empty ())
+      fail << "empty version for package directory " << d;
+
+    return move (pi.version);
+  }
+
+  standard_version
+  package_version (const common_options& o,
+                   const dir_path& cfg,
+                   const package_name& p)
+  {
+    // We could have used bpkg-pkg-status but then we would have to deal with
+    // iterations. So we use the build system's info meta-operation directly.
+    //
+    // Note: the package directory inside the configuration is a bit of an
+    // assumption.
+    //
+    b_project_info pi (package_info (o, (dir_path (cfg) /= p.string ())));
+
+    if (pi.version.empty ())
+      fail << "empty version for package " << p;
+
+    // Verify the name for good measure.
+    //
+    if (pi.project != p)
+      fail << "name mismatch for package " << p;
+
+    return move (pi.version);
   }
 }
