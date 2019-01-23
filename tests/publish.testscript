@@ -257,6 +257,13 @@ g = git -C prj >! 2>!
           info: use --force=uncommitted to publish anyway
         EOE
 
+      # Note that the uncomitted snapshot sn is the previous commit time + 1
+      # and the commited snapshot sn is the commit time. That's why let's
+      # sleep a bit to make sure that the package version increases with the
+      # commit.
+      #
+      sleep 1;
+
       $g commit -a -m 'Version';
 
       $* 2>>~%EOE% != 0;
