@@ -6,21 +6,69 @@ namespace bdep
 {
   template <typename... A>
   void
-  run_git (const semantic_version& min_ver, const dir_path& repo, A&&... args)
+  run_git (const semantic_version& min_ver,
+           bool progress,
+           const dir_path& repo,
+           A&&... args)
   {
-    // We don't expect git to print anything to stdout, as the caller would use
-    // start_git() and pipe otherwise. Thus, let's redirect stdout to stderr
-    // for good measure, as git is known to print some informational messages
-    // to stdout.
+    // Unfortunately git doesn't have any kind of a no-progress option but
+    // suppresses progress automatically for a non-terminal. So we use this
+    // feature for the progress suppression by redirecting git's stderr to our
+    // own diagnostics stream via a proxy pipe.
+    //
+    fdpipe pipe;
+
+    if (!progress)
+      pipe = open_pipe ();
+
+    int err (!progress ? pipe.out.get () : 2);
+
+    // We don't expect git to print anything to stdout, as the caller would
+    // use start_git() and pipe otherwise. Thus, let's redirect stdout to
+    // stderr for good measure, as git is known to print some informational
+    // messages to stdout.
     //
     process pr (start_git (min_ver,
                            repo,
-                           0 /* stdin  */,
-                           2 /* stdout */,
-                           2 /* stderr */,
+                           0   /* stdin  */,
+                           err /* stdout */,
+                           err /* stderr */,
                            forward<A> (args)...));
 
-    finish_git (pr);
+    bool io (false);
+
+    if (!progress)
+    {
+      // Shouldn't throw, unless something is severely damaged.
+      //
+      pipe.out.close ();
+
+      try
+      {
+        ifdstream is (move (pipe.in), fdstream_mode::skip, ifdstream::badbit);
+
+        // We could probably write something like this, instead:
+        //
+        // *diag_stream << is.rdbuf () << flush;
+        //
+        // However, it would never throw and we could potentially miss the
+        // reading failure.
+        //
+        for (string l; !eof (getline (is, l)); )
+          *diag_stream << l << std::endl;
+
+        is.close ();
+      }
+      catch (const io_error&)
+      {
+        // Presumably the child process failed and issued diagnostics so let
+        // finish_git() try to deal with that.
+        //
+        io = true;
+      }
+    }
+
+    finish_git (pr, io);
   }
 
   void
@@ -43,8 +91,8 @@ namespace bdep
   optional<string>
   git_line (const semantic_version& min_ver, bool ie, A&&... args)
   {
-    fdpipe pipe (fdopen_pipe ());
-    auto_fd null (ie ? fdnull () : auto_fd ());
+    fdpipe pipe (open_pipe ());
+    auto_fd null (ie ? open_dev_null () : auto_fd ());
 
     process pr (start_git (min_ver,
                            0                    /* stdin  */,
@@ -53,5 +101,40 @@ namespace bdep
                            forward<A> (args)...));
 
     return git_line (move (pr), move (pipe), ie);
+  }
+
+  template <typename... A>
+  void
+  git_push (const common_options& o, const dir_path& repo, A&&... args)
+  {
+    // Map verbosity level. Suppress the (too detailed) push command output if
+    // the verbosity level is 1. However, we still want to see the progress in
+    // this case, unless we were asked to suppress it (git also suppress
+    // progress for a non-terminal stderr).
+    //
+    cstrings v;
+    bool progress (!o.no_progress ());
+
+    if (verb < 2)
+    {
+      v.push_back ("-q");
+
+      if (progress)
+      {
+        if (verb == 1 && stderr_term)
+          v.push_back ("--progress");
+      }
+      else
+        progress = true; // No need to suppress (already done with -q).
+    }
+    else if (verb > 3)
+      v.push_back ("-v");
+
+    run_git (semantic_version {2, 1, 0},
+             progress,
+             repo,
+             "push",
+             v,
+             forward<A> (args)...);
   }
 }

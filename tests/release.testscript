@@ -56,7 +56,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
 : single-pkg
 :
 {
-  test.arguments += --yes -q
+  test.arguments += --yes
 
   : release
   :
@@ -71,7 +71,10 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       {
         $clone_root_repos;
 
-        $*;
+        $* 2>>~%EOE%;
+          %.+
+          pushing branch master, tag v0.1.0
+          EOE
 
         $clone2;
         $log2 >>:~%EOO%;
@@ -94,7 +97,10 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       {
         $clone_root_repos;
 
-        $* --alpha;
+        $* --alpha 2>>~%EOE%;
+          %.+
+          pushing branch master, tag v0.1.0-a.1
+          EOE
 
         $clone2;
         $log2 >>:~%EOO%
@@ -109,7 +115,10 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       {
         $clone_root_repos;
 
-        $* --beta;
+        $* --beta 2>>~%EOE%;
+          %.+
+          pushing branch master, tag v0.1.0-b.1
+          EOE
 
         $clone2;
         $log2 >>:~%EOO%
@@ -124,7 +133,10 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       {
         $clone_root_repos;
 
-        $* --minor;
+        $* --minor 2>>~%EOE%;
+          %.+
+          pushing branch master, tag v0.2.0
+          EOE
 
         $clone2;
         $log2 >>:~%EOO%
@@ -139,7 +151,10 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       {
         $clone_root_repos;
 
-        $* --major;
+        $* --major 2>>~%EOE%;
+          %.+
+          pushing branch master, tag v1.0.0
+          EOE
 
         $clone2;
         $log2 >>:~%EOO%
@@ -162,7 +177,10 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
 
         $* --open-beta 2>'error: --open-beta specified for final current version 0.1.0' != 0;
 
-	$* --alpha --open-beta;
+	$* --alpha --open-beta 2>>~%EOE%;
+          %.+
+          pushing branch master, tag v0.1.0-a.1
+          EOE
 
         $clone2;
         $log2 >>:~%EOO%;
@@ -171,7 +189,10 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
            Create
           EOO
 
-	$* --beta --open-beta;
+	$* --beta --open-beta 2>>~%EOE%;
+          %.+
+          pushing branch master, tag v0.1.0-b.1
+          EOE
 
         $pull2;
         $log2 >>:~%EOO%
@@ -188,7 +209,10 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       {
         $clone_root_repos;
 
-        $* --open-patch;
+        $* --open-patch 2>>~%EOE%;
+          %.+
+          pushing branch master, tag v0.1.0
+          EOE
 
         $clone2;
         $log2 >>:~%EOO%;
@@ -197,7 +221,12 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
            Create
           EOO
 
-        $*; # --open-patch is implied for bugfix release series.
+        # Note: --open-patch is implied for bugfix release series.
+        #
+        $* 2>>~%EOE%;
+          %.+
+          pushing branch master, tag v0.1.1
+          EOE
 
         $pull2;
         $log2 >>:~%EOO%
@@ -217,9 +246,20 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
         $* --alpha --open-minor 2>'error: --open-minor specified for alpha current version 0.1.0-a.1' != 0;
 	$* --beta  --open-minor 2>'error: --open-minor specified for beta current version 0.1.0-b.1' != 0;
 
-	$* --open-patch;
-	$*;
-	$* --open-minor;
+	$* --open-patch 2>>~%EOE%;
+          %.+
+          pushing branch master, tag v0.1.0
+          EOE
+
+	$* 2>>~%EOE%;
+          %.+
+          pushing branch master, tag v0.1.1
+          EOE
+
+	$* --open-minor 2>>~%EOE%;
+          %.+
+          pushing branch master, tag v0.1.2
+          EOE
 
         $clone2;
         $log2 >>:~%EOO%
@@ -238,7 +278,10 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       {
         $clone_root_repos;
 
-	$* --open-major;
+	$* --open-major 2>>~%EOE%;
+          %.+
+          pushing branch master, tag v0.1.0
+          EOE
 
         $clone2;
         $log2 >>:~%EOO%
@@ -259,7 +302,10 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       {
         $clone_root_repos;
 
-        $* --no-open;
+        $* --no-open 2>>~%EOE%;
+          %.+
+          pushing branch master, tag v0.1.0
+          EOE
 
         $clone2;
         $log2 >>:~%EOO%;
@@ -267,7 +313,10 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
            Create
           EOO
 
-        $* --open;
+        $* --open 2>>~%EOE%;
+          %.+
+          pushing branch master
+          EOE
 
         $pull2;
         $log2 >>:~%EOO%
@@ -282,7 +331,10 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       {
         $clone_root_repos;
 
-        $* --no-tag;
+        $* --no-tag 2>>~%EOE%;
+          %.+
+          pushing branch master
+          EOE
 
         $clone2;
         $log2 >>:~%EOO%;
@@ -296,7 +348,9 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
             info: use --force=snapshot to tag anyway
           EOE
 
-        $* --tag --force=snapshot;
+        $* --tag --force=snapshot 2>>~%EOE%;
+          %pushing branch master, tag v0.2.0-a.0.\.+%d
+          EOE
 
         $pull2;
         $log2 >>:~%EOO%
@@ -311,7 +365,10 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       {
         $clone_root_repos;
 
-        $* --no-tag --no-open;
+        $* --no-tag --no-open 2>>~%EOE%;
+          %.+
+          pushing branch master
+          EOE
 
         $clone2;
         $log2 >>:~%EOO%;
@@ -319,7 +376,9 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
            Create
           EOO
 
-        $* --tag;
+        $* --tag 2>>EOE;
+          pushing branch master, tag v0.1.0
+          EOE
 
         $pull2;
         $log2 >>:~%EOO%;
@@ -327,7 +386,10 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
            Create
           EOO
 
-        $* --open;
+        $* --open 2>>~%EOE%;
+          %.+
+          pushing branch master
+          EOE
 
         $pull2;
         $log2 >>:~%EOO%
@@ -348,6 +410,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
 
     : validate-manifest
     {
+      test.options += -q
       test.arguments += --push
 
       : file-value
@@ -406,7 +469,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       $* --no-commit;
 
       $gp commit -a -m 'Release version';
-      $* --tag --push;
+      $* --tag --push -q;
 
       $clone2;
       $log2 >>:~%EOO%
@@ -419,6 +482,8 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
   : revision
   :
   {
+    test.options += -q
+
     +$clone_root_repos
     +$* --no-open --push
 
@@ -532,6 +597,8 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
   : open
   :
   {
+    test.options += -q
+
     : unstaged
     :
     {
@@ -589,6 +656,26 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
        Create
       EOO
   }
+
+  : no-progress
+  :
+  {
+    $clone_root_repos;
+
+    $* --push --no-progress 2>>~%EOE%;
+      %\.+ Release version 0.1.0%d
+       1 file changed, 1 insertion(+), 1 deletion(-)
+      %\.+ Change version to 0.2.0-a.0.z%d
+       1 file changed, 1 insertion(+), 1 deletion(-)
+      EOE
+
+    $clone2;
+    $log2 >>:~%EOO%
+      % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
+       (tag: v0.1.0) Release version 0.1.0
+       Create
+      EOO
+  }
 }
 
 : multi-pkg
@@ -613,7 +700,8 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
   +$gp commit -m 'Create'
   +$gp push --set-upstream origin master
 
-  test.arguments += --push -q
+  test.options += -q
+  test.arguments += --push
 
   : patch
   :

@@ -67,11 +67,6 @@ namespace bdep
   using butl::auto_rmfile;
   using butl::auto_rmdir;
 
-  // <libbutl/fdstream.mxx>
-  //
-  using butl::fdnull;
-  using butl::fdopen_pipe;
-
   // Empty string and path.
   //
   extern const string   empty_string;
@@ -119,6 +114,10 @@ namespace bdep
   //
   extern dir_path exec_dir;
 
+  // Progress.
+  //
+  extern bool stderr_term; // True if stderr is a terminal.
+
   // Filesystem.
   //
   bool
@@ -146,6 +145,14 @@ namespace bdep
         bool dir_itself = true,
         uint16_t verbosity = 3,
         rm_error_mode = rm_error_mode::fail);
+
+  // File descriptor streams.
+  //
+  fdpipe
+  open_pipe ();
+
+  auto_fd
+  open_dev_null ();
 
   // Run a process.
   //

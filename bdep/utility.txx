@@ -2,6 +2,7 @@
 // copyright : Copyright (c) 2014-2019 Code Synthesis Ltd
 // license   : MIT; see accompanying LICENSE file
 
+#include <cstring>  // strcmp()
 #include <iostream> // cin
 
 #include <bdep/diagnostics.hxx>
@@ -91,6 +92,7 @@ namespace bdep
       string vl;
       {
         const char* o (nullptr);
+        bool progress (!co.no_progress ());
 
         switch (verb)
         {
@@ -106,7 +108,15 @@ namespace bdep
         }
 
         if (o != nullptr)
+        {
           ops.push_back (o);
+
+          if (strcmp (o, "-q") == 0)
+            progress = true; // No need to suppress (already done with -q).
+        }
+
+        if (!progress)
+          ops.push_back ("--no-progress");
       }
 
       // Forward our --build* options.
@@ -180,6 +190,7 @@ namespace bdep
       string vl;
       {
         const char* o (nullptr);
+        bool progress (!co.no_progress ());
 
         switch (verb)
         {
@@ -195,7 +206,15 @@ namespace bdep
         }
 
         if (o != nullptr)
+        {
           ops.push_back (o);
+
+          if (strcmp (o, "-q") == 0)
+            progress = true; // No need to suppress (already done with -q).
+        }
+
+        if (!progress)
+          ops.push_back ("--no-progress");
       }
 
       return process_start_callback (

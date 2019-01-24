@@ -80,6 +80,8 @@ namespace bdep
     }
   }
 
+  bool stderr_term;
+
   bool
   exists (const path& f, bool ignore_error)
   {
@@ -171,6 +173,32 @@ namespace bdep
 
       if (!w)
         throw failed ();
+    }
+  }
+
+  fdpipe
+  open_pipe ()
+  {
+    try
+    {
+      return fdopen_pipe ();
+    }
+    catch (const io_error& e)
+    {
+      fail << "unable to open pipe: " << e << endf;
+    }
+  }
+
+  auto_fd
+  open_dev_null ()
+  {
+    try
+    {
+      return fdnull ();
+    }
+    catch (const io_error& e)
+    {
+      fail << "unable to open null device: " << e << endf;
     }
   }
 

@@ -53,6 +53,52 @@ namespace bdep
       //
       optional<url> location;
 
+      // Map the verbosity level.
+      //
+      cstrings v;
+      bool progress (!o.no_progress ());
+
+      auto suppress_progress = [&v] ()
+      {
+        v.push_back ("-s");
+        v.push_back ("-S"); // But show errors.
+      };
+
+      if (verb < 1)
+      {
+        suppress_progress ();
+        progress = true;      // No need to suppress (already done).
+      }
+      else if (verb == 1 && fdterm (2))
+      {
+        if (progress)
+          v.push_back ("--progress-bar");
+      }
+      else if (verb > 3)
+        v.push_back ("-v");
+
+      // Suppress progress.
+      //
+      // Note: the `-v -s` options combination is valid and results in a
+      // verbose output without progress.
+      //
+      if (!progress)
+        suppress_progress ();
+
+      // Convert the submit arguments to curl's --form* options.
+      //
+      strings fos;
+      for (const parameter& p: params)
+      {
+        fos.emplace_back (p.type == parameter::file
+                          ? "--form"
+                          : "--form-string");
+
+        fos.emplace_back (p.type == parameter::file
+                          ? p.name + "=@" + p.value
+                          : p.name + "="  + p.value);
+      }
+
       // Note that it's a bad idea to issue the diagnostics while curl is
       // running, as it will be messed up with the progress output. Thus, we
       // throw the runtime_error exception on the HTTP response parsing error
@@ -63,65 +109,39 @@ namespace bdep
       // running curl over using butl::curl because in this context it is
       // restrictive and inconvenient.
       //
-      process pr;
+      // Start curl program.
+      //
+      fdpipe pipe (open_pipe ()); // Text mode seems appropriate.
+
+      // Note that we don't specify any default timeouts, assuming that bdep
+      // is an interactive program and the user can always interrupt the
+      // command (or pass the timeout with --curl-option).
+      //
+      process pr (start (0          /* stdin  */,
+                         pipe       /* stdout */,
+                         2          /* stderr */,
+                         o.curl (),
+                         v,
+                         "-A", (BDEP_USER_AGENT " curl"),
+
+                         o.curl_option (),
+
+                         // Include the response headers in the output so we
+                         // can get the status code/reason, content type, and
+                         // the redirect location.
+                         //
+                         "--include",
+
+                         fos,
+                         u.string ()));
+
+      // Shouldn't throw, unless something is severely damaged.
+      //
+      pipe.out.close ();
+
       bool io (false);
       try
       {
-        // Map the verbosity level.
-        //
-        cstrings v;
-        if (verb < 1)
-        {
-          v.push_back ("-s");
-          v.push_back ("-S"); // But show errors.
-        }
-        else if (verb == 1 && fdterm (2))
-          v.push_back ("--progress-bar");
-        else if (verb > 3)
-          v.push_back ("-v");
-
-        // Convert the submit arguments to curl's --form* options.
-        //
-        strings fos;
-        for (const parameter& p: params)
-        {
-          fos.emplace_back (p.type == parameter::file
-                            ? "--form"
-                            : "--form-string");
-
-          fos.emplace_back (p.type == parameter::file
-                            ? p.name + "=@" + p.value
-                            : p.name + "="  + p.value);
-        }
-
-        // Start curl program.
-        //
-        fdpipe pipe (fdopen_pipe ()); // Text mode seems appropriate.
-
-        // Note that we don't specify any default timeouts, assuming that bdep
-        // is an interactive program and the user can always interrupt the
-        // command (or pass the timeout with --curl-option).
-        //
-        pr = start (0          /* stdin  */,
-                    pipe       /* stdout */,
-                    2          /* stderr */,
-                    o.curl (),
-                    v,
-                    "-A", (BDEP_USER_AGENT " curl"),
-
-                    o.curl_option (),
-
-                    // Include the response headers in the output so we can
-                    // get the status code/reason, content type, and the
-                    // redirect location.
-                    //
-                    "--include",
-
-                    fos,
-                    u.string ());
-
-        pipe.out.close ();
-
         // First we read the HTTP response status line and headers. At this
         // stage we will read until the empty line (containing just CRLF). Not
         // being able to reach such a line is an error, which is the reason

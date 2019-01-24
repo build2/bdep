@@ -273,26 +273,28 @@ namespace bdep
       // Verify that archive name/content all match and while at it extract
       // its manifest.
       //
-      process pr;
+      fdpipe pipe (open_pipe ()); // Text mode seems appropriate.
+
+      // Pass the --deep option to make sure that the *-file manifest values
+      // are resolvable, so rep-create will not fail due to this package
+      // down the road.
+      //
+      process pr (start_bpkg (2    /* verbosity */,
+                              o,
+                              pipe /* stdout */,
+                              2    /* stderr */,
+                              "pkg-verify",
+                              "--deep",
+                              "--manifest",
+                              a));
+
+      // Shouldn't throw, unless something is severely damaged.
+      //
+      pipe.out.close ();
+
       bool io (false);
       try
       {
-        fdpipe pipe (fdopen_pipe ()); // Text mode seems appropriate.
-
-        // Pass the --deep option to make sure that the *-file manifest values
-        // are resolvable, so rep-create will not fail due to this package
-        // down the road.
-        //
-        pr = start_bpkg (2    /* verbosity */,
-                         o,
-                         pipe /* stdout */,
-                         2    /* stderr */,
-                         "pkg-verify",
-                         "--deep",
-                         "--manifest",
-                         a);
-
-        pipe.out.close ();
         ifdstream is (move (pipe.in), fdstream_mode::skip);
 
         manifest_parser mp (is, manifest_file.string ());
@@ -375,7 +377,7 @@ namespace bdep
       auto worktree_add = [&prj, &wd] ()
       {
         bool q (verb < 2);
-        auto_fd null (q ? fdnull () : auto_fd ());
+        auto_fd null (q ? open_dev_null () : auto_fd ());
 
         process pr (start_git (git_ver,
                                prj,
@@ -461,14 +463,14 @@ namespace bdep
         {
           // Create the empty tree object.
           //
-          auto_fd null (fdnull ());
-          fdpipe pipe (fdopen_pipe ());
+          auto_fd null (open_dev_null ());
+          fdpipe pipe (open_pipe ());
 
           process pr (start_git (git_ver,
                                  prj,
-                                 null.get () /* stdin  */,
-                                 pipe        /* stdout */,
-                                 2           /* stderr */,
+                                 null /* stdin  */,
+                                 pipe /* stdout */,
+                                 2    /* stderr */,
                                  "hash-object",
                                  "-wt", "tree",
                                  "--stdin"));
@@ -729,23 +731,14 @@ namespace bdep
               }
             }));
 
-        if (verb)
-          text << "pushing build2-control";
+        if (verb && !o.no_progress ())
+          text << "pushing branch build2-control";
 
-        // Note that we suppress the (too detailed) push command output if
-        // the verbosity level is 1. However, we still want to see the
-        // progress in this case.
-        //
-        run_git (git_ver,
-                 wd,
-                 "push",
-
-                 verb < 2 ? "-q" : verb > 3 ? "-v" : nullptr,
-                 verb == 1 ? "--progress" : nullptr,
-
-                 !remote_exists
-                 ? cstrings ({"--set-upstream", "origin", "build2-control"})
-                 : cstrings ());
+        git_push (o,
+                  wd,
+                  (!remote_exists
+                   ? cstrings ({"--set-upstream", "origin", "build2-control"})
+                   : cstrings ()));
       }
 
       worktree_remove ();
@@ -758,7 +751,7 @@ namespace bdep
       // The path points into the temporary directory so let's omit the
       // directory part.
       //
-      if (verb)
+      if (verb && !o.no_progress ())
         text << "submitting " << p.archive.leaf ();
 
       url u (o.repository ());

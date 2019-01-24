@@ -36,6 +36,7 @@
 #include <bdep/clean.hxx>
 
 using namespace std;
+using namespace butl;
 using namespace bdep;
 
 namespace bdep
@@ -156,6 +157,8 @@ main (int argc, char* argv[])
 try
 {
   using namespace cli;
+
+  stderr_term = fdterm (stderr_fd ());
 
   argv0 = argv[0];
   exec_dir = path (argv0).directory ();

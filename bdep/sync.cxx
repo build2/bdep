@@ -33,20 +33,22 @@ namespace bdep
 
     // Use bpkg-rep-list to discover the list of project directories.
     //
-    process pr;
+    fdpipe pipe (open_pipe ()); // Text mode seems appropriate.
+
+    process pr (start_bpkg (3,
+                            co,
+                            pipe /* stdout */,
+                            2    /* stderr */,
+                            "rep-list",
+                            "-d", cfg));
+
+    // Shouldn't throw, unless something is severely damaged.
+    //
+    pipe.out.close ();
+
     bool io (false);
     try
     {
-      fdpipe pipe (fdopen_pipe ()); // Text mode seems appropriate.
-
-      pr = start_bpkg (3,
-                       co,
-                       pipe /* stdout */,
-                       2    /* stderr */,
-                       "rep-list",
-                       "-d", cfg);
-
-      pipe.out.close ();
       ifdstream is (move (pipe.in), fdstream_mode::skip, ifdstream::badbit);
 
       for (string l; !eof (getline (is, l)); )

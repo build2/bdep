@@ -888,17 +888,20 @@ namespace bdep
         brspec  = st.branch + ':' + string (st.upstream, p + 1);
       }
 
-      // Note that we suppress the (too detailed) push command output if
-      // the verbosity level is 1. However, we still want to see the
-      // progress in this case.
-      //
-      run_git (git_ver,
-               prj.path,
-               "push",
-               verb < 1 ? "-q" : verb >= 2 ? "-v" : nullptr,
-               remote,
-               brspec,
-               !tagspec.empty () ? tagspec.c_str () : nullptr);
+      if (verb && !o.no_progress ())
+      {
+        diag_record dr (text);
+        dr << "pushing branch " << st.branch;
+
+        if (prj.tag)
+          dr << ", tag " << *prj.tag;
+      }
+
+      git_push (o,
+                prj.path,
+                remote,
+                brspec,
+                !tagspec.empty () ? tagspec.c_str () : nullptr);
     }
 
     return 0;

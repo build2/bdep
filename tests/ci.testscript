@@ -59,6 +59,11 @@ init += $cxx -d prj 2>! &prj/**/bootstrap/***
 
 windows = ($cxx.target.class == 'windows')
 
+# Normally we disable the progress indication that complicates stderr output
+# validation. When testing the progress indication specifically we need to
+# handle curl's progress carefully, as it is not always terminated with the
+# newline character on Windows.
+#
 : single-pkg
 :
 {
@@ -68,10 +73,22 @@ windows = ($cxx.target.class == 'windows')
     $clone_root_prj;
     $init -C @cfg &prj-cfg/***;
 
+    $* --no-progress 2>>~%EOE%
+      %CI request is queued.*%
+      %reference: .+%
+      EOE
+  }
+
+  : progress
+  :
+  {
+    $clone_root_prj;
+    $init -C @cfg &prj-cfg/***;
+
     $* 2>>~"%EOE%"
       submitting to $server
       %.*
-      %CI request is queued.*%
+      %.*CI request is queued.*%
       %reference: .+%
       EOE
   }
@@ -146,15 +163,15 @@ windows = ($cxx.target.class == 'windows')
   +$g commit -m 'Create'
   +$g push --set-upstream origin master
 
+  test.options += --no-progress
+
   : both
   :
   {
     $clone_prj;
     $init -C @cfg &prj-cfg/***;
 
-    $* 2>>~"%EOE%"
-      submitting to $server
-      %.*
+    $* 2>>~%EOE%
       %CI request is queued.*%
       %reference: .+%
       EOE
@@ -170,9 +187,7 @@ windows = ($cxx.target.class == 'windows')
     #
     test.arguments = $regex.apply($test.arguments, '^(prj)$', '\1/libprj');
 
-    $* 2>>~"%EOE%"
-      submitting to $server
-      %.*
+    $* 2>>~%EOE%
       %CI request is queued.*%
       %reference: .+%
       EOE
@@ -198,8 +213,7 @@ windows = ($cxx.target.class == 'windows')
 
         package: prj
         version: 1.0.1
-      %.*
-      %CI request is queued.*%
+      %continue\\?.+ CI request is queued.*%
       %reference: .+%
       EOE
   }

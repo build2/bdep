@@ -90,6 +90,23 @@ namespace bdep
        system."
     }
 
+    // When it comes to external programs (such as curl, git, etc), if stderr
+    // is not a terminal, the logic is actually tri-state: With --no-progress
+    // we suppress any progress. With --progress (which we may add in the
+    // future), we request full progress. Finally, without any --*progress
+    // options we let the external program decide what to do: it may do
+    // something intelligent (like curl) and produce non-terminal-friendly
+    // progress (such as status lines printed periodically) or it may disable
+    // progress all together (like git). Of course, it may also do no
+    // detection and dump non-terminal-unfriendly progress in which case we
+    // should probably do the detection ourselves and suppress it.
+    //
+    bool --no-progress
+    {
+      "Suppress progress indicators for long-lasting operations, such as
+       network transfers, building, etc."
+    }
+
     path --bpkg
     {
       "<path>",

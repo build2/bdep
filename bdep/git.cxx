@@ -257,22 +257,24 @@ namespace bdep
     // git-status --porcelain=2 (available since git 2.11.0) gives us all the
     // information with a single invocation.
     //
-    process pr;
+    fdpipe pipe (open_pipe ()); // Text mode seems appropriate.
+
+    process pr (start_git (semantic_version {2, 11, 0},
+                           repo,
+                           0    /* stdin  */,
+                           pipe /* stdout */,
+                           2    /* stderr */,
+                           "status",
+                           "--porcelain=2",
+                           "--branch"));
+
+    // Shouldn't throw, unless something is severely damaged.
+    //
+    pipe.out.close ();
+
     bool io (false);
     try
     {
-      fdpipe pipe (fdopen_pipe ()); // Text mode seems appropriate.
-
-      pr = start_git (semantic_version {2, 11, 0},
-                      repo,
-                      0    /* stdin  */,
-                      pipe /* stdout */,
-                      2    /* stderr */,
-                      "status",
-                      "--porcelain=2",
-                      "--branch");
-
-      pipe.out.close ();
       ifdstream is (move (pipe.in), fdstream_mode::skip, ifdstream::badbit);
 
       // Lines starting with '#' are headers (come first) with any other line

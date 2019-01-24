@@ -9,6 +9,7 @@
 
 #include <bdep/types.hxx>
 #include <bdep/utility.hxx>
+#include <bdep/common-options.hxx>
 
 namespace bdep
 {
@@ -39,7 +40,17 @@ namespace bdep
   //
   template <typename... A>
   void
-  run_git (const semantic_version&, const dir_path& repo, A&&... args);
+  run_git (const semantic_version&,
+           bool progress,
+           const dir_path& repo,
+           A&&... args);
+
+  template <typename... A>
+  inline void
+  run_git (const semantic_version& min_ver, const dir_path& repo, A&&... args)
+  {
+    run_git (min_ver, true /* progress */, repo, forward<A> (args)...);
+  }
 
   // Return the first line of the git output. If ignore_error is true, then
   // suppress stderr, ignore (normal) error exit status, and return nullopt.
@@ -95,6 +106,12 @@ namespace bdep
   //
   git_repository_status
   git_status (const dir_path& repo);
+
+  // Run the git push command.
+  //
+  template <typename... A>
+  void
+  git_push (const common_options&, const dir_path& repo, A&&... args);
 }
 
 #include <bdep/git.ixx>

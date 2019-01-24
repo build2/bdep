@@ -52,7 +52,7 @@ namespace bdep
     // present, then it is included in the diagnostics.
     //
     result
-    post (const common_options& o, const url&, const parameters&);
+    post (const common_options&, const url&, const parameters&);
   }
 }
 

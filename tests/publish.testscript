@@ -43,7 +43,13 @@ g = git -C prj >! 2>!
 # duplicate submissions. We will use unique version for each test,
 # incrementing the patch version for 1.0.X.
 #
-# Next version to use: 1.0.19
+# Next version to use: 1.0.20
+#
+
+# Normally we disable the progress indication that complicates stderr output
+# validation. When testing the progress indication specifically we need to
+# handle curl's progress carefully, as it is not always terminated with the
+# newline character on Windows.
 #
 : submit
 :
@@ -64,12 +70,27 @@ g = git -C prj >! 2>!
       $init -C @cfg &prj-cfg/***;
       sed -i -e 's/^(version:) .*$/\1 1.0.1/' prj/manifest;
 
-      $* 2>>~%EOE%
+      $* --no-progress 2>>~%EOE%
         synchronizing:
           upgrade prj/1.0.1
-        submitting prj-1.0.1.tar.gz
-        %.*
         %package submission is queued(: \.*prj/1.0.1)?%d
+        %reference: .{12}%
+        EOE
+    }
+
+    : progress
+    :
+    {
+      $clone_root_prj;
+      $init -C @cfg &prj-cfg/***;
+      sed -i -e 's/^(version:) .*$/\1 1.0.19/' prj/manifest;
+
+      $* 2>>~%EOE%
+        synchronizing:
+          upgrade prj/1.0.19
+        submitting prj-1.0.19.tar.gz
+        %.*
+        %.*package submission is queued(: \.*prj/1.0.19)?%d
         %reference: .{12}%
         EOE
     }
@@ -117,6 +138,7 @@ g = git -C prj >! 2>!
   : multi-pkg
   :
   {
+    test.options += --no-progress
     test.arguments += --force=uncommitted --simulate 'success'
 
     +$new -t empty prj &prj/***
@@ -132,12 +154,8 @@ g = git -C prj >! 2>!
       $init -C @cfg &prj-cfg/***;
 
       $* 2>>~%EOE%
-        submitting libprj-1.0.2.tar.gz
-        %.*
         %package submission is queued(: \.*libprj/1.0.2)?%d
         %reference: .{12}%
-        submitting prj-1.0.2.tar.gz
-        %.*
         %package submission is queued(: \.*prj/1.0.2)?%d
         %reference: .{12}%
         EOE
@@ -155,8 +173,6 @@ g = git -C prj >! 2>!
       test.arguments = $regex.apply($test.arguments, '^(prj)$', '\1/libprj');
 
       $* 2>>~%EOE%
-        submitting libprj-1.0.3.tar.gz
-        %.*
         %package submission is queued(: \.*prj/1.0.3)?%d
         %reference: .{12}%
         EOE
@@ -189,12 +205,8 @@ g = git -C prj >! 2>!
           project: prj
           section: stable
         %warning: publishing using staged build2 toolchain%?
-        continue? [y/n] submitting libprj-1.0.4.tar.gz
-        %.*
-        %package submission is queued\(: \\.*libprj/1.0.4\)?%d
+        %continue\\?\\.+ package submission is queued\(: \\.*libprj/1.0.4\)?%d
         %reference: .{12}%
-        submitting prj-1.0.4.tar.gz
-        %.*
         %package submission is queued\(: \\.*prj/1.0.4\)?%d
         %reference: .{12}%
         EOE
@@ -204,6 +216,7 @@ g = git -C prj >! 2>!
   : commited-prj
   :
   {
+    test.options += --no-progress
     test.arguments += --simulate 'success'
 
     clone_prj = cp --no-cleanup -p -r ../prj ./ &prj/***
@@ -234,8 +247,6 @@ g = git -C prj >! 2>!
       $g commit -a -m 'Version';
 
       $* 2>>~%EOE%
-        submitting prj-1.0.16.tar.gz
-        %.*
         %package submission is queued(: \.*prj/1.0.16)?%d
         %reference: .{12}%
         EOE
@@ -274,8 +285,6 @@ g = git -C prj >! 2>!
         EOE
 
       $* --force=snapshot 2>>~%EOE%
-        %submitting prj-1.0.17-a.0.\.+.tar.gz%d
-        %.*
         %package submission is queued(: \.*prj/1.0.17-a.0.\.+)?%d
         %reference: .{12}%
         EOE
@@ -285,6 +294,7 @@ g = git -C prj >! 2>!
   : non-vsc-prj
   :
   {
+    test.options += --no-progress
     test.arguments += --simulate 'success'
 
     clone_prj = cp --no-cleanup -p -r ../prj ./ &prj/***;
@@ -298,8 +308,6 @@ g = git -C prj >! 2>!
     $* 2>>~%EOE%
       synchronizing:
         upgrade prj/1.0.18
-      submitting prj-1.0.18.tar.gz
-      %.*
       %package submission is queued(: \.*prj/1.0.18)?%d
       %reference: .{12}%
       EOE
@@ -308,6 +316,7 @@ g = git -C prj >! 2>!
   : failure
   :
   {
+    test.options += --no-progress
     test.arguments += --force=uncommitted
 
     : duplicate-archive
@@ -322,8 +331,6 @@ g = git -C prj >! 2>!
       $* 2>>~%EOE% != 0
         synchronizing:
           upgrade prj/1.0.5
-        submitting prj-1.0.5.tar.gz
-        %.*
         error: duplicate submission
         %  info: reference: .{12}%?
         EOE
@@ -341,8 +348,6 @@ g = git -C prj >! 2>!
       $* 2>>~%EOE% != 0
         synchronizing:
           upgrade prj/1.0.6
-        submitting prj-1.0.6.tar.gz
-        %.*
         error: submission handling failed
         %  info: consider reporting this to .+ maintainers%
         EOE
@@ -360,8 +365,6 @@ g = git -C prj >! 2>!
       $* 2>>~%EOE% != 0
         synchronizing:
           upgrade prj/1.0.7
-        submitting prj-1.0.7.tar.gz
-        %.*
         error: HTTP status code 500 (internal server error)
         %  info: consider reporting this to .+ maintainers%
         EOE
@@ -414,13 +417,15 @@ g = git -C prj >! 2>!
     $* >&2 2>>~%EOE%;
       synchronizing:
         upgrade prj/1.0.8
-      pushing build2-control
+      pushing branch build2-control
       %.*
       submitting prj-1.0.8.tar.gz
-      %.*
-      %package submission is queued(: \.*prj/1.0.8)?%d
+      %.+
+      %.*package submission is queued(: \.*prj/1.0.8)?%d
       %reference: .{12}%
       EOE
+
+    test.options += --no-progress;
 
     # Publish when both local and remote-tracking build2-control branches are
     # present.
@@ -430,10 +435,6 @@ g = git -C prj >! 2>!
     $* 2>>~%EOE%;
       synchronizing:
         upgrade prj/1.0.9
-      pushing build2-control
-      %.*
-      submitting prj-1.0.9.tar.gz
-      %.*
       %package submission is queued(: \.*prj/1.0.9)?%d
       %reference: .{12}%
       EOE
@@ -448,10 +449,6 @@ g = git -C prj >! 2>!
     $* 2>>~%EOE%;
       synchronizing:
         upgrade prj/1.0.10
-      pushing build2-control
-      %.*
-      submitting prj-1.0.10.tar.gz
-      %.*
       %package submission is queued(: \.*prj/1.0.10)?%d
       %reference: .{12}%
       EOE
@@ -519,21 +516,19 @@ g = git -C prj >! 2>!
     $* 2>>~%EOE% != 0;
       synchronizing:
         upgrade prj/1.0.12
-      pushing build2-control
+      pushing branch build2-control
       %.*
       error: unable to push build2-control branch
         info: run 'git fetch' and try again
       EOE
+
+    test.options += --no-progress;
 
     # Publish successfully after the fetch.
     #
     $g fetch;
 
     $* 2>>~%EOE%;
-      pushing build2-control
-      %.*
-      submitting prj-1.0.12.tar.gz
-      %.*
       %package submission is queued(: \.*prj/1.0.12)?%d
       %reference: .{12}%
       EOE
@@ -548,10 +543,7 @@ g = git -C prj >! 2>!
     $* >&2 2>>~%EOE%;
       synchronizing:
         upgrade prj/1.0.13
-      pushing build2-control
-      %.*
-      submitting prj-1.0.13.tar.gz
-      %.*
+      Branch 'build2-control' set up to track remote branch 'build2-control' from 'origin'.
       %package submission is queued(: \.*prj/1.0.13)?%d
       %reference: .{12}%
       EOE
@@ -577,7 +569,6 @@ g = git -C prj >! 2>!
     $* 2>>~%EOE% != 0;
       synchronizing:
         upgrade prj/1.0.14
-      pushing build2-control
       %.*
       error: unable to push build2-control branch
         info: run 'git fetch' and try again
@@ -589,10 +580,6 @@ g = git -C prj >! 2>!
     $g pull;
 
     $* 2>>~%EOE%;
-      pushing build2-control
-      %.*
-      submitting prj-1.0.14.tar.gz
-      %.*
       %package submission is queued(: \.*prj/1.0.14)?%d
       %reference: .{12}%
       EOE
