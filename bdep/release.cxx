@@ -489,7 +489,7 @@ namespace bdep
       verify ("--no-commit", o.no_commit ());  // See above for modes.
     }
 
-    // Fully parse package manifest verify it is valid and returning the
+    // Fully parse package manifest verifying it is valid and returning the
     // position of the version value. In a sense we are publishing (by
     // tagging) to a version control-based repository and it makes sense to
     // ensure the repository will not be broken, similar to how we do it in
