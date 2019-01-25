@@ -543,7 +543,7 @@ g = git -C prj >! 2>!
     $* >&2 2>>~%EOE%;
       synchronizing:
         upgrade prj/1.0.13
-      Branch 'build2-control' set up to track remote branch 'build2-control' from 'origin'.
+      %Branch '?build2-control'? set up to track remote branch '?build2-control'? from '?origin'?.%d
       %package submission is queued(: \.*prj/1.0.13)?%d
       %reference: .{12}%
       EOE
