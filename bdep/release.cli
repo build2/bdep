@@ -160,6 +160,19 @@ namespace bdep
       "Open the development cycle with the next major version."
     }
 
+    // We are using string instead of standard_version because its constructor
+    // is too loose for our needs which means we have to do extra validations
+    // anyway (pre-release, etc).
+    //
+    string --open-base
+    {
+      "<version>",
+      "Open the development cycle with the specified version. The base version
+       should be in the \c{\i{major}\b{.}\i{minor}\c{.}\i{patch}} form with
+       the opened version becoming
+       \c{\i{major}\b{.}\i{minor}\b{.}\i{patch}\b{-a.0.z}}."
+    }
+
     std::set<string> --force
     {
       "<check>",

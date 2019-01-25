@@ -290,6 +290,40 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
            Create
           EOO
       }
+
+      : base
+      :
+      {
+        $clone_root_repos;
+
+	$* --open-base 1.0 2>>EOE != 0;
+          error: invalid base version '1.0': '.' expected after minor version
+          EOE
+
+	$* --open-base 1.0.0-a.1 2>>EOE != 0;
+          error: invalid base version '1.0.0-a.1': pre-release
+          EOE
+
+	$* --open-base 1.2.3 2>>~%EOE%;
+          %.+
+          pushing branch master, tag v0.1.0
+          EOE
+
+        $clone2;
+        $log2 >>:~%EOO%;
+          % \(HEAD -> master, \.*\) Change version to 1.2.3-a.0.z%d
+           (tag: v0.1.0) Release version 0.1.0
+           Create
+          EOO
+
+	$* --open-base 1.2.2 2>>EOE != 0;
+          error: base version 1.2.2 is less than or equal to current version 1.2.3
+          EOE
+
+	$* --open-base 1.2.3 2>>EOE != 0
+          error: base version 1.2.3 is less than or equal to current version 1.2.3
+          EOE
+      }
     }
 
     : no
@@ -974,5 +1008,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
   $* --open     --no-tag    2>'error: both --open and --no-tag specified'        != 0;
   $* --tag      --no-commit 2>'error: both --tag and --no-commit specified'      != 0;
   $* --push     --no-commit 2>'error: both --push and --no-commit specified'     != 0;
-  $* --push     --show-push 2>'error: both --push and --show-push specified'     != 0
+  $* --push     --show-push 2>'error: both --push and --show-push specified'     != 0;
+
+  $* --open-base 1.2.3 --open-beta 2>'error: both --open-beta and --open-base specified' != 0
 }

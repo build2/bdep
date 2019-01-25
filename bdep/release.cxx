@@ -189,6 +189,31 @@ namespace bdep
 
       fail << "current version " << cv << " is a snapshot";
     }
+    else if (o.open_base_specified ())
+    {
+      const string& vs (o.open_base ());
+
+      try
+      {
+        standard_version v (vs);
+
+        if (!v.release ())
+          throw invalid_argument ("pre-release");
+
+        if (v.revision != 0)
+          throw invalid_argument ("contains revision");
+
+        if (v <= cv)
+          fail << "base version " << vs << " is less than or equal to "
+               << "current version " << cv;
+
+        ov = make_snapshot (v.major (), v.minor (), v.patch ());
+      }
+      catch (const invalid_argument& e)
+      {
+        fail << "invalid base version '" << vs << "': " << e;
+      }
+    }
     else if (cv.alpha ())
     {
       if (const char* n = (o.open_patch () ? "--open-patch" :
@@ -482,7 +507,8 @@ namespace bdep
       verify ("--open-patch", o.open_patch ());
       verify ("--open-minor", o.open_minor ());
       verify ("--open-major", o.open_major ());
-      verify ("--no-open",    o.no_open ());    // Releasing only (see above).
+      verify ("--open-base",  o.open_base_specified ());
+      verify ("--no-open",    o.no_open ()); // Releasing only (see above).
 
       // There is no sense to push without committing the version change first.
       // Meaningful for all modes.
@@ -601,10 +627,10 @@ namespace bdep
 
           v = standard_version (vv.value, f);
         }
-        catch (const invalid_argument&)
+        catch (const invalid_argument& e)
         {
-          fail << "current package " << n << " version " << vv.value
-               << " is not standard";
+          fail << "current package " << n << " version '" << vv.value
+               << "' is not standard: " << e;
         }
 
         prj.packages.push_back (
