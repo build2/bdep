@@ -84,12 +84,12 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
           EOO
 
   	cat prj2/manifest >>~%EOO%
-            %.*
-            name: prj
-            version: 0.2.0-a.0.z
-            summary: prj executable
-            %.*
-            EOO
+          %.*
+          name: prj
+          version: 0.2.0-a.0.z
+          summary: prj executable
+          %.*
+          EOO
       }
 
       : alpha
@@ -499,7 +499,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       +echo '' >+ prj/manifest
       +$gp add manifest
 
-      : default
+      : normal
       :
       {
         $clone_repos;
@@ -512,6 +512,23 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
         $log2 >>:~%EOO%
           % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0\+1%d
            Release version 0.1.0
+           Create
+          EOO
+      }
+
+      : stub
+      :
+      {
+        $clone_root_repos;
+
+        sed -i -e 's/^(version:) .*$/\1 0/' prj/manifest;
+	$gp add manifest;
+
+        $* --revision;
+
+        $clone2;
+        $log2 >>:~%EOO%
+          % \(HEAD -> master, tag: v0, \.*\) Release version 0\+1%d
            Create
           EOO
       }
