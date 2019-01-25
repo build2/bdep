@@ -99,6 +99,13 @@ namespace bdep
       "Push the committed changes and tags to the remote."
     }
 
+    bool --show-push
+    {
+      "Print the push command instead of executing it. This allows examining
+       the committed changes and tags before pushing them to the remote. Note
+       that the command is printed to \cb{stdout}."
+    }
+
     bool --no-open
     {
       "Don't open the next development cycle. Opening can be performed later

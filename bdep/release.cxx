@@ -4,6 +4,8 @@
 
 #include <bdep/release.hxx>
 
+#include <iostream> // cout
+
 #include <libbutl/manifest-types.mxx>    // manifest_name_value
 #include <libbutl/manifest-rewriter.mxx>
 
@@ -483,10 +485,12 @@ namespace bdep
       verify ("--no-open",    o.no_open ());    // Releasing only (see above).
 
       // There is no sense to push without committing the version change first.
+      // Meaningful for all modes.
       //
       gopt = nullptr;
-      verify ("--push",      o.push ());       // Meaningful for all modes.
-      verify ("--no-commit", o.no_commit ());  // See above for modes.
+      verify ("--push",      o.push ());
+      verify ("--show-push", o.show_push ());
+      verify ("--no-commit", o.no_commit ()); // Not for tagging (see above).
     }
 
     // Fully parse package manifest verifying it is valid and returning the
@@ -656,7 +660,12 @@ namespace bdep
     const package& pkg (prj.packages.front ()); // Exemplar package.
 
     bool commit (!o.no_commit () && (pkg.release_version || prj.open_version));
-    bool push (o.push ());
+
+    // true - push, false - show push, nullopt - none of the above
+    //
+    optional<bool> push;
+    if (o.push () || o.show_push ())
+      push = o.push ();
 
     if (push && st.upstream.empty ())
       fail << "no upstream branch set for local branch '" << st.branch << "'";
@@ -693,6 +702,9 @@ namespace bdep
         dr << "  tag:     " << (prj.tag ? prj.tag->c_str () : "no") << '\n';
 
       dr << "  push:    " << (push ? st.upstream.c_str () : "no");
+
+      if (push && !*push)
+        dr << " (show)";
 
       dr.flush ();
 
@@ -860,6 +872,40 @@ namespace bdep
       // replace the tag in the remote repository. Thus, we specify the
       // repository and refspecs explicitly.
       //
+      // Upstream is normally in the <remote>/<branch> form, for example
+      // 'origin/master'.
+      //
+      string remote;
+      string brspec;
+      {
+        size_t p (path::traits::rfind_separator (st.upstream));
+
+        if (p == string::npos)
+          fail << "unable to extract remote from '" << st.upstream << "'";
+
+        remote = string (st.upstream, 0, p);
+
+        // Push the branch if the mode is other than tagging (and so the
+        // version change is committed) or the local branch is ahead (probably
+        // due to the previous command run without --push).
+        //
+        if (!o.tag () || st.ahead)
+        {
+          // Since we may print the push command, let's tidy it up a bit by
+          // reducing <src>:<dst> to just <src> if the source and destination
+          // branches are the same.
+          //
+          brspec = st.branch;
+
+          string b (st.upstream, p + 1);
+          if (b != st.branch)
+          {
+            brspec += ':';
+            brspec += b;
+          }
+        }
+      }
+
       string tagspec;
 
       if (prj.tag)
@@ -873,35 +919,69 @@ namespace bdep
         tagspec += *prj.tag;
       }
 
-      // Upstream is normally in the <remote>/<branch> form, for example
-      // 'origin/master'.
+      // There should always be something to push, since we are either tagging
+      // or committing the version change (or both).
       //
-      string remote;
-      string brspec;
+      assert (!brspec.empty () || !tagspec.empty ());
+
+      if (*push)
       {
-        size_t p (path::traits::rfind_separator (st.upstream));
+        if (verb && !o.no_progress ())
+        {
+          diag_record dr (text);
+          dr << "pushing";
 
-        if (p == string::npos)
-          fail << "unable to extract remote from '" << st.upstream << "'";
+          if (!brspec.empty ())
+            dr << " branch " << st.branch;
 
-        remote  = string (st.upstream, 0, p);
-        brspec  = st.branch + ':' + string (st.upstream, p + 1);
+          if (prj.tag)
+          {
+            if (!brspec.empty ())
+              dr << ',';
+
+            dr << " tag " << *prj.tag;
+          }
+        }
+
+        git_push (o,
+                  prj.path,
+                  remote,
+                  !brspec.empty ()  ? brspec.c_str ()  : nullptr,
+                  !tagspec.empty () ? tagspec.c_str () : nullptr);
       }
-
-      if (verb && !o.no_progress ())
+      else
       {
-        diag_record dr (text);
-        dr << "pushing branch " << st.branch;
+        // While normally the command will be run by the user, it's possible
+        // this will be scripted in some way and the script may want to
+        // extract the push command to run later. So, for generality and
+        // consistency with other similar situations, we print the command
+        // to stdout.
+        //
+        cout << "git ";
 
-        if (prj.tag)
-          dr << ", tag " << *prj.tag;
+        // Check if CWD is the project root and add -C if it's not.
+        //
+        if (prj.path != path::current_directory())
+        {
+          // Quote the directory if it contains spaces.
+          //
+          const string& s (prj.path.string ());
+          const string& d (s.find (' ') == string::npos ? s : '"' + s + '"');
+          cout << "-C " << d << ' ';
+        }
+
+        // Note: none of the remote, branch, or tag may contain spaces.
+        //
+        cout << "push " << remote;
+
+        if (!brspec.empty ())
+          cout << ' ' << brspec;
+
+        if (!tagspec.empty ())
+          cout << ' ' << tagspec;
+
+        cout << endl;
       }
-
-      git_push (o,
-                prj.path,
-                remote,
-                brspec,
-                !tagspec.empty () ? tagspec.c_str () : nullptr);
     }
 
     return 0;

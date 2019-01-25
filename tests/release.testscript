@@ -349,7 +349,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
           EOE
 
         $* --tag --force=snapshot 2>>~%EOE%;
-          %pushing branch master, tag v0.2.0-a.0.\.+%d
+          %pushing tag v0.2.0-a.0.\.+%d
           EOE
 
         $pull2;
@@ -377,7 +377,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
           EOO
 
         $* --tag 2>>EOE;
-          pushing branch master, tag v0.1.0
+          pushing tag v0.1.0
           EOE
 
         $pull2;
@@ -469,7 +469,10 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       $* --no-commit;
 
       $gp commit -a -m 'Release version';
-      $* --tag --push -q;
+
+      $* --tag --push 2>>EOE;
+        pushing branch master, tag v0.1.0
+        EOE
 
       $clone2;
       $log2 >>:~%EOO%
@@ -718,14 +721,13 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
   +$gp push --set-upstream origin master
 
   test.options += -q
-  test.arguments += --push
 
   : patch
   :
   {
     $clone_repos;
 
-    $* --yes;
+    $* --push --yes;
 
     $clone2;
     $log2 >>:~%EOO%;
@@ -754,7 +756,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
   : multiple-revisions
   :
   {
-    test.arguments += --yes
+    test.arguments += --push --yes
 
     $clone_repos;
     $* --no-open;
@@ -808,6 +810,35 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
 
           commit:  yes
           tag:     v0.1.0
+          push:    no
+        continue? [y/n]$sp
+        EOE
+
+      $clone2;
+      $log2 >>:~%EOO%
+        % \(HEAD -> master, \.*\) Create%d
+        EOO
+    }
+
+    : push
+    :
+    {
+      $clone_repos;
+
+      $* --push  <'y' 2>>:"EOE";
+        releasing:
+          package: prj
+          current: 0.1.0-a.0.z
+          release: 0.1.0
+          open:    0.2.0-a.0.z
+
+          package: libprj
+          current: 0.1.0-a.0.z
+          release: 0.1.0
+          open:    0.2.0-a.0.z
+
+          commit:  yes
+          tag:     v0.1.0
           push:    origin/master
         continue? [y/n]$sp
         EOE
@@ -815,6 +846,69 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       $clone2;
       $log2 >>:~%EOO%
         % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
+         (tag: v0.1.0) Release version 0.1.0
+         Create
+        EOO
+    }
+
+    : show-push
+    :
+    {
+      $clone_repos;
+
+      $* --show-push <'y' 2>>:"EOE" >>~%EOO%;
+        releasing:
+          package: prj
+          current: 0.1.0-a.0.z
+          release: 0.1.0
+          open:    0.2.0-a.0.z
+
+          package: libprj
+          current: 0.1.0-a.0.z
+          release: 0.1.0
+          open:    0.2.0-a.0.z
+
+          commit:  yes
+          tag:     v0.1.0
+          push:    origin/master \(show\)
+        continue? [y/n]$sp
+        EOE
+        %git -C \.+prj push origin master refs/tags/v0.1.0%d
+        EOO
+
+      $gp push origin master refs/tags/v0.1.0;
+
+      $clone2;
+      $log2 >>:~%EOO%;
+        % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
+         (tag: v0.1.0) Release version 0.1.0
+         Create
+        EOO
+
+      $* --no-tag --no-open --show-push --yes >>~%EOO%;
+        %git -C .+prj push origin master%
+        EOO
+
+      $gp push origin master;
+
+      $pull2 --tags; # Updates the existing local tag.
+      $log2 >>:~%EOO%;
+        % \(HEAD -> master, \.*\) Release version 0.2.0%d
+         Change version to 0.2.0-a.0.z
+         (tag: v0.1.0) Release version 0.1.0
+         Create
+        EOO
+
+      $* --tag --show-push --yes >>~%EOO%;
+        %git -C \.+prj push origin refs/tags/v0.2.0%d
+        EOO
+
+      $gp push origin refs/tags/v0.2.0;
+
+      $pull2 --tags; # Updates the existing local tag.
+      $log2 >>:~%EOO%
+        % \(HEAD -> master, tag: v0.2.0, \.*\) Release version 0.2.0%d
+         Change version to 0.2.0-a.0.z
          (tag: v0.1.0) Release version 0.1.0
          Create
         EOO
@@ -839,7 +933,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
 
           commit:  yes
           tag:     no
-          push:    origin/master
+          push:    no
         continue? [y/n]$sp
         EOE
     }
@@ -861,7 +955,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
 
           commit:  yes
           tag:     v0.1.0
-          push:    origin/master
+          push:    no
         continue? [y/n]$sp
         EOE
     }
@@ -879,5 +973,6 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
   $* --revision --open-beta 2>'error: both --revision and --open-beta specified' != 0;
   $* --open     --no-tag    2>'error: both --open and --no-tag specified'        != 0;
   $* --tag      --no-commit 2>'error: both --tag and --no-commit specified'      != 0;
-  $* --push     --no-commit 2>'error: both --push and --no-commit specified'     != 0
+  $* --push     --no-commit 2>'error: both --push and --no-commit specified'     != 0;
+  $* --push     --show-push 2>'error: both --push and --show-push specified'     != 0
 }
