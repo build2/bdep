@@ -907,7 +907,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
           push:    origin/master \(show\)
         continue? [y/n]$sp
         EOE
-        %git -C \.+prj push origin master refs/tags/v0.1.0%d
+        %git -C "?\.+prj"? push origin master refs/tags/v0.1.0%d
         EOO
 
       $gp push origin master refs/tags/v0.1.0;
@@ -920,7 +920,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
         EOO
 
       $* --no-tag --no-open --show-push --yes >>~%EOO%;
-        %git -C .+prj push origin master%
+        %git -C "?.+prj"? push origin master%
         EOO
 
       $gp push origin master;
@@ -934,7 +934,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
         EOO
 
       $* --tag --show-push --yes >>~%EOO%;
-        %git -C \.+prj push origin refs/tags/v0.2.0%d
+        %git -C "?\.+prj"? push origin refs/tags/v0.2.0%d
         EOO
 
       $gp push origin refs/tags/v0.2.0;
