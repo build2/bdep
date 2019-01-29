@@ -6,7 +6,7 @@
 
 #include <iostream> // cout
 
-#include <libbutl/manifest-types.mxx>    // manifest_name_value
+#include <libbutl/manifest-parser.mxx>
 #include <libbutl/manifest-rewriter.mxx>
 
 #include <libbpkg/manifest.hxx>
@@ -525,53 +525,87 @@ namespace bdep
     // ensure the repository will not be broken, similar to how we do it in
     // publish.
     //
-    auto parse_manifest = [] (const path& f)
+    auto parse_manifest = [&o] (const path& f)
     {
+      using bpkg::version;
+      using bpkg::package_manifest;
+
+      if (!exists (f))
+        fail << "package manifest file " << f << " does not exist";
+
       manifest_name_value r;
 
-      auto m (bdep::parse_manifest<bpkg::package_manifest> (
-        f,
-        "package",
-        false /* ignore_unknown */,
-        [&r] (manifest_name_value& nv)
-        {
-          if (nv.name == "version")
-            r = nv;
-
-          return true;
-        }));
-
-      //
-      // Validate the *-file manifest values expansion.
-      //
-      // Note: not forcible. Allowing releasing broken packages we are just
-      // asking for trouble and long mailing list threads.
-      //
-      m.load_files ([&f] (const string& n, const path& p)
+      try
       {
-        path vf (f.directory () / p);
+        ifdstream is (f);
+        manifest_parser p (is,
+                           f.string (),
+                           [&r] (manifest_name_value& nv)
+                           {
+                             if (nv.name == "version")
+                               r = nv;
 
-        try
-        {
-          ifdstream is (vf);
-          string s (is.read_text ());
+                             return true;
+                           });
 
-          if (s.empty ())
-            fail << n << " manifest value in " << f << " references empty "
-                 << "file " << vf;
+        dir_path d (f.directory ());
 
-          return s;
-        }
-        catch (const io_error& e)
-        {
-          fail << "unable to read " << vf << " referenced by " << n
-               << " manifest value in " << f << ": " << e << endf;
-        }
-      });
+        // Parse the package manifest populating the version snapshot
+        // information and completing dependency constraints. Save the
+        // original version into the result.
+        //
+        // Note that the dependency constraint parsing may fail if the
+        // dependent version it refers to is a latest snapshot (see
+        // dependency_constraint for details). That's why the version
+        // translation is required.
+        //
+        package_manifest m (p,
+                            [&o, &d, &r] (version& v)
+                            {
+                              r.value = v.string (); // For good measure.
+                              v = version (package_version (o, d).string ());
+                            });
 
-      assert (!r.empty ());
-      r.value = m.version.string (); // For good measure.
-      return r;
+        // Validate the *-file manifest values expansion.
+        //
+        // Note: not forcible. Allowing releasing broken packages we are just
+        // asking for trouble and long mailing list threads.
+        //
+        m.load_files ([&f, &d] (const string& n, const path& p)
+                      {
+                        path vf (d / p);
+
+                        try
+                        {
+                          ifdstream is (vf);
+                          string s (is.read_text ());
+
+                          if (s.empty ())
+                            fail << n << " manifest value in " << f
+                                 << " references empty " << "file " << vf;
+
+                          return s;
+                        }
+                        catch (const io_error& e)
+                        {
+                          fail << "unable to read " << vf << " referenced by "
+                               << n << " manifest value in " << f << ": " << e
+                               << endf;
+                        }
+                      });
+
+        assert (!r.empty ());
+        return r;
+      }
+      catch (const manifest_parsing& e)
+      {
+        fail << "invalid package manifest: " << f << ':'
+             << e.line << ':' << e.column << ": " << e.description << endf;
+      }
+      catch (const io_error& e)
+      {
+        fail << "unable to read " << f << ": " << e << endf;
+      }
     };
 
     // Collect project/package information.

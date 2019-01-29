@@ -6,6 +6,7 @@
 #include <bdep/project-odb.hxx>
 
 #include <libbutl/b.mxx>
+#include <libbutl/manifest-parser.mxx>
 
 #include <libbpkg/manifest.hxx>
 
@@ -245,15 +246,38 @@ namespace bdep
   static void
   load_package_names (const dir_path& prj, package_locations& pls)
   {
-    // Load each package's manifest and obtain its name (name is normally the
-    // first value so we could optimize this, if necessary).
+    // Load each package's manifest and obtain its name and project (they are
+    // normally at the beginning of the manifest so we could optimize this, if
+    // necessary).
     //
     for (package_location& pl: pls)
     {
       path f (prj / pl.path / manifest_file);
-      auto m (parse_manifest<bpkg::package_manifest> (f, "package"));
-      pl.name = move (m.name);
-      pl.project = move (m.project);
+
+      if (!exists (f))
+        fail << "package manifest file " << f << " does not exist";
+
+      try
+      {
+        ifdstream is (f);
+        manifest_parser p (is, f.string ());
+
+        bpkg::package_manifest m (p,
+                                  false /* ignore_unknown */,
+                                  false /* complete_depends */);
+
+        pl.name = move (m.name);
+        pl.project = move (m.project);
+      }
+      catch (const manifest_parsing& e)
+      {
+        fail << "invalid package manifest: " << f << ':'
+             << e.line << ':' << e.column << ": " << e.description << endf;
+      }
+      catch (const io_error& e)
+      {
+        fail << "unable to read " << f << ": " << e << endf;
+      }
     }
   }
 
