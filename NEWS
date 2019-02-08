@@ -1,3 +1,30 @@
+Version 0.9.0
+
+  * New bdep-release command for managing a project's version during release.
+
+    This command can be used to automatically change the project's version
+    from snapshot to release (or the other way around), commit this change,
+    tag this commit, and push everything to the remote.
+
+    See the "Versioning and Release Management" in The build2 Toolchain
+    Introduction for usage examples as well as the bdep-release(1) man pages
+    for details.
+
+  * New 'binless' option for the bdep-new 'c++' language parameter.
+
+    This option allows creation of a simpler buildfile for header-only (and,
+    in the future, for module-only) libraries. For example:
+
+    $ bdep new -l c++,binless ...
+
+  * New --jobs|-j option for specifying the number of jobs to perform in
+    parallel.
+
+  * CI requests from the staged toolchain are now by default sent to
+    ci.stage.build2.org.
+
+  * New --no-progress option for suppressing progress indicators.
+
 Version 0.8.0
 
   * New bdep-ci command for submitting package test requests to CI servers.
