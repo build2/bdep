@@ -884,8 +884,9 @@ namespace bdep
                prj.path,
                "tag",
                prj.replace_tag ? "-f" : nullptr,
-               "-a", *prj.tag,
-               "-m", "Tag version " + cv.string ());
+               "-a",
+               "-m", "Tag version " + cv.string (),
+               *prj.tag);
     }
 
     // Open.
