@@ -389,8 +389,8 @@ namespace bdep
          << "license: TODO"                                             << endl
          << "url: https://example.org/" << (prjn ? prjn->string () : n) << endl
          << "email: " << email                                          << endl
-         << "depends: * build2 >= 0.8.0-"                               << endl
-         << "depends: * bpkg >= 0.8.0-"                                 << endl
+         << "depends: * build2 >= 0.9.0-"                               << endl
+         << "depends: * bpkg >= 0.9.0-"                                 << endl
          << "#depends: libhello ^1.0.0"                                 << endl;
       os.close ();
 
