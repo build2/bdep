@@ -7,10 +7,14 @@ inc=()
 
 if test -d ../.bdep; then
 
-  # Use default configuration for headers.
-  #
-  cfg="$(bdep config list -d .. | \
+  if [ -n "$1" ]; then
+    cfg="$1"
+  else
+    # Use default configuration for headers.
+    #
+    cfg="$(bdep config list -d .. | \
 sed -r -ne 's#^(@[^ ]+ )?([^ ]+)/ .*default.*$#\2#p')"
+  fi
 
   inc+=("-I$(echo "$cfg"/libodb-[1-9]*/)")
   inc+=("-I$(echo "$cfg"/libodb-sqlite-[1-9]*/)")
