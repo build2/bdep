@@ -586,7 +586,12 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
 
         $release --tag --push --yes -d prj;
 
-        $pull2 --tags; # Updates the existing local tag.
+	# Updates the existing local tag.
+	#
+        # Note that starting git 2.20.0 --force is also required (see git
+	# release notes for details).
+        #
+        $pull2 --tags --force;
         $log2 >>:~%EOO%
           % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0\+1%d
            Release version 0.1.0
@@ -925,7 +930,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
 
       $gp push origin master;
 
-      $pull2 --tags; # Updates the existing local tag.
+      $pull2 --tags --force; # Updates the existing local tag (see above).
       $log2 >>:~%EOO%;
         % \(HEAD -> master, \.*\) Release version 0.2.0%d
          Change version to 0.2.0-a.0.z
@@ -939,7 +944,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
 
       $gp push origin refs/tags/v0.2.0;
 
-      $pull2 --tags; # Updates the existing local tag.
+      $pull2 --tags --force; # Updates the existing local tag (see above).
       $log2 >>:~%EOO%
         % \(HEAD -> master, tag: v0.2.0, \.*\) Release version 0.2.0%d
          Change version to 0.2.0-a.0.z
