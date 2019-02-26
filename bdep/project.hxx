@@ -116,6 +116,26 @@ namespace bdep
     //   #pragma db member(relative_path) options("COLLATE NOCASE")
     // #endif
 
+  public:
+    // Explicit aggregate initialization for C++20 (private default ctor).
+    //
+    configuration (optional_uint64_t i,
+                   optional_string n,
+                   dir_path p,
+                   optional_dir_path rp,
+                   bool d,
+                   bool f,
+                   bool as,
+                   vector<package_state> ps)
+      : id (i),
+        name (move (n)),
+        path (move (p)),
+        relative_path (move (rp)),
+        default_ (d),
+        forward (f),
+        auto_sync (as),
+        packages (move (ps)) {}
+
   private:
     friend class odb::access;
     configuration () = default;
