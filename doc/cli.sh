@@ -14,8 +14,8 @@ while [ $# -gt 0 ]; do
     --clean)
       rm -f bdep*.xhtml bdep*.1
       rm -f build2-project-manager-manual*.ps \
-	 build2-project-manager-manual*.pdf   \
-	 build2-project-manager-manual.xhtml
+         build2-project-manager-manual*.pdf   \
+         build2-project-manager-manual.xhtml
       exit 0
       ;;
     *)

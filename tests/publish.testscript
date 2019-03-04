@@ -19,9 +19,9 @@ end
 #
 repository = ($config.bdep.test.repository == [null] \
               ? ($build.version.stage                \
-	         ? 'https://stage.build2.org'        \
-		 : 'https://cppget.org')             \
-	      : "$config.bdep.test.repository")
+                 ? 'https://stage.build2.org'        \
+                 : 'https://cppget.org')             \
+              : "$config.bdep.test.repository")
 
 +if ("$repository" == '')
   exit

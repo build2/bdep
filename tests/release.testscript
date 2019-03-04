@@ -83,7 +83,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
            Create
           EOO
 
-  	cat prj2/manifest >>~%EOO%
+        cat prj2/manifest >>~%EOO%
           %.*
           name: prj
           version: 0.2.0-a.0.z
@@ -177,7 +177,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
 
         $* --open-beta 2>'error: --open-beta specified for final current version 0.1.0' != 0;
 
-	$* --alpha --open-beta 2>>~%EOE%;
+        $* --alpha --open-beta 2>>~%EOE%;
           %.+
           pushing branch master, tag v0.1.0-a.1
           EOE
@@ -189,7 +189,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
            Create
           EOO
 
-	$* --beta --open-beta 2>>~%EOE%;
+        $* --beta --open-beta 2>>~%EOE%;
           %.+
           pushing branch master, tag v0.1.0-b.1
           EOE
@@ -244,19 +244,19 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
         $clone_root_repos;
 
         $* --alpha --open-minor 2>'error: --open-minor specified for alpha current version 0.1.0-a.1' != 0;
-	$* --beta  --open-minor 2>'error: --open-minor specified for beta current version 0.1.0-b.1' != 0;
+        $* --beta  --open-minor 2>'error: --open-minor specified for beta current version 0.1.0-b.1' != 0;
 
-	$* --open-patch 2>>~%EOE%;
+        $* --open-patch 2>>~%EOE%;
           %.+
           pushing branch master, tag v0.1.0
           EOE
 
-	$* 2>>~%EOE%;
+        $* 2>>~%EOE%;
           %.+
           pushing branch master, tag v0.1.1
           EOE
 
-	$* --open-minor 2>>~%EOE%;
+        $* --open-minor 2>>~%EOE%;
           %.+
           pushing branch master, tag v0.1.2
           EOE
@@ -278,7 +278,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       {
         $clone_root_repos;
 
-	$* --open-major 2>>~%EOE%;
+        $* --open-major 2>>~%EOE%;
           %.+
           pushing branch master, tag v0.1.0
           EOE
@@ -296,15 +296,15 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       {
         $clone_root_repos;
 
-	$* --open-base 1.0 2>>EOE != 0;
+        $* --open-base 1.0 2>>EOE != 0;
           error: invalid base version '1.0': '.' expected after minor version
           EOE
 
-	$* --open-base 1.0.0-a.1 2>>EOE != 0;
+        $* --open-base 1.0.0-a.1 2>>EOE != 0;
           error: invalid base version '1.0.0-a.1': pre-release
           EOE
 
-	$* --open-base 1.2.3 2>>~%EOE%;
+        $* --open-base 1.2.3 2>>~%EOE%;
           %.+
           pushing branch master, tag v0.1.0
           EOE
@@ -316,11 +316,11 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
            Create
           EOO
 
-	$* --open-base 1.2.2 2>>EOE != 0;
+        $* --open-base 1.2.2 2>>EOE != 0;
           error: base version 1.2.2 is less than or equal to current version 1.2.3
           EOE
 
-	$* --open-base 1.2.3 2>>EOE != 0
+        $* --open-base 1.2.3 2>>EOE != 0
           error: base version 1.2.3 is less than or equal to current version 1.2.3
           EOE
       }
@@ -450,20 +450,20 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       : file-value
       :
       {
-	$clone_root_repos;
+        $clone_root_repos;
 
         echo 'description-file: README' >+ prj/manifest;
         $gp commit -a -m 'Add description';
 
-	$* 2>>~%EOE% != 0;
-	  %error: unable to read .+README referenced by description-file manifest value in .+manifest: .+%
-	  EOE
+        $* 2>>~%EOE% != 0;
+          %error: unable to read .+README referenced by description-file manifest value in .+manifest: .+%
+          EOE
 
         touch prj/README;
-	$gp add README;
+        $gp add README;
         $gp commit -m 'Add README file';
 
-	$* 2>>~%EOE% != 0;
+        $* 2>>~%EOE% != 0;
           %error: description-file manifest value in .+manifest references empty file .+README%
           EOE
 
@@ -476,14 +476,14 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       : unknown-value
       :
       {
-	$clone_root_repos;
+        $clone_root_repos;
 
         echo 'some-file: README' >+ prj/manifest;
         $gp commit -a -m 'Add file';
 
-	$* 2>>~%EOE% != 0
-	  %error: invalid package manifest: .+manifest:.+:1: unknown name 'some-file' in package manifest%
-	  EOE
+        $* 2>>~%EOE% != 0
+          %error: invalid package manifest: .+manifest:.+:1: unknown name 'some-file' in package manifest%
+          EOE
       }
     }
 
@@ -559,7 +559,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
         $clone_root_repos;
 
         sed -i -e 's/^(version:) .*$/\1 0/' prj/manifest;
-	$gp add manifest;
+        $gp add manifest;
 
         $* --revision;
 
@@ -586,10 +586,10 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
 
         $release --tag --push --yes -d prj;
 
-	# Updates the existing local tag.
-	#
+        # Updates the existing local tag.
+        #
         # Note that starting git 2.20.0 --force is also required (see git
-	# release notes for details).
+        # release notes for details).
         #
         $pull2 --tags --force;
         $log2 >>:~%EOO%

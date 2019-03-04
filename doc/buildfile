@@ -14,7 +14,7 @@ define xhtml: doc
 xhtml{*}: extension = xhtml
 
 ./: {man1 xhtml}{bdep bdep-common-options $cmds} \
-    css{common pre-box man} 	                 \
+    css{common pre-box man}                      \
     file{man-*}
 
 ./: file{cli.sh}

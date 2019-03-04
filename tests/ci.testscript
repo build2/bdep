@@ -19,9 +19,9 @@ end
 #
 server = ($config.bdep.test.repository == [null] \
           ? ($build.version.stage                \
-	     ? 'https://stage.build2.org'        \
-	     : 'https://ci.cppget.org')          \
-	  : "$config.bdep.test.repository")
+             ? 'https://stage.build2.org'        \
+             : 'https://ci.cppget.org')          \
+          : "$config.bdep.test.repository")
 
 +if ("$server" == '')
   exit
