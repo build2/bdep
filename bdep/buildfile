@@ -46,6 +46,8 @@ exe{bdep}:                                                                  \
 
 hxx{version}: in{version} $src_root/manifest
 
+# Build options.
+#
 obj{utility}: cxx.poptions += -DBDEP_EXE_SUFFIX='"'$bin.exe.suffix'"'
 
 # For now assume this is a staged toolchain if we are building with the staged
@@ -61,6 +63,8 @@ if ($cxx.class == 'msvc')
 elif ($cxx.class == 'gcc')
   cxx.coptions += -Wno-unknown-pragmas
 
+# Generated options parser.
+#
 if $cli.configured
 {
   # General topics and common options.
@@ -116,6 +120,9 @@ if $cli.configured
   # them when cleaning in src (so that clean results in a state identical to
   # distributed).
   #
-  cli.cxx{*}: dist  = true
-  cli.cxx{*}: clean = ($src_root != $out_root)
+  cli.cxx{*}:
+  {
+    dist  = true
+    clean = ($src_root != $out_root)
+  }
 }
