@@ -38,13 +38,39 @@ clean-options
 
 help_topics = projects-configs
 
-exe{bdep}:                                                                  \
-  {hxx ixx txx cxx}{** -{$options_topics} -{$help_topics} -*-odb -version}  \
-  {hxx ixx cxx}{$options_topics} {hxx cxx}{$help_topics}                    \
-  {hxx ixx cxx}{project-odb database-views-odb}                             \
-  {hxx}{version} $libs
+./: exe{bdep}: cxx{bdep} libue{bdep}
+
+libue{bdep}: {hxx ixx txx cxx}{** -bdep                    \
+                                  -{$options_topics}       \
+                                  -{$help_topics}          \
+                                  -*-odb                   \
+                                  -version                 \
+                                  -**.test...}             \
+             {hxx ixx cxx}{$options_topics}                \
+             {hxx cxx}{$help_topics}                       \
+             {hxx ixx cxx}{project-odb database-views-odb} \
+             {hxx}{version}                                \
+             $libs                                         \
+             xml{*}
 
 hxx{version}: in{version} $src_root/manifest
+
+# Unit tests.
+#
+exe{*.test}:
+{
+  test = true
+  install = false
+}
+
+for t: cxx{**.test...}
+{
+  d = $directory($t)
+  n = $name($t)...
+
+  ./: $d/exe{$n}: $t $d/{hxx ixx txx}{+$n} $d/testscript{+$n}
+  $d/exe{$n}: libue{bdep}: bin.whole = false
+}
 
 # Build options.
 #

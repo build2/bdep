@@ -1,5 +1,10 @@
 bdep
+*.test
 *-odb.?xx
 *-options.?xx
 projects-configs.?xx
 version.hxx
+
+# Testscript output directory (can be symlink).
+#
+test-*.test
