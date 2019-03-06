@@ -29,6 +29,8 @@ namespace bdep
   {
     tracer trace ("new");
 
+    // Validate options.
+    //
     bool ca (o.config_add_specified ());
     bool cc (o.config_create_specified ());
 
@@ -98,6 +100,14 @@ namespace bdep
     string a (args.more () ? args.next () : "");
     if (a.empty ())
       fail << "project name argument expected";
+
+    // Build file/directory naming scheme.
+    //
+    bool altn (false);
+
+    const dir_path build_dir      (altn ? "build2"     : "build");
+    const string   build_ext      (altn ? "build2"     : "build");
+    const path     buildfile_file (altn ? "build2file" : "buildfile");
 
     // If the project type is not empty then the project name is also a package
     // name. But even if it is empty, verify it is a valid package name since
@@ -271,7 +281,7 @@ namespace bdep
         //
         os.open (f = out / ".gitignore");
         if (!pkg)
-          os << bdep_dir.string () << '/'                              << endl
+          os << bdep_dir.posix_representation ()                       << endl
              <<                                                           endl;
         if (t != type::empty)
           os << "# Compiler/linker output."                            << endl
@@ -396,12 +406,12 @@ namespace bdep
 
       // build/
       //
-      dir_path bd (dir_path (out) /= "build");
+      dir_path bd (dir_path (out) / build_dir);
       mk (bd);
 
       // build/bootstrap.build
       //
-      os.open (f = bd / "bootstrap.build");
+      os.open (f = bd / "bootstrap." + build_ext);
       os << "project = " << n                                          << endl;
       if (o.no_amalgamation ())
         os << "amalgamation = # Disabled."                             << endl;
@@ -418,7 +428,7 @@ namespace bdep
       //
       // Note: see also tests/build/root.build below.
       //
-      os.open (f = bd / "root.build");
+      os.open (f = bd / "root." + build_ext);
 
       string m;  // Language module.
       string x;  // Source target type.
@@ -478,7 +488,7 @@ namespace bdep
       if (vc == vcs::git)
       {
         os.open (f = bd / ".gitignore");
-        os << "config.build"                                           << endl
+        os << "config." << build_ext                                   << endl
            << "root/"                                                  << endl
            << "bootstrap/"                                             << endl;
         os.close ();
@@ -486,8 +496,8 @@ namespace bdep
 
       // buildfile
       //
-      os.open (f = out / "buildfile");
-      os << "./: {*/ -build/} manifest"                                << endl;
+      os.open (f = out / buildfile_file);
+      os << "./: {*/ -" << build_dir.posix_representation () << "} manifest" << endl;
       if (itest && t == type::lib) // Have tests/ subproject.
         os <<                                                             endl
            << "# Don't install tests."                                 << endl
@@ -558,7 +568,7 @@ namespace bdep
 
           // <base>/buildfile
           //
-          os.open (f = sd / "buildfile");
+          os.open (f = sd / buildfile_file);
           os << "libs ="                                               << endl
              << "#import libs += libhello%lib{hello}"                  << endl
              <<                                                           endl;
@@ -915,7 +925,7 @@ namespace bdep
 
           // buildfile
           //
-          os.open (f = sd / "buildfile");
+          os.open (f = sd / buildfile_file);
           os << "int_libs = # Interface dependencies."                 << endl
              << "imp_libs = # Implementation dependencies."            << endl
              << "#import imp_libs += libhello%lib{hello}"              << endl
@@ -1100,7 +1110,7 @@ namespace bdep
 
           // build/export.build
           //
-          os.open (f = bd / "export.build");
+          os.open (f = bd / "export." + build_ext);
           os << "$out_root/"                                           << endl
              << "{"                                                    << endl
              << "  include " << b << "/"                               << endl
@@ -1119,12 +1129,12 @@ namespace bdep
 
           // tests/build/
           //
-          dir_path tbd (dir_path (td) /= "build");
+          dir_path tbd (dir_path (td) / build_dir);
           mk (tbd);
 
           // tests/build/bootstrap.build
           //
-          os.open (f = tbd / "bootstrap.build");
+          os.open (f = tbd / "bootstrap." + build_ext);
           os << "project = # Unnamed tests subproject."                << endl
              <<                                                           endl
              << "using config"                                         << endl
@@ -1134,7 +1144,7 @@ namespace bdep
 
           // tests/build/root.build
           //
-          os.open (f = tbd / "root.build");
+          os.open (f = tbd / "root." + build_ext);
           switch (l)
           {
           case lang::c:
@@ -1177,7 +1187,7 @@ namespace bdep
           if (vc == vcs::git)
           {
             os.open (f = tbd / ".gitignore");
-            os << "config.build"                                       << endl
+            os << "config." << build_ext                               << endl
                << "root/"                                              << endl
                << "bootstrap/"                                         << endl;
             os.close ();
@@ -1185,8 +1195,8 @@ namespace bdep
 
           // tests/buildfile
           //
-          os.open (f = td / "buildfile");
-          os << "./: {*/ -build/}"                                     << endl;
+          os.open (f = td / buildfile_file);
+          os << "./: {*/ -" << build_dir.posix_representation () << "}" << endl;
           os.close ();
 
           // tests/.gitignore
@@ -1298,7 +1308,7 @@ namespace bdep
 
           // tests/basics/buildfile
           //
-          os.open (f = td / "buildfile");
+          os.open (f = td / buildfile_file);
           os << "import libs = " << n << "%lib{" << s << "}"           << endl
              <<                                                           endl
              << "exe{driver}: {" << hs << ' ' << x                     <<
