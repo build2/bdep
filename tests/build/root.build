@@ -2,9 +2,10 @@
 # copyright : Copyright (c) 2014-2019 Code Synthesis Ltd
 # license   : MIT; see accompanying LICENSE file
 
-# We need to configure C++ module to pass the compiler path to some of bdep
-# test commands.
+# We need to configure C/C++ modules to pass the compiler paths to some of
+# bdep test commands.
 #
+using c
 using cxx
 
 # Setup the bdep that we are testing.
