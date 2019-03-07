@@ -402,17 +402,29 @@ namespace bdep
         }
 
         // We could run 'b info' and used the 'forwarded' value but this is
-        // both faster and simpler.
+        // both faster and simpler. Or at least it was until we got the
+        // alternative naming scheme.
         //
-        path f (src / "build" / "bootstrap" / "out-root.build");
-        bool e (exists (f));
+        auto check = [&src] ()
+        {
+          path f (src / "build2" / "bootstrap" / "out-root.build2");
+          bool e (exists (f));
+
+          if (!e)
+          {
+            f = src / "build" / "bootstrap" / "out-root.build";
+            e = exists (f);
+          }
+
+          return e;
+        };
 
         const char* o (nullptr);
         if (prj.config->forward)
         {
           bool changed (true);
 
-          if (changed || !e)
+          if (changed || !check ())
             o = "configure:";
         }
         else if (!prj.implicit) // Requires explicit sync.
@@ -421,7 +433,7 @@ namespace bdep
           //   Looks like we will need to test that the forward is to this
           //   config. 'b info' here we come?
 
-          //if (e)
+          //if (check ())
           //  o = "disfigure:";
         }
 

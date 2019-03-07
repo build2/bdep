@@ -68,6 +68,30 @@ status += -d prj
       EOE
   }
 
+  : exe-alt-naming
+  :
+  {
+    $* -t exe,alt-naming,unit-tests -l c++ foo 2>>/"EOE" &foo/***;
+      created new executable project foo in $~/foo/
+      EOE
+
+    $build foo/ $cxx 2>>~%EOE%
+      %(c\+\+|ld|ar) .+%{5}
+      EOE
+  }
+
+  : lib-alt-naming
+  :
+  {
+    $* -t lib,alt-naming,unit-tests -l c++ libfoo 2>>/"EOE" &libfoo/***;
+      created new library project libfoo in $~/libfoo/
+      EOE
+
+    $build libfoo/ $cxx 2>>~%EOE%
+      %(version\.in|c\+\+|ar|ld) .+%{11}
+      EOE
+  }
+
   : lib-binless
   :
   {

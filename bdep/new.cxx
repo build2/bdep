@@ -60,12 +60,37 @@ namespace bdep
     //
     const type& t (o.type ());
 
-    bool itest (t == type::exe  ? !t.exe_opt.no_tests ()  :
-                t == type::lib  ? !t.lib_opt.no_tests ()  :
-                t == type::bare ? !t.bare_opt.no_tests () : false);
+    bool altn (false);  // alt-naming
+    bool itest (false); // !no-tests
+    bool utest (false); // unit-tests
 
-    bool utest (t == type::exe  ? t.exe_opt.unit_tests () :
-                t == type::lib  ? t.lib_opt.unit_tests () : false);
+    switch (t)
+    {
+    case type::exe:
+      {
+        altn  =  t.exe_opt.alt_naming ();
+        itest = !t.exe_opt.no_tests ();
+        utest =  t.exe_opt.unit_tests ();
+        break;
+      }
+    case type::lib:
+      {
+        altn  =  t.lib_opt.alt_naming ();
+        itest = !t.lib_opt.no_tests ();
+        utest =  t.lib_opt.unit_tests ();
+        break;
+      }
+    case type::bare:
+      {
+        altn  =  t.bare_opt.alt_naming ();
+        itest = !t.bare_opt.no_tests ();
+        break;
+      }
+    case type::empty:
+      {
+        break;
+      }
+    }
 
     // Validate language options.
     //
@@ -101,10 +126,8 @@ namespace bdep
     if (a.empty ())
       fail << "project name argument expected";
 
-    // Build file/directory naming scheme.
+    // Standard/alternative build file/directory naming scheme.
     //
-    bool altn (false);
-
     const dir_path build_dir      (altn ? "build2"     : "build");
     const string   build_ext      (altn ? "build2"     : "build");
     const path     buildfile_file (altn ? "build2file" : "buildfile");

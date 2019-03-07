@@ -43,6 +43,9 @@ namespace bdep
                           const dir_path& cfg,
                           const dir_path& prj = dir_path ());
 
+  // Note that the hook is installed into the bpkg-created configuration which
+  // always uses the standard build file/directory naming scheme.
+  //
   extern const path hook_file; // build/bootstrap/pre-bdep-sync.build
 }
 

@@ -78,6 +78,8 @@ namespace bdep
          \cb{no-tests} \- Don't add support for functional/integration testing.
 
          \cb{unit-tests} \- Add support for unit testing.
+
+         \cb{alt-naming} \- Use the alternative build file/directory naming scheme.
          |
 
      \li|\cb{lib}
@@ -88,6 +90,8 @@ namespace bdep
          \cb{no-tests} \- Don't add support for functional/integration testing.
 
          \cb{unit-tests} \- Add support for unit testing.
+
+         \cb{alt-naming} \- Use the alternative build file/directory naming scheme.
          |
 
      \li|\cb{bare}
@@ -95,6 +99,8 @@ namespace bdep
          A project without any source code. Recognized bare project options:
 
          \cb{no-tests} \- Don't add support for testing.
+
+         \cb{alt-naming} \- Use the alternative build file/directory naming scheme.
          |
 
      \li|\cb{empty}
@@ -149,17 +155,20 @@ namespace bdep
   {
     bool no-tests;
     bool unit-tests;
+    bool alt-naming;
   };
 
   class cmd_new_lib_options
   {
     bool no-tests;
     bool unit-tests;
+    bool alt-naming;
   };
 
   class cmd_new_bare_options
   {
     bool no-tests;
+    bool alt-naming;
   };
 
   class cmd_new_empty_options
