@@ -34,18 +34,24 @@ namespace bdep
     bool ca (o.config_add_specified ());
     bool cc (o.config_create_specified ());
 
-    if (o.package () && o.no_init ())
-      fail << "both --no-init and --package specified";
+    if (o.package () && o.subdirectory ())
+      fail << "both --package and --subdirectory specified";
+
+    const char* m (o.package ()      ? "--package"      :
+                   o.subdirectory () ? "--subdirectory" : nullptr);
+
+    if (m && o.no_init ())
+      fail << "both --no-init and " << m << " specified";
 
     if (const char* n = (o.no_init () ? "--no-init" :
-                         o.package () ? "--package" : nullptr))
+                         m            ? m            : nullptr))
     {
       if (ca) fail << "both " << n << " and --config-add specified";
       if (cc) fail << "both " << n << " and --config-create specified";
     }
 
-    if (o.directory_specified () && !o.package ())
-      fail << "--directory|-d only valid with --package";
+    if (o.directory_specified () && !m)
+      fail << "--directory|-d only valid with --package or --subdirectory";
 
     if (const char* n = cmd_config_validate_add (o))
     {
@@ -60,9 +66,16 @@ namespace bdep
     //
     const type& t (o.type ());
 
-    bool altn (false);  // alt-naming
+    // For a library source subdirectory (--subdirectory) we don't generate
+    // the export stub, integration tests (because there is no export stub),
+    // or the version header (because the project name used in the .in file
+    // will most likely be wrong). All this seems reasonable for what this
+    // mode is expected to be used ("end-product" kind of projects).
+    //
+    bool altn  (false); // alt-naming
     bool itest (false); // !no-tests
     bool utest (false); // unit-tests
+    bool ver   (false); // !no-version
 
     switch (t)
     {
@@ -76,18 +89,26 @@ namespace bdep
     case type::lib:
       {
         altn  =  t.lib_opt.alt_naming ();
-        itest = !t.lib_opt.no_tests ();
+        itest = !t.lib_opt.no_tests ()   && !o.subdirectory ();
         utest =  t.lib_opt.unit_tests ();
+        ver   = !t.lib_opt.no_version () && !o.subdirectory ();
         break;
       }
     case type::bare:
       {
+        if (o.subdirectory ())
+          fail << "cannot create bare source subdirectory";
+
         altn  =  t.bare_opt.alt_naming ();
         itest = !t.bare_opt.no_tests ();
         break;
       }
     case type::empty:
       {
+        if (const char* w = (o.subdirectory () ? "source subdirectory" :
+                             o.package ()      ? "package" : nullptr))
+          fail << "cannot create empty " << w;
+
         break;
       }
     }
@@ -155,37 +176,44 @@ namespace bdep
     // base name for inner filesystem directories and preprocessor macros,
     // while the (sanitized) stem for modules, namespaces, etc.
     //
-    const string& n (pkgn.string ());
-    const string& b (pkgn.base ());
-    const string& v (pkgn.variable ());
-
-    string s (b);
-    switch (t)
+    const string&   n (pkgn.string ());   // Full name.
+    const string&   b (pkgn.base ());     // Base name.
+    const string&   v (pkgn.variable ()); // Variable name.
+    string          s (b);                // Name stem.
     {
-    case type::exe:
-      {
-        if (s.compare (0, 3, "lib") == 0)
-          warn << "executable name starts with 'lib'";
+      // Warn about the lib prefix unless we are creating a source
+      // subdirectory, in which case the project is probably not meant to be a
+      // package anyway.
+      //
+      bool w (!o.subdirectory ());
 
-        break;
-      }
-    case type::lib:
+      switch (t)
       {
-        if (s.compare (0, 3, "lib") == 0)
+      case type::exe:
         {
-          s.erase (0, 3);
+          if (w && s.compare (0, 3, "lib") == 0)
+            warn << "executable name starts with 'lib'";
 
-          if (s.empty ())
-            fail << "empty library name stem in '" << b << "'";
+          break;
         }
-        else
-          warn << "library name does not start with 'lib'";
+      case type::lib:
+        {
+          if (s.compare (0, 3, "lib") == 0)
+          {
+            s.erase (0, 3);
 
+            if (w && s.empty ())
+              fail << "empty library name stem in '" << b << "'";
+          }
+          else if (w)
+            warn << "library name does not start with 'lib'";
+
+          break;
+        }
+      case type::bare:
+      case type::empty:
         break;
       }
-    case type::bare:
-    case type::empty:
-      break;
     }
 
     // Sanitize the stem to be a valid language identifier.
@@ -206,11 +234,13 @@ namespace bdep
       }
     }
 
-    dir_path out;           // Project/package output directory.
+    dir_path out;           // Project/package/subdirectory output directory.
     dir_path prj;           // Project.
     optional<dir_path> pkg; // Package relative to its project root.
+    optional<dir_path> sub; // Source subdirectory relative to its
+                            // project/package root.
 
-    if (o.package ())
+    if (o.package () || o.subdirectory ())
     {
       if (o.directory_specified ())
         (prj = o.directory ()).complete ().normalize ();
@@ -220,11 +250,35 @@ namespace bdep
       out = o.output_dir_specified () ? o.output_dir () : prj / dir_path (n);
       out.complete ().normalize ();
 
-      if (!out.sub (prj))
-        fail << "package directory " << out << " is not a subdirectory of "
-             << "project directory " << prj;
+      if (o.package ())
+      {
+        if (!out.sub (prj))
+          fail << "package directory " << out << " is not a subdirectory of "
+               << "project directory " << prj;
 
-      pkg = out.leaf (prj);
+        pkg = out.leaf (prj);
+      }
+      else if (o.subdirectory ())
+      {
+        if (!out.sub (prj))
+          fail << "source subdirectory " << out << " is not a subdirectory of "
+               << "project/package directory " << prj;
+
+        // We use this information to form the include directories. The idea
+        // is that if the user places the subdirectory somewhere deeper (say
+        // into core/libfoo/), then we want the include directives to contain
+        // the prefix from the project root (so it will be <core/libfoo/...>)
+        // since all our buildfiles are hardwired with -I$src_root.
+        //
+        // Note also that a crafty user can adjust the prefix by picking the
+        // appropriate --directory|-d (i.e., it can point somewhere deeper
+        // than the project root). They will need to adjust their buildfiles,
+        // however (or we could get smarter by finding the actual package root
+        // and adding the difference to -I). Also, some other things, such as
+        // the namespace, currently do not contain the prefix.
+        //
+        sub = out.leaf (prj);
+      }
     }
     else
     {
@@ -232,6 +286,10 @@ namespace bdep
       out.complete ().normalize ();
       prj = out;
     }
+
+    // Source directory relative to package root.
+    //
+    const dir_path& d (sub ? *sub : dir_path (b));
 
     // Create the output directory and do some sanity check (empty if exists,
     // nested packages, etc; you would be surprised what people come up with).
@@ -242,7 +300,7 @@ namespace bdep
       if (e && !empty (out))
         fail << "directory " << out << " already exists and is not empty";
 
-      if (!o.no_checks ())
+      if (!o.no_checks () && !sub)
       {
         project_package pp (
           find_project_package (out, true /* ignore_not_found */));
@@ -273,14 +331,14 @@ namespace bdep
       }
 
       if (!e)
-        mk (out);
+        mk_p (out);
     }
 
     // Initialize the version control system. Do it before writing anything
     // ourselves in case it fails. Also, the email discovery may do the VCS
     // detection.
     //
-    if (!pkg)
+    if (!pkg && !sub)
     {
       switch (vc)
       {
@@ -298,40 +356,43 @@ namespace bdep
       //
       // See also tests/.gitignore below.
       //
-      if (vc == vcs::git)
+      if (!sub)
       {
-        // Use POSIX directory separators here.
-        //
-        os.open (f = out / ".gitignore");
-        if (!pkg)
-          os << bdep_dir.posix_representation ()                       << endl
-             <<                                                           endl;
-        if (t != type::empty)
-          os << "# Compiler/linker output."                            << endl
-             << "#"                                                    << endl
-             << "*.d"                                                  << endl
-             << "*.t"                                                  << endl
-             << "*.i"                                                  << endl
-             << "*.ii"                                                 << endl
-             << "*.o"                                                  << endl
-             << "*.obj"                                                << endl
-             << "*.so"                                                 << endl
-             << "*.dll"                                                << endl
-             << "*.a"                                                  << endl
-             << "*.lib"                                                << endl
-             << "*.exp"                                                << endl
-             << "*.pdb"                                                << endl
-             << "*.ilk"                                                << endl
-             << "*.exe"                                                << endl
-             << "*.exe.dlls/"                                          << endl
-             << "*.exe.manifest"                                       << endl
-             << "*.pc"                                                 << endl;
-        os.close ();
+        if (vc == vcs::git)
+        {
+          // Use POSIX directory separators here.
+          //
+          os.open (f = out / ".gitignore");
+          if (!pkg)
+            os << bdep_dir.posix_representation ()                     << endl
+               <<                                                         endl;
+          if (t != type::empty)
+            os << "# Compiler/linker output."                          << endl
+               << "#"                                                  << endl
+               << "*.d"                                                << endl
+               << "*.t"                                                << endl
+               << "*.i"                                                << endl
+               << "*.ii"                                               << endl
+               << "*.o"                                                << endl
+               << "*.obj"                                              << endl
+               << "*.so"                                               << endl
+               << "*.dll"                                              << endl
+               << "*.a"                                                << endl
+               << "*.lib"                                              << endl
+               << "*.exp"                                              << endl
+               << "*.pdb"                                              << endl
+               << "*.ilk"                                              << endl
+               << "*.exe"                                              << endl
+               << "*.exe.dlls/"                                        << endl
+               << "*.exe.manifest"                                     << endl
+               << "*.pc"                                               << endl;
+          os.close ();
+        }
       }
 
       // repositories.manifest
       //
-      if (!pkg)
+      if (!pkg && !sub)
       {
         os.open (f = out / "repositories.manifest");
         os << ": 1"                                                    << endl
@@ -349,7 +410,7 @@ namespace bdep
       }
       // packages.manifest
       //
-      else
+      else if (!sub)
       {
         bool e (exists (f = prj / "packages.manifest"));
         os.open (f, fdopen_mode::create | fdopen_mode::append);
@@ -363,95 +424,70 @@ namespace bdep
 
       // manifest
       //
-
-      // Project name.
-      //
-      // If this is a package in a project (--package mode), then use the
-      // project directory name as the project name. Otherwise, the project
-      // name is the same as the package and is therefore omitted.
-      //
-      // In case of a library, we could have used either the full name or the
-      // stem without the lib prefix. And it could go either way: if a library
-      // is (likely to be) accompanied by an executable (or some other extra
-      // packages), then its project should probably be the stem. Otherwise,
-      // if it is a standalone library, then the full library name is probably
-      // preferred. The stem also has another problem: it could be an invalid
-      // project name. So using the full name seems like a simpler and more
-      // robust approach.
-      //
-      // There was also an idea to warn if the project name ends with a digit
-      // (think libfoo and libfoo2).
-      //
-      optional<project_name> prjn;
-
-      if (o.package ())
+      if (!sub)
       {
-        string p (prj.leaf ().string ());
-
-        if (p != n) // Omit if the same as the package name.
+        // Project name.
+        //
+        // If this is a package in a project (--package mode), then use the
+        // project directory name as the project name. Otherwise, the project
+        // name is the same as the package and is therefore omitted.
+        //
+        // In case of a library, we could have used either the full name or
+        // the stem without the lib prefix. And it could go either way: if a
+        // library is (likely to be) accompanied by an executable (or some
+        // other extra packages), then its project should probably be the
+        // stem. Otherwise, if it is a standalone library, then the full
+        // library name is probably preferred. The stem also has another
+        // problem: it could be an invalid project name. So using the full
+        // name seems like a simpler and more robust approach.
+        //
+        // There was also an idea to warn if the project name ends with a
+        // digit (think libfoo and libfoo2).
+        //
+        optional<project_name> pn;
+        if (pkg)
         {
-          try
-          {
-            prjn = project_name (move (p));
-          }
-          catch (const invalid_argument& e)
-          {
-            warn << "project name '" << p << "' is invalid: " << e <<
-              info << "leaving the 'project' manifest value empty";
+          string p (prj.leaf ().string ());
 
-            prjn = project_name ();
+          if (p != n) // Omit if the same as the package name.
+          {
+            try
+            {
+              pn = project_name (move (p));
+            }
+            catch (const invalid_argument& e)
+            {
+              warn << "project name '" << p << "' is invalid: " << e <<
+                info << "leaving the 'project' manifest value empty";
+
+              pn = project_name ();
+            }
           }
         }
+
+        // Project email.
+        //
+        string pe;
+        {
+          optional<string> r (find_project_author_email (prj));
+          pe = r ? move (*r) : "you@example.org";
+        }
+
+        os.open (f = out / "manifest");
+        os << ": 1"                                                    << endl
+           << "name: " << n                                            << endl
+           << "version: 0.1.0-a.0.z"                                   << endl;
+        if (pn)
+          os << "project: " << *pn                                     << endl;
+        os << "summary: " << s << " " << t                             << endl
+           << "license: TODO"                                          << endl
+           << "url: https://example.org/" << (pn ? pn->string () : n)  << endl
+           << "email: " << pe                                          << endl
+           << "depends: * build2 >= 0.9.0-"                            << endl
+           << "depends: * bpkg >= 0.9.0-"                              << endl
+           << "#depends: libhello ^1.0.0"                              << endl;
+        os.close ();
       }
-
-      // Project email.
-      //
-      string email;
-      {
-        optional<string> r (find_project_author_email (prj));
-        email = r ? move (*r) : "you@example.org";
-      }
-
-      os.open (f = out / "manifest");
-      os << ": 1"                                                       << endl
-         << "name: " << n                                               << endl
-         << "version: 0.1.0-a.0.z"                                      << endl;
-      if (prjn)
-        os << "project: " << *prjn                                      << endl;
-      os << "summary: " << s << " " << t                                << endl
-         << "license: TODO"                                             << endl
-         << "url: https://example.org/" << (prjn ? prjn->string () : n) << endl
-         << "email: " << email                                          << endl
-         << "depends: * build2 >= 0.9.0-"                               << endl
-         << "depends: * bpkg >= 0.9.0-"                                 << endl
-         << "#depends: libhello ^1.0.0"                                 << endl;
-      os.close ();
-
-      // build/
-      //
-      dir_path bd (dir_path (out) / build_dir);
-      mk (bd);
-
-      // build/bootstrap.build
-      //
-      os.open (f = bd / "bootstrap." + build_ext);
-      os << "project = " << n                                          << endl;
-      if (o.no_amalgamation ())
-        os << "amalgamation = # Disabled."                             << endl;
-      os <<                                                               endl
-         << "using version"                                            << endl
-         << "using config"                                             << endl;
-      if (itest || utest)
-        os << "using test"                                             << endl;
-      os << "using install"                                            << endl
-         << "using dist"                                               << endl;
-      os.close ();
-
-      // build/root.build
-      //
-      // Note: see also tests/build/root.build below.
-      //
-      os.open (f = bd / "root." + build_ext);
 
       string m;  // Language module.
       string x;  // Source target type.
@@ -467,15 +503,6 @@ namespace bdep
           x  = "c";
           h  = "h";
           hs = "h";
-
-          // @@ TODO: 'latest' in c.std.
-          //
-          os //<< "c.std = latest"                                       << endl
-             //<<                                                           endl
-             << "using c"                                              << endl
-             <<                                                           endl
-             << "h{*}: extension = h"                                  << endl
-             << "c{*}: extension = c"                                  << endl;
           break;
         }
       case lang::cxx:
@@ -485,55 +512,107 @@ namespace bdep
           h  = "hxx";
           hs = "hxx ixx txx";
           es = l.cxx_opt.cpp () ? "pp" : "xx";
-
-          os << "cxx.std = latest"                                     << endl
-             <<                                                           endl
-             << "using cxx"                                            << endl
-             <<                                                           endl
-             << "hxx{*}: extension = h" << es                          << endl
-             << "ixx{*}: extension = i" << es                          << endl
-             << "txx{*}: extension = t" << es                          << endl
-             << "cxx{*}: extension = c" << es                          << endl;
           break;
         }
       }
 
-      if ((itest || utest) && !m.empty ())
-        os <<                                                           endl
-           << "# The test target for cross-testing (running tests under Wine, etc)." << endl
-           << "#"                                                    << endl
-           << "test.target = $" << m << ".target"                    << endl;
-
-      os.close ();
-
-      // build/.gitignore
+      // build/
       //
-      if (vc == vcs::git)
+      dir_path bd;
+      if (!sub)
       {
-        os.open (f = bd / ".gitignore");
-        os << "config." << build_ext                                   << endl
-           << "root/"                                                  << endl
-           << "bootstrap/"                                             << endl;
+        bd = out / build_dir;
+        mk (bd);
+
+        // build/bootstrap.build
+        //
+        os.open (f = bd / "bootstrap." + build_ext);
+        os << "project = " << n                                        << endl;
+        if (o.no_amalgamation ())
+          os << "amalgamation = # Disabled."                           << endl;
+        os <<                                                             endl
+           << "using version"                                          << endl
+           << "using config"                                           << endl;
+        if (itest || utest)
+          os << "using test"                                           << endl;
+        os << "using install"                                          << endl
+           << "using dist"                                             << endl;
         os.close ();
+
+        // build/root.build
+        //
+        // Note: see also tests/build/root.build below.
+        //
+        os.open (f = bd / "root." + build_ext);
+
+        switch (l)
+        {
+        case lang::c:
+          {
+            // @@ TODO: 'latest' in c.std.
+            //
+            // << "c.std = latest"                                     << endl
+            // <<                                                         endl
+            os << "using c"                                            << endl
+               <<                                                         endl
+               << "h{*}: extension = h"                                << endl
+               << "c{*}: extension = c"                                << endl;
+            break;
+          }
+        case lang::cxx:
+          {
+            os << "cxx.std = latest"                                   << endl
+               <<                                                         endl
+               << "using cxx"                                          << endl
+               <<                                                         endl
+               << "hxx{*}: extension = h" << es                        << endl
+               << "ixx{*}: extension = i" << es                        << endl
+               << "txx{*}: extension = t" << es                        << endl
+               << "cxx{*}: extension = c" << es                        << endl;
+            break;
+          }
+        }
+
+        if ((itest || utest) && !m.empty ())
+          os <<                                                           endl
+             << "# The test target for cross-testing (running tests under Wine, etc)." << endl
+             << "#"                                                    << endl
+             << "test.target = $" << m << ".target"                    << endl;
+
+        os.close ();
+
+        // build/.gitignore
+        //
+        if (vc == vcs::git)
+        {
+          os.open (f = bd / ".gitignore");
+          os << "config." << build_ext                                 << endl
+             << "root/"                                                << endl
+             << "bootstrap/"                                           << endl;
+          os.close ();
+        }
       }
 
       // buildfile
       //
-      os.open (f = out / buildfile_file);
-      os << "./: {*/ -" << build_dir.posix_representation () << "} manifest" << endl;
-      if (itest && t == type::lib) // Have tests/ subproject.
-        os <<                                                             endl
-           << "# Don't install tests."                                 << endl
-           << "#"                                                      << endl
-           << "tests/: install = false"                                << endl;
-      os.close ();
+      if (!sub)
+      {
+        os.open (f = out / buildfile_file);
+        os << "./: {*/ -" << build_dir.posix_representation () << "} manifest" << endl;
+        if (itest && t == type::lib) // Have tests/ subproject.
+          os <<                                                           endl
+             << "# Don't install tests."                               << endl
+             << "#"                                                    << endl
+             << "tests/: install = false"                              << endl;
+        os.close ();
+      }
 
       if (t == type::bare)
         break;
 
       // <base>/ (source subdirectory).
       //
-      dir_path sd (dir_path (out) /= b);
+      const dir_path& sd (sub ? out : out / d);
       mk (sd);
 
       switch (t)
@@ -715,34 +794,38 @@ namespace bdep
         }
       case type::lib:
         {
+          string ip (d.posix_representation ()); // Include prefix.
+
           string mp; // Macro prefix.
           transform (
-            b.begin (), b.end (), back_inserter (mp),
+            ip.begin (), ip.end () - 1, back_inserter (mp),
             [] (char c)
             {
-              return (c == '-' || c == '+' || c == '.') ? '_' : ucase (c);
+              return (c == '-' || c == '+' || c == '.' || c == '/')
+                ? '_'
+                : ucase (c);
             });
 
-          string hdr; // API header name.
-          string exp; // Export header name (empty if binless).
-          string ver; // Version header name.
+          string apih; // API header name.
+          string exph; // Export header name (empty if binless).
+          string verh; // Version header name.
 
           switch (l)
           {
           case lang::c:
             {
-              hdr = s + ".h";
-              exp = "export.h";
-              ver = "version.h";
+              apih = s + ".h";
+              exph = "export.h";
+              verh = ver ? "version.h" : string ();
 
               // <stem>.h
               //
-              os.open (f = sd / hdr);
+              os.open (f = sd / apih);
               os << "#pragma once"                                     << endl
                  <<                                                       endl
                  << "#include <stdio.h>"                               << endl
                  <<                                                       endl
-                 << "#include <" << b << "/" << exp << ">"             << endl
+                 << "#include <" << ip  << exph << ">"                 << endl
                  <<                                                       endl
                  << "// Print a greeting for the specified name into the specified"  << endl
                  << "// stream. On success, return the number of character printed." << endl
@@ -755,7 +838,7 @@ namespace bdep
               // <stem>.c
               //
               os.open (f = sd / s + ".c");
-              os << "#include <" << b << "/" << hdr << ">"             << endl
+              os << "#include <" << ip << apih << ">"                  << endl
                  <<                                                       endl
                  << "#include <errno.h>"                               << endl
                  <<                                                       endl
@@ -776,12 +859,12 @@ namespace bdep
           case lang::cxx:
             if (l.cxx_opt.binless ())
             {
-              hdr = s + ".h" + es;
-              ver = "version.h" + es;
+              apih = s + ".h" + es;
+              verh = ver ? "version.h" + es : string ();
 
               // <stem>.h(xx|pp)
               //
-              os.open (f = sd / hdr);
+              os.open (f = sd / apih);
               os << "#pragma once"                                     << endl
                  <<                                                       endl
                  << "#include <string>"                                << endl
@@ -810,19 +893,19 @@ namespace bdep
             }
             else
             {
-              hdr = s + ".h" + es;
-              exp = "export.h" + es;
-              ver = "version.h" + es;
+              apih = s + ".h" + es;
+              exph = "export.h" + es;
+              verh = ver ? "version.h" + es : string ();
 
               // <stem>.h(xx|pp)
               //
-              os.open (f = sd / hdr);
+              os.open (f = sd / apih);
               os << "#pragma once"                                     << endl
                  <<                                                       endl
                  << "#include <iosfwd>"                                << endl
                  << "#include <string>"                                << endl
                  <<                                                       endl
-                 << "#include <" << b << "/" << exp << ">"             << endl
+                 << "#include <" << ip << exph << ">"                  << endl
                  <<                                                       endl
                  << "namespace " << id                                 << endl
                  << "{"                                                << endl
@@ -837,7 +920,7 @@ namespace bdep
               // <stem>.c(xx|pp)
               //
               os.open (f = sd / s + ".c" + es);
-              os << "#include <" << b << "/" << hdr << ">"             << endl
+              os << "#include <" << ip << apih << ">"                  << endl
                  <<                                                       endl
                  << "#include <ostream>"                               << endl
                  << "#include <stdexcept>"                             << endl
@@ -862,9 +945,9 @@ namespace bdep
 
           // export.h[??]
           //
-          if (!exp.empty ())
+          if (!exph.empty ())
           {
-            os.open (f = sd / exp);
+            os.open (f = sd / exph);
             os << "#pragma once"                                       << endl
                <<                                                         endl;
             if (l == lang::cxx)
@@ -907,42 +990,45 @@ namespace bdep
 
           // version.h[??].in
           //
-          os.open (f = sd / ver + ".in");
+          if (ver)
+          {
+            os.open (f = sd / verh + ".in");
 
-          os << "#pragma once"                                         << endl
-             <<                                                           endl
-             << "// The numeric version format is AAABBBCCCDDDE where:"<< endl
-             << "//"                                                   << endl
-             << "// AAA - major version number"                        << endl
-             << "// BBB - minor version number"                        << endl
-             << "// CCC - bugfix version number"                       << endl
-             << "// DDD - alpha / beta (DDD + 500) version number"     << endl
-             << "// E   - final (0) / snapshot (1)"                    << endl
-             << "//"                                                   << endl
-             << "// When DDDE is not 0, 1 is subtracted from AAABBBCCC. For example:" << endl
-             << "//"                                                   << endl
-             << "// Version      AAABBBCCCDDDE"                        << endl
-             << "//"                                                   << endl
-             << "// 0.1.0        0000010000000"                        << endl
-             << "// 0.1.2        0000010010000"                        << endl
-             << "// 1.2.3        0010020030000"                        << endl
-             << "// 2.2.0-a.1    0020019990010"                        << endl
-             << "// 3.0.0-b.2    0029999995020"                        << endl
-             << "// 2.2.0-a.1.z  0020019990011"                        << endl
-             << "//"                                                   << endl
-             << "#define " << mp << "_VERSION       $" << v << ".version.project_number$ULL"   << endl
-             << "#define " << mp << "_VERSION_STR   \"$" << v << ".version.project$\""         << endl
-             << "#define " << mp << "_VERSION_ID    \"$" << v << ".version.project_id$\""      << endl
-             <<                                                                                  endl
-             << "#define " << mp << "_VERSION_MAJOR $" << v << ".version.major$" << endl
-             << "#define " << mp << "_VERSION_MINOR $" << v << ".version.minor$" << endl
-             << "#define " << mp << "_VERSION_PATCH $" << v << ".version.patch$" << endl
-             <<                                                                    endl
-             << "#define " << mp << "_PRE_RELEASE   $" << v << ".version.pre_release$" << endl
-             <<                                                                          endl
-             << "#define " << mp << "_SNAPSHOT_SN   $" << v << ".version.snapshot_sn$ULL"  << endl
-             << "#define " << mp << "_SNAPSHOT_ID   \"$" << v << ".version.snapshot_id$\"" << endl;
-          os.close ();
+            os << "#pragma once"                                       << endl
+               <<                                                         endl
+               << "// The numeric version format is AAABBBCCCDDDE where:"<< endl
+               << "//"                                                 << endl
+               << "// AAA - major version number"                      << endl
+               << "// BBB - minor version number"                      << endl
+               << "// CCC - bugfix version number"                     << endl
+               << "// DDD - alpha / beta (DDD + 500) version number"   << endl
+               << "// E   - final (0) / snapshot (1)"                  << endl
+               << "//"                                                 << endl
+               << "// When DDDE is not 0, 1 is subtracted from AAABBBCCC. For example:" << endl
+               << "//"                                                 << endl
+               << "// Version      AAABBBCCCDDDE"                      << endl
+               << "//"                                                 << endl
+               << "// 0.1.0        0000010000000"                      << endl
+               << "// 0.1.2        0000010010000"                      << endl
+               << "// 1.2.3        0010020030000"                      << endl
+               << "// 2.2.0-a.1    0020019990010"                      << endl
+               << "// 3.0.0-b.2    0029999995020"                      << endl
+               << "// 2.2.0-a.1.z  0020019990011"                      << endl
+               << "//"                                                 << endl
+               << "#define " << mp << "_VERSION       $" << v << ".version.project_number$ULL" << endl
+               << "#define " << mp << "_VERSION_STR   \"$" << v << ".version.project$\""       << endl
+               << "#define " << mp << "_VERSION_ID    \"$" << v << ".version.project_id$\""    << endl
+               <<                                                                                  endl
+               << "#define " << mp << "_VERSION_MAJOR $" << v << ".version.major$" << endl
+               << "#define " << mp << "_VERSION_MINOR $" << v << ".version.minor$" << endl
+               << "#define " << mp << "_VERSION_PATCH $" << v << ".version.patch$" << endl
+               <<                                                                    endl
+               << "#define " << mp << "_PRE_RELEASE   $" << v << ".version.pre_release$" << endl
+               <<                                                                          endl
+               << "#define " << mp << "_SNAPSHOT_SN   $" << v << ".version.snapshot_sn$ULL"<< endl
+               << "#define " << mp << "_SNAPSHOT_ID   \"$" << v << ".version.snapshot_id$\"" << endl;
+            os.close ();
+          }
 
           bool binless (l == lang::cxx && l.cxx_opt.binless ());
 
@@ -957,24 +1043,36 @@ namespace bdep
           if (!utest)
           {
             os << "lib{" << s << "}: "                                 <<
-              "{" << hs << (binless ? "" : ' ' + x) << "}"             <<
-              "{** -version} "                                         <<
-              h << "{version} $imp_libs $int_libs"                     << endl;
+              "{" << hs << (binless ? "" : ' ' + x) << "}{**";
+            if (ver)
+              os << " -version} " << h << "{version}";
+            else
+              os << "}";
+            os << " $imp_libs $int_libs"                               << endl;
           }
           else
           {
             if (binless)
             {
               os << "./: lib{" << s << "}: "                           <<
-                "{" << hs << "}{** -version -**.test...} "             <<
-                h << "{version} \\"                                    << endl
-                 << "  $imp_libs $int_libs"                            << endl;
+                "{" << hs << "}{** -**.test...";
+              if (ver)
+                os << " -version} " << h << "{version} \\"             << endl
+                   << " ";
+              else
+                os << "}";
+              os << " $imp_libs $int_libs"                             << endl;
             }
             else
             {
               os << "./: lib{" << s << "}: libul{" << s << "}: "       <<
-                "{" << hs << ' ' << x << "}{** -version -**.test...} \\" << endl
-                 << "  " << h << "{version} $imp_libs $int_libs"       << endl;
+                "{" << hs << ' ' << x << "}{** -**.test...";
+              if (ver)
+                os << " -version} \\"                                  << endl
+                   << "  " << h << "{version}";
+              else
+                os << "}";
+              os << " $imp_libs $int_libs"                             << endl;
             }
 
             os <<                                                         endl
@@ -1002,17 +1100,18 @@ namespace bdep
             os << "}"                                                  << endl;
           }
 
-          os <<                                                           endl
-             << "# Include the generated version header into the distribution (so that we don't" << endl
-             << "# pick up an installed one) and don't remove it when cleaning in src (so that"  << endl
-             << "# clean results in a state identical to distributed)."                          << endl
-             << "#"                                                                              << endl
-             << h << "{version}: in{version} $src_root/manifest"       << endl
-             << h << "{version}:"                                      << endl
-             << "{"                                                    << endl
-             << "  dist  = true"                                       << endl
-             << "  clean = ($src_root != $out_root)"                   << endl
-             << "}"                                                    << endl;
+          if (ver)
+            os <<                                                         endl
+               << "# Include the generated version header into the distribution (so that we don't" << endl
+               << "# pick up an installed one) and don't remove it when cleaning in src (so that"  << endl
+               << "# clean results in a state identical to distributed)."                          << endl
+               << "#"                                                                              << endl
+               << h << "{version}: in{version} $src_root/manifest"     << endl
+               << h << "{version}:"                                    << endl
+               << "{"                                                  << endl
+               << "  dist  = true"                                     << endl
+               << "  clean = ($src_root != $out_root)"                 << endl
+               << "}"                                                  << endl;
 
           // Build.
           //
@@ -1058,32 +1157,36 @@ namespace bdep
           // Installation.
           //
           os <<                                                           endl
-             << "# Install into the " << b << "/ subdirectory of, say, /usr/include/" << endl
+             << "# Install into the " << ip << " subdirectory of, say, /usr/include/" << endl
              << "# recreating subdirectories."                                        << endl
              << "#"                                                                   << endl
              << "{" << hs << "}{*}:"                                   << endl
              << "{"                                                    << endl
-             << "  install         = include/" << b << "/"             << endl
+             << "  install         = include/" << ip                   << endl
              << "  install.subdirs = true"                             << endl
              << "}"                                                    << endl;
           os.close ();
 
           // <base>/.gitignore
           //
-          if (vc == vcs::git)
+          if (ver || utest)
           {
-            os.open (f = sd / ".gitignore");
-            os << "# Generated version header."                        << endl
-               << "#"                                                  << endl
-               << ver                                                  << endl;
-            if (utest)
-              os <<                                                       endl
-                 << "# Unit test executables and Testscript output directories" << endl
-                 << "# (can be symlinks)."                             << endl
-                 << "#"                                                << endl
-                 << "*.test"                                           << endl
-                 << "test-*.test"                                      << endl;
-            os.close ();
+            if (vc == vcs::git)
+            {
+              os.open (f = sd / ".gitignore");
+              if (ver)
+                os << "# Generated version header."                    << endl
+                   << "#"                                              << endl
+                   << verh                                             << endl;
+              if (utest)
+                os <<                                        (ver ? "\n" : "")
+                   << "# Unit test executables and Testscript output directories" << endl
+                   << "# (can be symlinks)."                           << endl
+                   << "#"                                              << endl
+                   << "*.test"                                         << endl
+                   << "test-*.test"                                    << endl;
+              os.close ();
+            }
           }
 
           // <base>/<stem>.test.*
@@ -1100,7 +1203,7 @@ namespace bdep
                 os << "#include <stdio.h>"                             << endl
                    << "#include <assert.h>"                            << endl
                    <<                                                     endl
-                   << "#include <" << b << "/" << hdr << ">"           << endl
+                   << "#include <" << ip << apih << ">"                << endl
                    <<                                                     endl
                    << "int main ()"                                    << endl
                    << "{"                                              << endl
@@ -1118,7 +1221,7 @@ namespace bdep
                 os << "#include <cassert>"                             << endl
                    << "#include <iostream>"                            << endl
                    <<                                                     endl
-                   << "#include <" << b << "/" << hdr << ">"           << endl
+                   << "#include <" << ip << apih << ">"                << endl
                    <<                                                     endl
                    << "int main ()"                                    << endl
                    << "{"                                              << endl
@@ -1133,14 +1236,17 @@ namespace bdep
 
           // build/export.build
           //
-          os.open (f = bd / "export." + build_ext);
-          os << "$out_root/"                                           << endl
-             << "{"                                                    << endl
-             << "  include " << b << "/"                               << endl
-             << "}"                                                    << endl
-             <<                                                           endl
-             << "export $out_root/" << b << "/$import.target"          << endl;
-          os.close ();
+          if (!sub)
+          {
+            os.open (f = bd / "export." + build_ext);
+            os << "$out_root/"                                         << endl
+               << "{"                                                  << endl
+               << "  include " << ip                                   << endl
+               << "}"                                                  << endl
+               <<                                                         endl
+               << "export $out_root/" << ip << "$import.target"        << endl;
+            os.close ();
+          }
 
           // tests/ (tests subproject).
           //
@@ -1254,9 +1360,10 @@ namespace bdep
                  << "#include <errno.h>"                               << endl
                  << "#include <string.h>"                              << endl
                  << "#include <assert.h>"                              << endl
-                 <<                                                       endl
-                 << "#include <" << b << "/" << ver << ">"             << endl
-                 << "#include <" << b << "/" << hdr << ">"             << endl
+                 <<                                                       endl;
+              if (ver)
+                os << "#include <" << ip << verh << ">"                << endl;
+              os << "#include <" << ip << apih << ">"                  << endl
                  <<                                                       endl
                  << "int main ()"                                      << endl
                  << "{"                                                << endl
@@ -1293,9 +1400,10 @@ namespace bdep
               os << "#include <cassert>"                               << endl
                  << "#include <sstream>"                               << endl
                  << "#include <stdexcept>"                             << endl
-                 <<                                                       endl
-                 << "#include <" << b << "/" << ver << ">"             << endl
-                 << "#include <" << b << "/" << hdr << ">"             << endl
+                 <<                                                       endl;
+              if (ver)
+                os << "#include <" << ip << verh << ">"                << endl;
+              os << "#include <" << ip << apih << ">"                  << endl
                  <<                                                       endl
                  << "int main ()"                                      << endl
                  << "{"                                                << endl
@@ -1357,12 +1465,13 @@ namespace bdep
     }
 
     if (verb)
-      text << "created new " << t << ' ' << (pkg ? "package" : "project")
+      text << "created new " << t << ' ' << (sub ? "source subdirectory" :
+                                             pkg ? "package" : "project")
            << ' ' << n << " in " << out;
 
-    // --no-init | --package
+    // --no-init | --package | --subdirectory
     //
-    if (o.no_init () || o.package ())
+    if (o.no_init () || pkg || sub)
       return 0;
 
     // Create .bdep/.

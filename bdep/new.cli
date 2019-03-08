@@ -26,7 +26,8 @@ namespace bdep
         \b{bdep new} [<options>] \b{--config-add|-A} <cfg-dir> [\b{@}<cfg-name>] <spec> <name>\n
         \b{bdep new} [<options>] \b{--config-create|-C} <cfg-dir> [\b{@}<cfg-name>] <spec> <name>\n
         \ \ \ \ \ \ \ \ \ [<cfg-args>]\n
-        \b{bdep new} [<options>] \b{--package} [<prj-spec>] <spec> <name>}
+        \b{bdep new} [<options>] \b{--package} [<prj-spec>] <spec> <name>\n
+        \b{bdep new} [<options>] \b{--subdirectory} [<prj-spec>] <spec> <name>}
 
      \c{<spec> \ \ \ \ = [<type>] [<lang>] [<vcs>]\n
         <type> \ \ \ \ = \b{--type}|\b{-t} (\b{exe}|\b{lib}|\b{bare}|\b{empty})[\b{,}<type-opt>...]\n
@@ -38,8 +39,10 @@ namespace bdep
      \h|DESCRIPTION|
 
      The \cb{new} command creates and initializes a new project (the first
-     three forms) or a new package in an already existing project (the last
-     form). All four forms first create according to <spec> a new \cb{build2}
+     three forms), a new package in an already existing project (the
+     \cb{--package} form), or a new source subdirectory in an already existing
+     project/package (the \cb{--subdirectory} form). All the forms except
+     \cb{--subdirectory} first create according to <spec> a new \cb{build2}
      project/package called <name> in the <name> subdirectory of the current
      working directory (unless overridden with \c{\b{--output-dir}|\b{-o}}).
      See \l{bpkg#package-name Package Name} for details on project/package
@@ -47,16 +50,60 @@ namespace bdep
 
      The first form then, unless the \cb{--no-init} option is specified,
      initializes an empty project database as if by executing the
-     \l{bdep-init(1)} command with the \cb{--empty} option. Similarly, the
-     second and third forms add an existing or create new build configuration
-     and then initialize the project in that configuration as if by executing
-     the \l{bdep-init(1)} command with the \cb{--config-add} or
-     \cb{--config-create} option, respectively.
+     \l{bdep-init(1)} command with the \cb{--empty} option. For example:
 
-     The last form adds the new package to the \cb{packages.manifest} file
-     creating it if necessary. If no project directory is explicitly specified
-     with \c{\b{--directory}|\b{-d}}, then the current working directory is
-     assumed. Note that nested packages are not allowed.
+     \
+     $ bdep new -t exe -l c++ hello
+     \
+
+     Similarly, the second and third forms add an existing or create new build
+     configuration and then initialize the project in that configuration as if
+     by executing the \l{bdep-init(1)} command with the \cb{--config-add} or
+     \cb{--config-create} option, respectively. For example:
+
+     \
+     $ bdep new -t exe -l c++ -C @gcc hello cc config.cxx=g++
+     \
+
+     The \cb{--package} form adds the new package to the
+     \cb{packages.manifest} file creating it if necessary. If no project
+     directory is explicitly specified with \c{\b{--directory}|\b{-d}}, then
+     the current working directory is assumed. Note that nested packages are
+     not allowed. For example:
+
+     \
+     $ bdep new -t empty hello
+     $ cd hello
+
+     $ bdep new --package -t lib -l c++ libhello
+     $ bdep new --package -t exe -l c++ hello
+
+     $ bdep init -C @gcc cc config.cxx=g++
+     \
+
+     After executing these commands the \c{hello} project will contains
+     two packages, \c{libhello} and \c{hello}.
+
+     The \cb{--subdirectory} form operates \i{as-if} by first creating
+     according to <spec> a temporary project called <name> and then copying
+     its source subdirectory (\c{\i{name}\b{/}\i{name}\b{/}}) over to the
+     current working directory (unless overridden with
+     \c{\b{--output-dir}|\b{-o}}). If no project/package directory is
+     explicitly specified with \c{\b{--directory}|\b{-d}}, then the current
+     working directory is assumed. For example:
+
+     \
+     $ bdep new -t bare hello
+     $ cd hello
+
+     $ bdep new --subdirectory -t lib -l c++ libhello
+     $ bdep new --subdirectory -t exe -l c++ hello
+
+     $ bdep init -C @gcc cc config.cxx=g++
+     \
+
+     After executing these commands the \c{hello} project will contains two
+     source subdirectories, \c{libhello/} and \c{hello/}.
 
      The project parameters such as type (executable, library, etc), language,
      and version control system can be customized as described next. Some of
@@ -91,12 +138,15 @@ namespace bdep
 
          \cb{unit-tests} \- Add support for unit testing.
 
+         \cb{no-version} \- Don't add support for generating the version header.
+
          \cb{alt-naming} \- Use the alternative build file/directory naming scheme.
          |
 
      \li|\cb{bare}
 
-         A project without any source code. Recognized bare project options:
+         A project without any source code that can be filled later (see
+         \cb{--subdirectory}). Recognized bare project options:
 
          \cb{no-tests} \- Don't add support for testing.
 
@@ -162,6 +212,7 @@ namespace bdep
   {
     bool no-tests;
     bool unit-tests;
+    bool no-version;
     bool alt-naming;
   };
 
@@ -209,21 +260,29 @@ namespace bdep
 
     bool --package
     {
-      "Create a package inside an already existing project rather than a
+      "Create a new package inside an already existing project rather than a
        new project."
+    }
+
+    bool --subdirectory
+    {
+      "Create a new source subdirectory inside an already existing project or
+       package rather than a new project."
     }
 
     dir_path --output-dir|-o
     {
       "<dir>",
-      "Create the project in the specified directory."
+      "Create the project, package, or source subdirectory in the specified
+       directory."
     }
 
     dir_path --directory|-d
     {
       "<dir>",
-      "Assume the project is in the specified directory rather than in the
-       current working directory. Only used with \cb{--package}."
+      "Assume the project/package is in the specified directory rather than
+       in the current working directory. Only used with \cb{--package} or
+       \cb{--subdirectory}."
     }
 
     cmd_new_type --type|-t

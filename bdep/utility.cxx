@@ -138,6 +138,22 @@ namespace bdep
   }
 
   void
+  mk_p (const dir_path& d)
+  {
+    if (verb >= 3)
+      text << "mkdir -p " << d;
+
+    try
+    {
+      try_mkdir_p (d);
+    }
+    catch (const system_error& e)
+    {
+      fail << "unable to create directory " << d << ": " << e;
+    }
+  }
+
+  void
   rm (const path& f, uint16_t v)
   {
     if (verb >= v)

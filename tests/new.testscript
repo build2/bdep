@@ -92,6 +92,18 @@ status += -d prj
       EOE
   }
 
+  : lib-no-version
+  :
+  {
+    $* -t lib,unit-tests,no-version -l c++ libfoo 2>>/"EOE" &libfoo/***;
+      created new library project libfoo in $~/libfoo/
+      EOE
+
+    $build libfoo/ $cxx 2>>~%EOE%
+      %(c\+\+|ar|ld) .+%{10}
+      EOE
+  }
+
   : lib-binless
   :
   {
@@ -217,6 +229,68 @@ status += -d prj
         warning: project name 'x' is invalid: length is less than two characters
           info: leaving the 'project' manifest value empty
         created new executable package pkg in $~/x/pkg/
+        EOE
+    }
+  }
+
+  : sub
+  :
+  {
+    : exe
+    :
+    : Test adding a library source subdirectory to an executable project.
+    :
+    {
+      $* -t exe prj 2>>/"EOE" &prj/***;
+        created new executable project prj in $~/prj/
+        EOE
+
+      $* --subdirectory -t lib libprj -d prj 2>>/"EOE";
+        created new library source subdirectory libprj in $~/prj/libprj/
+        EOE
+
+      $build prj/ $cxx 2>>~%EOE%
+        %(c\+\+|ar|ld) .+%{6}
+        EOE
+    }
+
+    : bare
+    :
+    : Test filling a bare project with source subdirectories.
+    :
+    {
+      $* -t bare prj 2>>/"EOE" &prj/***;
+        created new bare project prj in $~/prj/
+        EOE
+
+      $* --subdirectory -t lib libprj -d prj 2>>/"EOE";
+        created new library source subdirectory libprj in $~/prj/libprj/
+        EOE
+
+      $* --subdirectory -t exe prj -d prj 2>>/"EOE";
+        created new executable source subdirectory prj in $~/prj/prj/
+        EOE
+
+      $build prj/ $cxx 2>>~%EOE%
+        %(c\+\+|ar|ld) .+%{6}
+        EOE
+    }
+
+    : nested
+    :
+    : Test adding a source subdirectories to a subdirectory.
+    :
+    {
+      $* -t bare prj 2>>/"EOE" &prj/***;
+        created new bare project prj in $~/prj/
+        EOE
+
+      $* --subdirectory -t lib,unit-tests prj -d prj -o prj/core/prj 2>>/"EOE";
+        created new library source subdirectory prj in $~/prj/core/prj/
+        EOE
+
+      $build prj/ $cxx 2>>~%EOE%
+        %(c\+\+|ar|ld) .+%{8}
         EOE
     }
   }
