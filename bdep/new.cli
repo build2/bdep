@@ -81,8 +81,8 @@ namespace bdep
      $ bdep init -C @gcc cc config.cxx=g++
      \
 
-     After executing these commands the \c{hello} project will contains
-     two packages, \c{libhello} and \c{hello}.
+     After executing these commands the \c{hello} project will contain two
+     packages, \c{libhello} and \c{hello}.
 
      The \cb{--subdirectory} form operates \i{as-if} by first creating
      according to <spec> a temporary project called <name> and then copying
@@ -102,7 +102,7 @@ namespace bdep
      $ bdep init -C @gcc cc config.cxx=g++
      \
 
-     After executing these commands the \c{hello} project will contains two
+     After executing these commands the \c{hello} project will contain two
      source subdirectories, \c{libhello/} and \c{hello/}.
 
      The project parameters such as type (executable, library, etc), language,
