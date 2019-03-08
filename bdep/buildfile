@@ -38,7 +38,7 @@ clean-options
 
 help_topics = projects-configs
 
-./: exe{bdep}: cxx{bdep} libue{bdep}
+./: exe{bdep}: {hxx ixx txx cxx}{+bdep} libue{bdep}
 
 libue{bdep}: {hxx ixx txx cxx}{** -bdep                    \
                                   -{$options_topics}       \
