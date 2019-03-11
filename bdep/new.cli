@@ -310,6 +310,8 @@ namespace bdep
        system-specific."
     }
 
+    // @@ This should be a no-amalgamation type sub-options.
+    //
     bool --no-amalgamation
     {
       "Create a project with disabled amalgamation support. This option is
