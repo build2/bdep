@@ -57,6 +57,12 @@ namespace bdep
      the remote as well as \cb{--open} which performs the opening of the next
      development cycle as described above.
 
+     In all the modes that perform a commit, if the project's repository index
+     already contains other changes, then the commit message is automatically
+     opened for editing unless \cb{--no-edit} is specified. The editing of the
+     commit message in the absence of other changes can be requested with the
+     \cb{--edit} option.
+
      Normally, \cb{release} operates on all the packages in a project. If no
      project directory is specified, then the current working directory is
      assumed and all the packages are released, even if the current directory
@@ -171,6 +177,16 @@ namespace bdep
        should be in the \c{\i{major}\b{.}\i{minor}\c{.}\i{patch}} form with
        the opened version becoming
        \c{\i{major}\b{.}\i{minor}\b{.}\i{patch}\b{-a.0.z}}."
+    }
+
+    bool --edit
+    {
+      "Open the commit message for editing."
+    }
+
+    bool --no-edit
+    {
+      "Don't open the commit message for editing."
     }
 
     std::set<string> --force

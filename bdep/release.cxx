@@ -493,11 +493,13 @@ namespace bdep
       gopt = o.revision () ? nullptr : mopt;
       verify ("--no-tag",  o.no_tag ());
 
-      // The following option is only meaningful for the releasing, revising,
-      // and opening modes.
+      // The following (mutually exclusive) options are only meaningful for
+      // the releasing, revising, and opening modes.
       //
       gopt = o.revision () || o.open () ? nullptr : mopt;
       verify ("--no-commit",  o.no_commit ());
+      verify ("--edit",       o.edit ());
+      verify ("--no-edit",    o.no_edit ());
 
       // The following (mutually exclusive) options are only meaningful for
       // the releasing and opening modes.
@@ -772,9 +774,11 @@ namespace bdep
         return 1;
     }
 
-    // Stage and commit the project changes.
+    // Stage and commit the project changes. Open the commit message in the
+    // editor if requested and --no-edit is not specified or if --edit is
+    // specified.
     //
-    auto commit_project = [&prj] (const string& msg)
+    auto commit_project = [&o, &prj] (const string& msg, bool edit)
     {
       // We shouldn't have any untracked files or unstaged changes other than
       // our modifications, so -a is good enough.
@@ -784,6 +788,7 @@ namespace bdep
                "commit",
                verb < 1 ? "-q" : verb >= 2 ? "-v" : nullptr,
                "-a",
+               (edit && !o.no_edit ()) || o.edit () ? "-e" : nullptr,
                "-m", msg);
     };
 
@@ -858,7 +863,11 @@ namespace bdep
       else
         m = "Release version " + pkg.release_version->string ();
 
-      commit_project (m);
+      commit_project (m, st.staged);
+
+      // The (possibly) staged changes are now committed.
+      //
+      st.staged = false;
     }
 
     // Tag.
@@ -923,7 +932,7 @@ namespace bdep
 
       // Commit the manifest rewrites.
       //
-      commit_project ("Change version to " + ov);
+      commit_project ("Change version to " + ov, st.staged);
     }
 
     if (push)
