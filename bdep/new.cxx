@@ -4,6 +4,8 @@
 
 #include <bdep/new.hxx>
 
+#include <algorithm> // replace()
+
 #include <libbutl/project-name.mxx>
 
 #include <bdep/project.hxx>
@@ -127,8 +129,24 @@ namespace bdep
       {
         auto& o (l.cxx_opt);
 
-        if (o.cpp () && o.cxx ())
-          fail << "'cxx' and 'cpp' are mutually exclusive c++ options";
+        if (o.cpp () && o.extension_specified ())
+          fail << "'extension' and 'cpp' are mutually exclusive c++ options";
+
+        // Verify that none of the extensions are specified as empty, except
+        // for hxx.
+        //
+        auto empty_ext = [] (const string& v, const char* o)
+        {
+          if (v.empty () || (v.size () == 1 && v[0] == '.'))
+            fail << "empty extension specified with '" << o << "' c++ option";
+        };
+
+        if (o.extension_specified ()) empty_ext (o.extension (), "extension");
+
+        if (o.cxx_specified ()) empty_ext (o.cxx (), "cxx");
+        if (o.ixx_specified ()) empty_ext (o.ixx (), "ixx");
+        if (o.txx_specified ()) empty_ext (o.txx (), "txx");
+        if (o.mxx_specified ()) empty_ext (o.mxx (), "mxx");
 
         if (o.binless () && t != type::lib)
           fail << "'binless' is only valid for libraries";
@@ -523,8 +541,13 @@ namespace bdep
       string m;  // Language module.
       string x;  // Source target type.
       string h;  // Header target type.
-      string hs; // All header target types.
-      string es; // Source file extension suffix (pp, xx).
+      string hs; // All header-like target types.
+      string xe; // Source file extension (including leading dot).
+      string he; // Header file extension (including leading dot unless empty).
+
+      optional<string> ie; // Inline file extension.
+      optional<string> te; // Template file extension.
+      optional<string> me; // Module interface extension.
 
       switch (l)
       {
@@ -534,18 +557,83 @@ namespace bdep
           x  = "c";
           h  = "h";
           hs = "h";
+          xe = ".c";
+          he = ".h";
           break;
         }
       case lang::cxx:
         {
+          const auto& opt (l.cxx_opt);
+
           m  = "cxx";
           x  = "cxx";
           h  = "hxx";
-          hs = "hxx ixx txx";
-          es = l.cxx_opt.cpp () ? "pp" : "xx";
+          hs = "hxx";
+
+          // Return the extension (v), if specified (s), derive the extension
+          // from the pattern and type (t), or return the default (d), if
+          // specified.
+          //
+          auto ext = [&opt] (bool s,
+                             const string& v,
+                             char t,
+                             const char* d = nullptr) -> optional<string>
+          {
+            optional<string> r;
+
+            if (s)
+              r = v;
+            else if (opt.extension_specified () || opt.cpp ())
+            {
+              string p (opt.extension_specified () ? opt.extension () :
+                        opt.cpp ()                 ? "?pp"            : "");
+
+              replace (p.begin (), p.end (), '?', t);
+              r = move (p);
+            }
+            else if (d != nullptr)
+              r = d;
+
+            // Add leading dot if absent.
+            //
+            if (r && !r->empty () && r->front () != '.')
+              r = '.' + *r;
+
+            return r;
+          };
+
+          xe = *ext (opt.cxx_specified (), opt.cxx (), 'c', "cxx");
+          he = *ext (opt.hxx_specified (), opt.hxx (), 'h', "hxx");
+
+          // We only want default .ixx/.txx/.mxx if the user didn't specify
+          // any of the extension-related options explicitly.
+          //
+          bool d (!opt.cxx_specified () &&
+                  !opt.hxx_specified () &&
+                  !opt.ixx_specified () &&
+                  !opt.txx_specified () &&
+                  !opt.mxx_specified ());
+
+          ie = ext (opt.ixx_specified (), opt.ixx (), 'i', d ? "ixx" : nullptr);
+          te = ext (opt.txx_specified (), opt.txx (), 't', d ? "txx" : nullptr);
+          me = ext (opt.mxx_specified (), opt.mxx (), 'm', d ? "mxx" : nullptr);
+
+          if (ie) hs += " ixx";
+          if (te) hs += " txx";
+          if (me) hs += " mxx";
+
           break;
         }
       }
+
+      // Return the pointer to the extension suffix after the leading dot or
+      // to the extension beginning if it is empty.
+      //
+      auto pure_ext = [] (const string& e)
+      {
+        assert (e.empty () || e[0] == '.');
+        return e.c_str () + (e.empty () ? 0 : 1);
+      };
 
       // build/
       //
@@ -595,11 +683,14 @@ namespace bdep
             os << "cxx.std = latest"                                   << endl
                <<                                                         endl
                << "using cxx"                                          << endl
-               <<                                                         endl
-               << "hxx{*}: extension = h" << es                        << endl
-               << "ixx{*}: extension = i" << es                        << endl
-               << "txx{*}: extension = t" << es                        << endl
-               << "cxx{*}: extension = c" << es                        << endl;
+               <<                                                         endl;
+
+            if (me) os << "mxx{*}: extension = " << pure_ext (*me)     << endl;
+            os         << "hxx{*}: extension = " << pure_ext (he)      << endl;
+            if (ie) os << "ixx{*}: extension = " << pure_ext (*ie)     << endl;
+            if (te) os << "txx{*}: extension = " << pure_ext (*te)     << endl;
+            os         << "cxx{*}: extension = " << pure_ext (xe)      << endl;
+
             break;
           }
         }
@@ -676,9 +767,9 @@ namespace bdep
             }
           case lang::cxx:
             {
-              // <base>/<stem>.c(xx|pp)
+              // <base>/<stem>.<cxx-ext>
               //
-              os.open (f = sd / s + ".c" + es);
+              os.open (f = sd / s + xe);
               os << "#include <iostream>"                              << endl
                  <<                                                       endl
                  << "int main (int argc, char* argv[])"                << endl
@@ -804,9 +895,9 @@ namespace bdep
               }
             case lang::cxx:
               {
-                // <base>/<stem>.test.c(xx|pp)
+                // <base>/<stem>.test.<cxx-ext>
                 //
-                os.open (f = sd / s + ".test.c" + es);
+                os.open (f = sd / s + ".test" + xe);
                 os << "#include <cassert>"                             << endl
                    << "#include <iostream>"                            << endl
                    <<                                                     endl
@@ -890,10 +981,10 @@ namespace bdep
           case lang::cxx:
             if (l.cxx_opt.binless ())
             {
-              apih = s + ".h" + es;
-              verh = ver ? "version.h" + es : string ();
+              apih = s + he;
+              verh = ver ? "version" + he : string ();
 
-              // <stem>.h(xx|pp)
+              // <stem>[.<hxx-ext>]
               //
               os.open (f = sd / apih);
               os << "#pragma once"                                     << endl
@@ -924,11 +1015,11 @@ namespace bdep
             }
             else
             {
-              apih = s + ".h" + es;
-              exph = "export.h" + es;
-              verh = ver ? "version.h" + es : string ();
+              apih = s + he;
+              exph = "export" + he;
+              verh = ver ? "version" + he : string ();
 
-              // <stem>.h(xx|pp)
+              // <stem>[.<hxx-ext>]
               //
               os.open (f = sd / apih);
               os << "#pragma once"                                     << endl
@@ -948,9 +1039,9 @@ namespace bdep
                  << "}"                                                << endl;
               os.close ();
 
-              // <stem>.c(xx|pp)
+              // <stem>.<cxx-ext>
               //
-              os.open (f = sd / s + ".c" + es);
+              os.open (f = sd / s + xe);
               os << "#include <" << ip << apih << ">"                  << endl
                  <<                                                       endl
                  << "#include <ostream>"                               << endl
@@ -1246,9 +1337,9 @@ namespace bdep
               }
             case lang::cxx:
               {
-                // <base>/<stem>.test.c(xx|pp)
+                // <base>/<stem>.test.<cxx-ext>
                 //
-                os.open (f = sd / s + ".test.c" + es);
+                os.open (f = sd / s + ".test" + xe);
                 os << "#include <cassert>"                             << endl
                    << "#include <iostream>"                            << endl
                    <<                                                     endl
@@ -1324,22 +1415,25 @@ namespace bdep
               os << "cxx.std = latest"                                 << endl
                  <<                                                       endl
                  << "using cxx"                                        << endl
-                 <<                                                       endl
-                 << "hxx{*}: extension = h" << es                      << endl
-                 << "ixx{*}: extension = i" << es                      << endl
-                 << "txx{*}: extension = t" << es                      << endl
-                 << "cxx{*}: extension = c" << es                      << endl;
+                 <<                                                       endl;
+
+              if (me) os << "mxx{*}: extension = " << pure_ext (*me)   << endl;
+              os         << "hxx{*}: extension = " << pure_ext (he)    << endl;
+              if (ie) os << "ixx{*}: extension = " << pure_ext (*ie)   << endl;
+              if (te) os << "txx{*}: extension = " << pure_ext (*te)   << endl;
+              os         << "cxx{*}: extension = " << pure_ext (xe)    << endl;
+
               break;
             }
           }
-          os <<                                                           endl
+          os <<                                                            endl
              << "# Every exe{} in this subproject is by default a test."<< endl
-             << "#"                                                    << endl
-             << "exe{*}: test = true"                                  << endl
-             <<                                                           endl
+             << "#"                                                     << endl
+             << "exe{*}: test = true"                                   << endl
+             <<                                                            endl
              << "# The test target for cross-testing (running tests under Wine, etc)." << endl
-             << "#"                                                    << endl
-             << "test.target = $" << m << ".target"                    << endl;
+             << "#"                                                     << endl
+             << "test.target = $" << m << ".target"                     << endl;
           os.close ();
 
           // tests/build/.gitignore
@@ -1425,9 +1519,9 @@ namespace bdep
             }
           case lang::cxx:
             {
-              // tests/basics/driver.c(xx|pp)
+              // tests/basics/driver.<cxx-ext>
               //
-              os.open (f = td / "driver.c" + es);
+              os.open (f = td / "driver" + xe);
               os << "#include <cassert>"                               << endl
                  << "#include <sstream>"                               << endl
                  << "#include <stdexcept>"                             << endl

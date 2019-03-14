@@ -82,7 +82,14 @@ namespace bdep
 
     // Default is C++ with no options.
     //
-    cmd_new_lang_template (): lang (cxx) {cxx_opt = CXX ();}
+    cmd_new_lang_template (): lang (cxx), cxx_opt (CXX ()) {}
+
+    cmd_new_lang_template (cmd_new_lang_template&&);
+    cmd_new_lang_template (const cmd_new_lang_template&);
+    cmd_new_lang_template& operator= (cmd_new_lang_template&&);
+    cmd_new_lang_template& operator= (const cmd_new_lang_template&);
+
+    ~cmd_new_lang_template ();
   };
 
   using cmd_new_lang = cmd_new_lang_template<>;
@@ -113,5 +120,7 @@ namespace bdep
 
   using cmd_new_vcs = cmd_new_vcs_template<>;
 }
+
+#include <bdep/new-types.ixx>
 
 #endif // BDEP_NEW_TYPES_HXX

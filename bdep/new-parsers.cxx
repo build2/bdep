@@ -21,34 +21,62 @@ namespace bdep
     static O
     parse_options (const char* o, const string v, size_t pos)
     {
-      // Use vector_scanner to parse the comma-separated list as options.
+      // Use vector_scanner to parse the comma-separated list of
+      // parameter-specific options. Make sure that option values are only
+      // specified if required (no value for flags, etc).
       //
       vector<string> os;
+      const options& ods (O::description ());
+
       for (size_t i (pos), j; i != string::npos; )
       {
         j = i + 1;
         i = v.find (',', j);
-        os.push_back (string (v, j, i != string::npos ? i - j : i));
+
+        string po (v, j, i != string::npos ? i - j : i);
+
+        // Split the parameter-specific option into the name and value.
+        //
+        optional<string> pv;
+        {
+          size_t i (po.find ('='));
+
+          if (i != string::npos)
+          {
+            pv = string (po, i + 1);
+            po.resize (i);
+          }
+        }
+
+        // Verify that the option is known and its value is only specified if
+        // required.
+        //
+        {
+          auto i (ods.find (po));
+
+          if (i == ods.end ())
+            throw invalid_value (o, po);
+
+          bool flag (!pv);
+
+          if (flag != i->flag ())
+            throw invalid_value (o,
+                                 po,
+                                 string (flag ? "missing" : "unexpected") +
+                                 " value for '" + po + "'");
+        }
+
+        os.push_back (move (po));
+
+        if (pv)
+          os.push_back (move (*pv));
       }
 
       vector_scanner s (os);
 
-      try
-      {
-        O r;
-        r.parse (s,
-                 unknown_mode::fail /* unknown_option */,
-                 unknown_mode::fail /* unknown_argument */);
-        return r;
-      }
-      catch (const unknown_option& e)
-      {
-        throw invalid_value (o, e.option ());
-      }
-      catch (const unknown_argument& e)
-      {
-        throw invalid_value (o, e.argument ());
-      }
+      O r;
+      r.parse (s);
+      return r;
     }
 
     void parser<type>::

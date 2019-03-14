@@ -294,6 +294,176 @@ status += -d prj
         EOE
     }
   }
+
+  : extensions
+  :
+  {
+    : default
+    :
+    {
+      $* -t lib -l c++ libprj 2>>/"EOE" &libprj/***;
+        created new library project libprj in $~/libprj/
+        EOE
+
+      test -f libprj/libprj/prj.cxx;
+      test -f libprj/libprj/prj.hxx;
+
+      $build libprj/ $cxx 2>>~%EOE%
+        %(version\.in|c\+\+|ar|ld) .+%{7}
+        EOE
+    }
+
+    : cpp
+    :
+    {
+      $* -t lib -l c++,cpp libprj 2>>/"EOE" &libprj/***;
+        created new library project libprj in $~/libprj/
+        EOE
+
+      test -f libprj/libprj/prj.cpp;
+      test -f libprj/libprj/prj.hpp;
+
+      $build libprj/ $cxx 2>>~%EOE%
+        %(version\.in|c\+\+|ar|ld) .+%{7}
+        EOE
+    }
+
+    : extension-c++
+    :
+    {
+      $* -t lib -l c++,extension=?++ libprj 2>>/"EOE" &libprj/***;
+        created new library project libprj in $~/libprj/
+        EOE
+
+      test -f libprj/libprj/prj.c++;
+      test -f libprj/libprj/prj.h++;
+
+      $build libprj/ $cxx 2>>~%EOE%
+        %(version\.in|c\+\+|ar|ld) .+%{7}
+        EOE
+    }
+
+    : extension-cc
+    :
+    {
+      $* -t lib -l c++,extension=?? libprj 2>>/"EOE" &libprj/***;
+        created new library project libprj in $~/libprj/
+        EOE
+
+      test -f libprj/libprj/prj.cc;
+      test -f libprj/libprj/prj.hh;
+
+      $build libprj/ $cxx 2>>~%EOE%
+        %(version\.in|c\+\+|ar|ld) .+%{7}
+        EOE
+    }
+
+    : cxx-hxx
+    :
+    {
+      $* -t lib -l c++,cxx=c,hxx=h libprj 2>>/"EOE" &libprj/***;
+        created new library project libprj in $~/libprj/
+        EOE
+
+      test -f libprj/libprj/prj.c;
+      test -f libprj/libprj/prj.h;
+
+      $build libprj/ $cxx 2>>~%EOE%
+        %(version\.in|c\+\+|ar|ld) .+%{7}
+        EOE
+    }
+
+    : empty-hxx
+    :
+    {
+      $* -t lib -l c++,hxx= libprj 2>>/"EOE" &libprj/***;
+        created new library project libprj in $~/libprj/
+        EOE
+
+      test -f libprj/libprj/prj.cxx;
+      test -f libprj/libprj/prj;
+
+      $build libprj/ $cxx 2>>~%EOE%
+        %(version\.in|c\+\+|ar|ld) .+%{7}
+        EOE
+    }
+
+    : ixx
+    :
+    {
+      $* -t lib -l c++,ixx=ixx libprj 2>>/"EOE" &libprj/***;
+        created new library project libprj in $~/libprj/
+        EOE
+
+      sed -n -e 's/(.*\bixx\b.*)/\1/p' libprj/build/root.build >>EOO;
+        ixx{*}: extension = ixx
+        EOO
+
+      sed -n -e 's/(.*\bixx\b.*)/\1/p' libprj/libprj/buildfile >>~%EOO%;
+        %.*\{hxx ixx cxx\}.*%
+        {hxx ixx}{*}:
+        EOO
+
+      $build libprj/ $cxx 2>>~%EOE%
+        %(version\.in|c\+\+|ar|ld) .+%{7}
+        EOE
+    }
+
+    : leading-dot
+    :
+    {
+      $* -t lib -l c++,cxx=.cpp libprj 2>>/"EOE" &libprj/***;
+        created new library project libprj in $~/libprj/
+        EOE
+
+      test -f libprj/libprj/prj.cpp;
+      test -f libprj/libprj/prj.hxx;
+
+      $build libprj/ $cxx 2>>~%EOE%
+        %(version\.in|c\+\+|ar|ld) .+%{7}
+        EOE
+    }
+
+    : errors
+    :
+    {
+      : missing-value
+      :
+      $* -t lib -l c++,cxx libprj 2>>EOE != 0
+        error: invalid value 'cxx' for option '-l': missing value for 'cxx'
+        EOE
+
+      : unexpected-value
+      :
+      $* -t lib -l c++,cpp=cxx libprj 2>>EOE != 0
+        error: invalid value 'cpp' for option '-l': unexpected value for 'cpp'
+        EOE
+
+      : empty-value
+      :
+      $* -t lib -l c++,extension= libprj 2>>EOE != 0
+        error: empty extension specified with 'extension' c++ option
+        EOE
+
+      : dot-only
+      :
+      $* -t lib -l c++,extension=. libprj 2>>EOE != 0
+        error: empty extension specified with 'extension' c++ option
+        EOE
+
+      : unknown-value
+      :
+      $* -t lib -l c++,zxx= libprj 2>>EOE != 0
+        error: invalid value 'zxx' for option '-l'
+        EOE
+
+      : mutually-exclusive
+      :
+      $* -t lib -l c++,cpp,extension=?pp libprj 2>>EOE != 0
+        error: 'extension' and 'cpp' are mutually exclusive c++ options
+        EOE
+    }
+  }
 }
 
 : cfg

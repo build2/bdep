@@ -119,45 +119,66 @@ namespace bdep
 
      \li|\cb{exe}
 
-         A project that builds a sample executable. Recognized executable
-         project options:
+         A project that builds a sample executable. Recognized
+         executable project options:|
 
-         \cb{no-tests} \- Don't add support for functional/integration testing.
+     \li|\n\ \ \ \cb{no-tests}
 
-         \cb{unit-tests} \- Add support for unit testing.
+         Don't add support for functional/integration testing.|
 
-         \cb{alt-naming} \- Use the alternative build file/directory naming scheme.
-         |
+     \li|\n\ \ \ \cb{unit-tests}
+
+         Add support for unit testing.|
+
+     \li|\n\ \ \ \cb{alt-naming}
+
+         Use the alternative build file/directory naming scheme.||
+
+     \dl|
 
      \li|\cb{lib}
 
-         A project that builds a sample library. Recognized library project
-         options:
+         A project that builds a sample library. Recognized library
+         project options:|
 
-         \cb{no-tests} \- Don't add support for functional/integration testing.
+     \li|\n\ \ \ \cb{no-tests}
 
-         \cb{unit-tests} \- Add support for unit testing.
+         Don't add support for functional/integration testing.|
 
-         \cb{no-version} \- Don't add support for generating the version header.
+     \li|\n\ \ \ \cb{unit-tests}
 
-         \cb{alt-naming} \- Use the alternative build file/directory naming scheme.
-         |
+         Add support for unit testing.|
+
+     \li|\n\ \ \ \cb{no-version}
+
+         Don't add support for generating the version header.|
+
+     \li|\n\ \ \ \cb{alt-naming}
+
+         Use the alternative build file/directory naming scheme.||
+
+     \dl|
 
      \li|\cb{bare}
 
-         A project without any source code that can be filled later (see
-         \cb{--subdirectory}). Recognized bare project options:
+         A project without any source code that can be filled later
+         (see \cb{--subdirectory}). Recognized bare project options:|
 
-         \cb{no-tests} \- Don't add support for testing.
+     \li|\n\ \ \ \cb{no-tests}
 
-         \cb{alt-naming} \- Use the alternative build file/directory naming scheme.
-         |
+         Don't add support for testing.|
+
+     \li|\n\ \ \ \cb{alt-naming}
+
+         Use the alternative build file/directory naming scheme.||
+
+     \dl|
 
      \li|\cb{empty}
 
          An empty project that can be filled with packages (see
-         \cb{--package}). Note that the project language is ignored for
-         this project type.||
+         \cb{--package}). Note that the project language is ignored for this
+         project type.||
 
      The project language can be specified with the \c{\b{--lang}|\b{-l}}
      option. Valid values for this option and their semantics are described
@@ -167,19 +188,65 @@ namespace bdep
 
      \li|\cb{c}
 
-         A C project.|
+         A C project.||
+
+     \dl|
 
      \li|\cb{c++}
 
-         A C++ project. Recognized language options:
+         A C++ project. Recognized language options:|
 
-         \cb{cxx} \- Use the \cb{.cxx}, \cb{.hxx}, \cb{.ixx}, \cb{.txx}, and
-         \cb{.mxx} source file extensions (default).
+     \li|\n\ \ \ \cb{binless}
 
-         \cb{cpp} \- Use the \cb{.cpp}, \cb{.hpp}, \cb{.ipp}, \cb{.tpp}, and
-         \cb{.mpp} source file extensions.
+         Create a header-only library.|
 
-         \cb{binless} \- Create a header-only library.||
+     \li|\n\ \ \ \cb{cpp}
+
+         Use the \cb{.cpp}, \cb{.hpp}, \cb{.ipp}, \cb{.tpp}, and \cb{.mpp}
+         source file extensions (alias for \cb{extension=?pp}).|
+
+     \li|\n\ \ \ \c{\b{extension=}\i{pattern}}
+
+         Derive source file extensions from \ci{pattern} by replacing
+         every \cb{?} with one of the \cb{c} (source), \cb{h} (header),
+         \cb{i} (inline), \cb{t} (template), or \cb{m} (module interface)
+         letters. If unspecified and no individual extensions are specified
+         with the below options, then \cb{?xx} is used by default.|
+
+     \li|\n\ \ \ \c{\b{hxx=}\i{extension}}
+
+         Use the specified \ci{extension} for header files instead of
+         the default \cb{.hxx}.|
+
+     \li|\n\ \ \ \c{\b{cxx=}\i{extension}}
+
+         Use the specified \ci{extension} for source files instead of
+         the default \cb{.cxx}.|
+
+     \li|\n\ \ \ \c{\b{ixx=}\i{extension}}
+
+         Use the specified \ci{extension} for inline files. If
+         unspecified, then assume no inline files are used by the
+         project.|
+
+     \li|\n\ \ \ \c{\b{txx=}\i{extension}}
+
+         Use the specified \ci{extension} for template files. If
+         unspecified, then assume no template files are used by the
+         project.|
+
+     \li|\n\ \ \ \c{\b{mxx=}\i{extension}}
+
+         Use the specified \ci{extension} for module interface files. If
+         unspecified, then assume no modules are used by the project.||
+
+     As an example, the following command creates a header-only C++ library
+     that uses the \cb{.h} extension for header files and \cb{.cpp} \- for
+     source files:
+
+     \
+     $ bdep new -t lib -l c++,binless,hxx=h,cxx=cpp libhello
+     \
 
      The project version control system can be specified with the
      \c{\b{--vcs}|\b{-s}} option. Valid values for this option and their
@@ -191,7 +258,9 @@ namespace bdep
      \li|\cb{git}
 
          Initialize a \cb{git(1)} repository inside the project and generate
-         \cb{.gitignore} files.|
+         \cb{.gitignore} files.||
+
+     \dl|
 
      \li|\cb{none}
 
@@ -232,11 +301,19 @@ namespace bdep
   {
   };
 
+  // The cpp flag is the "extension=?pp" alias and is mutually exclusive with
+  // extension=.
+  //
   class cmd_new_cxx_options
   {
-    bool cpp;
-    bool cxx;
     bool binless;
+    bool cpp;
+    string extension;
+    string hxx;
+    string cxx;
+    string ixx;
+    string txx;
+    string mxx;
   };
 
   // --vcs options

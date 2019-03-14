@@ -203,7 +203,7 @@ try
 
   // First parse common options and --version/--help.
   //
-  options o;
+  bdep::options o;
   o.parse (scan, unknown_mode::stop);
 
   if (o.version ())
