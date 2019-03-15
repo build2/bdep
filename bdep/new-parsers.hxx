@@ -16,6 +16,9 @@ namespace bdep
   {
     class scanner;
 
+    // Note that these parsers merge parameter-specific options rather
+    // than overwriting them (see new-types.hxx for details).
+    //
     template <typename T>
     struct parser;
 

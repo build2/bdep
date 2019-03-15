@@ -395,13 +395,18 @@ status += -d prj
         created new library project libprj in $~/libprj/
         EOE
 
-      sed -n -e 's/(.*\bixx\b.*)/\1/p' libprj/build/root.build >>EOO;
+      cat libprj/build/root.build >>~%EOO%;
+        %.+
         ixx{*}: extension = ixx
+        %.+
         EOO
 
-      sed -n -e 's/(.*\bixx\b.*)/\1/p' libprj/libprj/buildfile >>~%EOO%;
+      cat libprj/libprj/buildfile >>~%EOO%;
+        %.+
         %.*\{hxx ixx cxx\}.*%
+        %.+
         {hxx ixx}{*}:
+        %.+
         EOO
 
       $build libprj/ $cxx 2>>~%EOE%
@@ -418,6 +423,20 @@ status += -d prj
 
       test -f libprj/libprj/prj.cpp;
       test -f libprj/libprj/prj.hxx;
+
+      $build libprj/ $cxx 2>>~%EOE%
+        %(version\.in|c\+\+|ar|ld) .+%{7}
+        EOE
+    }
+
+    : merge
+    {
+      $* -t lib -l c++,cxx=cpp -l c -l c++,hxx=hpp libprj 2>>/"EOE" &libprj/***;
+        created new library project libprj in $~/libprj/
+        EOE
+
+      test -f libprj/libprj/prj.cpp;
+      test -f libprj/libprj/prj.hpp;
 
       $build libprj/ $cxx 2>>~%EOE%
         %(version\.in|c\+\+|ar|ld) .+%{7}
@@ -462,6 +481,134 @@ status += -d prj
       $* -t lib -l c++,cpp,extension=?pp libprj 2>>EOE != 0
         error: 'extension' and 'cpp' are mutually exclusive c++ options
         EOE
+    }
+  }
+
+  : options-file
+  :
+  {
+    +cat <<EOI >=options
+      --type exe,no-tests,unit-tests
+      --type lib,no-version
+      --type bare,alt-naming
+      --lang c++,cpp
+      --lang c
+      --vcs  none
+      EOI
+
+    test.arguments += --options-file $~/options
+
+    : type
+    :
+    {
+      : exe
+      :
+      {
+        $* -t exe prj 2>>/"EOE" &prj/***;
+          created new executable project prj in $~/prj/
+          EOE
+
+        test -f prj/buildfile;
+        test -f prj/prj/testscript == 1;
+
+        cat prj/prj/buildfile >>~%EOO%;
+          %.+
+          %for t: c\{\*\*.test...\}%d
+          %.+
+          EOO
+
+        $build prj/ $cxx 2>>~%EOE%
+          %(c|ar|ld) .+%{5}
+          EOE
+      }
+
+      : lib
+      :
+      {
+        $* -t lib libprj 2>>/"EOE" &libprj/***;
+          created new library project libprj in $~/libprj/
+          EOE
+
+        test -f libprj/buildfile;
+        test -f libprj/libprj/version.h.in == 1;
+
+        $build libprj/ $cxx 2>>~%EOE%
+          %(c|ar|ld) .+%{6}
+          EOE
+      }
+
+      : bare
+      :
+      {
+        $* -t bare libprj 2>>/"EOE" &libprj/***;
+          created new bare project libprj in $~/libprj/
+          EOE
+
+        test -f libprj/build2file;
+        test -d libprj/libprj == 1;
+
+        $build libprj/ $cxx 2>>~%EOE%
+          %info: .+ is up to date%
+          EOE
+      }
+
+      : empty
+      :
+      {
+        $* -t empty libprj 2>>/"EOE" &libprj/***
+          created new empty project libprj in $~/libprj/
+          EOE
+      }
+    }
+
+    : lang
+    :
+    {
+      test.arguments += -t lib
+
+      : c++
+      :
+      {
+        $* -l c++,hxx= libprj 2>>/"EOE" &libprj/***;
+          created new library project libprj in $~/libprj/
+          EOE
+
+        test -f libprj/libprj/prj;
+        test -f libprj/libprj/prj.cpp;
+
+        $build libprj/ $cxx 2>>~%EOE%
+          %(c\+\+|ar|ld) .+%{6}
+          EOE
+      }
+
+      : c
+      :
+      {
+        $* -l c libprj 2>>/"EOE" &libprj/***;
+          created new library project libprj in $~/libprj/
+          EOE
+
+        test -f libprj/libprj/prj.h;
+        test -f libprj/libprj/prj.c;
+
+        $build libprj/ $cxx 2>>~%EOE%
+          %(c|ar|ld) .+%{6}
+          EOE
+      }
+    }
+
+    : vcs
+    :
+    {
+      : git
+      :
+      {
+        $* -s git prj 2>>/"EOE" &prj/***;
+          created new bare project prj in $~/prj/
+          EOE
+
+        test -d prj/.git
+      }
     }
   }
 }

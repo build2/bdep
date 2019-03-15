@@ -12,6 +12,13 @@ namespace bdep
   // We could have defined cmd_new_*_options in a separate .cli file, include
   // that here, and so on. Or we can abuse templates and keep everything
   // together.
+  //
+  // Note that these types are designed to accumulate sub-options from the
+  // options specified on the command line (or in option files) multiple
+  // times, with the last one serving as a "selector". This, in particular,
+  // will be useful for specifying custom project creation defaults in the
+  // configuration files.
+  //
 
   // --type
   //
@@ -30,17 +37,14 @@ namespace bdep
 
     operator type_type () const {return type;}
 
-    union
-    {
-      EXE   exe_opt;
-      LIB   lib_opt;
-      BARE  bare_opt;
-      EMPTY empty_opt;
-    };
+    EXE   exe_opt;
+    LIB   lib_opt;
+    BARE  bare_opt;
+    EMPTY empty_opt;
 
     // Default is exe with no options.
     //
-    cmd_new_type_template (): type (exe) {exe_opt = EXE ();}
+    cmd_new_type_template (): type (exe) {}
 
     friend ostream&
     operator<< (ostream& os, const cmd_new_type_template& t)
@@ -74,22 +78,12 @@ namespace bdep
 
     operator lang_type () const {return lang;}
 
-    union
-    {
-      C     c_opt;
-      CXX cxx_opt;
-    };
+    C     c_opt;
+    CXX cxx_opt;
 
     // Default is C++ with no options.
     //
-    cmd_new_lang_template (): lang (cxx), cxx_opt (CXX ()) {}
-
-    cmd_new_lang_template (cmd_new_lang_template&&);
-    cmd_new_lang_template (const cmd_new_lang_template&);
-    cmd_new_lang_template& operator= (cmd_new_lang_template&&);
-    cmd_new_lang_template& operator= (const cmd_new_lang_template&);
-
-    ~cmd_new_lang_template ();
+    cmd_new_lang_template (): lang (cxx) {}
   };
 
   using cmd_new_lang = cmd_new_lang_template<>;
@@ -107,20 +101,15 @@ namespace bdep
 
     operator vcs_type () const {return vcs;}
 
-    union
-    {
-      GIT  git_opt;
-      NONE none_opt;
-    };
+    GIT  git_opt;
+    NONE none_opt;
 
     // Default is git with no options.
     //
-    cmd_new_vcs_template (): vcs (git) {git_opt = GIT ();}
+    cmd_new_vcs_template (): vcs (git) {}
   };
 
   using cmd_new_vcs = cmd_new_vcs_template<>;
 }
-
-#include <bdep/new-types.ixx>
 
 #endif // BDEP_NEW_TYPES_HXX

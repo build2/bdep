@@ -15,11 +15,11 @@ namespace bdep
     using vcs  = cmd_new_vcs;
 
     // Parse comma-separated list of of options starting from the first comma
-    // at pos.
+    // at pos, merging them with options parsed previously.
     //
     template <typename O>
-    static O
-    parse_options (const char* o, const string v, size_t pos)
+    static void
+    parse_options (const char* o, const string v, size_t pos, O& r)
     {
       // Use vector_scanner to parse the comma-separated list of
       // parameter-specific options. Make sure that option values are only
@@ -73,10 +73,7 @@ namespace bdep
       }
 
       vector_scanner s (os);
-
-      O r;
       r.parse (s);
-      return r;
     }
 
     void parser<type>::
@@ -94,22 +91,22 @@ namespace bdep
       if (l == "exe")
       {
         r.type = type::exe;
-        r.exe_opt = parse_options<cmd_new_exe_options> (o, v, i);
+        parse_options<cmd_new_exe_options> (o, v, i, r.exe_opt);
       }
       else if (l == "lib")
       {
         r.type = type::lib;
-        r.lib_opt = parse_options<cmd_new_lib_options> (o, v, i);
+        parse_options<cmd_new_lib_options> (o, v, i, r.lib_opt);
       }
       else if (l == "bare")
       {
         r.type = type::bare;
-        r.bare_opt = parse_options<cmd_new_bare_options> (o, v, i);
+        parse_options<cmd_new_bare_options> (o, v, i, r.bare_opt);
       }
       else if (l == "empty")
       {
         r.type = type::empty;
-        r.empty_opt = parse_options<cmd_new_empty_options> (o, v, i);
+        parse_options<cmd_new_empty_options> (o, v, i, r.empty_opt);
       }
       else
         throw invalid_value (o, l);
@@ -132,12 +129,12 @@ namespace bdep
       if (l == "c")
       {
         r.lang = lang::c;
-        r.c_opt = parse_options<cmd_new_c_options> (o, v, i);
+        parse_options<cmd_new_c_options> (o, v, i, r.c_opt);
       }
       else if (l == "c++")
       {
         r.lang = lang::cxx;
-        r.cxx_opt = parse_options<cmd_new_cxx_options> (o, v, i);
+        parse_options<cmd_new_cxx_options> (o, v, i, r.cxx_opt);
       }
       else
         throw invalid_value (o, l);
@@ -160,12 +157,12 @@ namespace bdep
       if (l == "git")
       {
         r.vcs = vcs::git;
-        r.git_opt = parse_options<cmd_new_git_options> (o, v, i);
+        parse_options<cmd_new_git_options> (o, v, i, r.git_opt);
       }
       else if (l == "none")
       {
         r.vcs = vcs::none;
-        r.none_opt = parse_options<cmd_new_none_options> (o, v, i);
+        parse_options<cmd_new_none_options> (o, v, i, r.none_opt);
       }
       else
         throw invalid_value (o, l);
