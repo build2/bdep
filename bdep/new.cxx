@@ -234,24 +234,69 @@ namespace bdep
       }
     }
 
-    dir_path out;           // Project/package/subdirectory output directory.
     dir_path prj;           // Project.
+    dir_path out;           // Project/package/subdirectory output directory.
     optional<dir_path> pkg; // Package relative to its project root.
     optional<dir_path> sub; // Source subdirectory relative to its
                             // project/package root.
-
-    if (o.package () || o.subdirectory ())
     {
-      if (o.directory_specified ())
-        (prj = o.directory ()).complete ().normalize ();
+      // Figure the final output and tentative project directories.
+      //
+      if (o.package () || o.subdirectory ())
+      {
+        if (o.directory_specified ())
+          (prj = o.directory ()).complete ().normalize ();
+        else
+          prj = path::current_directory ();
+
+        out = o.output_dir_specified () ? o.output_dir () : prj / dir_path (n);
+        out.complete ().normalize ();
+      }
       else
-        prj = path::current_directory ();
+      {
+        out = o.output_dir_specified () ? o.output_dir () : dir_path (n);
+        out.complete ().normalize ();
+        prj = out;
+      }
 
-      out = o.output_dir_specified () ? o.output_dir () : prj / dir_path (n);
-      out.complete ().normalize ();
+      // Check if the output directory already exists.
+      //
+      bool e (exists (out));
 
+      if (e && !empty (out))
+        fail << "directory " << out << " already exists and is not empty";
+
+      // Get the actual project/package information as "seen" from the output
+      // directory.
+      //
+      project_package pp (
+        find_project_package (out, true /* ignore_not_found */));
+
+      // Finalize the tentative project directory and do some sanity checks
+      // (nested packages, etc; you would be surprised what people come up
+      // with).
+      //
       if (o.package ())
       {
+        if (!o.no_checks ())
+        {
+          if (pp.project.empty ())
+            warn << prj << " does not look like a project directory";
+          else
+          {
+            if (pp.package)
+              fail << "package directory " << out << " is inside another "
+                   << "package directory " << pp.project / *pp.package <<
+                info << "nested packages are not allowed";
+          }
+        }
+
+        if (!pp.project.empty ())
+        {
+          if (prj != pp.project)
+            prj = move (pp.project);
+        }
+
         if (!out.sub (prj))
           fail << "package directory " << out << " is not a subdirectory of "
                << "project directory " << prj;
@@ -260,9 +305,29 @@ namespace bdep
       }
       else if (o.subdirectory ())
       {
+        if (!o.no_checks ())
+        {
+          if (pp.project.empty () || !pp.package)
+            warn << prj << " does not look like a package directory";
+        }
+
+        // Note: our prj should actually be the package (i.e., the build
+        // system project root).
+        //
+        if (!pp.project.empty ())
+        {
+          dir_path pkg (move (pp.project));
+
+          if (pp.package)
+            pkg /= *pp.package;
+
+          if (prj != pkg)
+            prj = move (pkg);
+        }
+
         if (!out.sub (prj))
           fail << "source subdirectory " << out << " is not a subdirectory of "
-               << "project/package directory " << prj;
+               << "package directory " << prj;
 
         // We use this information to form the include directories. The idea
         // is that if the user places the subdirectory somewhere deeper (say
@@ -279,49 +344,9 @@ namespace bdep
         //
         sub = out.leaf (prj);
       }
-    }
-    else
-    {
-      out = o.output_dir_specified () ? o.output_dir () : dir_path (n);
-      out.complete ().normalize ();
-      prj = out;
-    }
-
-    // Source directory relative to package root.
-    //
-    const dir_path& d (sub ? *sub : dir_path (b));
-
-    // Create the output directory and do some sanity check (empty if exists,
-    // nested packages, etc; you would be surprised what people come up with).
-    //
-    {
-      bool e (exists (out));
-
-      if (e && !empty (out))
-        fail << "directory " << out << " already exists and is not empty";
-
-      if (!o.no_checks () && !sub)
+      else
       {
-        project_package pp (
-          find_project_package (out, true /* ignore_not_found */));
-
-        if (o.package ())
-        {
-          if (!pp.project.empty ())
-          {
-            if (pp.project != prj)
-              fail << prj << " is not a project directory" <<
-                info << pp.project << " looks like a project directory";
-
-            if (pp.package)
-              fail << "package directory " << out << " is inside another "
-                   << "package directory " << prj / *pp.package <<
-                info << "nested packages are not allowed";
-          }
-          else
-            warn << prj << " does not look like a project directory";
-        }
-        else
+        if (!o.no_checks ())
         {
           if (!pp.project.empty ())
             fail << "project directory " << out << " is inside another "
@@ -330,9 +355,15 @@ namespace bdep
         }
       }
 
+      // Create the output directory if it doesn't exit.
+      //
       if (!e)
         mk_p (out);
     }
+
+    // Source directory relative to package root.
+    //
+    const dir_path& d (sub ? *sub : dir_path (b));
 
     // Initialize the version control system. Do it before writing anything
     // ourselves in case it fails. Also, the email discovery may do the VCS
