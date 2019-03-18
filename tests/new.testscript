@@ -500,6 +500,7 @@ status += -d prj
 
     : type
     :
+    if ($c.target.class != 'windows' && $c.target.class != 'macos')
     {
       : exe
       :
@@ -583,6 +584,7 @@ status += -d prj
 
       : c
       :
+      if ($c.target.class != 'windows' && $c.target.class != 'macos')
       {
         $* -l c libprj 2>>/"EOE" &libprj/***;
           created new library project libprj in $~/libprj/
