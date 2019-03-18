@@ -545,6 +545,9 @@ namespace bdep
       string xe; // Source file extension (including leading dot).
       string he; // Header file extension (including leading dot unless empty).
 
+      // @@ In a modular project, mxx is probably more like hxx/cxx rather
+      //    than ixx/txx.
+      //
       optional<string> ie; // Inline file extension.
       optional<string> te; // Template file extension.
       optional<string> me; // Module interface extension.
@@ -576,19 +579,19 @@ namespace bdep
           //
           auto ext = [&opt] (bool s,
                              const string& v,
-                             char t,
+                             optional<char> t,
                              const char* d = nullptr) -> optional<string>
           {
             optional<string> r;
 
             if (s)
               r = v;
-            else if (opt.extension_specified () || opt.cpp ())
+            else if (t && (opt.extension_specified () || opt.cpp ()))
             {
               string p (opt.extension_specified () ? opt.extension () :
                         opt.cpp ()                 ? "?pp"            : "");
 
-              replace (p.begin (), p.end (), '?', t);
+              replace (p.begin (), p.end (), '?', *t);
               r = move (p);
             }
             else if (d != nullptr)
@@ -616,7 +619,11 @@ namespace bdep
 
           ie = ext (opt.ixx_specified (), opt.ixx (), 'i', d ? "ixx" : nullptr);
           te = ext (opt.txx_specified (), opt.txx (), 't', d ? "txx" : nullptr);
-          me = ext (opt.mxx_specified (), opt.mxx (), 'm', d ? "mxx" : nullptr);
+
+          // For now only include mxx in buildfiles if its extension was
+          // explicitly specified with mxx=.
+          //
+          me = ext (opt.mxx_specified (), opt.mxx (), nullopt, nullptr);
 
           if (ie) hs += " ixx";
           if (te) hs += " txx";
