@@ -1,3 +1,39 @@
+Version 0.10.0
+
+  * New bdep-new(1) --subdirectory mode.
+
+    This mode can be used to create a new source subdirectory in an already
+    existing project.
+
+  * Support for more granular C++ source file extension specification in
+    bdep-new(1).
+
+    For example:
+
+    $ bdep new -t lib -l c++,hxx=h,cxx=cpp libhello  # .h & .cpp
+    $ bdep new -t lib -l c++,extension=?++           # .h++, .c++, etc
+
+    See the bdep-new(1) man pages for details.
+
+  * Support for suppressing the generation of the library version header.
+
+    Specifically, the bdep-new(1) --type|-t=lib option now has the new
+    no-version sub-option.
+
+  * Support for the alternative build file/directory naming scheme.
+
+    Specifically, the bdep-new(1) --type|-t option now has the new alt-naming
+    sub-option that can be used to create projects with the alternative
+    naming.
+
+  * New bdep-release(1) --[no]-edit options.
+
+    Now in all the bdep-release modes that perform a commit, if the project's
+    repository index already contains other changes, then the commit message
+    is automatically opened for editing unless --no-edit is specified. The
+    editing of the commit message in the absence of other changes can be
+    requested with the --edit option.
+
 Version 0.9.0
 
   * New bdep-release command for managing a project's version during release.
