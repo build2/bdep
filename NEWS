@@ -11,7 +11,7 @@ Version 0.10.0
     For example:
 
     $ bdep new -t lib -l c++,hxx=h,cxx=cpp libhello  # .h & .cpp
-    $ bdep new -t lib -l c++,extension=?++           # .h++, .c++, etc
+    $ bdep new -t lib -l c++,extension=?++ libhello  # .h++, .c++, etc
 
     See the bdep-new(1) man pages for details.
 
