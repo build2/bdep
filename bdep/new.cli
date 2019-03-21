@@ -81,8 +81,8 @@ namespace bdep
      $ bdep init -C @gcc cc config.cxx=g++
      \
 
-     After executing these commands the \c{hello} project will contain two
-     packages, \c{libhello} and \c{hello}.
+     After executing these commands the \cb{hello} project will contain two
+     packages, \cb{libhello} and \cb{hello}.
 
      The \cb{--subdirectory} form operates \i{as-if} by first creating
      according to <spec> a temporary project called <name> and then copying
@@ -102,8 +102,8 @@ namespace bdep
      $ bdep init -C @gcc cc config.cxx=g++
      \
 
-     After executing these commands the \c{hello} project will contain two
-     source subdirectories, \c{libhello/} and \c{hello/}.
+     After executing these commands the \cb{hello} project will contain two
+     source subdirectories, \cb{libhello/} and \cb{hello/}.
 
      The project parameters such as type (executable, library, etc), language,
      and version control system can be customized as described next. Some of
@@ -265,6 +265,18 @@ namespace bdep
      \li|\cb{none}
 
          Don't initialize a version control system inside the project.||
+
+     The newly created project, package, or subdirectory can be further
+     customized using the post-creation hooks specified with the
+     \cb{--post-hook} option. The hook commands are executed in the
+     newly created project, package, or source directory as their
+     current working directory. For example:
+
+     \
+     $ bdep new --post-hook \"echo .idea/ >>.gitignore\" hello
+     \
+
+     See the \cb{--post-hook} option documentation below for details.
      "
   }
 
@@ -385,6 +397,52 @@ namespace bdep
       "Specify project version control system and options. Valid values for
        <vcs> are \cb{git} (default) and \cb{none}. Valid values for <opt> are
        system-specific."
+    }
+
+    strings --post-hook
+    {
+      "<command>",
+      "Run the specified command in the newly created project, package, or
+       source directory.
+
+       The <command> value is interpreted as a whitespace-separated,
+       potentially quoted command line consisting of the program optionally
+       followed by arguments and redirects. Specifically, a single level of
+       quotes (either single or double) is removed and whitespaces are not
+       treated as separators inside such quoted fragments. Currently only the
+       \cb{stdout} redirect to a file is supported. For example:
+
+       \
+       $ bdep new --post-hook \"echo '.idea/ # IDE' >>.gitignore\" hello
+       \
+
+       The command line elements (program, arguments, etc) may optionally
+       contain substitutions \- variable names enclosed with the \cb{@}
+       substitution symbol \- which are replaced with the corresponding
+       variable values to produce the actual command. The following variable
+       names are recognized with the double substitution symbol (\cb{@@})
+       serving as an escape sequence.
+
+       \
+       @mode@ - one of 'project', 'package', or 'subdirectory'
+       @name@ - project, package, or subdirectory name
+       @base@ - name base (name without extension)
+       @stem@ - name stem (name base without 'lib' prefix)
+       @type@ - type (--type|-t value: 'exe', 'lib', etc)
+       @lang@ - language (--lang|-l value: 'c', 'c++', etc)
+       @vcs@  - version control system (--vcs|-s value: 'git', etc)
+       @root@ - project/package root directory
+       \
+
+       For example:
+
+       \
+       $ bdep new --post-hook \"echo bin/ >>@name@/.gitignore\" hello
+       \
+
+       These substitution variables are also made available to the hook program
+       as the \cb{BDEP_NEW_*} environment variables (\cb{BDEP_NEW_MODE},
+       \cb{BDEP_NEW_NAME}, etc)."
     }
 
     // @@ This should be a no-amalgamation type sub-options.

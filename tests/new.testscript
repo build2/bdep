@@ -4,6 +4,12 @@
 
 .include common.testscript
 
+posix = ($cxx.target.class != 'windows')
+
+# Our C tests use fmemopen() which is not always available.
+#
+c_tests = ($c.target.class != 'windows' && $c.target.class != 'macos')
+
 # Disable nesting checks in the created projects.
 #
 test.arguments += --no-checks
@@ -154,12 +160,9 @@ status += -d prj
       EOE
   }
 
-  # Our C tests use fmemopen() which is not always available.
-  #
-
   : lib-c
   :
-  if ($c.target.class != 'windows' && $c.target.class != 'macos')
+  if $c_tests
   {
     $* -t lib -l c libprj-foo 2>>/"EOE" &libprj-foo/***;
       created new library project libprj-foo in $~/libprj-foo/
@@ -172,7 +175,7 @@ status += -d prj
 
   : lib-c-unit-tests
   :
-  if ($c.target.class != 'windows' && $c.target.class != 'macos')
+  if $c_tests
   {
     $* -t lib,unit-tests -l c libfoo 2>>/"EOE" &libfoo/***;
       created new library project libfoo in $~/libfoo/
@@ -500,7 +503,7 @@ status += -d prj
 
     : type
     :
-    if ($c.target.class != 'windows' && $c.target.class != 'macos')
+    if $c_tests
     {
       : exe
       :
@@ -584,7 +587,7 @@ status += -d prj
 
       : c
       :
-      if ($c.target.class != 'windows' && $c.target.class != 'macos')
+      if $c_tests
       {
         $* -l c libprj 2>>/"EOE" &libprj/***;
           created new library project libprj in $~/libprj/
@@ -611,6 +614,91 @@ status += -d prj
 
         test -d prj/.git
       }
+    }
+  }
+
+  : post-hook
+  :
+  if $posix
+  {
+    : success
+    :
+    {
+      $* -t empty prj                                   \
+         --post-hook "echo .idea/ >>.gitignore"         \
+         --post-hook "echo @mode@ @name@ @base@ @stem@" \
+         --post-hook "echo @type@ @lang@ @vcs@ @root@"  \
+         >>"EOO" 2>>/"EOE" &prj/***;
+        project prj prj prj
+        empty c++ git $~/prj
+        EOO
+        created new empty project prj in $~/prj/
+        EOE
+
+      cat prj/.gitignore >>~%EOO%;
+        %.+
+        .idea/
+        EOO
+
+      $* --package prj -d prj                                  \
+         --post-hook "echo @@@@TODO >>NEWS"                    \
+         --post-hook "echo @mode@ @name@ @base@ @stem@ @root@" \
+         >>"EOO" 2>>/"EOE" &prj/prj/***;
+        package prj prj prj $~/prj
+        EOO
+        created new executable package prj in $~/prj/prj/
+        EOE
+
+      cat prj/prj/NEWS >'@@TODO';
+
+      $* --package -t lib libprj.bash -d prj                   \
+         --post-hook "echo @@@@TODO >>NEWS"                    \
+         --post-hook "echo @mode@ @name@ @base@ @stem@ @root@" \
+         >>"EOO" 2>>/"EOE" &prj/prj/***;
+        package libprj.bash libprj prj $~/prj
+        EOO
+        created new library package libprj.bash in $~/prj/libprj.bash/
+        EOE
+
+      cat prj/libprj.bash/NEWS >'@@TODO';
+
+      cat <<EOI >=hook;
+        #!/bin/sh
+        echo "$(pwd)"
+        echo "$BDEP_NEW_MODE $BDEP_NEW_ROOT"
+        EOI
+
+      chmod u+x hook;
+
+      $* -t lib --subdirectory libprj -d prj/prj --post-hook "$~/hook" \
+         >>"EOO" 2>>/"EOE" &prj/prj/libprj/***
+        $~/prj/prj/libprj
+        subdirectory $~/prj/prj
+        EOO
+        created new library source subdirectory libprj in $~/prj/prj/libprj/
+        EOE
+    }
+
+    : failure
+    :
+    {
+      : substitution
+      :
+      $* prj --post-hook 'echo foo >>@bar@' 2>>EOE &prj/*** != 0
+        error: invalid post hook 'echo foo >>@bar@': unknown variable 'bar'
+        EOE
+
+      : open-redirect
+      :
+      $* prj --post-hook 'echo foo >>bar/baz' 2>>/~%EOE% &prj/*** != 0
+        %error: unable to execute post hook 'echo foo >>bar/baz': unable to open stdout redirect file '.+baz': .+%
+        EOE
+
+      : process
+      :
+      $* prj --post-hook '""' 2>>~%EOE% &prj/*** != 0
+        %error: unable to execute post hook '""': .+%
+        EOE
     }
   }
 }

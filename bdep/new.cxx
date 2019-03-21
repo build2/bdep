@@ -6,6 +6,7 @@
 
 #include <algorithm> // replace()
 
+#include <libbutl/command.mxx>
 #include <libbutl/project-name.mxx>
 
 #include <bdep/project.hxx>
@@ -17,11 +18,10 @@
 #include <bdep/config.hxx>
 
 using namespace std;
+using namespace butl;
 
 namespace bdep
 {
-  using butl::project_name;
-
   using type = cmd_new_type;
   using lang = cmd_new_lang;
   using vcs  = cmd_new_vcs;
@@ -1594,6 +1594,76 @@ namespace bdep
     catch (const io_error& e)
     {
       fail << "unable to write " << f << ": " << e;
+    }
+
+    // Run post-hooks.
+    //
+    optional<process_env>              env;
+    optional<command_substitution_map> subs;
+    strings                            vars;
+
+    if (!o.post_hook ().empty ())
+    {
+      subs = command_substitution_map ();
+
+      auto add_var = [&subs, &vars] (string name, string value)
+      {
+        vars.push_back ("BDEP_NEW_"                              +
+                        ucase (const_cast<const string&> (name)) +
+                        '='                                      +
+                        value);
+
+        (*subs)[move (name)] = move (value);
+      };
+
+      add_var ("mode", sub ? "subdirectory" : pkg ? "package" : "project");
+      add_var ("name", n);
+      add_var ("base", move (b));
+      add_var ("stem", move (s));
+      add_var ("type", t.string ());
+      add_var ("lang", l.string ());
+      add_var ("vcs",  vc.string ());
+      add_var ("root", prj.string ());
+
+      env  = process_env (process_path (), out, vars);
+    }
+
+    for (const string& cmd: o.post_hook ())
+    {
+      try
+      {
+        // Note: out directory path is absolute and normalized.
+        //
+        process_exit e (command_run (cmd,
+                                     env,
+                                     subs,
+                                     '@',
+                                     [] (const char* const args[], size_t n)
+                                     {
+                                       if (verb >= 2)
+                                       {
+                                         print_process (args, n);
+                                       }
+                                     }));
+
+        if (!e)
+        {
+          if (e.normal ())
+            throw failed (); // Assume the command issued diagnostics.
+
+          fail << "post hook '" << cmd << "' " << e;
+        }
+      }
+      catch (const invalid_argument& e)
+      {
+        fail << "invalid post hook '" << cmd << "': " << e;
+      }
+      // Handle process_error and io_error (both derive from system_error).
+      //
+      catch (const system_error& e)
+      {
+        fail << "unable to execute post hook '" << cmd << "': " << e;
+      }
     }
 
     if (verb)

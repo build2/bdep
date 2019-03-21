@@ -46,20 +46,26 @@ namespace bdep
     //
     cmd_new_type_template (): type (exe) {}
 
-    friend ostream&
-    operator<< (ostream& os, const cmd_new_type_template& t)
+    const std::string
+    string () const
     {
       using type = cmd_new_type_template;
 
-      switch (t)
+      switch (*this)
       {
-      case type::exe:   return os << "executable";
-      case type::lib:   return os << "library";
-      case type::bare:  return os << "bare";
-      case type::empty: return os << "empty";
+      case type::exe:   return "executable";
+      case type::lib:   return "library";
+      case type::bare:  return "bare";
+      case type::empty: return "empty";
       }
 
-      return os;
+      return string (); // Should never reach.
+    }
+
+    friend ostream&
+    operator<< (ostream& os, const cmd_new_type_template& t)
+    {
+      return os << t.string ();
     }
   };
 
@@ -84,6 +90,20 @@ namespace bdep
     // Default is C++ with no options.
     //
     cmd_new_lang_template (): lang (cxx) {}
+
+    const std::string
+    string () const
+    {
+      using lang = cmd_new_lang_template;
+
+      switch (*this)
+      {
+      case lang::c:   return "c";
+      case lang::cxx: return "c++";
+      }
+
+      return string (); // Should never reach.
+    }
   };
 
   using cmd_new_lang = cmd_new_lang_template<>;
@@ -107,6 +127,20 @@ namespace bdep
     // Default is git with no options.
     //
     cmd_new_vcs_template (): vcs (git) {}
+
+    const std::string
+    string () const
+    {
+      using vcs = cmd_new_vcs_template;
+
+      switch (*this)
+      {
+      case vcs::git:  return "git";
+      case vcs::none: return "none";
+      }
+
+      return string (); // Should never reach.
+    }
   };
 
   using cmd_new_vcs = cmd_new_vcs_template<>;
