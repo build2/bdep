@@ -1658,9 +1658,11 @@ namespace bdep
       {
         fail << "invalid post hook '" << cmd << "': " << e;
       }
-      // Handle process_error and io_error (both derive from system_error).
-      //
-      catch (const system_error& e)
+      catch (const io_error& e)
+      {
+        fail << "unable to execute post hook '" << cmd << "': " << e;
+      }
+      catch (const process_error& e)
       {
         fail << "unable to execute post hook '" << cmd << "': " << e;
       }
