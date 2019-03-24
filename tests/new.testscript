@@ -691,7 +691,7 @@ status += -d prj
       : open-redirect
       :
       $* prj --post-hook 'echo foo >>bar/baz' 2>>/~%EOE% &prj/*** != 0
-        %error: unable to execute post hook 'echo foo >>bar/baz': unable to open stdout redirect file '.+baz': .+%
+        %error: unable to execute post hook 'echo foo >>bar/baz': unable to open stdout redirect file '.+baz'.*%
         EOE
 
       : process
