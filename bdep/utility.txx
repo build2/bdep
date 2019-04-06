@@ -342,7 +342,7 @@ namespace bdep
 
     try
     {
-      manifest_serializer s (os, name, move (ff));
+      manifest_serializer s (os, name, false /* long_lines */, move (ff));
       m.serialize (s);
       return;
     }
