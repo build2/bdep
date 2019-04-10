@@ -89,7 +89,7 @@ namespace bdep
 
   template <typename... A>
   optional<string>
-  git_line (const semantic_version& min_ver, bool ie, A&&... args)
+  git_line (const semantic_version& min_ver, bool ie, char delim, A&&... args)
   {
     fdpipe pipe (open_pipe ());
     auto_fd null (ie ? open_dev_null () : auto_fd ());
@@ -100,7 +100,21 @@ namespace bdep
                            ie ? null.get () : 2 /* stderr */,
                            forward<A> (args)...));
 
-    return git_line (move (pr), move (pipe), ie);
+    return git_line (move (pr), move (pipe), ie, delim);
+  }
+
+  template <typename... A>
+  inline optional<string>
+  git_line (const semantic_version& min_ver, bool ie, A&&... args)
+  {
+    return git_line (min_ver, ie, '\n' /* delim */, forward<A> (args)...);
+  }
+
+  template <typename... A>
+  inline optional<string>
+  git_string (const semantic_version& min_ver, bool ie, A&&... args)
+  {
+    return git_line (min_ver, ie, '\0' /* delim */, forward<A> (args)...);
   }
 
   template <typename... A>

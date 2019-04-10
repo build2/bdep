@@ -393,10 +393,12 @@ namespace bdep
     // Note: the use-case for forcing would be to create a commit to be
     // squashed later.
     //
-    // Also, don't complain if we are not committing.
+    // Also, don't complain if we are not committing or amending an existing
+    // commit.
     //
     if (!st.staged      &&
         !o.no_commit () &&
+        !o.amend ()     &&
         o.force ().find ("unchanged") == o.force ().end ())
       fail << "project directory has no staged changes" <<
         info << "revision increment must be committed together with "
@@ -456,6 +458,16 @@ namespace bdep
           else
             fail << "both " << gopt << " and " << opt << " specified";
         }
+      };
+
+      // Verify that an option is specified only if it's prerequisite option
+      // is also specified.
+      //
+      auto require = [] (const char* opt,    bool opt_specified,
+                         const char* prereq, bool prereq_specified)
+      {
+        if (opt_specified && !prereq_specified)
+          fail << opt << " requires " << prereq;
       };
 
       // Check the mode options.
@@ -518,6 +530,20 @@ namespace bdep
       gopt = nullptr;
       verify ("--push",      o.push ());
       verify ("--show-push", o.show_push ());
+      verify ("--no-commit", o.no_commit ()); // Not for tagging (see above).
+
+      // Verify the --amend and --squash options.
+      //
+      require ("--amend", o.amend (), "--revision", o.revision ());
+      require ("--squash", o.squash_specified (), "--amend", o.amend ());
+
+      if (o.squash_specified () && o.squash () == 0)
+        fail << "invalid --squash value: " << o.squash ();
+
+      // There is no sense to amend without committing.
+      //
+      gopt = nullptr;
+      verify ("--amend",     o.amend ());     // Revising only (see above).
       verify ("--no-commit", o.no_commit ()); // Not for tagging (see above).
     }
 
@@ -774,22 +800,56 @@ namespace bdep
         return 1;
     }
 
-    // Stage and commit the project changes. Open the commit message in the
-    // editor if requested and --no-edit is not specified or if --edit is
-    // specified.
+    // Stage the project changes and either commit them separately or amend
+    // the latest commit. Open the commit messages in the editor if requested
+    // and --no-edit is not specified or if --edit is specified. Fail if the
+    // process terminated abnormally or with a non-zero status, unless
+    // return_error is true in which case return the git process exit
+    // information.
     //
-    auto commit_project = [&o, &prj] (const string& msg, bool edit)
+    auto commit_project = [&o, &prj] (const strings& msgs,
+                                      bool edit,
+                                      bool amend = false,
+                                      bool return_error = false)
     {
+      assert (!msgs.empty ());
+
+      cstrings msg_ops;
+      for (const string& m: msgs)
+      {
+        msg_ops.push_back ("-m");
+        msg_ops.push_back (m.c_str ());
+      }
+
       // We shouldn't have any untracked files or unstaged changes other than
       // our modifications, so -a is good enough.
       //
-      run_git (git_ver,
-               prj.path,
-               "commit",
-               verb < 1 ? "-q" : verb >= 2 ? "-v" : nullptr,
-               "-a",
-               (edit && !o.no_edit ()) || o.edit () ? "-e" : nullptr,
-               "-m", msg);
+      // We don't want git to print anything to stdout, so let's redirect it
+      // to stderr for good measure, as git is known to print some
+      // informational messages to stdout.
+      //
+      process pr (
+        start_git (git_ver,
+                   prj.path,
+                   0 /* stdin  */,
+                   2 /* stdout */,
+                   2 /* stderr */,
+                   "commit",
+                   verb < 1 ? "-q" : verb >= 2 ? "-v" : nullptr,
+                   amend ? "--amend" : nullptr,
+                   "-a",
+                   (edit && !o.no_edit ()) || o.edit () ? "-e" : nullptr,
+                   msg_ops));
+
+      // Wait for the process termination.
+      //
+      if (return_error)
+        pr.wait ();
+      else
+        finish_git (pr); // Fails on process error.
+
+      assert (pr.exit);
+      return move (*pr.exit);
     };
 
     // Release.
@@ -863,7 +923,82 @@ namespace bdep
       else
         m = "Release version " + pkg.release_version->string ();
 
-      commit_project (m, st.staged);
+      strings msgs ({move (m)});
+
+      if (o.amend ())
+      {
+        // Collect the amended/squashed commit messages.
+        //
+        // This would fail if we try to squash initial commit. However, that
+        // shouldn't be a problem since that would mean squashing the commit
+        // for the first release that we are now revising, which is
+        // meaningless.
+        //
+        optional<string> ms (
+          git_string (git_ver,
+                      prj.path,
+                      false /* ignore_error */,
+                      "log",
+                      "--format=%B",
+                      "HEAD~" + to_string (o.squash ()) + "..HEAD"));
+
+        if (!ms)
+          fail << "unable to obtain commit messages for " << o.squash ()
+               << " latest commit(s)";
+
+        msgs.push_back (move (*ms));
+      }
+
+      // Note that we could handle the latest commit amendment (squash == 1)
+      // here as well, but let's do it via the git-commit --amend option to
+      // revert automatically in case of git terminating due to SIGINT, etc.
+      //
+      if (o.squash () > 1)
+      {
+        // Squash commits, reverting them into the index.
+        //
+        run_git (git_ver,
+                 prj.path,
+                 "reset",
+                  verb < 1 ? "-q" : nullptr,
+                 "--soft",
+                 "HEAD~" + to_string (o.squash ()));
+
+        // Commit editing the message.
+        //
+        process_exit e (commit_project (msgs,
+                                        true  /* edit */,
+                                        false /* amend */,
+                                        true  /* ignore_error */));
+
+        // If git-commit terminated normally with non-zero status, for example
+        // due to the empty commit message, then revert the above reset and
+        // fail afterwards. If it terminated abnormally, we probably shouldn't
+        // mess with it and leave things to the user to handle.
+        //
+        if (!e)
+        {
+          if (e.normal ())
+          {
+            run_git (git_ver,
+                     prj.path,
+                     "reset",
+                     verb < 1 ? "-q" : nullptr,
+                     "--soft",
+                     "HEAD@{1}"); // Previously checked out revision.
+
+            throw failed (); // Assume the child issued diagnostics.
+          }
+
+          fail << "git " << e;
+        }
+      }
+      else
+      {
+        // Commit or amend.
+        //
+        commit_project (msgs, st.staged || o.amend () /* edit */, o.amend ());
+      }
 
       // The (possibly) staged changes are now committed.
       //
@@ -932,7 +1067,7 @@ namespace bdep
 
       // Commit the manifest rewrites.
       //
-      commit_project ("Change version to " + ov, st.staged);
+      commit_project ({"Change version to " + ov}, st.staged);
     }
 
     if (push)

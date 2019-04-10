@@ -31,6 +31,19 @@ namespace bdep
              I&& in, O&& out, E&& err,
              A&&... args);
 
+  template <typename I, typename O, typename E, typename... A>
+  inline process
+  start_git (const semantic_version& min_ver,
+             dir_path& repo,
+             I&& in, O&& out, E&& err,
+             A&&... args)
+  {
+    return start_git (min_ver,
+                      const_cast<const dir_path&> (repo),
+                      forward<I> (in), forward<O> (out), forward<E> (err),
+                      forward<A> (args)...);
+  }
+
   // Wait for git process to terminate.
   //
   void
@@ -70,7 +83,23 @@ namespace bdep
   // redirected output pipe.
   //
   optional<string>
-  git_line (process&& pr, fdpipe&& pipe, bool ignore_error);
+  git_line (process&&, fdpipe&&, bool ignore_error, char delim = '\n');
+
+  // Similar to git_line() functions but return the complete git output.
+  //
+  template <typename... A>
+  optional<string>
+  git_string (const semantic_version&, bool ignore_error, A&&... args);
+
+  template <typename... A>
+  optional<string>
+  git_string (const semantic_version&,
+              const dir_path& repo,
+              bool ignore_error,
+              A&&... args);
+
+  optional<string>
+  git_string (process&&, fdpipe&&, bool ignore_error);
 
   // Try to derive a remote HTTPS repository URL from the optionally specified
   // custom git config value falling back to remote.origin.build2Url and then

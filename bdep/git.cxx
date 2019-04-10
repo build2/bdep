@@ -45,7 +45,7 @@ namespace bdep
   }
 
   optional<string>
-  git_line (process&& pr, fdpipe&& pipe, bool ie)
+  git_line (process&& pr, fdpipe&& pipe, bool ie, char delim)
   {
     optional<string> r;
 
@@ -56,7 +56,7 @@ namespace bdep
       ifdstream is (move (pipe.in), fdstream_mode::skip, ifdstream::badbit);
 
       string l;
-      if (!eof (getline (is, l)))
+      if (!eof (getline (is, l, delim)))
         r = move (l);
 
       is.close (); // Detect errors.

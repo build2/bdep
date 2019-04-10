@@ -44,11 +44,16 @@ namespace bdep
      package's \cb{manifest} file, commits these changes (unless
      \cb{--no-commit} is specified), tags this commit (unless \cb{--no-tag} is
      specified), and, if \cb{--push} is specified, pushes the changes to the
-     remote. Note that in this case the project's repository index is expected
-     to already contain other changes since for a revision all the associated
-     changes, including to version, must belong to a single commit. In this
-     mode \cb{release} will also silently replace an existing tag for the same
-     version.
+     remote. Note that in this mode \cb{release} will also silently replace an
+     existing tag for the same version.
+
+     When releasing a revision, the project's repository index is expected to
+     already contain other changes since for a revision all the associated
+     changes, including to version, must belong to a single commit.
+     Alternatively, a revision can be released by amending one or more
+     existing commits using the \cb{--amend} and \cb{--squash} options. In
+     this case the index may still contain additional changes but is not
+     required to.
 
      The \cb{release} command also has a number of \i{continue modes} that
      allow the completion of steps that were previously suppressed with the
@@ -121,6 +126,20 @@ namespace bdep
     bool --open
     {
       "Open the next development cycle instead of releasing a new version."
+    }
+
+    bool --amend
+    {
+      "Release a revision by amending the latest commit instead of making
+       a new one."
+    }
+
+    size_t --squash = 1
+    {
+      "<num>",
+      "Release a revision by squashing the specified number of previous
+       commits and then amending the result. Requires the \cb{--amend}
+       option to be specified."
     }
 
     bool --alpha
