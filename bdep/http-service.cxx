@@ -85,18 +85,30 @@ namespace bdep
       if (!progress)
         suppress_progress ();
 
-      // Convert the submit arguments to curl's --form* options.
+      // Convert the submit arguments to curl's --form* options and cache the
+      // pointer to the file_text parameter value, if present, for writing
+      // into curl's stdin.
       //
       strings fos;
+      const string* file_text (nullptr);
+
       for (const parameter& p: params)
       {
-        fos.emplace_back (p.type == parameter::file
+        if (p.type == parameter::file_text)
+        {
+          assert (file_text == nullptr);
+          file_text = &p.value;
+        }
+
+        fos.emplace_back (p.type == parameter::file ||
+                          p.type == parameter::file_text
                           ? "--form"
                           : "--form-string");
 
-        fos.emplace_back (p.type == parameter::file
-                          ? p.name + "=@" + p.value
-                          : p.name + "="  + p.value);
+        fos.emplace_back (
+          p.type == parameter::file      ? p.name + "=@" + p.value :
+          p.type == parameter::file_text ? p.name + "=@-"          :
+          p.name + "="  + p.value);
       }
 
       // Note that it's a bad idea to issue the diagnostics while curl is
@@ -111,35 +123,43 @@ namespace bdep
       //
       // Start curl program.
       //
-      fdpipe pipe (open_pipe ()); // Text mode seems appropriate.
+      // Text mode seems appropriate.
+      //
+      fdpipe in_pipe  (open_pipe ());
+      fdpipe out_pipe (file_text != nullptr ? open_pipe () : fdpipe ());
 
       // Note that we don't specify any default timeouts, assuming that bdep
       // is an interactive program and the user can always interrupt the
       // command (or pass the timeout with --curl-option).
       //
-      process pr (start (0          /* stdin  */,
-                         pipe       /* stdout */,
-                         2          /* stderr */,
-                         o.curl (),
-                         v,
-                         "-A", (BDEP_USER_AGENT " curl"),
+      process pr (
+        start (file_text != nullptr ? out_pipe.in.get () : 0 /* stdin  */,
+               in_pipe                                       /* stdout */,
+               2                                             /* stderr */,
+               o.curl (),
+               v,
+               "-A", (BDEP_USER_AGENT " curl"),
 
-                         o.curl_option (),
+               o.curl_option (),
 
-                         // Include the response headers in the output so we
-                         // can get the status code/reason, content type, and
-                         // the redirect location.
-                         //
-                         "--include",
+               // Include the response headers in the output so we can get the
+               // status code/reason, content type, and the redirect location.
+               //
+               "--include",
 
-                         fos,
-                         u.string ()));
+               fos,
+               u.string ()));
 
       // Shouldn't throw, unless something is severely damaged.
       //
-      pipe.out.close ();
+      in_pipe.out.close ();
 
-      bool io (false);
+      if (file_text != nullptr)
+        out_pipe.in.close ();
+
+      bool io_write (false);
+      bool io_read  (false);
+
       try
       {
         // First we read the HTTP response status line and headers. At this
@@ -148,9 +168,21 @@ namespace bdep
         // for the exception mask choice.
         //
         ifdstream is (
-          move (pipe.in),
+          move (in_pipe.in),
           fdstream_mode::skip,
           ifdstream::badbit | ifdstream::failbit | ifdstream::eofbit);
+
+        if (file_text != nullptr)
+        {
+          ofdstream os (move (out_pipe.out));
+          os << *file_text;
+          os.close ();
+
+          // Indicate to the potential IO error handling that we are done with
+          // writing.
+          //
+          file_text = nullptr;
+        }
 
         // Parse and return the HTTP status code. Return 0 if the argument is
         // invalid.
@@ -428,7 +460,7 @@ namespace bdep
         // Presumably the child process failed and issued diagnostics so let
         // finish() try to deal with that first.
         //
-        io = true;
+        (file_text != nullptr ? io_write : io_read) = true;
       }
       // Handle all parsing errors, including the manifest_parsing exception
       // that inherits from the runtime_error exception.
@@ -455,7 +487,7 @@ namespace bdep
           dr << info << "reference: " << *reference;
       }
 
-      finish (o.curl (), pr, io);
+      finish (o.curl (), pr, io_read, io_write);
 
       assert (!message.empty ());
 

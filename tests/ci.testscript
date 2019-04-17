@@ -138,6 +138,110 @@ windows = ($cxx.target.class == 'windows')
       error: remote git repository URL '$repository#frag' already has fragment
       EOE
   }
+
+  : overrides
+  :
+  {
+    +$clone_root_prj
+    +$init -C @cfg &prj-cfg/***
+
+    : valid
+    :
+    : Here we only test that bdep-ci does not fail for valid overrides. It
+    : seems to be impossible to verify the submitted overrides manifest.
+    :
+    {
+      $clone_prj;
+
+      cat <<EOI >=overrides.manifest;
+        : 1
+        builds: all
+        EOI
+
+      $* --overrides-file overrides.manifest \
+         --build-email 'foo@example.com' \
+         --override 'build-error-email: error@example.com' \
+         --override 'builds: &gcc' \
+         --override 'build-include: linux*' \
+         --override 'build-exclude: *' 2>>~"%EOE%"
+        submitting to $server
+        %.*
+        %.*CI request is queued.*%
+        %reference: .+%
+        EOE
+    }
+
+    : invalid-option
+    :
+    {
+      +$clone_prj
+
+      : overrides-file
+      :
+      {
+        +$clone_prj
+
+        : reading
+        :
+        {
+          $clone_prj;
+
+          $* --overrides-file overrides.manifest 2>>~%EOE% != 0
+            %error: invalid value 'overrides.manifest' for option '--overrides-file': unable to read: .+%
+            EOE
+        }
+
+        : parsing
+        :
+        {
+          $clone_prj;
+
+          cat <<EOI >=overrides.manifest;
+            builds: all
+            EOI
+
+          $* --overrides-file overrides.manifest 2>>EOE != 0
+            error: invalid value 'overrides.manifest' for option '--overrides-file': unable to parse: 1:1: error: format version pair expected
+            EOE
+        }
+      }
+
+      : override
+      :
+      {
+        $clone_prj;
+
+        $* --override 'all' 2>>EOE != 0
+          error: invalid value 'all' for option '--override': missing ':'
+          EOE
+      }
+
+      : override-pair
+      :
+      : Each override option is valid by its own, but the resulting overrides
+      : manifest is invalid.
+      :
+      {
+        $clone_prj;
+
+        $* --override 'builds: all' --override 'builds: default : &gcc' 2>>EOE != 0
+          error: invalid overrides: invalid package builds in 'default : &gcc': unexpected underlying class set
+          EOE
+      }
+
+      : overrides
+      :
+      : This is a fake option (see ci.cli for details).
+      :
+      {
+        $clone_prj;
+
+        $* --overrides 'all' 2>>EOE != 0
+          error: unknown option '--overrides'
+          EOE
+      }
+    }
+  }
 }
 
 : multi-pkg

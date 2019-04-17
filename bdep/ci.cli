@@ -3,6 +3,7 @@
 // license   : MIT; see accompanying LICENSE file
 
 include <bdep/project.cli>;
+include <bdep/ci-types.hxx>;
 
 "\section=1"
 "\name=bdep-ci"
@@ -55,6 +56,26 @@ namespace bdep
      \cb{git(1)}, the current branch and commit id are added as the repository
      URL fragment (see \l{bpkg-repository-types(1)} for details).
 
+     Some package manifest values can be overridden as part of the CI request
+     submission using the \cb{--override} and \cb{--overrides-file} options as
+     well as their \cb{--builds} and \cb{--build-email} shortcuts. This is
+     primarily useful for specifying alternative build configurations and/or
+     build notification emails. For example:
+
+     \
+     $ bdep ci --builds gcc
+     \
+
+     Note that manifest overrides override the entire value group that they
+     belong to. Currently, the following value groups can be overridden with
+     the \cb{build*-email} group overridden by default as if by specifying
+     an empty build email.
+
+     \
+     build-email build-{warning,error}-email
+     builds build-{include,exclude}
+     \
+
      While the exact interpretation of the CI request depends on the specific
      service, normally, the CI server will respond with a reference that can
      be used to query the results. See \l{brep#ci Package CI} for details on
@@ -82,6 +103,49 @@ namespace bdep
       "<url>",
       "Remote repository URL for the project."
     }
+
+    // Note: the following options are for documentation only (see --overrides
+    // below for details).
+    //
+    strings --override
+    {
+      "<name>:<value>",
+      "Package manifest value override. Repeat this option to override
+       multiple values."
+    }
+
+    path --overrides-file
+    {
+      "<file>",
+      "Read manifest value overrides from the specified manifest fragment
+       file. Repeat this option to specify multiple override files."
+    }
+
+    strings --builds
+    {
+      "<class-expr>",
+      "Shortcut for \c{\b{--override\ builds:}<class-expr>}."
+    }
+
+    string --build-email
+    {
+      "<email>",
+      "Shortcut for \c{\b{--override\ build-email:}<email>}."
+    }
+
+    // All the overrides-related options are handled with a common parser and
+    // are collected in a single manifest value list that is accessible via
+    // the --overrides option accessor. The --overrides option is "fake" in
+    // that it only serves to collect the values in a single list while
+    // preserving their order. Note that for this trick (or hack, if you
+    // will) to work, this option should come after all the options it
+    // aliases.
+    //
+    ci_override --overrides      |
+                --override       |
+                --overrides-file |
+                --builds         |
+                --build-email;
 
     string --simulate
     {

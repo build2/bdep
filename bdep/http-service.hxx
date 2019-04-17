@@ -5,7 +5,7 @@
 #ifndef BDEP_HTTP_SERVICE_HXX
 #define BDEP_HTTP_SERVICE_HXX
 
-#include <libbutl/manifest-parser.mxx>
+#include <libbutl/manifest-types.mxx>
 
 #include <bdep/types.hxx>
 #include <bdep/utility.hxx>
@@ -16,11 +16,12 @@ namespace bdep
 {
   namespace http_service
   {
-    // If type is file, then the value is a path to be uploaded.
+    // If type is file, then the value is a path to be uploaded. If type is
+    // file_text, then the value is a file content to be uploaded.
     //
     struct parameter
     {
-      enum {text, file} type;
+      enum {text, file, file_text} type;
       string name;
       string value;
     };
@@ -39,6 +40,8 @@ namespace bdep
     // Submit text parameters and/or upload files to an HTTP service via the
     // POST method. Use the multipart/form-data content type if any files are
     // uploaded and application/x-www-form-urlencoded otherwise.
+    //
+    // Note: currently only one file_text parameter can be specified.
     //
     // On success, return the response manifest message and reference (if
     // present, see below) and the rest of the manifest values, if any. Issue

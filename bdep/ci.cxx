@@ -4,6 +4,10 @@
 
 #include <bdep/ci.hxx>
 
+#include <sstream>
+
+#include <libbutl/manifest-types.mxx>
+
 #include <libbpkg/manifest.hxx>
 
 #include <bdep/git.hxx>
@@ -144,6 +148,29 @@ namespace bdep
   {
     tracer trace ("ci");
 
+    // Create the default override.
+    //
+    vector<manifest_name_value> overrides ({
+        manifest_name_value {"build-email", "",      // Name and value.
+                             0, 0, 0, 0, 0, 0, 0}}); // Locations, etc.
+
+    // Validate and append the specified overrides.
+    //
+    if (o.overrides_specified ())
+    try
+    {
+      bpkg::package_manifest::validate_overrides (o.overrides (),
+                                                  "" /* name */);
+
+      overrides.insert (overrides.end (),
+                        o.overrides ().begin (),
+                        o.overrides ().end ());
+    }
+    catch (const manifest_parsing& e)
+    {
+      fail << "invalid overrides: " << e;
+    }
+
     // If we are submitting the entire project, then we have two choices: we
     // can list all the packages in the project or we can only do so for
     // packages that were initialized in the (specified) configuration(s?).
@@ -267,6 +294,21 @@ namespace bdep
         params.push_back ({parameter::text,
                            "package",
                            p.name.string () + '/' + p.version.string ()});
+
+      try
+      {
+        ostringstream os;
+        manifest_serializer s (os, "" /* name */);
+        serialize_manifest (s, overrides);
+
+        params.push_back ({parameter::file_text, "overrides", os.str ()});
+      }
+      catch (const manifest_serialization&)
+      {
+        // Values are verified by package_manifest::validate_overrides ();
+        //
+        assert (false);
+      }
 
       if (o.simulate_specified ())
         params.push_back ({parameter::text, "simulate", o.simulate ()});
