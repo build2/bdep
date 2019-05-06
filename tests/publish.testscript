@@ -47,9 +47,9 @@ g = git -C prj >! 2>!
 #
 
 # Normally we disable the progress indication that complicates stderr output
-# validation. When testing the progress indication specifically we need to
-# handle curl's progress carefully, as it is not always terminated with the
-# newline character on Windows.
+# validation. We also disable the progress indication test on Windows, as
+# curl's progress is not always properly terminated there, messing up with
+# the subsequent output.
 #
 : submit
 :
@@ -80,6 +80,7 @@ g = git -C prj >! 2>!
 
     : progress
     :
+    if! $windows
     {
       $clone_root_prj;
       $init -C @cfg &prj-cfg/***;
@@ -90,7 +91,7 @@ g = git -C prj >! 2>!
           upgrade prj/1.0.19
         submitting prj-1.0.19.tar.gz
         %.*
-        %.*package submission is queued(: \.*prj/1.0.19)?%d
+        %package submission is queued(: \.*prj/1.0.19)?%d
         %reference: .{12}%
         EOE
     }
@@ -421,7 +422,6 @@ g = git -C prj >! 2>!
       %.*
       submitting prj-1.0.8.tar.gz
       %.+
-      %.*package submission is queued(: \.*prj/1.0.8)?%d
       %reference: .{12}%
       EOE
 

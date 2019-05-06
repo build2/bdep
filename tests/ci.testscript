@@ -60,9 +60,9 @@ init += $cxx -d prj 2>! &prj/**/bootstrap/***
 windows = ($cxx.target.class == 'windows')
 
 # Normally we disable the progress indication that complicates stderr output
-# validation. When testing the progress indication specifically we need to
-# handle curl's progress carefully, as it is not always terminated with the
-# newline character on Windows.
+# validation. We also disable the progress indication test on Windows, as
+# curl's progress is not always properly terminated there, messing up with
+# the subsequent output.
 #
 : single-pkg
 :
@@ -81,6 +81,7 @@ windows = ($cxx.target.class == 'windows')
 
   : progress
   :
+  if! $windows
   {
     $clone_root_prj;
     $init -C @cfg &prj-cfg/***;
@@ -88,7 +89,7 @@ windows = ($cxx.target.class == 'windows')
     $* 2>>~"%EOE%"
       submitting to $server
       %.*
-      %.*CI request is queued.*%
+      %CI request is queued.*%
       %reference: .+%
       EOE
   }
@@ -145,6 +146,8 @@ windows = ($cxx.target.class == 'windows')
     +$clone_root_prj
     +$init -C @cfg &prj-cfg/***
 
+    test.options += --no-progress
+
     : valid
     :
     : Here we only test that bdep-ci does not fail for valid overrides. It
@@ -164,9 +167,7 @@ windows = ($cxx.target.class == 'windows')
          --override 'builds: &gcc' \
          --override 'build-include: linux*' \
          --override 'build-exclude: *' 2>>~"%EOE%"
-        submitting to $server
-        %.*
-        %.*CI request is queued.*%
+        %CI request is queued.*%
         %reference: .+%
         EOE
     }
