@@ -680,11 +680,11 @@ namespace bdep
         standard_version v;
         try
         {
-          // Allow stubs only in the --revision mode.
+          // Allow stubs only in the --revision and --tag modes.
           //
           standard_version::flags f (standard_version::none);
 
-          if (o.revision ())
+          if (o.revision () || o.tag ())
             f |= standard_version::allow_stub;
 
           v = standard_version (vv.value, f);

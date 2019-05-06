@@ -1140,5 +1140,4 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
   $* --squash 1                     2>'error: --squash requires --amend'              != 0;
   $* --revision --amend --squash 0  2>'error: invalid --squash value: 0'              != 0;
   $* --revision --amend --no-commit 2>'error: both --amend and --no-commit specified' != 0
-
 }
