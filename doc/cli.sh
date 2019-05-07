@@ -73,6 +73,17 @@ done
 #
 exit 0
 
+function xhtml_to_ps () # <from> <to> [<html2ps-options>]
+{
+  local from="$1"
+  shift
+  local to="$1"
+  shift
+
+  sed -e 's/├/|/g' -e 's/│/|/g' -e 's/─/-/g' -e 's/└/`/g' "$from" | \
+  html2ps "${@}" -o "$to"
+}
+
 cli -I .. \
 -v version="$(echo "$version" | sed -e 's/^\([^.]*\.[^.]*\).*/\1/')" \
 -v date="$date" \
@@ -83,8 +94,8 @@ cli -I .. \
 --link-regex '%build2(#.+)?%../../build2/doc/build2-build-system-manual.xhtml$1%' \
 --output-prefix build2-project-manager- manual.cli
 
-html2ps -f doc.html2ps:a4.html2ps -o build2-project-manager-manual-a4.ps build2-project-manager-manual.xhtml
+xhtml_to_ps build2-project-manager-manual.xhtml build2-project-manager-manual-a4.ps -f doc.html2ps:a4.html2ps
 ps2pdf14 -sPAPERSIZE=a4 -dOptimize=true -dEmbedAllFonts=true build2-project-manager-manual-a4.ps build2-project-manager-manual-a4.pdf
 
-html2ps -f doc.html2ps:letter.html2ps -o build2-project-manager-manual-letter.ps build2-project-manager-manual.xhtml
+xhtml_to_ps build2-project-manager-manual.xhtml build2-project-manager-manual-letter.ps -f doc.html2ps:letter.html2ps
 ps2pdf14 -sPAPERSIZE=letter -dOptimize=true -dEmbedAllFonts=true build2-project-manager-manual-letter.ps build2-project-manager-manual-letter.pdf
