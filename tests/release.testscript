@@ -87,7 +87,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
           %.*
           name: prj
           version: 0.2.0-a.0.z
-          summary: prj executable
+          summary: prj C++ executable
           %.*
           EOO
       }
@@ -452,23 +452,23 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       {
         $clone_root_repos;
 
-        echo 'description-file: README' >+ prj/manifest;
-        $gp commit -a -m 'Add description';
+        rm prj/README.md;
+        $gp commit -a -m 'Remove description';
 
         $* 2>>~%EOE% != 0;
-          %error: unable to read .+README referenced by description-file manifest value in .+manifest: .+%
+          %error: unable to read .+README\.md referenced by description-file manifest value in .+manifest: .+%
           EOE
 
-        touch prj/README;
-        $gp add README;
-        $gp commit -m 'Add README file';
+        touch prj/README.md;
+        $gp add README.md;
+        $gp commit -m 'Add README.md file';
 
         $* 2>>~%EOE% != 0;
-          %error: description-file manifest value in .+manifest references empty file .+README%
+          %error: description-file manifest value in .+manifest references empty file .+README.md%
           EOE
 
-        echo '.' >= prj/README;
-        $gp commit -a -m 'Fill README file';
+        echo '.' >= prj/README.md;
+        $gp commit -a -m 'Fill README.md file';
 
         $*
       }
@@ -897,7 +897,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       %.*
       name: prj
       version: 0.2.0-a.0.z
-      summary: prj executable
+      summary: prj C++ executable
       %.*
       EOO
 

@@ -46,7 +46,7 @@ namespace bdep
       fail << "both --no-init and " << m << " specified";
 
     if (const char* n = (o.no_init () ? "--no-init" :
-                         m            ? m            : nullptr))
+                         m            ? m           : nullptr))
     {
       if (ca) fail << "both " << n << " and --config-add specified";
       if (cc) fail << "both " << n << " and --config-create specified";
@@ -74,26 +74,29 @@ namespace bdep
     // will most likely be wrong). All this seems reasonable for what this
     // mode is expected to be used ("end-product" kind of projects).
     //
-    bool altn  (false); // alt-naming
-    bool itest (false); // !no-tests
-    bool utest (false); // unit-tests
-    bool ver   (false); // !no-version
+    bool readme (false); // !no-readme
+    bool altn   (false); // alt-naming
+    bool itest  (false); // !no-tests
+    bool utest  (false); // unit-tests
+    bool ver    (false); // !no-version
 
     switch (t)
     {
     case type::exe:
       {
-        altn  =  t.exe_opt.alt_naming ();
-        itest = !t.exe_opt.no_tests ();
-        utest =  t.exe_opt.unit_tests ();
+        readme = !t.exe_opt.no_readme ()  && !o.subdirectory ();
+        altn   =  t.exe_opt.alt_naming ();
+        itest  = !t.exe_opt.no_tests ();
+        utest  =  t.exe_opt.unit_tests ();
         break;
       }
     case type::lib:
       {
-        altn  =  t.lib_opt.alt_naming ();
-        itest = !t.lib_opt.no_tests ()   && !o.subdirectory ();
-        utest =  t.lib_opt.unit_tests ();
-        ver   = !t.lib_opt.no_version () && !o.subdirectory ();
+        readme = !t.lib_opt.no_readme ()  && !o.subdirectory ();
+        altn   =  t.lib_opt.alt_naming ();
+        itest  = !t.lib_opt.no_tests ()   && !o.subdirectory ();
+        utest  =  t.lib_opt.unit_tests ();
+        ver    = !t.lib_opt.no_version () && !o.subdirectory ();
         break;
       }
     case type::bare:
@@ -101,8 +104,9 @@ namespace bdep
         if (o.subdirectory ())
           fail << "cannot create bare source subdirectory";
 
-        altn  =  t.bare_opt.alt_naming ();
-        itest = !t.bare_opt.no_tests ();
+        readme = !t.bare_opt.no_readme ();
+        altn   =  t.bare_opt.alt_naming ();
+        itest  = !t.bare_opt.no_tests ();
         break;
       }
     case type::empty:
@@ -111,6 +115,7 @@ namespace bdep
                              o.package ()      ? "package" : nullptr))
           fail << "cannot create empty " << w;
 
+        readme = !t.empty_opt.no_readme ();
         break;
       }
     }
@@ -468,6 +473,36 @@ namespace bdep
         os.close ();
       }
 
+      // README.md
+      //
+      if (readme)
+      {
+        os.open (f = out / "README.md");
+        switch (t)
+        {
+        case type::exe:
+        case type::lib:
+          {
+            // @@ Maybe we should generate a "Hello, World" description and
+            //    usage example as a guide, at least for a library?
+
+            os << "# " << n << " - " << l << " " << t                  << endl
+               <<                                                         endl
+               << "TODO"                                               << endl;
+            break;
+          }
+        case type::bare:
+        case type::empty:
+          {
+            os << "# " << n                                            << endl
+               <<                                                         endl
+               << "TODO"                                               << endl;
+            break;
+          }
+        }
+        os.close ();
+      }
+
       if (t == type::empty)
         break;
 
@@ -528,9 +563,11 @@ namespace bdep
            << "version: 0.1.0-a.0.z"                                   << endl;
         if (pn)
           os << "project: " << *pn                                     << endl;
-        os << "summary: " << s << " " << t                             << endl
-           << "license: TODO"                                          << endl
-           << "url: https://example.org/" << (pn ? pn->string () : n)  << endl
+        os << "summary: " << s << " " << l << " " << t                 << endl
+           << "license: TODO"                                          << endl;
+        if (readme)
+          os << "description-file: README.md"                          << endl;
+        os << "url: https://example.org/" << (pn ? pn->string () : n)  << endl
            << "email: " << pe                                          << endl
            << "depends: * build2 >= 0.10.0"                            << endl
            << "depends: * bpkg >= 0.10.0"                              << endl
@@ -727,7 +764,10 @@ namespace bdep
       if (!sub)
       {
         os.open (f = out / buildfile_file);
-        os << "./: {*/ -" << build_dir.posix_representation () << "} manifest" << endl;
+
+        os << "./: {*/ -" << build_dir.posix_representation () << "}"  <<
+          (readme ? " doc{README.md}" : "") << " manifest"             << endl;
+
         if (itest && t == type::lib) // Have tests/ subproject.
           os <<                                                           endl
              << "# Don't install tests."                               << endl
@@ -1621,7 +1661,7 @@ namespace bdep
       add_var ("base", move (b));
       add_var ("stem", move (s));
       add_var ("type", t.string ());
-      add_var ("lang", l.string ());
+      add_var ("lang", l.string (true /* lower */));
       add_var ("vcs",  vc.string ());
       add_var ("root", prj.string ());
 

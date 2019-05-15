@@ -59,7 +59,7 @@ namespace bdep
       case type::empty: return "empty";
       }
 
-      return string (); // Should never reach.
+      return std::string (); // Should never reach.
     }
 
     friend ostream&
@@ -92,17 +92,23 @@ namespace bdep
     cmd_new_lang_template (): lang (cxx) {}
 
     const std::string
-    string () const
+    string (bool lower = false) const
     {
       using lang = cmd_new_lang_template;
 
       switch (*this)
       {
-      case lang::c:   return "c";
-      case lang::cxx: return "c++";
+      case lang::c:   return lower ? "c"   : "C";
+      case lang::cxx: return lower ? "c++" : "C++";
       }
 
-      return string (); // Should never reach.
+      return std::string (); // Should never reach.
+    }
+
+    friend ostream&
+    operator<< (ostream& os, const cmd_new_lang_template& l)
+    {
+      return os << l.string ();
     }
   };
 
@@ -139,7 +145,7 @@ namespace bdep
       case vcs::none: return "none";
       }
 
-      return string (); // Should never reach.
+      return std::string (); // Should never reach.
     }
   };
 

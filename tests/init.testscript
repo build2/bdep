@@ -135,7 +135,9 @@ deinit += -d prj
   #
   mkdir --no-cleanup prj/prj.pkg;
 
-  mv prj/prj prj/build prj/buildfile prj/manifest prj/.gitignore prj/prj.pkg/;
+  mv prj/prj prj/build prj/buildfile prj/manifest prj/README.md \
+     prj/.gitignore prj/prj.pkg/;
+
   mv prj/prj.pkg prj/prj;
 
   cat <<EOI >=prj/packages.manifest;

@@ -98,6 +98,50 @@ status += -d prj
       EOE
   }
 
+  : exe-readme
+  :
+  {
+    : add
+    :
+    {
+      $* foo 2>>/"EOE" &foo/***;
+        created new executable project foo in $~/foo/
+        EOE
+
+      test -f foo/README.md;
+
+      cat foo/manifest >>~%EOE%;
+        %.+
+        description-file: README.md
+        %.+
+        EOE
+
+      cat foo/buildfile >>~%EOE%;
+        %.*
+        %.+ doc\{README.md\}.*%
+        %.*
+        EOE
+
+      $build foo/ $cxx 2>>~%EOE%
+        %(c\+\+|ld) .+%{2}
+        EOE
+    }
+
+    : omit
+    :
+    {
+      $* -t exe,no-readme foo 2>>/"EOE" &foo/***;
+        created new executable project foo in $~/foo/
+        EOE
+
+      test -f foo/README.md == 1;
+
+      $build foo/ $cxx 2>>~%EOE%
+        %(c\+\+|ld) .+%{2}
+        EOE
+    }
+  }
+
   : lib-no-version
   :
   {
@@ -198,6 +242,10 @@ status += -d prj
         created new empty project prj in $~/prj/
         EOE
 
+      # While at it, test that README.md is created.
+      #
+      test -f prj/README.md;
+
       $* --package -t lib libprj -d prj 2>>/"EOE";
         created new library package libprj in $~/prj/libprj/
         EOE
@@ -251,6 +299,10 @@ status += -d prj
       $* --subdirectory -t lib libprj -d prj 2>>/"EOE";
         created new library source subdirectory libprj in $~/prj/libprj/
         EOE
+
+      # While at it, test that README.md is not created.
+      #
+      test -f prj/libprj/README.md == 1;
 
       $build prj/ $cxx 2>>~%EOE%
         %(c\+\+|ar|ld) .+%{6}

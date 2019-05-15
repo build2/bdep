@@ -130,6 +130,10 @@ namespace bdep
 
          Add support for unit testing.|
 
+     \li|\n\ \ \ \cb{no-readme}
+
+         Don't add \cb{README.md}.|
+
      \li|\n\ \ \ \cb{alt-naming}
 
          Use the alternative build file/directory naming scheme.||
@@ -153,6 +157,10 @@ namespace bdep
 
          Don't add support for generating the version header.|
 
+     \li|\n\ \ \ \cb{no-readme}
+
+         Don't add \cb{README.md}.|
+
      \li|\n\ \ \ \cb{alt-naming}
 
          Use the alternative build file/directory naming scheme.||
@@ -168,6 +176,10 @@ namespace bdep
 
          Don't add support for testing.|
 
+     \li|\n\ \ \ \cb{no-readme}
+
+         Don't add \cb{README.md}.|
+
      \li|\n\ \ \ \cb{alt-naming}
 
          Use the alternative build file/directory naming scheme.||
@@ -178,7 +190,11 @@ namespace bdep
 
          An empty project that can be filled with packages (see
          \cb{--package}). Note that the project language is ignored for this
-         project type.||
+         project type. Recognized empty project options:|
+
+     \li|\n\ \ \ \cb{no-readme}
+
+         Don't add \cb{README.md}.||
 
      The project language can be specified with the \c{\b{--lang}|\b{-l}}
      option. Valid values for this option and their semantics are described
@@ -286,6 +302,7 @@ namespace bdep
   {
     bool no-tests;
     bool unit-tests;
+    bool no-readme;
     bool alt-naming;
   };
 
@@ -294,17 +311,20 @@ namespace bdep
     bool no-tests;
     bool unit-tests;
     bool no-version;
+    bool no-readme;
     bool alt-naming;
   };
 
   class cmd_new_bare_options
   {
     bool no-tests;
+    bool no-readme;
     bool alt-naming;
   };
 
   class cmd_new_empty_options
   {
+    bool no-readme;
   };
 
   // --lang options
