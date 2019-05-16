@@ -80,23 +80,29 @@ namespace bdep
     bool utest  (false); // unit-tests
     bool ver    (false); // !no-version
 
+    string license;
+
     switch (t)
     {
     case type::exe:
       {
-        readme = !t.exe_opt.no_readme ()  && !o.subdirectory ();
-        altn   =  t.exe_opt.alt_naming ();
-        itest  = !t.exe_opt.no_tests ();
-        utest  =  t.exe_opt.unit_tests ();
+        readme  = !t.exe_opt.no_readme ()  && !o.subdirectory ();
+        altn    =  t.exe_opt.alt_naming ();
+        itest   = !t.exe_opt.no_tests ();
+        utest   =  t.exe_opt.unit_tests ();
+
+        license =  t.exe_opt.license ();
         break;
       }
     case type::lib:
       {
-        readme = !t.lib_opt.no_readme ()  && !o.subdirectory ();
-        altn   =  t.lib_opt.alt_naming ();
-        itest  = !t.lib_opt.no_tests ()   && !o.subdirectory ();
-        utest  =  t.lib_opt.unit_tests ();
-        ver    = !t.lib_opt.no_version () && !o.subdirectory ();
+        readme  = !t.lib_opt.no_readme ()  && !o.subdirectory ();
+        altn    =  t.lib_opt.alt_naming ();
+        itest   = !t.lib_opt.no_tests ()   && !o.subdirectory ();
+        utest   =  t.lib_opt.unit_tests ();
+        ver     = !t.lib_opt.no_version () && !o.subdirectory ();
+
+        license =  t.lib_opt.license ();
         break;
       }
     case type::bare:
@@ -104,9 +110,11 @@ namespace bdep
         if (o.subdirectory ())
           fail << "cannot create bare source subdirectory";
 
-        readme = !t.bare_opt.no_readme ();
-        altn   =  t.bare_opt.alt_naming ();
-        itest  = !t.bare_opt.no_tests ();
+        readme  = !t.bare_opt.no_readme ();
+        altn    =  t.bare_opt.alt_naming ();
+        itest   = !t.bare_opt.no_tests ();
+
+        license =  t.bare_opt.license ();
         break;
       }
     case type::empty:
@@ -118,6 +126,36 @@ namespace bdep
         readme = !t.empty_opt.no_readme ();
         break;
       }
+    }
+
+    // Full name for some common license abbreviations.
+    //
+    string license_full;
+    {
+      auto cmp = [&license] (const char* n)
+      {
+        return casecmp (license, n) == 0;
+      };
+
+      license_full =
+        cmp ("MIT")            ? "MIT License"                            :
+        cmp ("BSD3")           ? "New 3-clause BSD License"               :
+        cmp ("BSD2")           ? "Simplified 2-clause BSD License"        :
+        cmp ("BSD4")           ? "Original 4-clause BSD License"          :
+        cmp ("GPLv2")          ? "GNU General Public License v2.0"        :
+        cmp ("GPLv3")          ? "GNU General Public License v3.0"        :
+        cmp ("LGPLv2")         ? "GNU Lesser General Public License v2.0" :
+        cmp ("LGPLv2.1")       ? "GNU Lesser General Public License v2.1" :
+        cmp ("LGPLv3")         ? "GNU Lesser General Public License v3.0" :
+        cmp ("ASLv1")          ? "Apache License v1.0"                    :
+        cmp ("ASLv1.1")        ? "Apache License v1.1"                    :
+        cmp ("ASLv2")          ? "Apache License v2.0"                    :
+        cmp ("MPLv2")          ? "Mozilla Public License v2.0"            :
+        "";
+
+      if (cmp ("BSD"))
+        warn << "BSD license name is ambiguous" <<
+          info << "consider changing to BSD3 for \"New 3-clause BSD License\"";
     }
 
     // Validate language options.
@@ -563,8 +601,11 @@ namespace bdep
            << "version: 0.1.0-a.0.z"                                   << endl;
         if (pn)
           os << "project: " << *pn                                     << endl;
-        os << "summary: " << s << " " << l << " " << t                 << endl
-           << "license: TODO"                                          << endl;
+        os << "summary: " << s << " " << l << " " << t                 << endl;
+        if (license_full.empty ())
+          os << "license: " << license                                 << endl;
+        else
+          os << "license: " << license << " ; " << license_full        << endl;
         if (readme)
           os << "description-file: README.md"                          << endl;
         os << "url: https://example.org/" << (pn ? pn->string () : n)  << endl

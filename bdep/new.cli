@@ -107,7 +107,7 @@ namespace bdep
 
      The project parameters such as type (executable, library, etc), language,
      and version control system can be customized as described next. Some of
-     these parameters also support parameter-specific options (such as the
+     these parameters also support parameter-specific sub-options (such as the
      file extensions to use in a C++ project) that can be specified with a
      comma after the parameter value.
 
@@ -120,7 +120,7 @@ namespace bdep
      \li|\cb{exe}
 
          A project that builds a sample executable. Recognized
-         executable project options:|
+         executable project sub-options:|
 
      \li|\n\ \ \ \cb{no-tests}
 
@@ -130,20 +130,20 @@ namespace bdep
 
          Add support for unit testing.|
 
-     \li|\n\ \ \ \cb{no-readme}
+     \li|\n\ \ \ \c{\b{license=}\i{name}}|
 
-         Don't add \cb{README.md}.|
+     \li|\ \ \ \cb{no-readme}|
 
-     \li|\n\ \ \ \cb{alt-naming}
+     \li|\ \ \ \cb{alt-naming}
 
-         Use the alternative build file/directory naming scheme.||
+         See \cb{common} sub-options below.||
 
      \dl|
 
      \li|\cb{lib}
 
          A project that builds a sample library. Recognized library
-         project options:|
+         project sub-options:|
 
      \li|\n\ \ \ \cb{no-tests}
 
@@ -157,32 +157,32 @@ namespace bdep
 
          Don't add support for generating the version header.|
 
-     \li|\n\ \ \ \cb{no-readme}
+     \li|\n\ \ \ \c{\b{license=}\i{name}}|
 
-         Don't add \cb{README.md}.|
+     \li|\ \ \ \cb{no-readme}|
 
-     \li|\n\ \ \ \cb{alt-naming}
+     \li|\ \ \ \cb{alt-naming}
 
-         Use the alternative build file/directory naming scheme.||
+         See \cb{common} sub-options below.||
 
      \dl|
 
      \li|\cb{bare}
 
          A project without any source code that can be filled later
-         (see \cb{--subdirectory}). Recognized bare project options:|
+         (see \cb{--subdirectory}). Recognized bare project sub-options:|
 
      \li|\n\ \ \ \cb{no-tests}
 
          Don't add support for testing.|
 
-     \li|\n\ \ \ \cb{no-readme}
+     \li|\n\ \ \ \c{\b{license=}\i{name}}|
 
-         Don't add \cb{README.md}.|
+     \li|\ \ \ \cb{no-readme}|
 
-     \li|\n\ \ \ \cb{alt-naming}
+     \li|\ \ \ \cb{alt-naming}
 
-         Use the alternative build file/directory naming scheme.||
+         See \cb{common} sub-options below.||
 
      \dl|
 
@@ -190,11 +190,33 @@ namespace bdep
 
          An empty project that can be filled with packages (see
          \cb{--package}). Note that the project language is ignored for this
-         project type. Recognized empty project options:|
+         project type. Recognized empty project sub-options:|
 
      \li|\n\ \ \ \cb{no-readme}
 
-         Don't add \cb{README.md}.||
+         See \cb{common} sub-options below.||
+
+     \dl|
+
+     \li|\cb{common}
+
+         Common project type sub-options:|
+
+     \li|\n\ \ \ \c{\b{license=}\i{name}}
+
+         Specify the project's license. Commonly used license names are
+         \cb{MIT}, \cb{ASLv2} (Apache License 2.0), \cb{GPLv3}, and
+         \cb{proprietary}. If unspecified, then \cb{proprietary} is
+         assumed. See the \l{bpkg#manifest-package-license \cb{license}}
+         package manifest value for details.|
+
+     \li|\n\ \ \ \cb{no-readme}
+
+         Don't add \cb{README.md}.|
+
+     \li|\n\ \ \ \cb{alt-naming}
+
+         Use the alternative build file/directory naming scheme.||
 
      The project language can be specified with the \c{\b{--lang}|\b{-l}}
      option. Valid values for this option and their semantics are described
@@ -210,7 +232,7 @@ namespace bdep
 
      \li|\cb{c++}
 
-         A C++ project. Recognized language options:|
+         A C++ project. Recognized language sub-options:|
 
      \li|\n\ \ \ \cb{binless}
 
@@ -302,6 +324,7 @@ namespace bdep
   {
     bool no-tests;
     bool unit-tests;
+    string license = "proprietary";
     bool no-readme;
     bool alt-naming;
   };
@@ -311,6 +334,7 @@ namespace bdep
     bool no-tests;
     bool unit-tests;
     bool no-version;
+    string license = "proprietary";
     bool no-readme;
     bool alt-naming;
   };
@@ -318,6 +342,7 @@ namespace bdep
   class cmd_new_bare_options
   {
     bool no-tests;
+    string license = "proprietary";
     bool no-readme;
     bool alt-naming;
   };
