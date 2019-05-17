@@ -139,8 +139,8 @@ namespace bdep
 
       license_full =
         cmp ("MIT")            ? "MIT License"                            :
-        cmp ("BSD3")           ? "New 3-clause BSD License"               :
         cmp ("BSD2")           ? "Simplified 2-clause BSD License"        :
+        cmp ("BSD3")           ? "New 3-clause BSD License"               :
         cmp ("BSD4")           ? "Original 4-clause BSD License"          :
         cmp ("GPLv2")          ? "GNU General Public License v2.0"        :
         cmp ("GPLv3")          ? "GNU General Public License v3.0"        :
@@ -605,7 +605,7 @@ namespace bdep
         if (license_full.empty ())
           os << "license: " << license                                 << endl;
         else
-          os << "license: " << license << " ; " << license_full        << endl;
+          os << "license: " << license << " ; " << license_full << "." << endl;
         if (readme)
           os << "description-file: README.md"                          << endl;
         os << "url: https://example.org/" << (pn ? pn->string () : n)  << endl
