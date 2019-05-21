@@ -610,7 +610,7 @@ namespace bdep
 
                           if (s.empty ())
                             fail << n << " manifest value in " << f
-                                 << " references empty " << "file " << vf;
+                                 << " references empty file " << vf;
 
                           return s;
                         }
