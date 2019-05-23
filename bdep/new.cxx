@@ -1206,24 +1206,24 @@ namespace bdep
 
             os << "#pragma once"                                       << endl
                <<                                                         endl
-               << "// The numeric version format is AAABBBCCCDDDE where:"<< endl
+               << "// The numeric version format is AAAAABBBBBCCCCCDDDE where:"<< endl
                << "//"                                                 << endl
-               << "// AAA - major version number"                      << endl
-               << "// BBB - minor version number"                      << endl
-               << "// CCC - bugfix version number"                     << endl
-               << "// DDD - alpha / beta (DDD + 500) version number"   << endl
-               << "// E   - final (0) / snapshot (1)"                  << endl
+               << "// AAAAA - major version number"                    << endl
+               << "// BBBBB - minor version number"                    << endl
+               << "// CCCCC - bugfix version number"                   << endl
+               << "// DDD   - alpha / beta (DDD + 500) version number" << endl
+               << "// E     - final (0) / snapshot (1)"                << endl
                << "//"                                                 << endl
-               << "// When DDDE is not 0, 1 is subtracted from AAABBBCCC. For example:" << endl
+               << "// When DDDE is not 0, 1 is subtracted from AAAAABBBBBCCCCC. For example:" << endl
                << "//"                                                 << endl
-               << "// Version      AAABBBCCCDDDE"                      << endl
+               << "// Version      AAAAABBBBBCCCCCDDDE"                << endl
                << "//"                                                 << endl
-               << "// 0.1.0        0000010000000"                      << endl
-               << "// 0.1.2        0000010010000"                      << endl
-               << "// 1.2.3        0010020030000"                      << endl
-               << "// 2.2.0-a.1    0020019990010"                      << endl
-               << "// 3.0.0-b.2    0029999995020"                      << endl
-               << "// 2.2.0-a.1.z  0020019990011"                      << endl
+               << "// 0.1.0        0000000001000000000"                << endl
+               << "// 0.1.2        0000000001000020000"                << endl
+               << "// 1.2.3        0000100002000030000"                << endl
+               << "// 2.2.0-a.1    0000200001999990010"                << endl
+               << "// 3.0.0-b.2    0000299999999995020"                << endl
+               << "// 2.2.0-a.1.z  0000200001999990011"                << endl
                << "//"                                                 << endl
                << "#define " << mp << "_VERSION       $" << v << ".version.project_number$ULL" << endl
                << "#define " << mp << "_VERSION_STR   \"$" << v << ".version.project$\""       << endl

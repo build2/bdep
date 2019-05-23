@@ -160,9 +160,9 @@ namespace bdep
     //
     auto& ov (prj.open_version);
 
-    auto make_snapshot = [&cv] (uint16_t major,
-                                uint16_t minor,
-                                uint16_t patch,
+    auto make_snapshot = [&cv] (uint32_t major,
+                                uint32_t minor,
+                                uint32_t patch,
                                 uint16_t pre_release = 0 /* a.0 */)
     {
       return standard_version (cv.epoch,
@@ -243,9 +243,9 @@ namespace bdep
       if (const char* n = (o.open_beta () ? "--open-beta" : nullptr))
         fail << n << " specified for final current version " << cv;
 
-      uint16_t mj (cv.major ());
-      uint16_t mi (cv.minor ());
-      uint16_t pa (cv.patch ());
+      uint32_t mj (cv.major ());
+      uint32_t mi (cv.minor ());
+      uint32_t pa (cv.patch ());
 
       if      (o.open_major ()) {mj++; mi =  pa = 0;}
       else if (o.open_minor ()) {      mi++; pa = 0;}
@@ -300,9 +300,9 @@ namespace bdep
       //
       // Note that there is no --patch since we cannot jump to patch.
       //
-      uint16_t mj (cv.major ());
-      uint16_t mi (cv.minor ());
-      uint16_t pa (cv.patch ());
+      uint32_t mj (cv.major ());
+      uint32_t mi (cv.minor ());
+      uint32_t pa (cv.patch ());
       uint16_t pr (*cv.pre_release ());
 
       if      (o.major ()) {mj++; mi =  pa = pr = 0;}
