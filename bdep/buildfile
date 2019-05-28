@@ -89,6 +89,11 @@ if ($cxx.class == 'msvc')
 elif ($cxx.class == 'gcc')
   cxx.coptions += -Wno-unknown-pragmas
 
+# Make sure backtrace includes function names.
+#
+if ($cxx.target.class == 'linux')
+  cxx.loptions += -rdynamic
+
 # Generated options parser.
 #
 if $cli.configured
