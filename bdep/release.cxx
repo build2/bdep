@@ -1083,7 +1083,7 @@ namespace bdep
       string remote;
       string brspec;
       {
-        size_t p (path::traits::rfind_separator (st.upstream));
+        size_t p (path::traits_type::rfind_separator (st.upstream));
 
         if (p == string::npos)
           fail << "unable to extract remote from '" << st.upstream << "'";

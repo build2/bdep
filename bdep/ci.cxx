@@ -75,7 +75,7 @@ namespace bdep
              << s.branch << "'" <<
           info << "run 'git push --set-upstream' to set";
 
-      size_t p (path::traits::rfind_separator (s.upstream));
+      size_t p (path::traits_type::rfind_separator (s.upstream));
       branch = p != string::npos ? string (s.upstream, p + 1) : s.upstream;
 
       // Note: not forcible (for now). While the use case is valid, the

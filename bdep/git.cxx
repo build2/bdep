@@ -173,9 +173,9 @@ namespace bdep
       // the schemes recognized by git currently do and probably never will).
       //
       size_t p (s.find (':'));
-      if (p != string::npos                  && // Has ':'.
-          url::traits::find (s, p) == 0      && // Scheme starts at 0.
-          s.rfind ('.', p - 1) == string::npos) // No dots in scheme.
+      if (p != string::npos                       && // Has ':'.
+          url::traits_type::find (s, p) == 0      && // Scheme starts at 0.
+          s.rfind ('.', p - 1) == string::npos)      // No dots in scheme.
       {
         u = parse_url (s, "remote.origin.url");
       }
@@ -183,7 +183,7 @@ namespace bdep
       {
         // Absolute path or the SSH thing.
         //
-        if (path::traits::absolute (s))
+        if (path::traits_type::absolute (s))
         {
           // This is what we want to end up with:
           //

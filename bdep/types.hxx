@@ -131,7 +131,7 @@ namespace std
   operator<< (ostream& os, const ::butl::path& p)
   {
     string r (p.representation ());
-    ::butl::path::traits::canonicalize (r);
+    ::butl::path::traits_type::canonicalize (r);
     return os << r;
   }
 }

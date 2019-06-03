@@ -546,8 +546,8 @@ namespace bdep
       // Both paths are normilized so we can just compare them as
       // strings.
       //
-      if (path::traits::compare (v.c_str () + b, n,
-                                 p.c_str (),     p.size ()) == 0)
+      if (path::traits_type::compare (v.c_str () + b, n,
+                                      p.c_str (),     p.size ()) == 0)
       {
         if (implicit)
           return true;

@@ -35,14 +35,14 @@ namespace bdep
   tmp_file (const string& p)
   {
     assert (!temp_dir.empty ());
-    return auto_rmfile (temp_dir / path::traits::temp_name (p));
+    return auto_rmfile (temp_dir / path::traits_type::temp_name (p));
   }
 
   auto_rmdir
   tmp_dir (const string& p)
   {
     assert (!temp_dir.empty ());
-    return auto_rmdir (temp_dir / dir_path (path::traits::temp_name (p)));
+    return auto_rmdir (temp_dir / dir_path (path::traits_type::temp_name (p)));
   }
 
   void
