@@ -147,6 +147,8 @@ namespace bdep
         cmp ("LGPLv2")         ? "GNU Lesser General Public License v2.0" :
         cmp ("LGPLv2.1")       ? "GNU Lesser General Public License v2.1" :
         cmp ("LGPLv3")         ? "GNU Lesser General Public License v3.0" :
+        cmp ("AGPLv2")         ? "Affero General Public License v2.0"     :
+        cmp ("AGPLv3")         ? "GNU Affero General Public License v3.0" :
         cmp ("ASLv1")          ? "Apache License v1.0"                    :
         cmp ("ASLv1.1")        ? "Apache License v1.1"                    :
         cmp ("ASLv2")          ? "Apache License v2.0"                    :
