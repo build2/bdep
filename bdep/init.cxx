@@ -136,6 +136,9 @@ namespace bdep
       if (!ca && !cc)
         fail << n << " specified without --config-(add|create)";
 
+      if (o.existing () && !cc)
+        fail << "--existing|-e specified without --config-create";
+
       if (o.wipe () && !cc)
         fail << "--wipe specified without --config-create";
     }

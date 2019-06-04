@@ -43,6 +43,17 @@ namespace bdep
        synchronized."
     }
 
+    // These two a really just convenience aliases since they can be specified
+    // as part of <cfg-args> but would require `--`, for example:
+    //
+    // bdep ... -- --wipe cc config.cxx=g++
+
+    bool --existing|-e
+    {
+      "Initialize a \cb{bpkg} configuration based on an existing build system
+       configuration."
+    }
+
     bool --wipe
     {
       "Wipe the configuration directory clean before creating the new

@@ -52,12 +52,16 @@ namespace bdep
     if (o.auto_sync () && o.no_auto_sync ())
       fail << "both --auto-sync and --no-auto-sync specified";
 
+    if (o.existing () && o.wipe ())
+      fail << "both --existing|-e and --wipe specified";
+
     return (o.default_ ()     ? "--default"      :
             o.no_default ()   ? "--no-default"   :
             o.forward ()      ? "--forward"      :
             o.no_forward ()   ? "--no-forward"   :
             o.auto_sync ()    ? "--auto-sync"    :
             o.no_auto_sync () ? "--no-auto-sync" :
+            o.existing ()     ? "--existing|-e"  :
             o.wipe ()         ? "--wipe"         : nullptr);
   }
 
@@ -284,7 +288,8 @@ namespace bdep
                 co,
                 "create",
                 "-d", path,
-                (ao.wipe () ? "--wipe" : nullptr),
+                (ao.existing () ? "--existing" : nullptr),
+                (ao.wipe ()     ? "--wipe"     : nullptr),
                 args);
     }
 
@@ -295,7 +300,7 @@ namespace bdep
                            move (path),
                            move (name),
                            id,
-                           "created");
+                           ao.existing () ? "initialized" : "created");
   }
 
   static int
@@ -755,6 +760,9 @@ namespace bdep
     {
       if (!c.add () && !c.create () && !c.set ())
         fail << n << " not valid for this subcommand";
+
+      if (o.existing () && !c.create ())
+        fail << "--existing|-e is not valid for this subcommand";
 
       if (o.wipe () && !c.create ())
         fail << "--wipe is not valid for this subcommand";
