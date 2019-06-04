@@ -4,7 +4,7 @@ version: 0.11.0-a.0.z
 project: build2
 summary: build2 project dependency manager
 license: MIT
-tags: c++, project, dependency, manager
+topics: package dependency management, build toolchain
 description-file: README
 changes-file: NEWS
 url: https://build2.org
