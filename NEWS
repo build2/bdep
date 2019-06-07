@@ -1,3 +1,47 @@
+Version 0.11.0
+
+  * The bdep-new command now by default adds a README.md template. This can be
+    suppressed with the new no-readme project type sub-option. For example:
+
+    $ bdep new -t exe,no-readme hello
+
+  * New license=<name> bdep-new project type sub-option allows specifying a
+    project license. For example:
+
+    $ bdep new -t exe,license=MIT hello
+
+    Commonly used license names are 'MIT', 'ASLv2' (Apache License 2.0),
+    'GPLv3', and 'proprietary' (see the 'license' package manifest value
+    documentation for a more extensive list). Note that if the license is not
+    specified, the default is now 'proprietary' instead of 'TODO'.
+
+  * New bdep-new --post-hook option allows execution of customization commands
+    in the newly created project. For example:
+
+    $ bdep new --post-hook "echo .idea/ >>.gitignore" hello
+
+    See the bdep-new(1) man pages for details.
+
+  * The bdep-ci(1) command now allows overriding certain manifest values in
+    packages being submitted for testing. This is primarily useful for
+    specifying alternative build configurations and/or build notification
+    emails. For example:
+
+    $ bdep ci --builds gcc
+
+    See the bdep-ci(1) man pages for details.
+
+  * New bdep-release --amend and --squash options allow releasing a revision
+    by squashing and amending one or more existing commits.
+
+  * New --existing|-e option for bdep-{init,new} --config-create|-C and
+    bdep-config create modes. With this option bdep initializes a bpkg
+    configuration based on an existing build system configuration instead of
+    creating a new one from scratch. For example:
+
+    $ b create: build-clang/,cc config.cxx=clang++
+    $ bdep new -C build-clang --existing hello
+
 Version 0.10.0
 
   * New bdep-new(1) --subdirectory mode.
