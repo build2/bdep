@@ -12,8 +12,9 @@ Version 0.11.0
 
     Commonly used license names are 'MIT', 'ASLv2' (Apache License 2.0),
     'GPLv3', and 'proprietary' (see the 'license' package manifest value
-    documentation for a more extensive list). Note that if the license is not
-    specified, the default is now 'proprietary' instead of 'TODO'.
+    documentation for a more extensive list of names). Note that if the
+    license is not specified, the default is now 'proprietary' instead of
+    'TODO'.
 
   * New bdep-new --post-hook option allows execution of customization commands
     in the newly created project. For example:
@@ -22,7 +23,7 @@ Version 0.11.0
 
     See the bdep-new(1) man pages for details.
 
-  * The bdep-ci(1) command now allows overriding certain manifest values in
+  * The bdep-ci command now allows overriding certain manifest values in
     packages being submitted for testing. This is primarily useful for
     specifying alternative build configurations and/or build notification
     emails. For example:
@@ -44,13 +45,13 @@ Version 0.11.0
 
 Version 0.10.0
 
-  * New bdep-new(1) --subdirectory mode.
+  * New bdep-new --subdirectory mode.
 
     This mode can be used to create a new source subdirectory in an already
     existing project.
 
   * Support for more granular C++ source file extension specification in
-    bdep-new(1).
+    bdep-new.
 
     For example:
 
@@ -61,16 +62,16 @@ Version 0.10.0
 
   * Support for suppressing the generation of the library version header.
 
-    Specifically, the bdep-new(1) --type|-t=lib option now has the new
-    no-version sub-option.
+    Specifically, the bdep-new --type|-t=lib option now has the new no-version
+    sub-option.
 
   * Support for the alternative build file/directory naming scheme.
 
-    Specifically, the bdep-new(1) --type|-t option now has the new alt-naming
+    Specifically, the bdep-new --type|-t option now has the new alt-naming
     sub-option that can be used to create projects with the alternative
     naming.
 
-  * New bdep-release(1) --[no]-edit options.
+  * New bdep-release --[no]-edit options.
 
     Now in all the bdep-release modes that perform a commit, if the project's
     repository index already contains other changes, then the commit message
@@ -108,10 +109,10 @@ Version 0.9.0
 Version 0.8.0
 
   * New bdep-ci command for submitting package test requests to CI servers.
-    See bdep-ci(1) for details.
+    See the bdep-ci(1) man pages for details.
 
   * New bdep-publish command for publishing packages to archive-based
-    repositories. See bdep-publish(1) for details.
+    repositories. See the bdep-publish(1) man pages for details.
 
   * New unit-tests project type option for the bdep-new command.
 
