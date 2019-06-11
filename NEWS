@@ -16,8 +16,8 @@ Version 0.11.0
     license is not specified, the default is now 'proprietary' instead of
     'TODO'.
 
-  * New bdep-new --post-hook option allows execution of customization commands
-    in the newly created project. For example:
+  * New bdep-new --post-hook option allows the execution of customization
+    commands in the newly created project. For example:
 
     $ bdep new --post-hook "echo .idea/ >>.gitignore" hello
 
