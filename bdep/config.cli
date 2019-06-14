@@ -31,7 +31,7 @@ namespace bdep
 
      \c{<cfg-spec> = \b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>\n
         <prj-spec> = \b{--directory}|\b{-d} <prj-dir>\n
-        <cfg-args> = [<bpkg-options>] [\b{--existing}|\b{-e} | (<module> | <cfg-var>)...]}
+        <cfg-args> = [\b{--} <bpkg-options>] [\b{--existing}|\b{-e} | (<module> | <cfg-var>)...]}
 
      \h|DESCRIPTION|
 
