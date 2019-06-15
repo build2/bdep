@@ -23,7 +23,7 @@ namespace bdep
                    const package_locations& ps,
                    database& db,
                    const dir_path& cfg,
-                   cli::scanner& args,
+                   const strings& args,
                    bool ca,
                    bool cc)
   {
@@ -173,6 +173,11 @@ namespace bdep
       return 0;
     }
 
+    // Skip the first `--` separator, if any.
+    //
+    if (args.more () && args.peek () == string ("--"))
+      args.next ();
+
     configurations cfgs;
     {
       // Make sure everyone refers to the same objects across all the
@@ -184,6 +189,16 @@ namespace bdep
       //
       if (ca || cc)
       {
+        strings cfg_args;
+        if (cc)
+        {
+          // Read the configuration arguments until we reach the second `--`
+          // separator or eos.
+          //
+          for (string a; args.more () && (a = args.next ()) != "--"; )
+            cfg_args.push_back (move (a));
+        }
+
         cfgs.push_back (
           cmd_init_config (
             o,
@@ -192,7 +207,7 @@ namespace bdep
             load_packages (prj),
             db,
             ca ? o.config_add () : o.config_create (),
-            args,
+            cfg_args,
             ca,
             cc));
       }

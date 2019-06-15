@@ -30,7 +30,7 @@ namespace bdep
                      const package_locations&,
                      database&,
                      dir_path                  path,
-                     cli::scanner&             args,
+                     const strings&            args,
                      optional<string>          name,
                      optional<uint64_t>        id = nullopt);
 

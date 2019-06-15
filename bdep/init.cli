@@ -23,8 +23,9 @@ namespace bdep
      \c{\b{bdep init} [<options>] [<pkg-spec>] [<cfg-spec>] [<pkg-args>]\n
         \b{bdep init} [<options>] [<prj-spec>] \b{--empty|-E}\n
         \b{bdep init} [<options>] [<pkg-spec>] \b{--config-add|-A} <cfg-dir> [\b{@}<cfg-name>]\n
+        \ \ \ \ \ \ \ \ \ \ [<pkg-args>]\n
         \b{bdep init} [<options>] [<pkg-spec>] \b{--config-create|-C} <cfg-dir> [\b{@}<cfg-name>]\n
-        \ \ \ \ \ \ \ \ \ \ [<cfg-args>]}
+        \ \ \ \ \ \ \ \ \ \ [<cfg-args>] [\b{--} <pkg-args>]}
 
      \c{<cfg-spec> = (\b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>)... | \b{--all}|\b{-a}\n
         <pkg-spec> = (\b{--directory}|\b{-d} <pkg-dir>)... | <prj-spec>\n
@@ -59,7 +60,13 @@ namespace bdep
      \cb{config add} or \cb{config create} commands (\l{bdep-config(1)}),
      respectively, followed by the first form. Optional <cfg-args> in the
      fourth form are the additional arguments to the underlying
-     \l{bpkg-cfg-create(1)} command.
+     \l{bpkg-cfg-create(1)} command. Note that in this case to specify
+     <pkg-args> without specifying <cfg-args> you have to use two \cb{--}
+     separators, for example:
+
+     \
+     $ bdep init -C ../prj-gcc @gcc -- -- ?sys:libsqlite3/*
+     \
 
      \h|EXAMPLES|
 

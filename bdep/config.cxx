@@ -264,7 +264,7 @@ namespace bdep
                      const package_locations&         pkgs,
                      database&                        db,
                      dir_path                         path,
-                     cli::scanner&                    cfg_args,
+                     const strings&                   args,
                      optional<string>                 name,
                      optional<uint64_t>               id)
   {
@@ -279,19 +279,13 @@ namespace bdep
 
     // Call bpkg to create the configuration.
     //
-    {
-      strings args;
-      while (cfg_args.more ())
-        args.push_back (cfg_args.next ());
-
-      run_bpkg (2,
-                co,
-                "create",
-                "-d", path,
-                (ao.existing () ? "--existing" : nullptr),
-                (ao.wipe ()     ? "--wipe"     : nullptr),
-                args);
-    }
+    run_bpkg (2,
+              co,
+              "create",
+              "-d", path,
+              (ao.existing () ? "--existing" : nullptr),
+              (ao.wipe ()     ? "--wipe"     : nullptr),
+              args);
 
     return cmd_config_add (ao,
                            prj,
@@ -386,13 +380,16 @@ namespace bdep
     dir_path prj (find_project (o));
     database db (open (prj, trace));
 
+    strings cfg_args;
+    for (; args.more (); cfg_args.push_back (args.next ())) ;
+
     cmd_config_create (o,
                        o,
                        prj,
                        load_packages (prj, true /* allow_empty */),
                        db,
                        move (path),
-                       args,
+                       cfg_args,
                        move (name),
                        move (id));
     return 0;

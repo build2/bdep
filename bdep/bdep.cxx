@@ -93,6 +93,7 @@ static O
 init (const common_options& co,
       cli::group_scanner& scan,
       strings& args,
+      bool keep_sep,
       bool tmp)
 {
   O o;
@@ -111,7 +112,9 @@ init (const common_options& co,
       //
       if (strcmp (a, "--") == 0)
       {
-        scan.next ();
+        if (!keep_sep)
+          scan.next ();
+
         opt = false;
         continue;
       }
@@ -242,7 +245,13 @@ try
   const common_options& co (o);
 
   if (o.help ())
-    return help (init<help_options> (co, scan, argsv, false), "", nullptr);
+    return help (init<help_options> (co,
+                                     scan,
+                                     argsv,
+                                     false /* keep_sep */,
+                                     false /* tmp */),
+                 "",
+                 nullptr);
 
   // The next argument should be a command.
   //
@@ -257,7 +266,11 @@ try
 
   if (h)
   {
-    ho = init<help_options> (co, scan, argsv, false);
+    ho = init<help_options> (co,
+                             scan,
+                             argsv,
+                             false /* keep_sep */,
+                             false /* tmp */);
 
     if (args.more ())
     {
@@ -296,38 +309,44 @@ try
     //  if (h)
     //    r = help (ho, "new", print_bdep_cmd_new_usage);
     //  else
-    //    r = cmd_new (init<cmd_new_options> (co, scan, argsv), args);
+    //    r = cmd_new (init<cmd_new_options> (co,
+    //                                        scan,
+    //                                        argsv,
+    //                                        false /* keep_sep */,
+    //                                        true  /* tmp */),
+    //                 args);
     //
     //  break;
     // }
     //
-#define COMMAND_IMPL(ON, FN, SN, TMP)                                         \
+#define COMMAND_IMPL(ON, FN, SN, SEP, TMP)                                    \
     if (cmd.ON ())                                                            \
     {                                                                         \
       if (h)                                                                  \
         r = help (ho, SN, print_bdep_##FN##_usage);                           \
       else                                                                    \
-        r = cmd_##FN (init<cmd_##FN##_options> (co, scan, argsv, TMP), args); \
+        r = cmd_##FN (init<cmd_##FN##_options> (co, scan, argsv, SEP, TMP),   \
+                      args);                                                  \
                                                                               \
       break;                                                                  \
     }
 
     // Temp dir is initialized manually for these commands.
     //
-    COMMAND_IMPL (new_,    new,     "new",     false);
-    COMMAND_IMPL (sync,    sync,    "sync",    false);
+    COMMAND_IMPL (new_,    new,     "new",     false, false);
+    COMMAND_IMPL (sync,    sync,    "sync",    false, false);
 
-    COMMAND_IMPL (init,    init,    "init",    true);
-    COMMAND_IMPL (fetch,   fetch,   "fetch",   true);
-    COMMAND_IMPL (status,  status,  "status",  true);
-    COMMAND_IMPL (ci,      ci,      "ci",      true);
-    COMMAND_IMPL (release, release, "release", true);
-    COMMAND_IMPL (publish, publish, "publish", true);
-    COMMAND_IMPL (deinit,  deinit,  "deinit",  true);
-    COMMAND_IMPL (config,  config,  "config",  true);
-    COMMAND_IMPL (test,    test,    "test",    true);
-    COMMAND_IMPL (update,  update,  "update",  true);
-    COMMAND_IMPL (clean,   clean,   "clean",   true);
+    COMMAND_IMPL (init,    init,    "init",    true,  true);
+    COMMAND_IMPL (fetch,   fetch,   "fetch",   false, true);
+    COMMAND_IMPL (status,  status,  "status",  false, true);
+    COMMAND_IMPL (ci,      ci,      "ci",      false, true);
+    COMMAND_IMPL (release, release, "release", false, true);
+    COMMAND_IMPL (publish, publish, "publish", false, true);
+    COMMAND_IMPL (deinit,  deinit,  "deinit",  false, true);
+    COMMAND_IMPL (config,  config,  "config",  false, true);
+    COMMAND_IMPL (test,    test,    "test",    false, true);
+    COMMAND_IMPL (update,  update,  "update",  false, true);
+    COMMAND_IMPL (clean,   clean,   "clean",   false, true);
 
     assert (false);
     fail << "unhandled command";

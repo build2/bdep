@@ -14,43 +14,97 @@ deinit += -d prj
 
 : create-cfg
 :
-: Here we also test that the configuration variable is properly persisted and
-: the project is properly built in the source tree.
-:
 {
-  $clone_prj;
+  +$clone_prj
 
-  $* -C @cfg $cxx 'config.cc.poptions=-DTEST' 2>>/~"%EOE%" &prj-cfg/***;
-    initializing in project $~/prj/
-    created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
-    synchronizing:
-    %  new prj.+19700101000000%
-    EOE
+  +cat <<EOI >+prj/manifest
+    depends: libprj
+    EOI
 
-  sed -n -e 's/^config.cc.poptions = (.+)$/\1/p' prj-cfg/build/config.build \
-    >'-DTEST';
+  : cfg-pkg-args
+  :
+  {
+    $clone_prj;
 
-  $status >'prj configured 0.1.0-a.0.19700101000000';
+    $* -C @cfg $cxx 'config.cc.poptions=-DTEST' -- '?sys:libprj/*' 2>>/~"%EOE%" &prj-cfg/***;
+      initializing in project $~/prj/
+      created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
+      synchronizing:
+      %  configure sys:libprj.*%
+      %  new prj.+19700101000000%
+      EOE
 
-  $build prj/ 2>>~%EOE%;
-    %(mkdir|c\+\+|ld|ln) .+%{4}
-    EOE
+    sed -n -e 's/^config.cc.poptions = (.+)$/\1/p' prj-cfg/build/config.build \
+      >'-DTEST';
 
-  prj/prj/prj 'testscript' >'Hello, testscript!'; # Make sure is forwarded.
+    $status >'prj configured 0.1.0-a.0.19700101000000';
 
-  $build prj-cfg/prj/ 2>>/EOE;
-    info: prj-cfg/dir{prj/} is up to date
-    EOE
+    $build prj/ 2>>~%EOE%;
+      %(mkdir|c\+\+|ld|ln) .+%{4}
+      EOE
 
-  $build 'clean:' prj/ 2>>~%EOE%;
-    %rm .+%{3}
-    EOE
+    prj/prj/prj 'testscript' >'Hello, testscript!'; # Make sure is forwarded.
 
-  $deinit 2>>/"EOE"
-    deinitializing in project $~/prj/
-    synchronizing:
-      drop prj
-    EOE
+    $build prj-cfg/prj/ 2>>/EOE;
+      info: prj-cfg/dir{prj/} is up to date
+      EOE
+
+    $build 'clean:' prj/ 2>>~%EOE%;
+      %rm .+%{3}
+      EOE
+
+    $deinit 2>>/"EOE"
+      deinitializing in project $~/prj/
+      synchronizing:
+        drop prj
+        drop libprj
+      EOE
+  }
+
+  : cfg-pkg-args-sep
+  :
+  {
+    $clone_prj;
+
+    $* -C @cfg -- $cxx 'config.cc.poptions=-DTEST' -- '?sys:libprj/*' 2>>/~"%EOE%" &prj-cfg/***;
+      initializing in project $~/prj/
+      created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
+      synchronizing:
+      %  configure sys:libprj.*%
+      %  new prj.+19700101000000%
+      EOE
+
+    sed -n -e 's/^config.cc.poptions = (.+)$/\1/p' prj-cfg/build/config.build \
+      >'-DTEST';
+
+    $deinit 2>>/"EOE"
+      deinitializing in project $~/prj/
+      synchronizing:
+        drop prj
+        drop libprj
+      EOE
+  }
+
+  : pkg-args
+  :
+  {
+    $clone_prj;
+
+    $* -C @cfg -- -- '?sys:libprj/*' 2>>/~"%EOE%" &prj-cfg/***;
+      initializing in project $~/prj/
+      created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
+      synchronizing:
+      %  configure sys:libprj.*%
+      %  new prj.+19700101000000%
+      EOE
+
+    $deinit 2>>/"EOE"
+      deinitializing in project $~/prj/
+      synchronizing:
+        drop prj
+        drop libprj
+      EOE
+  }
 }
 
 : add-cfg
@@ -58,22 +112,28 @@ deinit += -d prj
 {
   $clone_prj;
 
+  cat <<EOI >+prj/manifest;
+    depends: libprj
+    EOI
+
   # Pre-create configurations.
   #
   $new  -C prj-cfg1    tmp $cxx 2>! &prj-cfg1/*** &tmp/***;
   $init -C prj-cfg2 -d tmp $cxx 2>! &prj-cfg2/***;
 
-  $* -A @cfg1 2>>/~"%EOE%";
+  $* -A @cfg1 '?sys:libprj/*' 2>>/~"%EOE%";
     initializing in project $~/prj/
     added configuration @cfg1 $~/prj-cfg1/ 1 default,forwarded,auto-synchronized
     synchronizing:
+    %  configure sys:libprj.*%
     %  new prj.+19700101000000%
     EOE
 
-  $* -A prj-cfg2 @cfg2 2>>/~"%EOE%";
+  $* -A prj-cfg2 @cfg2 '?sys:libprj/*' 2>>/~"%EOE%";
     initializing in project $~/prj/
     added configuration @cfg2 $~/prj-cfg2/ 2 auto-synchronized
     synchronizing:
+    %  configure sys:libprj.*%
     %  new prj.+19700101000000%
     EOE
 
@@ -105,6 +165,7 @@ deinit += -d prj
     deinitializing in project $~/prj/
     synchronizing:
       drop prj
+      drop libprj
     EOE
 }
 

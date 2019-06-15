@@ -1783,6 +1783,10 @@ namespace bdep
       if (t != type::empty) // prj == pkg
         pkgs.push_back (package_location {move (pkgn), nullopt, dir_path ()});
 
+      strings cfg_args;
+      if (cc)
+        for (; args.more (); cfg_args.push_back (args.next ())) ;
+
       configurations cfgs {
         cmd_init_config (
           o,
@@ -1791,12 +1795,11 @@ namespace bdep
           pkgs,
           db,
           ca ? o.config_add () : o.config_create (),
-          args,
+          cfg_args,
           ca,
           cc)};
 
-      if (!pkgs.empty ())
-        cmd_init (o, prj, db, cfgs, pkgs, scan_arguments (args) /* pkg_args */);
+      cmd_init (o, prj, db, cfgs, pkgs, strings () /* pkg_args */);
     }
 
     return 0;

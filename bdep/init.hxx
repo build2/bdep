@@ -22,7 +22,7 @@ namespace bdep
                    const package_locations&,
                    database&,
                    const dir_path& cfg,
-                   cli::scanner& cfg_args,
+                   const strings& cfg_args,
                    bool config_add_specified,
                    bool config_create_specified);
 
