@@ -1322,7 +1322,6 @@ namespace bdep
                << "# clean results in a state identical to distributed)."                          << endl
                << "#"                                                                              << endl
                << h << "{version}: in{version} $src_root/manifest"     << endl
-               << h << "{version}:"                                    << endl
                << "{"                                                  << endl
                << "  dist  = true"                                     << endl
                << "  clean = ($src_root != $out_root)"                 << endl
