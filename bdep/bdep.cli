@@ -404,7 +404,7 @@ namespace bdep
 
   class commands
   {
-    "\h|COMMANDS|"
+    "\h#commands|COMMANDS|"
 
     //
     // NOTE: Use the same sentence as in the page's \summary and make
