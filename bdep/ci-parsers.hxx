@@ -25,10 +25,10 @@ namespace bdep
     // option-specific semantics.
     //
     template <>
-    struct parser<ci_override>
+    struct parser<cmd_ci_override>
     {
       static void
-      parse (ci_override&, bool&, scanner&);
+      parse (cmd_ci_override&, bool&, scanner&);
     };
   }
 }

@@ -14,7 +14,7 @@ namespace bdep
   // This type is intended for accumulating package manifest override values
   // from all the override-related options (see ci-parsers.hxx for details).
   //
-  class ci_override: public vector<butl::manifest_name_value>
+  class cmd_ci_override: public vector<butl::manifest_name_value>
   {
   };
 }

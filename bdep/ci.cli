@@ -141,11 +141,11 @@ namespace bdep
     // will) to work, this option should come after all the options it
     // aliases.
     //
-    ci_override --overrides      |
-                --override       |
-                --overrides-file |
-                --builds         |
-                --build-email;
+    cmd_ci_override --overrides      |
+                    --override       |
+                    --overrides-file |
+                    --builds         |
+                    --build-email;
 
     string --simulate
     {

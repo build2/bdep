@@ -147,6 +147,9 @@ if $cli.configured
   cli.cxx{ci-options}: cli.options += \
 --cxx-prologue "#include <bdep/ci-parsers.hxx>"
 
+  cli.cxx{release-options}: cli.options += \
+--cxx-prologue "#include <bdep/release-parsers.hxx>"
+
   # Avoid generating CLI runtime and empty inline file for help topics.
   #
   cli.cxx{projects-configs}: cli.options += --suppress-cli --suppress-inline

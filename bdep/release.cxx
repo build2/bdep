@@ -56,7 +56,13 @@ namespace bdep
       optional<standard_version> open_version;
 
       optional<string> tag;
-      bool             replace_tag = false;
+
+      struct current_tag
+      {
+        string name;
+        cmd_release_current_tag action;
+      };
+      optional<current_tag> cur_tag; // Only present if tagging a revision.
     };
 
     using status = git_repository_status;
@@ -95,10 +101,11 @@ namespace bdep
     // happen as part of a release or revision.
     //
     if (cv.snapshot () && o.force ().find ("snapshot") == o.force ().end ())
-      fail << "current version " << cv << " is a snapshot"<<
+      fail << "current version " << cv << " is a snapshot" <<
         info << "use --force=snapshot to tag anyway";
 
-    // Canonical version tag without epoch or revision.
+    // Canonical version tag without epoch or revision, unless we keep/remove
+    // the current tag in the revising or tagging mode.
     //
     // For tagging a snapshot we need to use the actual package version
     // (replacing .z with the actual snapshot information). Note: for
@@ -109,11 +116,47 @@ namespace bdep
       ? package_version (o, pkg.manifest.directory ())
       : cv);
 
-    prj.tag = "v" + v.string_project ();
+    auto vtag = [] (const standard_version& v, bool inc_rev)
+    {
+      return "v" + v.string_project (inc_rev);
+    };
 
-    // Replace the existing tag only if this is a revision.
-    //
-    prj.replace_tag = (cv.revision != 0);
+    if (cv.revision == 0) // Tagging a release.
+    {
+      // Specifying --current-tag for the release tagging is meaningless.
+      //
+      if (o.current_tag_specified ())
+        fail << "--current-tag specified for non-revision current version "
+             << cv;
+
+      prj.tag = vtag (v, false /* inc_rev */);
+    }
+    else                  // Tagging a revision.
+    {
+      // Note that using --current-tag for the same version inconsistently
+      // either fails in the middle of the release (e.g. for update after
+      // remove) or succeeds but with an undesirable result (e.g. update after
+      // keep). Diagnosing such inconsistent use is quite complicated so let's
+      // ignore it for now.
+      //
+      cmd_release_current_tag ct (o.current_tag ());
+
+      // Include the revision into the tag, unless we update the current tag.
+      //
+      prj.tag = vtag (v, ct != cmd_release_current_tag::update /* inc_rev */);
+
+      // Current tag version.
+      //
+      // Note that the current tag name is only used for removal but let's
+      // always fill it in, for completeness.
+      //
+      standard_version ctv (v);
+      ctv.revision = ct != cmd_release_current_tag::update
+                     ? v.revision - 1
+                     : 0;
+
+      prj.cur_tag = project::current_tag {vtag (ctv, true /* inc_rev */), ct};
+    }
   }
 
   static void
@@ -460,14 +503,42 @@ namespace bdep
         }
       };
 
-      // Verify that an option is specified only if it's prerequisite option
-      // is also specified.
+      // Verify that an option is specified only if any of it's prerequisite
+      // options is also specified.
       //
-      auto require = [] (const char* opt,    bool opt_specified,
-                         const char* prereq, bool prereq_specified)
+      auto require_any = [] (
+        const char* opt, bool opt_specified,
+        const small_vector<pair<const char*, bool>, 2>& prereqs)
       {
-        if (opt_specified && !prereq_specified)
-          fail << opt << " requires " << prereq;
+        assert (!prereqs.empty ());
+
+        if (opt_specified)
+        {
+          for (const pair<const char*, bool>& p: prereqs)
+          {
+            // Bail out if a prerequisite is specified.
+            //
+            if (p.second)
+              return;
+          }
+
+          diag_record dr (fail);
+          dr << opt << " requires";
+
+          for (size_t i (0); i != prereqs.size (); ++i)
+          {
+            if (i != 0)
+            {
+              if (prereqs.size () > 2)
+                dr << ',';
+
+              if (i == prereqs.size () - 1)
+                dr << " or";
+            }
+
+            dr << ' ' << prereqs[i].first;
+          }
+        }
       };
 
       // Check the mode options.
@@ -498,6 +569,18 @@ namespace bdep
       //
       gopt = mopt;
       verify ("--no-open", o.no_open ());
+
+      // The following option is only meaningful for the revising and tagging
+      // modes.
+      //
+      require_any ("--current-tag", o.current_tag_specified (),
+                   {{"--revision", o.revision ()}, {"--tag", o.tag ()}});
+
+      // Specifying --current-tag is meaningless without tagging.
+      //
+      gopt = nullptr;
+      verify ("--current-tag", o.current_tag_specified ());
+      verify ("--no-tag",  o.no_tag ());
 
       // The following option is only meaningful for the releasing and
       // revising modes.
@@ -534,8 +617,10 @@ namespace bdep
 
       // Verify the --amend and --squash options.
       //
-      require ("--amend", o.amend (), "--revision", o.revision ());
-      require ("--squash", o.squash_specified (), "--amend", o.amend ());
+      require_any ("--amend", o.amend (), {{"--revision", o.revision ()}});
+
+      require_any ("--squash", o.squash_specified (),
+                   {{"--amend", o.amend ()}});
 
       if (o.squash_specified () && o.squash () == 0)
         fail << "invalid --squash value: " << o.squash ();
@@ -707,8 +792,10 @@ namespace bdep
     // Verify all the packages have the same version. This is the only
     // arrangement we currently (and probably ever) support. The immediate
     // problem with supporting different versions (besides the extra
-    // complexity, of course) is tagging. But since our tags don't include
-    // revisions, we do allow variations in that.
+    // complexity, of course) is tagging. We only allow variations in
+    // revisions if the tag doesn't include the revision, which is not the
+    // case when we keep/remove a current tag in the revising and tagging
+    // modes.
     //
     // While at it, notice if we will end up with different revisions which
     // we use below when forming the commit message.
@@ -717,12 +804,16 @@ namespace bdep
     {
       const package& f (prj.packages.front ());
 
+      bool ignore_revision (
+        !((o.revision () || o.tag()) &&
+          o.current_tag () != cmd_release_current_tag::update));
+
       for (const package& p: prj.packages)
       {
         const auto& fv (f.current_version);
         const auto& pv (p.current_version);
 
-        if (fv.compare (pv, true /* ignore_revision */) != 0)
+        if (fv.compare (pv, ignore_revision) != 0)
         {
           fail << "different current package versions" <<
             info << "package " << f.name << " version " << fv <<
@@ -787,7 +878,21 @@ namespace bdep
         dr << "  commit:  " << (commit ? "yes" : "no") << '\n';
 
       if (!o.open ()) // Does not make sense in the open mode.
-        dr << "  tag:     " << (prj.tag ? prj.tag->c_str () : "no") << '\n';
+      {
+        dr << "  tag:     " << (prj.tag ? prj.tag->c_str () : "no");
+
+        const optional<project::current_tag>& ct (prj.cur_tag);
+
+        if (ct)
+        {
+          if (ct->action == cmd_release_current_tag::update)
+            dr << " (update)";
+          else if (ct->action == cmd_release_current_tag::remove)
+            dr << " (remove " << ct->name << ')';
+        }
+
+        dr << '\n';
+      }
 
       dr << "  push:    " << (push ? st.upstream.c_str () : "no");
 
@@ -1024,13 +1129,20 @@ namespace bdep
       //
       // Updated tag 'v0.1.0' (was 8f689ec)
       //
+      const optional<project::current_tag>& ct (prj.cur_tag);
+
       run_git (git_ver,
                prj.path,
                "tag",
-               prj.replace_tag ? "-f" : nullptr,
+               (ct && ct->action == cmd_release_current_tag::update
+                ? "-f"
+                : nullptr),
                "-a",
                "-m", "Tag version " + cv.string (),
                *prj.tag);
+
+      if (ct && ct->action == cmd_release_current_tag::remove)
+        run_git (git_ver, prj.path, "tag", "--delete", ct->name);
     }
 
     // Open.
@@ -1074,8 +1186,8 @@ namespace bdep
     {
       // It would have been nice to push commits and tags using just the
       // --follow-tags option. However, this doesn't work if we need to
-      // replace the tag in the remote repository. Thus, we specify the
-      // repository and refspecs explicitly.
+      // replace or remove the tag in the remote repository. Thus, we specify
+      // the repository and refspecs explicitly.
       //
       // Upstream is normally in the <remote>/<branch> form, for example
       // 'origin/master'.
@@ -1111,23 +1223,37 @@ namespace bdep
         }
       }
 
-      string tagspec;
+      small_vector<string, 2> tagspecs;
 
       if (prj.tag)
       {
-        // Force update of the remote tag, if required.
+        // Add the new or update an existing tag.
         //
-        if (prj.replace_tag)
-          tagspec += '+';
+        const optional<project::current_tag>& ct (prj.cur_tag);
+        {
+          string t;
 
-        tagspec += "refs/tags/";
-        tagspec += *prj.tag;
+          // Force update of the remote tag, if requested.
+          //
+          if (ct && ct->action == cmd_release_current_tag::update)
+            t += '+';
+
+          t += "refs/tags/";
+          t += *prj.tag;
+
+          tagspecs.push_back (move (t));
+        }
+
+        // Remove the current tag, if requested.
+        //
+        if (ct && ct->action == cmd_release_current_tag::remove)
+          tagspecs.push_back (":refs/tags/" + ct->name);
       }
 
       // There should always be something to push, since we are either tagging
       // or committing the version change (or both).
       //
-      assert (!brspec.empty () || !tagspec.empty ());
+      assert (!brspec.empty () || !tagspecs.empty ());
 
       if (*push)
       {
@@ -1152,7 +1278,7 @@ namespace bdep
                   prj.path,
                   remote,
                   !brspec.empty ()  ? brspec.c_str ()  : nullptr,
-                  !tagspec.empty () ? tagspec.c_str () : nullptr);
+                  tagspecs);
       }
       else
       {
@@ -1182,8 +1308,8 @@ namespace bdep
         if (!brspec.empty ())
           cout << ' ' << brspec;
 
-        if (!tagspec.empty ())
-          cout << ' ' << tagspec;
+        for (const string& t: tagspecs)
+          cout << ' ' << t;
 
         cout << endl;
       }

@@ -5,6 +5,7 @@
 include <set>;
 
 include <bdep/common.cli>;
+include <bdep/release-types.hxx>;
 
 "\section=1"
 "\name=bdep-release"
@@ -44,8 +45,9 @@ namespace bdep
      package's \cb{manifest} file, commits these changes (unless
      \cb{--no-commit} is specified), tags this commit (unless \cb{--no-tag} is
      specified), and, if \cb{--push} is specified, pushes the changes to the
-     remote. Note that in this mode \cb{release} will also silently replace an
-     existing tag for the same version.
+     remote. In this mode \cb{release} can be optionally instructed to update
+     an existing tag for the current version to point to the latest revision
+     (\cb{--current-tag=update}) or to remove it (\cb{--current-tag=remove}).
 
      When releasing a revision, the project's repository index is expected to
      already contain other changes since for a revision all the associated
@@ -103,6 +105,14 @@ namespace bdep
     bool --tag
     {
       "Tag the already released version instead of releasing a new one."
+    }
+
+    cmd_release_current_tag --current-tag = cmd_release_current_tag::keep
+    {
+      "<action>",
+      "Specify what to do with an existing tag for the current version when
+       tagging a new revision. Valid values for this option are \cb{keep}
+       (default), \cb{update}, and \cb{remove}."
     }
 
     bool --push

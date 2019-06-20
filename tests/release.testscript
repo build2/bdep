@@ -27,7 +27,8 @@ clone_root_rep = cp --no-cleanup -p -r $~/prj.git ./ &prj.git/***
 # Set the origin repository location as a relative path, so we can copy the
 # local/remote repository pair into the testscript scopes.
 #
-gp = $g -C prj
+gp  = $g -C prj
+log = $gp log '--pretty=format:"%d %s"'
 
 +$gp config user.name 'Test Script'
 +$gp config user.email 'testscript@example.com'
@@ -51,16 +52,17 @@ release += 2>!
 gp2    = $g -C prj2
 clone2 = $g clone prj.git prj2 &prj2/***
 pull2  = $gp2 pull
+fetch2 = $gp2 fetch
 log2   = $gp2 log '--pretty=format:"%d %s"'
 
 : single-pkg
 :
 {
-  test.arguments += --yes
-
   : release
   :
   {
+    test.arguments += --yes
+
     : version
     :
     {
@@ -382,6 +384,13 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
             info: use --force=snapshot to tag anyway
           EOE
 
+        # While at it, verify that the --current-tag is forbidden for a
+        # non-revision release.
+        #
+        $* --tag --force=snapshot --current-tag=update 2>>EOE != 0;
+          error: --current-tag specified for non-revision current version 0.2.0-a.0.z
+          EOE
+
         $* --tag --force=snapshot 2>>~%EOE%;
           %pushing tag v0.2.0-a.0.\.+%d
           EOE
@@ -522,14 +531,255 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
     test.options += -q
 
     +$clone_root_repos
-    +$* --no-open --push
+    +$* --no-open --push --yes
 
     test.arguments += --revision
+
+    : current-tag
+    :
+    {
+      +$clone_repos
+
+      +echo '' >+ prj/manifest
+      +$gp add manifest
+
+      test.arguments += --push --no-edit
+
+      : update
+      :
+      {
+        $clone_repos;
+        sp=' ';
+
+        $* --current-tag=update <'y' 2>>~%EOE%;
+          revising:
+            package: prj
+            current: 0.1.0
+            release: 0.1.0+1
+            commit:  yes
+            tag:     v0.1.0 (update)
+            push:    origin/master
+          %continue\? \[y/n\] Updated tag 'v0.1.0' \.+%d
+          EOE
+
+        test.arguments += --yes;
+
+        $log >>:~%EOO%;
+          % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0\+1%d
+           Release version 0.1.0
+           Create
+          EOO
+
+        $clone2;
+        $log2 >>:~%EOO%;
+          % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0\+1%d
+           Release version 0.1.0
+           Create
+          EOO
+
+        $* --current-tag=update --force=unchanged 2>>~%EOE%;
+          %Updated tag 'v0.1.0' \.+%d
+          EOE
+
+        $log >>:~%EOO%;
+          % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0\+2%d
+           Release version 0.1.0+1
+           Release version 0.1.0
+           Create
+          EOO
+
+        # Updates the existing local tag.
+        #
+        # Note that starting git 2.20.0 --force is also required (see git
+        # release notes for details).
+        #
+        $pull2 --tags --force;
+        $log2 >>:~%EOO%
+          % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0\+2%d
+           Release version 0.1.0+1
+           Release version 0.1.0
+           Create
+          EOO
+      }
+
+      : remove
+      :
+      {
+        $clone_repos;
+
+        $* --current-tag=remove <'y' 2>>~%EOE%;
+          revising:
+            package: prj
+            current: 0.1.0
+            release: 0.1.0+1
+            commit:  yes
+            tag:     v0.1.0+1 (remove v0.1.0)
+            push:    origin/master
+          %continue\? \[y/n\] Deleted tag 'v0.1.0' \.+%d
+          EOE
+
+        test.arguments += --yes;
+
+        $log >>:~%EOO%;
+          % \(HEAD -> master, tag: v0.1.0\+1, \.*\) Release version 0.1.0\+1%d
+           Release version 0.1.0
+           Create
+          EOO
+
+        $* --current-tag=remove --force=unchanged 2>>~%EOE%;
+          %Deleted tag 'v0.1.0\+1' \.+%d
+          EOE
+
+        $log >>:~%EOO%;
+          % \(HEAD -> master, tag: v0.1.0\+2, \.*\) Release version 0.1.0\+2%d
+           Release version 0.1.0+1
+           Release version 0.1.0
+           Create
+          EOO
+
+        $clone2;
+        $log2 >>:~%EOO%
+          % \(HEAD -> master, tag: v0.1.0\+2, \.*\) Release version 0.1.0\+2%d
+           Release version 0.1.0+1
+           Release version 0.1.0
+           Create
+          EOO
+      }
+
+      : keep
+      :
+      {
+        $clone_repos;
+        sp = ' ';
+
+        $* --current-tag=keep <'y' 2>>:"EOE";
+          revising:
+            package: prj
+            current: 0.1.0
+            release: 0.1.0+1
+            commit:  yes
+            tag:     v0.1.0+1
+            push:    origin/master
+          continue? [y/n]$sp
+          EOE
+
+        test.arguments += --yes;
+
+        $log >>:~%EOO%;
+          % \(HEAD -> master, tag: v0.1.0\+1, \.*\) Release version 0.1.0\+1%d
+           (tag: v0.1.0) Release version 0.1.0
+           Create
+          EOO
+
+        $* --current-tag=keep --force=unchanged;
+
+        $log >>:~%EOO%;
+          % \(HEAD -> master, tag: v0.1.0\+2, \.*\) Release version 0.1.0\+2%d
+           (tag: v0.1.0+1) Release version 0.1.0+1
+           (tag: v0.1.0) Release version 0.1.0
+           Create
+          EOO
+
+        $clone2;
+        $log2 >>:~%EOO%
+          % \(HEAD -> master, tag: v0.1.0\+2, \.*\) Release version 0.1.0\+2%d
+           (tag: v0.1.0+1) Release version 0.1.0+1
+           (tag: v0.1.0) Release version 0.1.0
+           Create
+          EOO
+      }
+    }
+
+    : tag
+    :
+    {
+      +$clone_repos
+
+      test.arguments += --push --no-edit --force=unchanged --yes
+
+      +$* --no-tag
+
+      +$clone2
+      +$log2 >>:~%EOO%
+        % \(HEAD -> master, origin/master, \.*\) Release version 0.1.0\+1%d
+         (tag: v0.1.0) Release version 0.1.0
+         Create
+        EOO
+
+      tag = $release --tag --push -q --yes -d prj/prj
+
+      : update
+      :
+      {
+        $clone_repos;
+
+        $tag --current-tag=update 2>>~%EOE%;
+          %Updated tag 'v0.1.0' \.+%d
+          EOE
+
+        $log >>:~%EOO%;
+          % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0\+1%d
+           Release version 0.1.0
+           Create
+          EOO
+
+        $clone2;
+        $log2 >>:~%EOO%
+          % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0\+1%d
+           Release version 0.1.0
+           Create
+          EOO
+      }
+
+      : remove
+      :
+      {
+        $clone_repos;
+
+        $tag --current-tag=remove 2>>~%EOE%;
+          %Deleted tag 'v0.1.0' \.+%d
+          EOE
+
+        $log >>:~%EOO%;
+          % \(HEAD -> master, tag: v0.1.0\+1, \.*\) Release version 0.1.0\+1%d
+           Release version 0.1.0
+           Create
+          EOO
+
+        $clone2;
+        $log2 >>:~%EOO%
+          % \(HEAD -> master, tag: v0.1.0\+1, \.*\) Release version 0.1.0\+1%d
+           Release version 0.1.0
+           Create
+          EOO
+      }
+
+      : keep
+      :
+      {
+        $clone_repos;
+
+        $tag --current-tag=keep;
+
+        $log >>:~%EOO%;
+          % \(HEAD -> master, tag: v0.1.0\+1, \.*\) Release version 0.1.0\+1%d
+           (tag: v0.1.0) Release version 0.1.0
+           Create
+          EOO
+
+        $clone2;
+        $log2 >>:~%EOO%
+          % \(HEAD -> master, tag: v0.1.0\+1, \.*\) Release version 0.1.0\+1%d
+           (tag: v0.1.0) Release version 0.1.0
+           Create
+          EOO
+      }
+    }
 
     : changes-staged
     :
     {
-      test.arguments += --push --no-edit
+      test.arguments += --push --no-edit --yes
 
       +$clone_repos
 
@@ -541,14 +791,12 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       {
         $clone_repos;
 
-        $* 2>>~%EOE%;
-          %Updated tag 'v0.1.0' \(was \.*\)%d
-          EOE
+        $*;
 
         $clone2;
         $log2 >>:~%EOO%
-          % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0\+1%d
-           Release version 0.1.0
+          % \(HEAD -> master, tag: v0.1.0\+1, \.*\) Release version 0.1.0\+1%d
+           (tag: v0.1.0) Release version 0.1.0
            Create
           EOO
       }
@@ -565,7 +813,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
 
         $clone2;
         $log2 >>:~%EOO%
-          % \(HEAD -> master, tag: v0, \.*\) Release version 0\+1%d
+          % \(HEAD -> master, tag: v0\+1, \.*\) Release version 0\+1%d
            Create
           EOO
       }
@@ -586,15 +834,10 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
 
         $release --tag --push --yes -d prj;
 
-        # Updates the existing local tag.
-        #
-        # Note that starting git 2.20.0 --force is also required (see git
-        # release notes for details).
-        #
-        $pull2 --tags --force;
+        $pull2 --tags --force; # Updates the existing local tag (see above).
         $log2 >>:~%EOO%
-          % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0\+1%d
-           Release version 0.1.0
+          % \(HEAD -> master, tag: v0.1.0\+1, \.*\) Release version 0.1.0\+1%d
+           (tag: v0.1.0) Release version 0.1.0
            Create
           EOO
       }
@@ -603,7 +846,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
     : no-changes-staged
     :
     {
-      test.arguments += --push
+      test.arguments += --push --yes
 
       $clone_repos;
 
@@ -613,14 +856,12 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
           info: use --force=unchanged to release anyway
         EOE
 
-      $* --force=unchanged 2>>~%EOE%;
-        %Updated tag 'v0.1.0' \(was \.*\)%d
-        EOE
+      $* --force=unchanged;
 
       $clone2;
       $log2 >>:~%EOO%
-        % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0\+1%d
-         Release version 0.1.0
+        % \(HEAD -> master, tag: v0.1.0\+1, \.*\) Release version 0.1.0\+1%d
+         (tag: v0.1.0) Release version 0.1.0
          Create
         EOO
     }
@@ -628,6 +869,8 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
     : unstaged
     :
     {
+      test.arguments += --yes;
+
       $clone_repos;
 
       echo '' >+ prj/manifest;
@@ -646,8 +889,8 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
 
       $clone2;
       $log2 >>:~%EOO%
-        % \(HEAD -> master, tag: v0.1.0, \.*\) Release revision%d
-         Release version 0.1.0
+        % \(HEAD -> master, tag: v0.1.0\+1, \.*\) Release revision%d
+         (tag: v0.1.0) Release version 0.1.0
          Create
         EOO
     }
@@ -655,7 +898,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
     : amend
     :
     {
-      test.arguments += --push --amend --no-edit
+      test.arguments += --push --amend --no-edit --yes
 
       +$clone_repos
 
@@ -673,15 +916,13 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       {
         $clone_repos;
 
-        $* 2>>~%EOE%;
-          %Updated tag 'v0.1.0' \(was \.*\)%d
-          EOE
+        $*;
 
         $clone2;
         $log2 >>:~%EOO%;
-          % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0\+1%d
+          % \(HEAD -> master, tag: v0.1.0\+1, \.*\) Release version 0.1.0\+1%d
            Fix repositories.manifest
-           Release version 0.1.0
+           (tag: v0.1.0) Release version 0.1.0
            Create
           EOO
 
@@ -705,14 +946,12 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       {
         $clone_repos;
 
-        $* --squash 2 2>>~%EOE%;
-          %Updated tag 'v0.1.0' \(was \.*\)%d
-          EOE
+        $* --squash 2;
 
         $clone2;
         $log2 >>:~%EOO%;
-          % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0\+1%d
-           Release version 0.1.0
+          % \(HEAD -> master, tag: v0.1.0\+1, \.*\) Release version 0.1.0\+1%d
+           (tag: v0.1.0) Release version 0.1.0
            Create
           EOO
 
@@ -738,16 +977,14 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
 
         $gp commit -a -m 'Change manifest';
 
-        $* 2>>~%EOE%;
-          %Updated tag 'v0.1.0' \(was \.*\)%d
-          EOE
+        $*;
 
         $clone2;
         $log2 >>:~%EOO%;
-          % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0\+1%d
+          % \(HEAD -> master, tag: v0.1.0\+1, \.*\) Release version 0.1.0\+1%d
            Fix buildfile
            Fix repositories.manifest
-           Release version 0.1.0
+           (tag: v0.1.0) Release version 0.1.0
            Create
           EOO
 
@@ -774,7 +1011,8 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
   : open
   :
   {
-    test.options += -q
+    test.options   += -q
+    test.arguments += --yes
 
     : unstaged
     :
@@ -809,6 +1047,8 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
   : no-commit
   :
   {
+    test.arguments += --yes
+
     $clone_root_repos;
 
     $* --no-commit;
@@ -837,6 +1077,8 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
   : no-progress
   :
   {
+    test.arguments += --yes
+
     $clone_root_repos;
 
     $* --push --no-progress 2>>~%EOE%;
@@ -921,7 +1163,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
     echo '' >+ prj/prj/manifest;
     $gp add prj/manifest;
 
-    $release --revision -q --yes --no-edit -d prj/prj;
+    $release --revision --current-tag=update -q --yes --no-edit -d prj/prj;
 
     echo '' >+ prj/prj/manifest;
     $gp add prj/manifest;
@@ -929,10 +1171,18 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
     echo '' >+ prj/libprj/manifest;
     $gp add libprj/manifest;
 
-    $* --revision --no-edit 2>>~%EOE%;
-      %Updated tag 'v0.1.0' \(was \.*\)%d
+    $* --revision --no-edit 2>>EOE != 0;
+      error: different current package versions
+        info: package prj version 0.1.0+1
+        info: package libprj version 0.1.0
       EOE
 
+    $* --revision --current-tag=update --no-edit 2>>~%EOE%;
+      %Updated tag 'v0.1.0' \.+%d
+      EOE
+
+    # Note that the 0.1.0+1 release is not tagged as it wasn't pushed.
+    #
     $clone2;
     $log2 >>:~%EOO%
       % \(HEAD -> master, tag: v0.1.0, \.*\) Release versions prj/0.1.0\+2, libprj/0.1.0\+1%d
@@ -946,7 +1196,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
   :
   {
     +$clone_repos
-    sp=' '
+    sp = ' '
 
     : default
     :
@@ -1011,9 +1261,11 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
     : show-push
     :
     {
+      test.arguments += --show-push
+
       $clone_repos;
 
-      $* --show-push <'y' 2>>:"EOE" >>~%EOO%;
+      $* <'y' 2>>:"EOE" >>~%EOO%;
         releasing:
           package: prj
           current: 0.1.0-a.0.z
@@ -1042,7 +1294,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
          Create
         EOO
 
-      $* --no-tag --no-open --show-push --yes >>~%EOO%;
+      $* --no-tag --no-open --yes >>~%EOO%;
         %git -C "?.+prj"? push origin master%
         EOO
 
@@ -1056,15 +1308,33 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
          Create
         EOO
 
-      $* --tag --show-push --yes >>~%EOO%;
+      $* --tag --yes >>~%EOO%;
         %git -C "?\.+prj"? push origin refs/tags/v0.2.0%d
         EOO
 
       $gp push origin refs/tags/v0.2.0;
 
       $pull2 --tags --force; # Updates the existing local tag (see above).
-      $log2 >>:~%EOO%
+      $log2 >>:~%EOO%;
         % \(HEAD -> master, tag: v0.2.0, \.*\) Release version 0.2.0%d
+         Change version to 0.2.0-a.0.z
+         (tag: v0.1.0) Release version 0.1.0
+         Create
+        EOO
+
+      $* --revision --current-tag=remove --force=unchanged --yes >>~%EOO% 2>>~%EOE%;
+        %git -C "?\.+prj"? push origin master refs/tags/v0.2.0\+1 :refs/tags/v0.2.0%d
+        EOO
+        %Deleted tag 'v0.2.0' \.+%d
+        EOE
+
+      $gp push origin master refs/tags/v0.2.0+1 ':refs/tags/v0.2.0';
+
+      $fetch2 --prune origin '+refs/tags/*:refs/tags/*';
+      $pull2 --tags;
+      $log2 >>:~%EOO%
+        % \(HEAD -> master, tag: v0.2.0\+1, \.*\) Release version 0.2.0\+1%d
+         Release version 0.2.0
          Change version to 0.2.0-a.0.z
          (tag: v0.1.0) Release version 0.1.0
          Create
@@ -1122,22 +1392,22 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
 : options-incompatibility
 :
 {
-  $clone_prj;
+  +$clone_prj
 
-  $* --revision --open      2>'error: both --revision and --open specified'      != 0;
-  $* --revision --alpha     2>'error: both --revision and --alpha specified'     != 0;
-  $* --revision --no-open   2>'error: both --revision and --no-open specified'   != 0;
-  $* --revision --open-beta 2>'error: both --revision and --open-beta specified' != 0;
-  $* --open     --no-tag    2>'error: both --open and --no-tag specified'        != 0;
-  $* --tag      --no-commit 2>'error: both --tag and --no-commit specified'      != 0;
-  $* --push     --no-commit 2>'error: both --push and --no-commit specified'     != 0;
-  $* --push     --show-push 2>'error: both --push and --show-push specified'     != 0;
-  $* --edit     --no-commit 2>'error: both --no-commit and --edit specified'     != 0;
-
-  $* --open-base 1.2.3 --open-beta 2>'error: both --open-beta and --open-base specified' != 0;
-
-  $* --amend                        2>'error: --amend requires --revision'            != 0;
-  $* --squash 1                     2>'error: --squash requires --amend'              != 0;
-  $* --revision --amend --squash 0  2>'error: invalid --squash value: 0'              != 0;
-  $* --revision --amend --no-commit 2>'error: both --amend and --no-commit specified' != 0
+  $* --revision --open                      2>'error: both --revision and --open specified'       != 0
+  $* --revision --alpha                     2>'error: both --revision and --alpha specified'      != 0
+  $* --revision --no-open                   2>'error: both --revision and --no-open specified'    != 0
+  $* --revision --open-beta                 2>'error: both --revision and --open-beta specified'  != 0
+  $* --open     --no-tag                    2>'error: both --open and --no-tag specified'         != 0
+  $* --tag      --no-commit                 2>'error: both --tag and --no-commit specified'       != 0
+  $* --push     --no-commit                 2>'error: both --push and --no-commit specified'      != 0
+  $* --push     --show-push                 2>'error: both --push and --show-push specified'      != 0
+  $* --edit     --no-commit                 2>'error: both --no-commit and --edit specified'      != 0
+  $* --current-tag=keep                     2>'error: --current-tag requires --revision or --tag' != 0
+  $* --revision --current-tag keep --no-tag 2>'error: both --current-tag and --no-tag specified'  != 0
+  $* --open-base 1.2.3 --open-beta          2>'error: both --open-beta and --open-base specified' != 0
+  $* --amend                                2>'error: --amend requires --revision'                != 0
+  $* --squash 1                             2>'error: --squash requires --amend'                  != 0
+  $* --revision --amend --squash 0          2>'error: invalid --squash value: 0'                  != 0
+  $* --revision --amend --no-commit         2>'error: both --amend and --no-commit specified'     != 0
 }

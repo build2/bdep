@@ -17,8 +17,8 @@ namespace bdep
     using namespace std;
     using namespace butl;
 
-    void parser<ci_override>::
-    parse (ci_override& r, bool& xs, scanner& s)
+    void parser<cmd_ci_override>::
+    parse (cmd_ci_override& r, bool& xs, scanner& s)
     {
       auto add = [&r] (string&& n, string&& v)
       {
