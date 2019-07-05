@@ -60,7 +60,7 @@ $libodb_sqlite.check(LIBODB_SQLITE_VERSION, LIBODB_SQLITE_SNAPSHOT)$
 # else
 #  define BDEP_OS "Windows"
 # endif
-#elif defined(__linux)
+#elif defined(__linux__)
 #  define BDEP_OS "GNU/Linux"
 #elif defined(__APPLE__)
 #  define BDEP_OS "MacOS"
