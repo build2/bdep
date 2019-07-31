@@ -15,11 +15,11 @@
 # The most commonly used project cloning command that copies it from the
 # parent scope working directory.
 #
-clone_prj = cp -p -r ../prj ./
+clone_prj = cp -pr ../prj ./
 
 # Clones the original project from the root scope working directory.
 #
-clone_root_prj = cp -p -r $~/prj ./
+clone_root_prj = cp -pr $~/prj ./
 
 # Setup a test command to use a cloned project directory by default.
 #

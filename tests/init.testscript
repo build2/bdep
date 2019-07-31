@@ -177,7 +177,7 @@ deinit += -d prj
 {
   # Create (and build) the executable single-package project.
   #
-  cp --no-cleanup -p -r ../prj ./ &prj/***;
+  cp --no-cleanup -pr ../prj ./ &prj/***;
 
   $* -C @cfg $cxx 2>>/~"%EOE%" &prj-cfg/***;
     initializing in project $~/prj/

@@ -19,8 +19,8 @@ g = git 2>! >&2
 +mkdir --no-cleanup prj.git
 +$g -C prj.git init --bare &prj.git/***
 
-clone_rep      = cp --no-cleanup -p -r ../prj.git ./ &prj.git/***
-clone_root_rep = cp --no-cleanup -p -r $~/prj.git ./ &prj.git/***
+clone_rep      = cp --no-cleanup -pr ../prj.git ./ &prj.git/***
+clone_root_rep = cp --no-cleanup -pr $~/prj.git ./ &prj.git/***
 
 # Prepare the local repository.
 #
@@ -37,8 +37,8 @@ log = $gp log '--pretty=format:"%d %s"'
 +$gp commit -m 'Create'
 +$gp push --set-upstream origin master
 
-clone_prj      = cp --no-cleanup -p -r ../prj ./ &prj/***
-clone_root_prj = cp --no-cleanup -p -r $~/prj ./ &prj/***
+clone_prj      = cp --no-cleanup -pr ../prj ./ &prj/***
+clone_root_prj = cp --no-cleanup -pr $~/prj ./ &prj/***
 
 clone_repos      = $clone_prj && $clone_rep
 clone_root_repos = $clone_root_prj && $clone_root_rep
@@ -462,7 +462,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
         $clone_root_repos;
 
         rm prj/README.md;
-        $gp commit -a -m 'Remove description';
+        $gp commit -am 'Remove description';
 
         $* 2>>~%EOE% != 0;
           %error: unable to read .+README\.md referenced by description-file manifest value in .+manifest: .+%
@@ -477,7 +477,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
           EOE
 
         echo '.' >= prj/README.md;
-        $gp commit -a -m 'Fill README.md file';
+        $gp commit -am 'Fill README.md file';
 
         $*
       }
@@ -488,7 +488,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
         $clone_root_repos;
 
         echo 'some-file: README' >+ prj/manifest;
-        $gp commit -a -m 'Add file';
+        $gp commit -am 'Add file';
 
         $* 2>>~%EOE% != 0
           %error: invalid package manifest: .+manifest:.+:1: unknown name 'some-file' in package manifest%
@@ -511,7 +511,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
 
       $* --no-commit;
 
-      $gp commit -a -m 'Release version';
+      $gp commit -am 'Release version';
 
       $* --tag --push 2>>EOE;
         pushing branch master, tag v0.1.0
@@ -884,7 +884,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
 
       $* --no-commit;
 
-      $gp commit -a -m 'Release revision';
+      $gp commit -am 'Release revision';
       $release --tag --push --yes -d prj;
 
       $clone2;
@@ -903,10 +903,10 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       +$clone_repos
 
       +echo '' >+ prj/repositories.manifest
-      +$gp commit -a -m 'Fix repositories.manifest'
+      +$gp commit -am 'Fix repositories.manifest'
 
       +echo '' >+ prj/buildfile
-      +$gp commit -a -m 'Fix buildfile' -m "Add '\n' to the end of the file."
+      +$gp commit -am 'Fix buildfile' -m "Add '\n' to the end of the file."
 
       +echo '' >+ prj/manifest
       +$gp add manifest
@@ -975,7 +975,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       {
         $clone_repos;
 
-        $gp commit -a -m 'Change manifest';
+        $gp commit -am 'Change manifest';
 
         $*;
 
@@ -1032,7 +1032,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
 
       $* --open --no-commit;
 
-      $gp commit -a -m 'Open dev cycle';
+      $gp commit -am 'Open dev cycle';
       $gp push origin HEAD --tags;
 
       $clone2;
@@ -1058,12 +1058,12 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       % \(HEAD -> master, .*\) Create%
       EOO
 
-    $gp commit -a -m 'Release version';
+    $gp commit -am 'Release version';
 
     $* --tag;
     $* --open --no-commit;
 
-    $gp commit -a -m 'Change version';
+    $gp commit -am 'Change version';
     $gp push origin HEAD --tags;
 
     $pull2;
