@@ -245,7 +245,7 @@ g = git -C prj >! 2>!
           info: use --force=uncommitted to publish anyway
         EOE
 
-      $g commit -am 'Version';
+      $g commit -a -m 'Version';
 
       $* 2>>~%EOE%
         %package submission is queued(: \.*prj/1.0.16)?%d
@@ -276,7 +276,7 @@ g = git -C prj >! 2>!
       #
       sleep 1;
 
-      $g commit -am 'Version';
+      $g commit -a -m 'Version';
 
       $* 2>>~%EOE% != 0;
         synchronizing:
