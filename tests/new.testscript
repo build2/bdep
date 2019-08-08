@@ -230,6 +230,38 @@ status += -d prj
       EOE
   }
 
+  # Test create-from-existin functionality.
+  #
+  : exist
+  :
+  {
+    : basics
+    :
+    mkdir libfoo &!libfoo/;
+    git -C libfoo init -q;
+    cat <<EOI >=libfoo/README.md &!libfoo/README.md;
+    # libfoo
+
+    cool foo
+
+    Some more stuff.
+    EOI
+    cat <<EOI >=libfoo/LICENSE &!libfoo/LICENSE;
+                                 Apache License
+                           Version 2.0, January 2004
+                        http://www.apache.org/licenses/
+
+    TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+    ...
+    EOI
+    $* -t lib --output-dir libfoo 2>>/"EOE" &libfoo/***;
+      created new library project libfoo in $~/libfoo/
+      EOE
+    test -f libfoo/.gitignore;
+    sed -n -e 's/^summary: (.+)$/\1/p'      libfoo/manifest >'cool foo';
+    sed -n -e 's/^license: ([^ ]+).*$/\1/p' libfoo/manifest >'ASLv2'
+  }
+
   : pkg
   :
   {

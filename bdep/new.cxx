@@ -4,11 +4,14 @@
 
 #include <bdep/new.hxx>
 
+#include <map>
 #include <algorithm> // replace()
 
+#include <libbutl/regex.mxx>
 #include <libbutl/command.mxx>
 #include <libbutl/project-name.mxx>
 
+#include <bdep/git.hxx>
 #include <bdep/project.hxx>
 #include <bdep/project-author.hxx>
 #include <bdep/database.hxx>
@@ -22,12 +25,189 @@ using namespace butl;
 
 namespace bdep
 {
+  // License id to full name map.
+  //
+  static const map<string, string, case_compare_string> licenses = {
+    {"MIT",               "MIT License"                            },
+    {"BSD2",              "Simplified 2-clause BSD License"        },
+    {"BSD3",              "New 3-clause BSD License"               },
+    {"BSD4",              "Original 4-clause BSD License"          },
+    {"GPLv2",             "GNU General Public License v2.0"        },
+    {"GPLv3",             "GNU General Public License v3.0"        },
+    {"LGPLv2",            "GNU Lesser General Public License v2.0" },
+    {"LGPLv2.1",          "GNU Lesser General Public License v2.1" },
+    {"LGPLv3",            "GNU Lesser General Public License v3.0" },
+    {"AGPLv2",            "Affero General Public License v2.0"     },
+    {"AGPLv3",            "GNU Affero General Public License v3.0" },
+    {"ASLv1",             "Apache License v1.0"                    },
+    {"ASLv1.1",           "Apache License v1.1"                    },
+    {"ASLv2",             "Apache License v2.0"                    },
+    {"MPLv2",             "Mozilla Public License v2.0"            },
+
+    // Note: entries with empty full name are here to get canonical case.
+    //
+    {"public domain" ,    ""                                       },
+    {"available source",  "Not free software/open source"          },
+    {"proprietary",       ""                                       },
+    {"TODO",              "License is not yet decided"             }};
+
+
+  // Extract a license id from a license file returning an empty string if
+  // it doesn't match any known license file signatures.
+  //
+  static string
+  extract_license (const path& f)
+  {
+    // The overall plan is to read the license heading and then try to match
+    // it against a bunch of regular expression.
+    //
+    // Some license headings are spread over multiple lines but all the files
+    // that we have seen so far separate the heading from the license body
+    // with a blank line, for example:
+    //
+    //                       Apache License
+    //                   Version 2.0, January 2004
+    //                http://www.apache.org/licenses/
+    //
+    //   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+    //   ....
+    //
+    // So what we are going to do is combine all the lines (trimmed and
+    // separated with spaces) until the blank and run our regular expressions
+    // on that. Note that it's possible we will end up with some non-heading
+    // junk, as in the case of MPL:
+    //
+    //   Mozilla Public License Version 2.0
+    //   ==================================
+    //
+    //   1. Definitions
+    //   ...
+    //
+    string h;
+    try
+    {
+      ifdstream is (f, ifdstream::badbit);
+
+      for (string l; !eof (getline (is, l)); )
+      {
+        if (trim (l).empty ())
+          break;
+
+        if (!h.empty ())
+          h += ' ';
+
+        h += l;
+      }
+    }
+    catch (const io_error& e)
+    {
+      fail << "unable to read " << f << ": " << e << endf;
+    }
+
+    if (h.empty ())
+      return "";
+
+    // We do case-insensitive first-only match ignoring the unmatched parts.
+    //
+    string r;
+    auto test = [&h, &r] (const string& e, const string& f) -> bool
+    {
+      regex re (e, regex::ECMAScript | regex::icase);
+
+      pair<string, bool> p (
+        regex_replace_search (h,
+                              re,
+                              f,
+                              regex_constants::format_first_only |
+                              regex_constants::format_no_copy));
+
+      if (p.second)
+      {
+        assert (!p.first.empty ());
+        r = move (p.first);
+      }
+
+      return p.second;
+    };
+
+    // Note that some licenses (like ASL, MPL) always spell the minor verison,
+    // even if it is there (unlike the GNU licenses). So for them we need to
+    // ignore the zero minor component.
+    //
+    (test ("MIT License",                                         "MIT")     ||
+     test ("BSD ([1234])-Clause License",                         "BSD$1")   ||
+     test ("Apache License Version ([0-9]+(\\.[1-9])?)",          "ASLv$1")  ||
+     test ("Mozilla Public License Version ([0-9]+(\\.[1-9])?)",  "MPLv$1")  ||
+     test ("GNU GENERAL PUBLIC LICENSE Version ([0-9.]+)",        "GPLv$1")  ||
+     test ("GNU LESSER GENERAL PUBLIC LICENSE Version ([0-9.]+)", "LGPLv$1") ||
+     test ("GNU AFFERO GENERAL PUBLIC LICENSE Version ([0-9.]+)", "AGPLv$1") ||
+     test ("public domain",                                 "public domain"));
+
+    return r;
+  }
+
+  // Extract a summary line from a README.md file returning an empty string if
+  // unable to. The second argument is the project name.
+  //
+  static string
+  extract_summary (const path& f, const string& n)
+  {
+    // README.md created by popular hosting services (GitHub, GitLab) have the
+    // following format (give or take a few blank lines in between):
+    //
+    // # <name>
+    // <summary>
+    //
+    // Of course, the file could have been tweaked. In particular, one popular
+    // alternative arrangement looks like this:
+    //
+    // # <name> - <summary>
+    //
+    // Let's start simple by only support the first version and maybe
+    // extend/complicate things later.
+    //
+    try
+    {
+      ifdstream is (f, ifdstream::badbit);
+
+      string l;
+      auto next = [&is, &l] () -> bool
+      {
+        while (!eof (getline (is, l)) && trim (l).empty ())
+          ;
+        return !l.empty ();
+      };
+
+      if (next ())
+      {
+        if (casecmp (l, "# " + n) == 0)
+        {
+          if (next ())
+          {
+            // Potential improvements:
+            //
+            // - Strip trailing period, if any.
+            // - Get only the first sentence.
+            //
+            return l;
+          }
+        }
+      }
+
+      return "";
+    }
+    catch (const io_error& e)
+    {
+      fail << "unable to read " << f << ": " << e << endf;
+    }
+  }
+
   using type = cmd_new_type;
   using lang = cmd_new_lang;
   using vcs  = cmd_new_vcs;
 
   int
-  cmd_new (const cmd_new_options& o, cli::group_scanner& args)
+  cmd_new (cmd_new_options&& o, cli::group_scanner& args)
   {
     tracer trace ("new");
 
@@ -84,84 +264,75 @@ namespace bdep
     bool ver    (false); // !no-version
 
     string license;
-
-    switch (t)
+    bool   license_o (false);
     {
-    case type::exe:
+      bool pkg (o.package ());
+      bool sub (o.subdirectory ());
+
+      switch (t)
       {
-        readme  = !t.exe_opt.no_readme ()  && !o.subdirectory ();
-        altn    =  t.exe_opt.alt_naming ();
-        itest   = !t.exe_opt.no_tests ();
-        utest   =  t.exe_opt.unit_tests ();
+      case type::exe:
+        {
+          readme  = !t.exe_opt.no_readme ()  && !sub;
+          altn    =  t.exe_opt.alt_naming ();
+          itest   = !t.exe_opt.no_tests ();
+          utest   =  t.exe_opt.unit_tests ();
 
-        license =  t.exe_opt.license ();
-        break;
-      }
-    case type::lib:
-      {
-        readme  = !t.lib_opt.no_readme ()  && !o.subdirectory ();
-        altn    =  t.lib_opt.alt_naming ();
-        itest   = !t.lib_opt.no_tests ()   && !o.subdirectory ();
-        utest   =  t.lib_opt.unit_tests ();
-        ver     = !t.lib_opt.no_version () && !o.subdirectory ();
+          if (!sub)
+          {
+            license   = t.exe_opt.license ();
+            license_o = t.exe_opt.license_specified ();
+          }
+          break;
+        }
+      case type::lib:
+        {
+          readme  = !t.lib_opt.no_readme ()  && !sub;
+          altn    =  t.lib_opt.alt_naming ();
+          itest   = !t.lib_opt.no_tests ()   && !sub;
+          utest   =  t.lib_opt.unit_tests ();
+          ver     = !t.lib_opt.no_version () && !sub;
 
-        license =  t.lib_opt.license ();
-        break;
-      }
-    case type::bare:
-      {
-        if (o.subdirectory ())
-          fail << "cannot create bare source subdirectory";
+          if (!sub)
+          {
+            license   = t.lib_opt.license ();
+            license_o = t.lib_opt.license_specified ();
+          }
+          break;
+        }
+      case type::bare:
+        {
+          if (sub)
+            fail << "cannot create bare source subdirectory";
 
-        readme  = !t.bare_opt.no_readme ();
-        altn    =  t.bare_opt.alt_naming ();
-        itest   = !t.bare_opt.no_tests ();
+          readme  = !t.bare_opt.no_readme ();
+          altn    =  t.bare_opt.alt_naming ();
+          itest   = !t.bare_opt.no_tests ();
 
-        license =  t.bare_opt.license ();
-        break;
-      }
-    case type::empty:
-      {
-        if (const char* w = (o.subdirectory () ? "source subdirectory" :
-                             o.package ()      ? "package" : nullptr))
-          fail << "cannot create empty " << w;
+          if (!sub)
+          {
+            license   = t.bare_opt.license ();
+            license_o = t.bare_opt.license_specified ();
+          }
+          break;
+        }
+      case type::empty:
+        {
+          if (const char* w = (sub ? "source subdirectory" :
+                               pkg ? "package"             : nullptr))
+            fail << "cannot create empty " << w;
 
-        readme = !t.empty_opt.no_readme ();
-        break;
+          readme = !t.empty_opt.no_readme ();
+          break;
+        }
       }
     }
 
-    // Full name for some common license abbreviations.
+    // Standard/alternative build file/directory naming scheme.
     //
-    string license_full;
-    {
-      auto cmp = [&license] (const char* n)
-      {
-        return casecmp (license, n) == 0;
-      };
-
-      license_full =
-        cmp ("MIT")            ? "MIT License"                            :
-        cmp ("BSD2")           ? "Simplified 2-clause BSD License"        :
-        cmp ("BSD3")           ? "New 3-clause BSD License"               :
-        cmp ("BSD4")           ? "Original 4-clause BSD License"          :
-        cmp ("GPLv2")          ? "GNU General Public License v2.0"        :
-        cmp ("GPLv3")          ? "GNU General Public License v3.0"        :
-        cmp ("LGPLv2")         ? "GNU Lesser General Public License v2.0" :
-        cmp ("LGPLv2.1")       ? "GNU Lesser General Public License v2.1" :
-        cmp ("LGPLv3")         ? "GNU Lesser General Public License v3.0" :
-        cmp ("AGPLv2")         ? "Affero General Public License v2.0"     :
-        cmp ("AGPLv3")         ? "GNU Affero General Public License v3.0" :
-        cmp ("ASLv1")          ? "Apache License v1.0"                    :
-        cmp ("ASLv1.1")        ? "Apache License v1.1"                    :
-        cmp ("ASLv2")          ? "Apache License v2.0"                    :
-        cmp ("MPLv2")          ? "Mozilla Public License v2.0"            :
-        "";
-
-      if (cmp ("BSD"))
-        warn << "BSD license name is ambiguous" <<
-          info << "consider changing to BSD3 for \"New 3-clause BSD License\"";
-    }
+    const dir_path build_dir      (altn ? "build2"     : "build");
+    const string   build_ext      (altn ? "build2"     : "build");
+    const path     buildfile_file (altn ? "build2file" : "buildfile");
 
     // Validate language options.
     //
@@ -205,19 +376,28 @@ namespace bdep
 
     // Validate vcs options.
     //
-    const vcs& vc (o.vcs ());
+    vcs  vc   (o.vcs ());
+    bool vc_o (o.vcs_specified ());
 
-    // Validate argument.
+    // Check if we have the argument (name). If not, then we use the specified
+    // output or current working directory name.
     //
-    string a (args.more () ? args.next () : "");
-    if (a.empty ())
-      fail << "project name argument expected";
+    string a;
+    if (args.more ())
+      a = args.next ();
+    else
+    {
+      if (!o.output_dir_specified ())
+      {
+        // Reduce this case (for the logic that follows) to as-if the current
+        // working directory was specified as the output directory.
+        //
+        o.output_dir (path::current_directory ());
+        o.output_dir_specified (true);
+      }
 
-    // Standard/alternative build file/directory naming scheme.
-    //
-    const dir_path build_dir      (altn ? "build2"     : "build");
-    const string   build_ext      (altn ? "build2"     : "build");
-    const path     buildfile_file (altn ? "build2file" : "buildfile");
+      a = o.output_dir ().leaf ().string ();
+    }
 
     // If the project type is not empty then the project name is also a package
     // name. But even if it is empty, verify it is a valid package name since
@@ -325,13 +505,6 @@ namespace bdep
         prj = out;
       }
 
-      // Check if the output directory already exists.
-      //
-      bool e (exists (out));
-
-      if (e && !empty (out))
-        fail << "directory " << out << " already exists and is not empty";
-
       // Get the actual project/package information as "seen" from the output
       // directory.
       //
@@ -421,21 +594,99 @@ namespace bdep
         }
       }
 
-      // Create the output directory if it doesn't exit.
+      // Create the output directory if it doesn't exit. Note that we are
+      // ok with it already existing and containing some things; see below
+      // for details.
       //
-      if (!e)
-        mk_p (out);
+      if (!exists (out))
+          mk_p (out);
     }
 
     // Source directory relative to package root.
     //
     const dir_path& d (sub ? *sub : dir_path (b));
 
+    // Check if certain things already exist.
+    //
+    optional<vcs::vcs_type> vc_e;      // Detected version control system.
+    optional<string>        readme_e;  // Extracted summary line.
+    optional<string>        license_e; // Extracted license id.
+    {
+      if (!sub)
+      {
+        if (!pkg)
+        {
+          if (git_repository (out))
+            vc_e = vcs::git;
+        }
+
+        // @@ What if in the --package mode these files already exist but are
+        //    not in the package but in the project root? This also goes back
+        //    to an existing desire to somehow reuse project README.md/LICENSE
+        //    in its packages (currently a reference from manifest out of
+        //    package is illegal). Maybe via symlinks? We could probably even
+        //    automatically find and symlink them?
+        //
+        path f;
+
+        // README.md
+        //
+        if (exists ((f = out / "README.md")))
+        {
+          readme_e = extract_summary (f, n);
+
+          if (readme_e->empty ())
+            warn << "unable to extract project summary from " << f <<
+              info << "using generic summary in manifest";
+        }
+
+        // LICENSE
+        //
+        if (exists ((f = out / "LICENSE")))
+        {
+          license_e = extract_license (f);
+
+          if (license_e->empty () && !license_o)
+            fail << "unable to guess project license from " << f <<
+              info << "use license --type|-t sub-option to specify explicitly";
+        }
+      }
+
+      // Merge option and existing values verifying that what already exists
+      // does not conflict with what's requested.
+      //
+      if (vc_e)
+      {
+        if (!vc_o)
+          vc = *vc_e;
+        else if (*vc_e != vc)
+          fail << "existing version control system does not match requested" <<
+            info << "existing: " << *vc_e <<
+            info << "requested: " << vc;
+      }
+
+      if (readme_e)
+      {
+        if (!readme)
+          fail << "no-readme sub-option specified but README already exists";
+      }
+
+      if (license_e)
+      {
+        if (!license_o)
+          license = *license_e;
+        else if (casecmp (*license_e, license) != 0)
+          fail << "extracted license does not match requested" <<
+            info << "extracted: " << *license_e <<
+            info << "requested: " << license;
+      }
+    }
+
     // Initialize the version control system. Do it before writing anything
     // ourselves in case it fails. Also, the email discovery may do the VCS
     // detection.
     //
-    if (!pkg && !sub)
+    if (!vc_e && !pkg && !sub)
     {
       switch (vc)
       {
@@ -444,10 +695,34 @@ namespace bdep
       }
     }
 
-    for (path f;;) // Breakout loop with file currently being written.
+    // We support creating a project that already contains some files provided
+    // none of them conflict with what we are trying to create (with a few
+    // exceptions such as LICENSE and README.md that are handled explicitly
+    // plus packages.manifest to which we append last).
+    //
+    // While we could verify at the outset that none of the files we will be
+    // creating exist, that would be quite unwieldy. So instead we are going
+    // to fail as we go along but, in this case, also cleanup any files that
+    // we have already created.
+    //
+    vector<auto_rmfile> rms;
+    for (path cf;;) // Breakout look with the current file being written.
     try
     {
       ofdstream os;
+      auto open = [&cf, &os, &rms] (path f)
+      {
+        try
+        {
+          os.open (f, fdopen_mode::create | fdopen_mode::exclusive);
+          cf = f;
+          rms.push_back (auto_rmfile (move (f)));
+        }
+        catch (const io_error& e)
+        {
+          fail << "unable to create " << f << ": " << e;
+        }
+      };
 
       // .gitignore
       //
@@ -459,7 +734,7 @@ namespace bdep
         {
           // Use POSIX directory separators here.
           //
-          os.open (f = out / ".gitignore");
+          open (out / ".gitignore");
           if (!pkg)
             os << bdep_dir.posix_representation ()                     << endl
                <<                                                         endl;
@@ -491,7 +766,7 @@ namespace bdep
       //
       if (!pkg && !sub)
       {
-        os.open (f = out / "repositories.manifest");
+        open (out / "repositories.manifest");
         os << ": 1"                                                    << endl
            << "summary: " << n << " project repository"                << endl
            <<                                                             endl
@@ -505,22 +780,12 @@ namespace bdep
            << "#location: https://git.build2.org/hello/libhello.git"   << endl;
         os.close ();
       }
-      // packages.manifest
-      //
-      else if (!sub)
-      {
-        bool e (exists (f = prj / "packages.manifest"));
-        os.open (f, fdopen_mode::create | fdopen_mode::append);
-        os << (e ? ":" : ": 1")                                        << endl
-           << "location: " << pkg->posix_representation ()             << endl;
-        os.close ();
-      }
 
       // README.md
       //
-      if (readme)
+      if (!readme_e && readme)
       {
-        os.open (f = out / "README.md");
+        open (out / "README.md");
         switch (t)
         {
         case type::exe:
@@ -547,7 +812,7 @@ namespace bdep
       }
 
       if (t == type::empty)
-        break;
+        break; // Done.
 
       // manifest
       //
@@ -600,17 +865,38 @@ namespace bdep
           pe = r ? move (*r) : "you@example.org";
         }
 
-        os.open (f = out / "manifest");
+        // Full license name.
+        //
+        string ln;
+        {
+          auto i (licenses.find (license));
+          if (i != licenses.end ())
+          {
+            ln = i->second;
+            license = i->first; // Use canonical case.
+          }
+          else
+          {
+            if (casecmp (license, "BSD") == 0)
+              warn << "BSD license name is ambiguous" <<
+                info << "consider using BSD3 for \"New 3-clause BSD License\"";
+          }
+        }
+
+        open (out / "manifest");
         os << ": 1"                                                    << endl
            << "name: " << n                                            << endl
            << "version: 0.1.0-a.0.z"                                   << endl;
         if (pn)
           os << "project: " << *pn                                     << endl;
-        os << "summary: " << s << " " << l << " " << t                 << endl;
-        if (license_full.empty ())
+        if (readme_e && !readme_e->empty ())
+          os << "summary: " << *readme_e                               << endl;
+        else
+          os << "summary: " << s << " " << l << " " << t               << endl;
+        if (ln.empty ())
           os << "license: " << license                                 << endl;
         else
-          os << "license: " << license << " ; " << license_full << "." << endl;
+          os << "license: " << license << " ; " << ln << "."           << endl;
         if (readme)
           os << "description-file: README.md"                          << endl;
         os << "url: https://example.org/" << (pn ? pn->string () : n)  << endl
@@ -735,7 +1021,7 @@ namespace bdep
 
         // build/bootstrap.build
         //
-        os.open (f = bd / "bootstrap." + build_ext);
+        open (bd / "bootstrap." + build_ext);
         os << "project = " << n                                        << endl;
         if (o.no_amalgamation ())
           os << "amalgamation = # Disabled."                           << endl;
@@ -752,7 +1038,7 @@ namespace bdep
         //
         // Note: see also tests/build/root.build below.
         //
-        os.open (f = bd / "root." + build_ext);
+        open (bd / "root." + build_ext);
 
         switch (l)
         {
@@ -797,7 +1083,7 @@ namespace bdep
         //
         if (vc == vcs::git)
         {
-          os.open (f = bd / ".gitignore");
+          open (bd / ".gitignore");
           os << "config." << build_ext                                 << endl
              << "root/"                                                << endl
              << "bootstrap/"                                           << endl;
@@ -809,7 +1095,7 @@ namespace bdep
       //
       if (!sub)
       {
-        os.open (f = out / buildfile_file);
+        open (out / buildfile_file);
 
         os << "./: {*/ -" << build_dir.posix_representation () << "}"  <<
           (readme ? " doc{README.md}" : "") << " manifest"             << endl;
@@ -823,7 +1109,7 @@ namespace bdep
       }
 
       if (t == type::bare)
-        break;
+        break; // Done
 
       // <base>/ (source subdirectory).
       //
@@ -840,7 +1126,7 @@ namespace bdep
             {
               // <base>/<stem>.c
               //
-              os.open (f = sd / s + ".c");
+              open (sd / s + ".c");
               os << "#include <stdio.h>"                               << endl
                  <<                                                       endl
                  << "int main (int argc, char *argv[])"                << endl
@@ -862,7 +1148,7 @@ namespace bdep
             {
               // <base>/<stem>.<cxx-ext>
               //
-              os.open (f = sd / s + xe);
+              open (sd / s + xe);
               os << "#include <iostream>"                              << endl
                  <<                                                       endl
                  << "int main (int argc, char* argv[])"                << endl
@@ -885,7 +1171,7 @@ namespace bdep
 
           // <base>/buildfile
           //
-          os.open (f = sd / buildfile_file);
+          open (sd / buildfile_file);
           os << "libs ="                                               << endl
              << "#import libs += libhello%lib{hello}"                  << endl
              <<                                                           endl;
@@ -932,7 +1218,7 @@ namespace bdep
           //
           if (vc == vcs::git)
           {
-            os.open (f = sd / ".gitignore");
+            open (sd / ".gitignore");
             os << s                                                    << endl;
             if (utest)
               os << "*.test"                                           << endl;
@@ -951,7 +1237,7 @@ namespace bdep
           //
           if (itest)
           {
-            os.open (f = sd / "testscript");
+            open (sd / "testscript");
             os << ": basics"                                           << endl
                << ":"                                                  << endl
                << "$* 'World' >'Hello, World!'"                        << endl
@@ -974,7 +1260,7 @@ namespace bdep
               {
                 // <base>/<stem>.test.c
                 //
-                os.open (f = sd / s + ".test.c");
+                open (sd / s + ".test.c");
                 os << "#include <stdio.h>"                             << endl
                    << "#include <assert.h>"                            << endl
                    <<                                                     endl
@@ -990,7 +1276,7 @@ namespace bdep
               {
                 // <base>/<stem>.test.<cxx-ext>
                 //
-                os.open (f = sd / s + ".test" + xe);
+                open (sd / s + ".test" + xe);
                 os << "#include <cassert>"                             << endl
                    << "#include <iostream>"                            << endl
                    <<                                                     endl
@@ -1035,7 +1321,7 @@ namespace bdep
 
               // <stem>.h
               //
-              os.open (f = sd / apih);
+              open (sd / apih);
               os << "#pragma once"                                     << endl
                  <<                                                       endl
                  << "#include <stdio.h>"                               << endl
@@ -1052,7 +1338,7 @@ namespace bdep
 
               // <stem>.c
               //
-              os.open (f = sd / s + ".c");
+              open (sd / s + ".c");
               os << "#include <" << ip << apih << ">"                  << endl
                  <<                                                       endl
                  << "#include <errno.h>"                               << endl
@@ -1079,7 +1365,7 @@ namespace bdep
 
               // <stem>[.<hxx-ext>]
               //
-              os.open (f = sd / apih);
+              open (sd / apih);
               os << "#pragma once"                                     << endl
                  <<                                                       endl
                  << "#include <string>"                                << endl
@@ -1114,7 +1400,7 @@ namespace bdep
 
               // <stem>[.<hxx-ext>]
               //
-              os.open (f = sd / apih);
+              open (sd / apih);
               os << "#pragma once"                                     << endl
                  <<                                                       endl
                  << "#include <iosfwd>"                                << endl
@@ -1134,7 +1420,7 @@ namespace bdep
 
               // <stem>.<cxx-ext>
               //
-              os.open (f = sd / s + xe);
+              open (sd / s + xe);
               os << "#include <" << ip << apih << ">"                  << endl
                  <<                                                       endl
                  << "#include <ostream>"                               << endl
@@ -1162,7 +1448,7 @@ namespace bdep
           //
           if (!exph.empty ())
           {
-            os.open (f = sd / exph);
+            open (sd / exph);
             os << "#pragma once"                                       << endl
                <<                                                         endl;
             if (l == lang::cxx)
@@ -1207,7 +1493,7 @@ namespace bdep
           //
           if (ver)
           {
-            os.open (f = sd / verh + ".in");
+            open (sd / verh + ".in");
 
             os << "#pragma once"                                       << endl
                <<                                                         endl
@@ -1249,7 +1535,7 @@ namespace bdep
 
           // buildfile
           //
-          os.open (f = sd / buildfile_file);
+          open (sd / buildfile_file);
           os << "int_libs = # Interface dependencies."                 << endl
              << "imp_libs = # Implementation dependencies."            << endl
              << "#import imp_libs += libhello%lib{hello}"              << endl
@@ -1387,7 +1673,7 @@ namespace bdep
           {
             if (vc == vcs::git)
             {
-              os.open (f = sd / ".gitignore");
+              open (sd / ".gitignore");
               if (ver)
                 os << "# Generated version header."                    << endl
                    << "#"                                              << endl
@@ -1413,7 +1699,7 @@ namespace bdep
               {
                 // <base>/<stem>.test.c
                 //
-                os.open (f = sd / s + ".test.c");
+                open (sd / s + ".test.c");
                 os << "#include <stdio.h>"                             << endl
                    << "#include <assert.h>"                            << endl
                    <<                                                     endl
@@ -1431,7 +1717,7 @@ namespace bdep
               {
                 // <base>/<stem>.test.<cxx-ext>
                 //
-                os.open (f = sd / s + ".test" + xe);
+                open (sd / s + ".test" + xe);
                 os << "#include <cassert>"                             << endl
                    << "#include <iostream>"                            << endl
                    <<                                                     endl
@@ -1452,7 +1738,7 @@ namespace bdep
           //
           if (!sub)
           {
-            os.open (f = bd / "export." + build_ext);
+            open (bd / "export." + build_ext);
             os << "$out_root/"                                         << endl
                << "{"                                                  << endl
                << "  include " << ip                                   << endl
@@ -1477,7 +1763,7 @@ namespace bdep
 
           // tests/build/bootstrap.build
           //
-          os.open (f = tbd / "bootstrap." + build_ext);
+          open (tbd / "bootstrap." + build_ext);
           os << "project = # Unnamed tests subproject."                << endl
              <<                                                           endl
              << "using config"                                         << endl
@@ -1487,7 +1773,7 @@ namespace bdep
 
           // tests/build/root.build
           //
-          os.open (f = tbd / "root." + build_ext);
+          open (tbd / "root." + build_ext);
           switch (l)
           {
           case lang::c:
@@ -1532,7 +1818,7 @@ namespace bdep
           //
           if (vc == vcs::git)
           {
-            os.open (f = tbd / ".gitignore");
+            open (tbd / ".gitignore");
             os << "config." << build_ext                               << endl
                << "root/"                                              << endl
                << "bootstrap/"                                         << endl;
@@ -1541,7 +1827,7 @@ namespace bdep
 
           // tests/buildfile
           //
-          os.open (f = td / buildfile_file);
+          open (td / buildfile_file);
           os << "./: {*/ -" << build_dir.posix_representation () << "}" << endl;
           os.close ();
 
@@ -1549,7 +1835,7 @@ namespace bdep
           //
           if (vc == vcs::git)
           {
-            os.open (f = td / ".gitignore");
+            open (td / ".gitignore");
             os << "# Test executables."                                << endl
                << "#"                                                  << endl
                << "driver"                                             << endl
@@ -1572,7 +1858,7 @@ namespace bdep
             {
               // tests/basics/driver.c
               //
-              os.open (f = td / "driver.c");
+              open (td / "driver.c");
               os << "#include <stdio.h>"                               << endl
                  << "#include <errno.h>"                               << endl
                  << "#include <string.h>"                              << endl
@@ -1613,7 +1899,7 @@ namespace bdep
             {
               // tests/basics/driver.<cxx-ext>
               //
-              os.open (f = td / "driver" + xe);
+              open (td / "driver" + xe);
               os << "#include <cassert>"                               << endl
                  << "#include <sstream>"                               << endl
                  << "#include <stdexcept>"                             << endl
@@ -1656,7 +1942,7 @@ namespace bdep
 
           // tests/basics/buildfile
           //
-          os.open (f = td / buildfile_file);
+          open (td / buildfile_file);
           os << "import libs = " << n << "%lib{" << s << "}"           << endl
              <<                                                           endl
              << "exe{driver}: {" << hs << ' ' << x                     <<
@@ -1674,12 +1960,37 @@ namespace bdep
         }
       }
 
-      break;
+      break; // Done.
     }
     catch (const io_error& e)
     {
-      fail << "unable to write " << f << ": " << e;
+      fail << "unable to write " << cf << ": " << e;
     }
+
+    // Cancel auto-removal of the files we have created.
+    //
+    for (auto& rm: rms)
+      rm.cancel ();
+
+    // packages.manifest
+    //
+    if (pkg)
+    {
+      path f (prj / "packages.manifest");
+      bool e (exists (f));
+      try
+      {
+        ofdstream os (f, fdopen_mode::create | fdopen_mode::append);
+        os << (e ? ":" : ": 1")                                        << endl
+           << "location: " << pkg->posix_representation ()             << endl;
+        os.close ();
+      }
+      catch (const io_error& e)
+      {
+        fail << "unable to write " << f << ": " << e;
+      }
+    }
+
 
     // Run post-hooks.
     //

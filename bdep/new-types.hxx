@@ -127,6 +127,9 @@ namespace bdep
 
     operator vcs_type () const {return vcs;}
 
+    cmd_new_vcs_template&
+    operator= (vcs_type v) {vcs = v; return *this;}
+
     GIT  git_opt;
     NONE none_opt;
 
