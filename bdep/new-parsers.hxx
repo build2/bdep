@@ -27,6 +27,9 @@ namespace bdep
     {
       static void
       parse (cmd_new_type&, bool&, scanner&);
+
+      static void
+      merge (cmd_new_type&, const cmd_new_type&);
     };
 
     template <>
@@ -34,6 +37,9 @@ namespace bdep
     {
       static void
       parse (cmd_new_lang&, bool&, scanner&);
+
+      static void
+      merge (cmd_new_lang&, const cmd_new_lang&);
     };
 
     template <>
@@ -41,6 +47,9 @@ namespace bdep
     {
       static void
       parse (cmd_new_vcs&, bool&, scanner&);
+
+      static void
+      merge (cmd_new_vcs&, const cmd_new_vcs&);
     };
   }
 }

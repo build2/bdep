@@ -114,6 +114,11 @@ namespace bdep
   //
   extern dir_path exec_dir;
 
+  // Path.
+  //
+  dir_path
+  current_directory ();
+
   // Progress.
   //
   extern bool stderr_term; // True if stderr is a terminal.

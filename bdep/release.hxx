@@ -14,6 +14,15 @@ namespace bdep
 {
   int
   cmd_release (const cmd_release_options&, cli::scanner& args);
+
+  default_options_files
+  options_files (const char* cmd,
+                 const cmd_release_options&,
+                 const strings& args);
+
+  cmd_release_options
+  merge_options (const default_options<cmd_release_options>&,
+                 const cmd_release_options&);
 }
 
 #endif // BDEP_RELEASE_HXX

@@ -29,6 +29,9 @@ namespace bdep
     {
       static void
       parse (cmd_ci_override&, bool&, scanner&);
+
+      static void
+      merge (cmd_ci_override&, const cmd_ci_override&);
     };
   }
 }

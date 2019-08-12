@@ -43,6 +43,15 @@ namespace bdep
                           const dir_path& cfg,
                           const dir_path& prj = dir_path ());
 
+  default_options_files
+  options_files (const char* cmd,
+                 const cmd_sync_options&,
+                 const strings& args);
+
+  cmd_sync_options
+  merge_options (const default_options<cmd_sync_options>&,
+                 const cmd_sync_options&);
+
   // Note that the hook is installed into the bpkg-created configuration which
   // always uses the standard build file/directory naming scheme.
   //

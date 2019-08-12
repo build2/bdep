@@ -5,7 +5,7 @@
 #ifndef BDEP_DIAGNOSTICS_HXX
 #define BDEP_DIAGNOSTICS_HXX
 
-#include <utility> // forward()
+#include <utility> // move(), forward()
 
 #include <odb/tracer.hxx>
 
@@ -98,8 +98,8 @@ namespace bdep
     // Zero lines or columns are not printed.
     //
     explicit
-    location (string f, uint64_t l, uint64_t c)
-        : file (move (f)), line (l), column (c) {}
+    location (string f, uint64_t l = 0, uint64_t c = 0)
+        : file (std::move (f)), line (l), column (c) {}
 
     location () = default;
 
@@ -117,6 +117,11 @@ namespace bdep
                             const char* name,
                             const location& l)
         : type_ (type), name_ (name), loc_ (l) {}
+
+    location_prologue_base (const char* type,
+                            const char* name,
+                            const path& f)
+        : type_ (type), name_ (name), loc_ (f.string ()) {}
 
     void
     operator() (const diag_record& r) const;
@@ -151,10 +156,18 @@ namespace bdep
       return location_prologue (epilogue_, type_, name_, l);
     }
 
+    location_prologue
+    operator() (const path& f) const
+    {
+      return location_prologue (epilogue_, type_, name_, f);
+    }
+
     template <typename L>
     location_prologue
     operator() (const L& l) const
     {
+      // get_location() is the user-supplied ADL-searched function.
+      //
       return location_prologue (
         epilogue_, type_, name_, get_location (l, data_));
     }

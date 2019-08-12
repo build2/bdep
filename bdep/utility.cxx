@@ -82,6 +82,19 @@ namespace bdep
 
   bool stderr_term;
 
+  dir_path
+  current_directory ()
+  {
+    try
+    {
+      return dir_path::current_directory ();
+    }
+    catch (const system_error& e)
+    {
+      fail << "unable to obtain current directory: " << e << endf;
+    }
+  }
+
   bool
   exists (const path& f, bool ignore_error)
   {

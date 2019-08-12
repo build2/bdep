@@ -493,7 +493,7 @@ namespace bdep
         if (o.directory_specified ())
           (prj = o.directory ()).complete ().normalize ();
         else
-          prj = path::current_directory ();
+          prj = current_directory ();
 
         out = o.output_dir_specified () ? o.output_dir () : prj / dir_path (n);
         out.complete ().normalize ();
@@ -2002,7 +2002,7 @@ namespace bdep
     optional<command_substitution_map> subs;
     strings                            vars;
 
-    if (!o.post_hook ().empty ())
+    if (o.post_hook_specified ())
     {
       subs = command_substitution_map ();
 
@@ -2117,5 +2117,138 @@ namespace bdep
     }
 
     return 0;
+  }
+
+  default_options_files
+  options_files (const char*, const cmd_new_options& o, const strings&)
+  {
+    // bdep.options
+    // bdep-{config config-add}.options               # -A
+    // bdep-{config config-add config-create}.options # -C
+    // bdep-new.options
+    // bdep-new-{project|package|subdirectory}.options
+
+    // Use the project directory as a start directory in the
+    // package/subdirectory modes and the parent directory of the new project
+    // otherwise.
+    //
+    // Note that we will not validate the command arguments and let cmd_new()
+    // complain later in case of an error.
+    //
+    optional<dir_path> start_dir;
+
+    auto output_parent_dir = [&o] ()
+    {
+      return o.output_dir ().directory ().complete ().normalize ();
+    };
+
+    if (o.package () || o.subdirectory ())
+    {
+      auto project_dir = [&o] ()
+      {
+        return dir_path (o.directory ()).complete ().normalize ();
+      };
+
+      start_dir = o.output_dir_specified () ? output_parent_dir () :
+                  o.directory_specified  () ? project_dir ()       :
+                  current_directory ();
+
+      // Get the actual project directory.
+      //
+      project_package pp (find_project_package (*start_dir,
+                                                true /* ignore_not_found */));
+
+      if (!pp.project.empty ())
+        start_dir = move (pp.project);
+      else if (!o.no_checks ())
+        start_dir = nullopt;           // Let cmd_new() fail.
+    }
+    else // New project.
+    {
+      start_dir = o.output_dir_specified ()
+                  ? output_parent_dir ()
+                  : current_directory ();
+    }
+
+    default_options_files r {{path ("bdep.options")}, move (start_dir)};
+
+    auto add = [&r] (const string& n)
+    {
+      r.files.push_back (path ("bdep-" + n + ".options"));
+    };
+
+    if (o.config_add_specified () || o.config_create_specified ())
+    {
+      add ("config");
+      add ("config-add");
+    }
+
+    if (o.config_create_specified ())
+      add ("config-create");
+
+    add ("new");
+
+    // Add the mode-specific options file.
+    //
+    add (o.subdirectory () ? "new-subdirectory" :
+         o.package ()      ? "new-package"      :
+                             "new-project");
+
+    return r;
+  }
+
+  cmd_new_options
+  merge_options (const default_options<cmd_new_options>& defs,
+                 const cmd_new_options& cmd)
+  {
+    // While validating/merging the default options, check for the "remote"
+    // hooks presence and prepare the prompt, if that's the case.
+    //
+    diag_record dr;
+
+    auto verify = [&dr] (const default_options_entry<cmd_new_options>& e,
+                         const cmd_new_options&)
+    {
+      const cmd_new_options& o (e.options);
+
+      auto forbid = [&e] (const char* opt, bool specified)
+      {
+        if (specified)
+          fail (e.file) << opt << " in default options file";
+      };
+
+      forbid ("--output-dir|-o",    o.output_dir_specified ());
+      forbid ("--directory|-d",     o.directory_specified ());
+      forbid ("--package",          o.package ());
+      forbid ("--subdirectory",     o.subdirectory ());
+      forbid ("--no-checks",        o.no_checks ());
+      forbid ("--config-add|-A",    o.config_add_specified ());
+      forbid ("--config-create|-C", o.config_create_specified ());
+      forbid ("--wipe",             o.wipe ()); // Dangerous.
+
+      if (e.remote && o.post_hook_specified ())
+      {
+        if (dr.empty ())
+          dr << text << "remote post-creation hooks:";
+
+        dr << "\n  " << e.file << ':';
+
+        const strings& hs (o.post_hook ());
+        for (const string& h: hs)
+          dr << (hs.size () == 1 ? " " : "\n    ") << h;
+      }
+    };
+
+    cmd_new_options r (merge_default_options (defs, cmd, verify));
+
+    if (!dr.empty ())
+    {
+      dr.flush ();
+
+      if (!yn_prompt ("execute? [y/n]"))
+        throw failed ();
+    }
+
+    return r;
   }
 }

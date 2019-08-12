@@ -115,5 +115,11 @@ namespace bdep
 
       xs = true;
     }
+
+    void parser<cmd_ci_override>::
+    merge (cmd_ci_override& b, const cmd_ci_override& a)
+    {
+      b.insert (b.end (), a.begin (), a.end ());
+    }
   }
 }

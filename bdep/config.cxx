@@ -786,4 +786,70 @@ namespace bdep
     assert (false); // Unhandled (new) subcommand.
     return 1;
   }
+
+  default_options_files
+  options_files (const char*,
+                 const cmd_config_options& o,
+                 const strings& args)
+  {
+    // bdep.options
+    // bdep-config.options
+    // bdep-config-<subcmd>.options
+    //
+    // Note that bdep-config-add.options is loaded for both the add and
+    // create subcommands since create is-a add.
+    //
+    // Also note that these files are loaded by other commands (bdep-init
+    // and bdep-new).
+
+    default_options_files r {
+      {path ("bdep.options"), path ("bdep-config.options")},
+      find_project (o)};
+
+    // Validate the subcommand.
+    //
+    {
+      cli::vector_scanner scan (args);
+      parse_command<cmd_config_subcommands> (scan,
+                                             "config subcommand",
+                                             "bdep help config");
+    }
+
+    const string& sc (args[0]);
+
+    auto add = [&r] (const string& n)
+    {
+      r.files.push_back (path ("bdep-" + n + ".options"));
+    };
+
+    if (sc == "create")
+      add ("config-add");
+
+    add ("config-" + sc);
+
+    return r;
+  }
+
+  cmd_config_options
+  merge_options (const default_options<cmd_config_options>& defs,
+                 const cmd_config_options& cmd)
+  {
+    return merge_default_options (
+      defs,
+      cmd,
+      [] (const default_options_entry<cmd_config_options>& e,
+          const cmd_config_options&)
+      {
+        const cmd_config_options& o (e.options);
+
+        auto forbid = [&e] (const char* opt, bool specified)
+        {
+          if (specified)
+            fail (e.file) << opt << " in default options file";
+        };
+
+        forbid ("--directory|-d", o.directory_specified ());
+        forbid ("--wipe",         o.wipe ()); // Dangerous.
+      });
+  }
 }

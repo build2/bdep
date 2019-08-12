@@ -39,6 +39,15 @@ namespace bdep
 
   int
   cmd_init (const cmd_init_options&, cli::group_scanner& args);
+
+  default_options_files
+  options_files (const char* cmd,
+                 const cmd_init_options&,
+                 const strings& args);
+
+  cmd_init_options
+  merge_options (const default_options<cmd_init_options>&,
+                 const cmd_init_options&);
 }
 
 #endif // BDEP_INIT_HXX

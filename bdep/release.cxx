@@ -725,7 +725,7 @@ namespace bdep
     //
     project prj;
     {
-      // We publish all the packages in the project. We could have required a
+      // We release all the packages in the project. We could have required a
       // configuration and verified that they are all initialized, similar to
       // publish. But seeing that we don't need the configuration (unlike
       // publish), this feels like an unnecessary complication. We also don't
@@ -859,7 +859,7 @@ namespace bdep
 
       for (const package& p: prj.packages)
       {
-        dr << "  package: " << p.name    << '\n'
+        dr << "  package: " << p.name            << '\n'
            << "  current: " << p.current_version << '\n';
 
         if (p.release_version)
@@ -1292,7 +1292,7 @@ namespace bdep
 
         // Check if CWD is the project root and add -C if it's not.
         //
-        if (prj.path != path::current_directory())
+        if (prj.path != current_directory())
         {
           // Quote the directory if it contains spaces.
           //
@@ -1316,5 +1316,51 @@ namespace bdep
     }
 
     return 0;
+  }
+
+  default_options_files
+  options_files (const char*, const cmd_release_options& o, const strings&)
+  {
+    // bdep.options
+    // bdep-release.options
+    // bdep-release{version|revision|open|tag}.options
+
+    default_options_files r {
+      {path ("bdep.options"), path ("bdep-release.options")},
+      find_project (o.directory ())};
+
+    // Add the mode-specific options file.
+    //
+    r.files.push_back (path (o.revision () ? "bdep-release-revision.options" :
+                             o.open     () ? "bdep-release-open.options"     :
+                             o.tag      () ? "bdep-release-tag.options"      :
+                                             "bdep-release-version.options"));
+
+    return r;
+  }
+
+  cmd_release_options
+  merge_options (const default_options<cmd_release_options>& defs,
+                 const cmd_release_options& cmd)
+  {
+    return merge_default_options (
+      defs,
+      cmd,
+      [] (const default_options_entry<cmd_release_options>& e,
+          const cmd_release_options&)
+      {
+        const cmd_release_options& o (e.options);
+
+        auto forbid = [&e] (const char* opt, bool specified)
+        {
+          if (specified)
+            fail (e.file) << opt << " in default options file";
+        };
+
+        forbid ("--directory|-d", o.directory_specified ());
+        forbid ("--revision",     o.revision ());
+        forbid ("--open",         o.open ());
+        forbid ("--tag",          o.tag ());
+      });
   }
 }

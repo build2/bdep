@@ -6,9 +6,10 @@
 #  include <signal.h> // signal()
 #endif
 
-#include <cstring>   // strcmp()
+#include <cstring>     // strcmp()
 #include <iostream>
-#include <exception> // set_terminate(), terminate_handler
+#include <exception>   // set_terminate(), terminate_handler
+#include <type_traits> // enable_if, is_base_of
 
 #include <libbutl/backtrace.mxx> // backtrace()
 
@@ -44,6 +45,61 @@ using namespace bdep;
 
 namespace bdep
 {
+  // Deduce the default options files and the directory to start searching
+  // from based on the command line options and arguments.
+  //
+  // default_options_files
+  // options_files (const char* cmd,
+  //                const cmd_xxx_options&,
+  //                const strings& args);
+
+  // Return the default options files and the project directory as a search
+  // start directory for commands that operate on project/packages (and thus
+  // have their options derived from project_options).
+  //
+  // Note that currently we don't support package-level default options files,
+  // since it can be surprising that running a command for multiple packages
+  // and doing the same for these packages individually may end up with
+  // different outcomes.
+  //
+  static inline default_options_files
+  options_files (const char* cmd, const project_options& o, const strings&)
+  {
+    // bdep.options
+    // bdep-<cmd>.options
+
+    return default_options_files {
+      {path ("bdep.options"), path (string ("bdep-") + cmd + ".options")},
+      find_project (o)};
+  }
+
+  // Merge the default options and the command line options. Fail if options
+  // used to deduce the default options files or the start directory appear in
+  // an options file (or for other good reasons).
+  //
+  // cmd_xxx_options
+  // merge_options (const default_options<cmd_xxx_options>&,
+  //                const cmd_xxx_options&);
+
+  // Merge the default options and the command line options for commands
+  // that operate on project/packages. Fail if --directory|-d appears in the
+  // options file to avoid the chicken and egg problem.
+  //
+  template <typename O>
+  static inline typename enable_if<is_base_of<project_options, O>::value,
+                                   O>::type
+  merge_options (const default_options<O>& defs, const O& cmd)
+  {
+    return merge_default_options (
+      defs,
+      cmd,
+      [] (const default_options_entry<O>& e, const O&)
+      {
+        if (e.options.directory_specified ())
+          fail (e.file) << "--directory|-d in default options file";
+      });
+  }
+
   int
   main (int argc, char* argv[]);
 }
@@ -93,6 +149,7 @@ static O
 init (const common_options& co,
       cli::group_scanner& scan,
       strings& args,
+      const char* cmd,
       bool keep_sep,
       bool tmp)
 {
@@ -139,6 +196,24 @@ init (const common_options& co,
     // Copy over the argument including the group.
     //
     scan_argument (args, scan);
+  }
+
+  // Handle default option files.
+  //
+  // Note: don't need to use group_scaner (no arguments in options files).
+  //
+  try
+  {
+    o = merge_options (
+      load_default_options<O, cli::argv_file_scanner, cli::unknown_mode> (
+        nullopt /* sys_dir */,
+        path::home_directory (),
+        options_files (cmd, o, args)),
+      o);
+  }
+  catch (const system_error& e)
+  {
+    fail << "unable to load default options files: " << e;
   }
 
   // Global initializations.
@@ -248,6 +323,7 @@ try
     return help (init<help_options> (co,
                                      scan,
                                      argsv,
+                                     "help",
                                      false /* keep_sep */,
                                      false /* tmp */),
                  "",
@@ -269,6 +345,7 @@ try
     ho = init<help_options> (co,
                              scan,
                              argsv,
+                             "help",
                              false /* keep_sep */,
                              false /* tmp */);
 
@@ -319,16 +396,21 @@ try
     //  break;
     // }
     //
-#define COMMAND_IMPL(ON, FN, SN, SEP, TMP)                                    \
-    if (cmd.ON ())                                                            \
-    {                                                                         \
-      if (h)                                                                  \
-        r = help (ho, SN, print_bdep_##FN##_usage);                           \
-      else                                                                    \
-        r = cmd_##FN (init<cmd_##FN##_options> (co, scan, argsv, SEP, TMP),   \
-                      args);                                                  \
-                                                                              \
-      break;                                                                  \
+#define COMMAND_IMPL(ON, FN, SN, SEP, TMP)             \
+    if (cmd.ON ())                                     \
+    {                                                  \
+      if (h)                                           \
+        r = help (ho, SN, print_bdep_##FN##_usage);    \
+      else                                             \
+        r = cmd_##FN (init<cmd_##FN##_options> (co,    \
+                                                scan,  \
+                                                argsv, \
+                                                SN,    \
+                                                SEP,   \
+                                                TMP),  \
+                      args);                           \
+                                                       \
+      break;                                           \
     }
 
     // Temp dir is initialized manually for these commands.

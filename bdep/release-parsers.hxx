@@ -24,6 +24,12 @@ namespace bdep
     {
       static void
       parse (cmd_release_current_tag&, bool&, scanner&);
+
+      static void
+      merge (cmd_release_current_tag& b, const cmd_release_current_tag& a)
+      {
+        b = a;
+      }
     };
   }
 }

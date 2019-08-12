@@ -62,4 +62,22 @@ namespace bdep
 
     throw failed ();
   }
+
+  default_options_files
+  options_files (const char*, const help_options&, const strings&)
+  {
+    // bdep.options
+    // bdep-help.options
+
+    return default_options_files {
+      {path ("bdep.options"), path ("bdep-help.options")},
+      nullopt /* start_dir */};
+  }
+
+  help_options
+  merge_options (const default_options<help_options>& defs,
+                 const help_options& cmd)
+  {
+    return merge_default_options (defs, cmd);
+  }
 }

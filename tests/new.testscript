@@ -701,6 +701,47 @@ status += -d prj
     }
   }
 
+  : default-options-files
+  :
+  {
+    : remote-post-hook
+    :
+    if $posix
+    {
+      $* -t empty prj 2>! &prj/***;
+
+      mkdir prj/.build2;
+
+      cat <<EOI >=prj/.build2/bdep-new-package.options;
+        --post-hook "echo .idea/ >>.gitignore"
+        EOI
+
+      $* --package -t lib -d prj libprj <'y' 2>>~%EOE%;
+        remote post-creation hooks:
+        %  .+/.build2/bdep-new-package.options: echo .idea/ >>.gitignore%
+        %execute\? \[y/n\] created new library package libprj in .+/prj/libprj/%
+        EOE
+
+      $build prj/libprj/ $cxx 2>>~%EOE%
+        %(version\.in|c\+\+|ar|ld) .+%{7}
+        EOE
+    }
+
+    : disallow-options
+    :
+    {
+      mkdir .build2;
+
+      cat <<EOI >=.build2/bdep-new.options;
+        --package
+        EOI
+
+      $* prj 2>>/~%EOE%d != 0
+        %\.+/.build2/bdep-new.options: error: --package in default options file%
+        EOE
+    }
+  }
+
   : post-hook
   :
   if $posix

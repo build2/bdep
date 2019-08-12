@@ -16,6 +16,12 @@ namespace bdep
 
   int
   help (const help_options&, const string& topic, usage_function* usage);
+
+  default_options_files
+  options_files (const char* cmd, const help_options&, const strings& args);
+
+  help_options
+  merge_options (const default_options<help_options>&, const help_options&);
 }
 
 #endif // BDEP_HELP_HXX

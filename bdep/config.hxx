@@ -49,6 +49,15 @@ namespace bdep
                            const char* what,
                            optional<string>& name,
                            optional<uint64_t>& id);
+
+  default_options_files
+  options_files (const char* cmd,
+                 const cmd_config_options&,
+                 const strings& args);
+
+  cmd_config_options
+  merge_options (const default_options<cmd_config_options>&,
+                 const cmd_config_options&);
 }
 
 #endif // BDEP_CONFIG_HXX

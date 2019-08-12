@@ -28,6 +28,7 @@
 #include <libbutl/optional.mxx>
 #include <libbutl/fdstream.mxx>
 #include <libbutl/small-vector.mxx>
+#include <libbutl/default-options.mxx>
 #include <libbutl/semantic-version.mxx>
 #include <libbutl/standard-version.mxx>
 
@@ -111,6 +112,12 @@ namespace bdep
   using butl::ofdstream;
   using butl::fdopen_mode;
   using butl::fdstream_mode;
+
+  // <libbutl/default-options.mxx>
+  //
+  using butl::default_options_files;
+  using butl::default_options_entry;
+  using butl::default_options;
 
   // <libbutl/semantic-version.mxx>
   // <libbutl/standard-version.mxx>

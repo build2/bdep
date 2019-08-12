@@ -76,6 +76,8 @@ namespace bdep
       r.parse (s);
     }
 
+    // parser<type>
+    //
     void parser<type>::
     parse (type& r, bool& xs, scanner& s)
     {
@@ -114,6 +116,19 @@ namespace bdep
       xs = true;
     }
 
+    void parser<type>::
+    merge (type& b, const type& a)
+    {
+      b.type = a.type;
+
+      b.exe_opt.merge   (a.exe_opt);
+      b.lib_opt.merge   (a.lib_opt);
+      b.bare_opt.merge  (a.bare_opt);
+      b.empty_opt.merge (a.empty_opt);
+    }
+
+    // parser<lang>
+    //
     void parser<lang>::
     parse (lang& r, bool& xs, scanner& s)
     {
@@ -142,6 +157,17 @@ namespace bdep
       xs = true;
     }
 
+    void parser<lang>::
+    merge (lang& b, const lang& a)
+    {
+      b.lang = a.lang;
+
+      b.c_opt.merge   (a.c_opt);
+      b.cxx_opt.merge (a.cxx_opt);
+    }
+
+    // parser<vcs>
+    //
     void parser<vcs>::
     parse (vcs& r, bool& xs, scanner& s)
     {
@@ -168,6 +194,15 @@ namespace bdep
         throw invalid_value (o, l);
 
       xs = true;
+    }
+
+    void parser<vcs>::
+    merge (vcs& b, const vcs& a)
+    {
+      b.vcs = a.vcs;
+
+      b.git_opt.merge  (a.git_opt);
+      b.none_opt.merge (a.none_opt);
     }
   }
 }

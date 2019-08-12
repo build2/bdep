@@ -336,7 +336,7 @@ namespace bdep
     }
     else
     {
-      project_package p (find_project_package (path::current_directory ()));
+      project_package p (find_project_package (current_directory ()));
 
       r.project = move (p.project);
 

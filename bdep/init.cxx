@@ -233,4 +233,58 @@ namespace bdep
 
     return 0;
   }
+
+  default_options_files
+  options_files (const char*, const cmd_init_options& o, const strings&)
+  {
+    // bdep.options
+    // bdep-{config config-add}.options               # -A
+    // bdep-{config config-add config-create}.options # -C
+    // bdep-init.options
+
+    default_options_files r {{path ("bdep.options")}, find_project (o)};
+
+    auto add = [&r] (const string& n)
+    {
+      r.files.push_back (path ("bdep-" + n + ".options"));
+    };
+
+    if (o.config_add_specified () || o.config_create_specified ())
+    {
+      add ("config");
+      add ("config-add");
+    }
+
+    if (o.config_create_specified ())
+      add ("config-create");
+
+    add ("init");
+
+    return r;
+  }
+
+  cmd_init_options
+  merge_options (const default_options<cmd_init_options>& defs,
+                 const cmd_init_options& cmd)
+  {
+    return merge_default_options (
+      defs,
+      cmd,
+      [] (const default_options_entry<cmd_init_options>& e,
+          const cmd_init_options&)
+      {
+        const cmd_init_options& o (e.options);
+
+        auto forbid = [&e] (const char* opt, bool specified)
+        {
+          if (specified)
+            fail (e.file) << opt << " in default options file";
+        };
+
+        forbid ("--directory|-d",     o.directory_specified ());
+        forbid ("--config-add|-A",    o.config_add_specified ());
+        forbid ("--config-create|-C", o.config_create_specified ());
+        forbid ("--wipe",             o.wipe ()); // Dangerous.
+      });
+  }
 }

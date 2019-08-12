@@ -861,4 +861,59 @@ namespace bdep
 
     return 0;
   }
+
+  default_options_files
+  options_files (const char*, const cmd_sync_options& o, const strings&)
+  {
+    // bdep.options
+    // bdep-{sync|sync-implicit}.options
+
+    default_options_files r {{path ("bdep.options")}, nullopt};
+
+    // Add bdep-sync-implicit.options for an implicit sync and
+    // bdep-sync.options otherwise. Omit the search start dir in the former
+    // case.
+    //
+    auto add = [&r] (const string& n)
+    {
+      r.files.push_back (path ("bdep-" + n + ".options"));
+    };
+
+    if (o.implicit () || o.hook_specified ())
+    {
+      add ("sync-implicit");
+    }
+    else
+    {
+      add ("sync");
+
+      r.start_dir = find_project (o);
+    }
+
+    return r;
+  }
+
+  cmd_sync_options
+  merge_options (const default_options<cmd_sync_options>& defs,
+                 const cmd_sync_options& cmd)
+  {
+    return merge_default_options (
+      defs,
+      cmd,
+      [] (const default_options_entry<cmd_sync_options>& e,
+          const cmd_sync_options&)
+      {
+        const cmd_sync_options& o (e.options);
+
+        auto forbid = [&e] (const char* opt, bool specified)
+        {
+          if (specified)
+            fail (e.file) << opt << " in default options file";
+        };
+
+        forbid ("--directory|-d", o.directory_specified ());
+        forbid ("--implicit",     o.implicit ());
+        forbid ("--hook",         o.hook_specified ());
+      });
+  }
 }
