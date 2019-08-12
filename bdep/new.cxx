@@ -714,7 +714,9 @@ namespace bdep
       {
         try
         {
-          os.open (f, fdopen_mode::create | fdopen_mode::exclusive);
+          os.open (f, (fdopen_mode::out    |
+                       fdopen_mode::create |
+                       fdopen_mode::exclusive));
           cf = f;
           rms.push_back (auto_rmfile (move (f)));
         }
@@ -1980,7 +1982,9 @@ namespace bdep
       bool e (exists (f));
       try
       {
-        ofdstream os (f, fdopen_mode::create | fdopen_mode::append);
+        ofdstream os (f, (fdopen_mode::out    |
+                          fdopen_mode::create |
+                          fdopen_mode::append));
         os << (e ? ":" : ": 1")                                        << endl
            << "location: " << pkg->posix_representation ()             << endl;
         os.close ();
