@@ -316,7 +316,7 @@ namespace bdep
 
     try
     {
-      ofdstream ofs (f, ios::binary);
+      ofdstream ofs (f, fdopen_mode::binary);
       auto_rmfile arm (f); // Try to remove on failure ignoring errors.
 
       serialize_manifest (m, ofs, f.string (), what, move (ff));
