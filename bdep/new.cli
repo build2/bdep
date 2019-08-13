@@ -22,12 +22,12 @@ namespace bdep
 
     "\h|SYNOPSIS|
 
-     \c{\b{bdep new} [<options>] [\b{--no-init}] <spec> <name>\n
-        \b{bdep new} [<options>] \b{--config-add|-A} <cfg-dir> [\b{@}<cfg-name>] <spec> <name>\n
-        \b{bdep new} [<options>] \b{--config-create|-C} <cfg-dir> [\b{@}<cfg-name>] <spec> <name>\n
+     \c{\b{bdep new} [<options>] [\b{--no-init}] <spec> [<name>]\n
+        \b{bdep new} [<options>] \b{--config-add|-A} <cfg-dir> [\b{@}<cfg-name>] <spec> [<name>]\n
+        \b{bdep new} [<options>] \b{--config-create|-C} <cfg-dir> [\b{@}<cfg-name>] <spec> [<name>]\n
         \ \ \ \ \ \ \ \ \ [<cfg-args>]\n
-        \b{bdep new} [<options>] \b{--package} [<prj-spec>] <spec> <name>\n
-        \b{bdep new} [<options>] \b{--subdirectory} [<prj-spec>] <spec> <name>}
+        \b{bdep new} [<options>] \b{--package} [<prj-spec>] <spec> [<name>]\n
+        \b{bdep new} [<options>] \b{--subdirectory} [<prj-spec>] <spec> [<name>]}
 
      \c{<spec> \ \ \ \ = [<type>] [<lang>] [<vcs>]\n
         <type> \ \ \ \ = \b{--type}|\b{-t} (\b{exe}|\b{lib}|\b{bare}|\b{empty})[\b{,}<type-opt>...]\n
@@ -45,8 +45,6 @@ namespace bdep
      \cb{--subdirectory} first create according to <spec> a new \cb{build2}
      project/package called <name> in the <name> subdirectory of the current
      working directory (unless overridden with \c{\b{--output-dir}|\b{-o}}).
-     See \l{bpkg#package-name Package Name} for details on project/package
-     names.
 
      The first form then, unless the \cb{--no-init} option is specified,
      initializes an empty project database as if by executing the
@@ -104,6 +102,20 @@ namespace bdep
 
      After executing these commands the \cb{hello} project will contain two
      source subdirectories, \cb{libhello/} and \cb{hello/}.
+
+     In all the forms, if <name> is omitted, then the current working
+     directory name (unless overridden with \c{\b{--output-dir}|\b{-o}}) is
+     used as the project/package/subdirectory name. See \l{bpkg#package-name
+     Package Name} for details on project/package names. For example:
+
+     \
+     $ # Create a project on one of the Git hosting services.
+
+     $ git clone .../libhello.git
+     $ cd libhello
+
+     $ bdep new -t lib -l c++
+     \
 
      The project parameters such as type (executable, library, etc), language,
      and version control system can be customized as described next. Some of
