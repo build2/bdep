@@ -816,6 +816,10 @@ namespace bdep
           open (out / ".gitignore");
           if (!pkg)
             os << bdep_dir.posix_representation ()                     << endl
+               <<                                                         endl
+               << "# Local default options files."                     << endl
+               << "#"                                                  << endl
+               << ".build2/local/"                                     << endl
                <<                                                         endl;
           if (t != type::empty)
             os << "# Compiler/linker output."                          << endl
