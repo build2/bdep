@@ -599,8 +599,85 @@ namespace bdep
       // for details.
       //
       if (!exists (out))
-          mk_p (out);
+        mk_p (out);
     }
+
+    // Run pre/post hooks.
+    //
+    auto run_hooks = [&prj, &sub, &pkg, &n, &b, &s, &t, &l, &vc, &out]
+                     (const strings& hooks, const char* what)
+    {
+      command_substitution_map subs;
+      strings                  vars;
+
+      auto add_var = [&subs, &vars] (string name, string value)
+      {
+        vars.push_back ("BDEP_NEW_"                              +
+                        ucase (const_cast<const string&> (name)) +
+                        '='                                      +
+                        value);
+
+        subs[move (name)] = move (value);
+      };
+
+      add_var ("mode", sub ? "subdirectory" : pkg ? "package" : "project");
+      add_var ("name", n);
+      add_var ("base", b);
+      add_var ("stem", s);
+      add_var ("type", t.string ());
+      add_var ("lang", l.string (true /* lower */));
+      add_var ("vcs",  vc.string ());
+      add_var ("root", prj.string ());
+
+      // Note: out directory path is absolute and normalized.
+      //
+      optional<process_env> env (process_env (process_path (), out, vars));
+
+      for (const string& cmd: hooks)
+      {
+        try
+        {
+          process_exit e (command_run (cmd,
+                                       env,
+                                       subs,
+                                       '@',
+                                       [] (const char* const args[], size_t n)
+                                       {
+                                         if (verb >= 2)
+                                         {
+                                           print_process (args, n);
+                                         }
+                                       }));
+
+          if (!e)
+          {
+            if (e.normal ())
+              throw failed (); // Assume the command issued diagnostics.
+
+            fail << what << " hook '" << cmd << "' " << e;
+          }
+        }
+        catch (const invalid_argument& e)
+        {
+          fail << "invalid " << what << " hook '" << cmd << "': " << e;
+        }
+        catch (const io_error& e)
+        {
+          fail << "unable to execute " << what << " hook '" << cmd << "': "
+               << e;
+        }
+        catch (const process_error& e)
+        {
+          fail << "unable to execute " << what << " hook '" << cmd << "': "
+               << e;
+        }
+      }
+    };
+
+    // Run pre hooks.
+    //
+    if (o.pre_hook_specified ())
+      run_hooks (o.pre_hook (), "pre");
 
     // Source directory relative to package root.
     //
@@ -706,7 +783,7 @@ namespace bdep
     // we have already created.
     //
     vector<auto_rmfile> rms;
-    for (path cf;;) // Breakout look with the current file being written.
+    for (path cf;;) // Breakout loop with the current file being written.
     try
     {
       ofdstream os;
@@ -1995,78 +2072,10 @@ namespace bdep
       }
     }
 
-
-    // Run post-hooks.
+    // Run post hooks.
     //
-    optional<process_env>              env;
-    optional<command_substitution_map> subs;
-    strings                            vars;
-
     if (o.post_hook_specified ())
-    {
-      subs = command_substitution_map ();
-
-      auto add_var = [&subs, &vars] (string name, string value)
-      {
-        vars.push_back ("BDEP_NEW_"                              +
-                        ucase (const_cast<const string&> (name)) +
-                        '='                                      +
-                        value);
-
-        (*subs)[move (name)] = move (value);
-      };
-
-      add_var ("mode", sub ? "subdirectory" : pkg ? "package" : "project");
-      add_var ("name", n);
-      add_var ("base", move (b));
-      add_var ("stem", move (s));
-      add_var ("type", t.string ());
-      add_var ("lang", l.string (true /* lower */));
-      add_var ("vcs",  vc.string ());
-      add_var ("root", prj.string ());
-
-      env  = process_env (process_path (), out, vars);
-    }
-
-    for (const string& cmd: o.post_hook ())
-    {
-      try
-      {
-        // Note: out directory path is absolute and normalized.
-        //
-        process_exit e (command_run (cmd,
-                                     env,
-                                     subs,
-                                     '@',
-                                     [] (const char* const args[], size_t n)
-                                     {
-                                       if (verb >= 2)
-                                       {
-                                         print_process (args, n);
-                                       }
-                                     }));
-
-        if (!e)
-        {
-          if (e.normal ())
-            throw failed (); // Assume the command issued diagnostics.
-
-          fail << "post hook '" << cmd << "' " << e;
-        }
-      }
-      catch (const invalid_argument& e)
-      {
-        fail << "invalid post hook '" << cmd << "': " << e;
-      }
-      catch (const io_error& e)
-      {
-        fail << "unable to execute post hook '" << cmd << "': " << e;
-      }
-      catch (const process_error& e)
-      {
-        fail << "unable to execute post hook '" << cmd << "': " << e;
-      }
-    }
+      run_hooks (o.post_hook (), "post");
 
     if (verb)
       text << "created new " << t << ' ' << (sub ? "source subdirectory" :
@@ -2226,16 +2235,26 @@ namespace bdep
       forbid ("--config-create|-C", o.config_create_specified ());
       forbid ("--wipe",             o.wipe ()); // Dangerous.
 
-      if (e.remote && o.post_hook_specified ())
+      if (e.remote && (o.pre_hook_specified () || o.post_hook_specified ()))
       {
         if (dr.empty ())
-          dr << text << "remote post-creation hooks:";
+          dr << text;
+        else
+          dr << '\n';
 
-        dr << "\n  " << e.file << ':';
+        dr << "remote hook commands in " << e.file << ':';
 
-        const strings& hs (o.post_hook ());
-        for (const string& h: hs)
-          dr << (hs.size () == 1 ? " " : "\n    ") << h;
+        auto add = [&dr] (const strings& hs, const char* what)
+        {
+          for (const string& cmd: hs)
+            dr << "\n  " << what << ' ' << cmd;
+        };
+
+        if (o.pre_hook_specified ())
+          add (o.pre_hook (),   "pre: ");
+
+        if (o.post_hook_specified ())
+          add (o.post_hook (), "post:");
       }
     };
 

@@ -704,7 +704,7 @@ status += -d prj
   : default-options-files
   :
   {
-    : remote-post-hook
+    : remote-hooks
     :
     if $posix
     {
@@ -713,14 +713,31 @@ status += -d prj
       mkdir prj/.build2;
 
       cat <<EOI >=prj/.build2/bdep-new-package.options;
-        --post-hook "echo .idea/ >>.gitignore"
+        --pre-hook  "mv .gitignore .gitignore.bak"
+        --post-hook "cat .gitignore.bak >>.gitignore"
+        --post-hook "rm .gitignore.bak"
+        EOI
+
+      mkdir --no-cleanup prj/libprj;
+
+      cat <<EOI >=prj/libprj/.gitignore;
+        CMakeCache.txt
         EOI
 
       $* --package -t lib -d prj libprj <'y' 2>>~%EOE%;
-        remote post-creation hooks:
-        %  .+/.build2/bdep-new-package.options: echo .idea/ >>.gitignore%
+        %remote hook commands in .+/.build2/bdep-new-package.options:%
+          pre:  mv .gitignore .gitignore.bak
+          post: cat .gitignore.bak >>.gitignore
+          post: rm .gitignore.bak
         %execute\? \[y/n\] created new library package libprj in .+/prj/libprj/%
         EOE
+
+      cat prj/libprj/.gitignore >>~%EOO%;
+        # Compiler/linker output.
+        #
+        %.+
+        CMakeCache.txt
+        EOO
 
       $build prj/libprj/ $cxx 2>>~%EOE%
         %(version\.in|c\+\+|ar|ld) .+%{7}
@@ -823,6 +840,43 @@ status += -d prj
       :
       $* prj --post-hook '""' 2>>~%EOE% &prj/*** != 0
         %error: unable to execute post hook '""': .+%
+        EOE
+    }
+  }
+
+  : pre-hook
+  :
+  if $posix
+  {
+    : success
+    :
+    {
+      mkdir --no-cleanup prj &prj/***;
+
+      cat <<EOI >=prj/.gitignore;
+        CMakeCache.txt
+        EOI
+
+      $* prj --pre-hook  "mv .gitignore .gitignore.bak"    \
+             --post-hook "cat .gitignore.bak >>.gitignore" \
+             --post-hook "rm .gitignore.bak" 2>>/"EOE";
+        created new executable project prj in $~/prj/
+        EOE
+
+      cat prj/.gitignore >>~%EOO%
+        .bdep/
+        %.+
+        CMakeCache.txt
+        EOO
+    }
+
+    : failure
+    :
+    {
+      : substitution
+      :
+      $* prj --pre-hook 'echo foo >>@bar@' 2>>EOE &prj/*** != 0
+        error: invalid pre hook 'echo foo >>@bar@': unknown variable 'bar'
         EOE
     }
   }
