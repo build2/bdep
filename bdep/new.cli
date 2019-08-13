@@ -106,10 +106,18 @@ namespace bdep
      In all the forms, if <name> is omitted, then the current working
      directory name (unless overridden with \c{\b{--output-dir}|\b{-o}}) is
      used as the project/package/subdirectory name. See \l{bpkg#package-name
-     Package Name} for details on project/package names. For example:
+     Package Name} for details on project/package names.
+
+     The output directory may already contain existing files provided they
+     don't clash with the files to be created. The \cb{new} command also
+     recognizes certain well-known files and tries to use the extracted
+     information in the package \cb{manifest} file. Specifically, it tries to
+     guess the license from the \cb{LICENSE} file as well as extract the
+     summary from \cb{README.md}. This allows for the following workflow:
 
      \
-     $ # Create a project on one of the Git hosting services.
+     # Create a project with LICENSE and README.md on one of the Git
+     # hosting services (GitHub, GitLab, etc).
 
      $ git clone .../libhello.git
      $ cd libhello
