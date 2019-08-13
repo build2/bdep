@@ -324,17 +324,30 @@ namespace bdep
 
          Don't initialize a version control system inside the project.||
 
-     The newly created project, package, or subdirectory can be further
-     customized using the post-creation hooks specified with the
-     \cb{--post-hook} option. The hook commands are executed in the
-     newly created project, package, or source directory as their
-     current working directory. For example:
+     The created project, package, or subdirectory can be further customized
+     using the pre and post-creation hooks specified with the \cb{--pre-hook}
+     and \cb{--post-hook} options, respectively. The pre hooks are executed
+     before any new files are created and the post hook \- after all the files
+     have been created. The hook commands are executed in the project,
+     package, or source directory as their current working directory. For
+     example:
 
      \
      $ bdep new --post-hook \"echo .idea/ >>.gitignore\" hello
      \
 
-     See the \cb{--post-hook} option documentation below for details.
+     The pre hooks are primarily useful for moving/renaming existing files
+     that would otherwise clash with files created by the \cb{new}
+     command. For example:
+
+     \
+     $ bdep new --pre-hook  \"mv .gitignore .gitignore.bak\" \\
+                --post-hook \"cat .gitignore.bak >>.gitignore\" \\
+                --post-hook \"rm .gitignore.bak\" ...
+     \
+
+     See the \cb{--pre-hook} and \cb{--post-hook} options documentation below
+     for details.
      "
   }
 
@@ -464,10 +477,16 @@ namespace bdep
        system-specific."
     }
 
+    strings --pre-hook
+    {
+      "<command>"
+      // Shares documentation with --post-hook.
+    }
+
     strings --post-hook
     {
       "<command>",
-      "Run the specified command in the newly created project, package, or
+      "Run the specified command before/after creating the project, package, or
        source directory.
 
        The <command> value is interpreted as a whitespace-separated,
