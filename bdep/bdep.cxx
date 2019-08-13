@@ -153,6 +153,8 @@ init (const common_options& co,
       bool keep_sep,
       bool tmp)
 {
+  tracer trace ("init");
+
   O o;
   static_cast<common_options&> (o) = co;
 
@@ -198,6 +200,18 @@ init (const common_options& co,
     scan_argument (args, scan);
   }
 
+  // Note that the diagnostics verbosity level can only be calculated after
+  // default options are loaded and merged (see below). Thus, to trace the
+  // default options files search, we refer to the verbosity level specified
+  // on the command line.
+  //
+  auto verbosity = [&o] ()
+  {
+    return o.verbose_specified ()
+           ? o.verbose ()
+           : o.V () ? 3 : o.v () ? 2 : o.quiet () ? 0 : 1;
+  };
+
   // Handle default option files.
   //
   // Note: don't need to use group_scaner (no arguments in options files).
@@ -208,7 +222,12 @@ init (const common_options& co,
       load_default_options<O, cli::argv_file_scanner, cli::unknown_mode> (
         nullopt /* sys_dir */,
         path::home_directory (),
-        options_files (cmd, o, args)),
+        options_files (cmd, o, args),
+        [&trace, &verbosity] (const path& f, bool remote)
+        {
+          if (verbosity () >= 3)
+            trace << "loading " << (remote ? "remote " : "local ") << f;
+        }),
       o);
   }
   catch (const system_error& e)
@@ -221,9 +240,7 @@ init (const common_options& co,
 
   // Diagnostics verbosity.
   //
-  verb = o.verbose_specified ()
-    ? o.verbose ()
-    : o.V () ? 3 : o.v () ? 2 : o.quiet () ? 0 : 1;
+  verb = verbosity ();
 
   // Temporary directory.
   //
