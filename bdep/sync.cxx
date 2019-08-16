@@ -741,8 +741,7 @@ namespace bdep
 
       for (dir_path d: o.config ())
       {
-        d.complete ();
-        d.normalize ();
+        normalize (d, "configuration");
 
         if (open && d.string () == *open)
           continue;

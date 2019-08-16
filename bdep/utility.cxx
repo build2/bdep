@@ -95,6 +95,25 @@ namespace bdep
     }
   }
 
+  dir_path&
+  normalize (dir_path& d, const char* what)
+  {
+    try
+    {
+      d.complete ().normalize ();
+    }
+    catch (const invalid_path& e)
+    {
+      fail << "invalid " << what << " directory " << e.path;
+    }
+    catch (const system_error& e)
+    {
+      fail << "unable to obtain current directory: " << e;
+    }
+
+    return d;
+  }
+
   bool
   exists (const path& f, bool ignore_error)
   {

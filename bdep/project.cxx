@@ -62,8 +62,7 @@ namespace bdep
     {
       for (dir_path d: po.config ())
       {
-        d.complete ();
-        d.normalize ();
+        normalize (d, "configuration");
 
         if (auto c = db.query_one<configuration> (query::path == d.string ()))
           add (move (c));
@@ -135,9 +134,7 @@ namespace bdep
     dir_path prj;
     optional<dir_path> pkg;
 
-    dir_path d (start);
-    d.complete ();
-    d.normalize ();
+    dir_path d (normalize (start, "project"));
     for (; !d.empty (); d = d.directory ())
     {
       // Ignore errors when checking for file existence since we may be

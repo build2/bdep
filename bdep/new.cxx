@@ -491,17 +491,17 @@ namespace bdep
       if (o.package () || o.subdirectory ())
       {
         if (o.directory_specified ())
-          (prj = o.directory ()).complete ().normalize ();
+          prj = normalize (o.directory (), "project");
         else
           prj = current_directory ();
 
         out = o.output_dir_specified () ? o.output_dir () : prj / dir_path (n);
-        out.complete ().normalize ();
+        normalize (out, "output");
       }
       else
       {
         out = o.output_dir_specified () ? o.output_dir () : dir_path (n);
-        out.complete ().normalize ();
+        normalize (out, "output");
         prj = out;
       }
 
@@ -2152,19 +2152,15 @@ namespace bdep
 
     auto output_parent_dir = [&o] ()
     {
-      return o.output_dir ().directory ().complete ().normalize ();
+      return normalize (o.output_dir (), "output");
     };
 
     if (o.package () || o.subdirectory ())
     {
-      auto project_dir = [&o] ()
-      {
-        return dir_path (o.directory ()).complete ().normalize ();
-      };
-
-      start_dir = o.output_dir_specified () ? output_parent_dir () :
-                  o.directory_specified  () ? project_dir ()       :
-                  current_directory ();
+      start_dir =
+        o.output_dir_specified () ? output_parent_dir ()                  :
+        o.directory_specified  () ? normalize (o.directory (), "project") :
+        current_directory ();
 
       // Get the actual project directory.
       //

@@ -158,8 +158,7 @@ namespace bdep
     // Make sure the configuration path is absolute and normalized. Also
     // derive relative to project directory path if possible.
     //
-    path.complete ();
-    path.normalize ();
+    normalize (path, "configuration");
 
     verify_configuration_path (path, prj, pkgs);
 
@@ -272,8 +271,7 @@ namespace bdep
     //
     translate_path_name (prj, path, name);
 
-    path.complete ();
-    path.normalize ();
+    normalize (path, "configuration");
 
     verify_configuration_path (path, prj, pkgs);
 
@@ -469,8 +467,7 @@ namespace bdep
         if (!exists (path))
           fail << "configuration directory " << path << " does not exist";
 
-        path.complete ();
-        path.normalize ();
+        normalize (path, "configuration");
       }
       catch (const invalid_path&)
       {

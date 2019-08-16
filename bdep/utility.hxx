@@ -119,6 +119,19 @@ namespace bdep
   dir_path
   current_directory ();
 
+  // Normalize a directory path. Also make the relative path absolute using
+  // the current directory.
+  //
+  dir_path&
+  normalize (dir_path&, const char* what);
+
+  inline dir_path
+  normalize (const dir_path& d, const char* what)
+  {
+    dir_path r (d);
+    return move (normalize (r, what));
+  }
+
   // Progress.
   //
   extern bool stderr_term; // True if stderr is a terminal.
