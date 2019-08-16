@@ -231,9 +231,14 @@ init (const common_options& co,
         }),
       o);
   }
+  catch (const pair<path, system_error>& e)
+  {
+    fail << "unable to load default options files: " << e.first << ": "
+         << e.second;
+  }
   catch (const system_error& e)
   {
-    fail << "unable to load default options files: " << e;
+    fail << "unable to obtain home directory: " << e;
   }
 
   // Global initializations.
