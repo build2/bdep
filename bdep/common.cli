@@ -212,5 +212,10 @@ namespace bdep
        the shell escaping and quoting is not required. Repeat this option
        to specify more than one options file."
     }
+
+    bool --no-default-options
+    {
+      "Don't load default options files."
+    }
   };
 }

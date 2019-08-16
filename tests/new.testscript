@@ -753,9 +753,15 @@ status += -d prj
         --package
         EOI
 
-      $* prj 2>>/~%EOE%d != 0
+      $* prj 2>>/~%EOE%d != 0;
         %\.+/.build2/bdep-new.options: error: --package in default options file%
         EOE
+
+      # Disable default options files loading.
+      #
+      $* --no-default-options prj 2>>/"EOE" &prj/***
+          created new executable project prj in $~/prj/
+          EOE
     }
   }
 

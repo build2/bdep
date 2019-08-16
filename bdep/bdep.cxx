@@ -212,10 +212,11 @@ init (const common_options& co,
            : o.V () ? 3 : o.v () ? 2 : o.quiet () ? 0 : 1;
   };
 
-  // Handle default option files.
+  // Handle default options files.
   //
   // Note: don't need to use group_scaner (no arguments in options files).
   //
+  if (!o.no_default_options ()) // Command line option.
   try
   {
     o = merge_options (
