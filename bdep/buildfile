@@ -129,11 +129,12 @@ if $cli.configured
 
   # Option length must be the same to get commands/topics/options aligned.
   #
-  cli.options += -I $src_root --include-with-brackets --include-prefix bdep \
---guard-prefix BDEP --cxx-prologue "#include <bdep/types-parsers.hxx>" \
---cli-namespace bdep::cli --generate-vector-scanner --generate-file-scanner \
---generate-group-scanner --keep-separator --generate-specifier \
---generate-modifier --generate-description --generate-parse --generate-merge \
+  cli.options += --std c++11 -I $src_root --include-with-brackets \
+--include-prefix bdep --guard-prefix BDEP \
+--cxx-prologue "#include <bdep/types-parsers.hxx>" --cli-namespace bdep::cli \
+--generate-vector-scanner --generate-file-scanner --generate-group-scanner \
+--keep-separator --generate-specifier --generate-modifier \
+--generate-description --generate-parse --generate-merge \
 --page-usage 'bdep::print_$name$_' --ansi-color --include-base-last \
 --suppress-undocumented --option-length 23
 
