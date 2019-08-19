@@ -71,7 +71,7 @@ namespace bdep
 
     return default_options_files {
       {path ("bdep.options"), path ("bdep-help.options")},
-      nullopt /* start_dir */};
+      nullopt /* start */};
   }
 
   help_options

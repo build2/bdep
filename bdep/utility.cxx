@@ -95,6 +95,19 @@ namespace bdep
     }
   }
 
+  dir_path
+  home_directory ()
+  {
+    try
+    {
+      return dir_path::home_directory ();
+    }
+    catch (const system_error& e)
+    {
+      fail << "unable to obtain home directory: " << e << endf;
+    }
+  }
+
   dir_path&
   normalize (dir_path& d, const char* what)
   {

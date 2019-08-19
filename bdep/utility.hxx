@@ -14,10 +14,11 @@
 
 #include <libbutl/ft/lang.hxx>
 
-#include <libbutl/utility.mxx>    // casecmp(), reverse_iterate(), etc
+#include <libbutl/utility.mxx>         // casecmp(), reverse_iterate(), etc
 #include <libbutl/prompt.mxx>
 #include <libbutl/fdstream.mxx>
 #include <libbutl/filesystem.mxx>
+#include <libbutl/default-options.mxx>
 
 #include <libbutl/manifest-parser.mxx>     // manifest_parser::filter_function
 #include <libbutl/manifest-serializer.mxx> // manifest_serializer::filter_function
@@ -66,6 +67,12 @@ namespace bdep
   //
   using butl::auto_rmfile;
   using butl::auto_rmdir;
+
+  // <libbutl/default-options.mxx>
+  //
+  using butl::load_default_options;
+  using butl::merge_default_options;
+  using butl::default_options_start;
 
   // Empty string and path.
   //
@@ -118,6 +125,9 @@ namespace bdep
   //
   dir_path
   current_directory ();
+
+  dir_path
+  home_directory ();
 
   // Normalize a directory path. Also make the relative path absolute using
   // the current directory.

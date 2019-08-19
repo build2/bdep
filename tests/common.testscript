@@ -13,7 +13,29 @@
 # produced or updated by a command being tested.
 #
 build = $recall($build.path)
-test.options += --build $build
+
+# Disable loading the user's default options files (that may affect the test
+# commands execution) for bdep, bpkg, and build2.
+#
+options_guard = $~/.build2
++mkdir $options_guard
+
++echo '--no-default-options' >=$options_guard/b.options
++echo '--no-default-options' >=$options_guard/bpkg.options
++echo '--no-default-options' >=$options_guard/bdep.options
+
+test.options += --default-options $options_guard \
+--build $build --build-option "--default-options=$options_guard" \
+--bpkg-option "--default-options=$options_guard" \
+--bpkg-option "--build-option=--default-options=$options_guard"
+
+build = $build --default-options $options_guard
+
++cat <<"EOI" >=$options_guard/bdep-sync-implicit.options
+--build-option "--default-options=$options_guard"
+--bpkg-option "--default-options=$options_guard"
+--bpkg-option "--build-option=--default-options=$options_guard"
+EOI
 
 # Check that git version is the minimum supported one or above. The lowest
 # common denominator for bdep commands is 2.1.0.

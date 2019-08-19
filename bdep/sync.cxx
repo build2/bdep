@@ -870,8 +870,8 @@ namespace bdep
     default_options_files r {{path ("bdep.options")}, nullopt};
 
     // Add bdep-sync-implicit.options for an implicit sync and
-    // bdep-sync.options otherwise. Omit the search start dir in the former
-    // case.
+    // bdep-sync.options otherwise. In the former case try to find a common
+    // start directory using the configuration directories.
     //
     auto add = [&r] (const string& n)
     {
@@ -881,12 +881,14 @@ namespace bdep
     if (o.implicit () || o.hook_specified ())
     {
       add ("sync-implicit");
+
+      r.start = default_options_start (home_directory (), o.config ());
     }
     else
     {
       add ("sync");
 
-      r.start_dir = find_project (o);
+      r.start = find_project (o);
     }
 
     return r;
@@ -913,6 +915,7 @@ namespace bdep
         forbid ("--directory|-d", o.directory_specified ());
         forbid ("--implicit",     o.implicit ());
         forbid ("--hook",         o.hook_specified ());
+        forbid ("--config|-c",    o.config_specified ());
       });
   }
 }

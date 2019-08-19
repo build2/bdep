@@ -2148,7 +2148,7 @@ namespace bdep
     // Note that we will not validate the command arguments and let cmd_new()
     // complain later in case of an error.
     //
-    optional<dir_path> start_dir;
+    optional<dir_path> start;
 
     auto output_parent_dir = [&o] ()
     {
@@ -2157,29 +2157,29 @@ namespace bdep
 
     if (o.package () || o.subdirectory ())
     {
-      start_dir =
+      start =
         o.output_dir_specified () ? output_parent_dir ()                  :
         o.directory_specified  () ? normalize (o.directory (), "project") :
         current_directory ();
 
       // Get the actual project directory.
       //
-      project_package pp (find_project_package (*start_dir,
+      project_package pp (find_project_package (*start,
                                                 true /* ignore_not_found */));
 
       if (!pp.project.empty ())
-        start_dir = move (pp.project);
+        start = move (pp.project);
       else if (!o.no_checks ())
-        start_dir = nullopt;           // Let cmd_new() fail.
+        start = nullopt;           // Let cmd_new() fail.
     }
     else // New project.
     {
-      start_dir = o.output_dir_specified ()
-                  ? output_parent_dir ()
-                  : current_directory ();
+      start = o.output_dir_specified ()
+              ? output_parent_dir ()
+              : current_directory ();
     }
 
-    default_options_files r {{path ("bdep.options")}, move (start_dir)};
+    default_options_files r {{path ("bdep.options")}, move (start)};
 
     auto add = [&r] (const string& n)
     {

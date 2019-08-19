@@ -219,15 +219,25 @@ init (const common_options& co,
   if (!o.no_default_options ()) // Command line option.
   try
   {
+    bdep::optional<dir_path> extra;
+    if (o.default_options_specified ())
+      extra = o.default_options ();
+
     o = merge_options (
       load_default_options<O, cli::argv_file_scanner, cli::unknown_mode> (
         nullopt /* sys_dir */,
-        path::home_directory (),
+        home_directory (),
+        extra,
         options_files (cmd, o, args),
-        [&trace, &verbosity] (const path& f, bool remote)
+        [&trace, &verbosity] (const path& f, bool r, bool o)
         {
           if (verbosity () >= 3)
-            trace << "loading " << (remote ? "remote " : "local ") << f;
+          {
+            if (o)
+              trace << "treating " << f << " as " << (r ? "remote" : "local");
+            else
+              trace << "loading " << (r ? "remote " : "local ") << f;
+          }
         }),
       o);
   }
@@ -235,10 +245,6 @@ init (const common_options& co,
   {
     fail << "unable to load default options files: " << e.first << ": "
          << e.second;
-  }
-  catch (const system_error& e)
-  {
-    fail << "unable to obtain home directory: " << e;
   }
 
   // Global initializations.
