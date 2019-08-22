@@ -70,8 +70,8 @@ namespace bdep
 
         run_b (o,
                "disfigure:",
-               src.representation () + '@' + out.representation () +
-               ",forward");
+               "'" + src.representation () + "'@'" + out.representation () +
+               "',forward");
       }
     }
 

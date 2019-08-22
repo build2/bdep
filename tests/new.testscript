@@ -818,7 +818,7 @@ status += -d prj
 
       chmod u+x hook;
 
-      $* -t lib --subdirectory libprj -d prj/prj --post-hook "$~/hook" \
+      $* -t lib --subdirectory libprj -d prj/prj --post-hook "'$~/hook'" \
          >>"EOO" 2>>/"EOE" &prj/prj/libprj/***
         $~/prj/prj/libprj
         subdirectory $~/prj/prj

@@ -442,8 +442,8 @@ namespace bdep
           dir_path out (dir_path (cfg) /= pkg.name.string ());
           run_b (co,
                  o,
-                 src.representation () + '@' + out.representation () +
-                 ",forward");
+                 "'" + src.representation () + "'@'" + out.representation () +
+                 "',forward");
         }
       }
     }

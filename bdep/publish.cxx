@@ -249,14 +249,16 @@ namespace bdep
       // build2's version module by default does not allow distribution of
       // uncommitted projects.
       //
-      run_b (o,
-             "dist:", (dir_path (cfg) /= p.name.string ()).representation (),
-             "config.dist.root=" + dr.representation (),
-             "config.dist.archives=tar.gz",
-             "config.dist.checksums=sha256",
-             (uncommitted && *uncommitted
-              ? "config.dist.uncommitted=true"
-              : nullptr));
+      run_b (
+        o,
+        "dist:",
+        "'" + (dir_path (cfg) /= p.name.string ()).representation () + "'",
+        "config.dist.root='" + dr.representation () + "'",
+        "config.dist.archives=tar.gz",
+        "config.dist.checksums=sha256",
+        (uncommitted && *uncommitted
+         ? "config.dist.uncommitted=true"
+         : nullptr));
 
       // This is the canonical package archive name that we expect dist to
       // produce.
