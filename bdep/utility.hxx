@@ -49,6 +49,7 @@ namespace bdep
 
   using butl::trim;
   using butl::next_word;
+  using butl::sanitize_identifier;
 
   using butl::reverse_iterate;
 

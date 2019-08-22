@@ -470,12 +470,7 @@ namespace bdep
     case lang::c:
     case lang::cxx:
       {
-        auto sanitize = [] (char c)
-        {
-          return (c == '-' || c == '+' || c == '.') ? '_' : c;
-        };
-
-        transform (s.begin (), s.end (), back_inserter (id), sanitize);
+        id = sanitize_identifier (const_cast<const string&> (s));
         break;
       }
     }
@@ -1380,15 +1375,14 @@ namespace bdep
         {
           string ip (d.posix_representation ()); // Include prefix.
 
-          string mp; // Macro prefix.
-          transform (
-            ip.begin (), ip.end () - 1, back_inserter (mp),
-            [] (char c)
-            {
-              return (c == '-' || c == '+' || c == '.' || c == '/')
-                ? '_'
-                : ucase (c);
-            });
+          // Macro prefix.
+          //
+          string mp (
+            sanitize_identifier (ucase (const_cast<const string&> (ip))));
+
+          // Strip the trailing underscore (produced from slash).
+          //
+          mp.pop_back ();
 
           string apih; // API header name.
           string exph; // Export header name (empty if binless).
@@ -1409,7 +1403,7 @@ namespace bdep
                  <<                                                       endl
                  << "#include <stdio.h>"                               << endl
                  <<                                                       endl
-                 << "#include <" << ip  << exph << ">"                 << endl
+                 << "#include <" << ip << exph << ">"                  << endl
                  <<                                                       endl
                  << "// Print a greeting for the specified name into the specified"  << endl
                  << "// stream. On success, return the number of character printed." << endl
