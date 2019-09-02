@@ -243,6 +243,17 @@ namespace bdep
     strings args;
     strings reps;
 
+    // First add configuration variables from pkg_args, if any.
+    //
+    {
+      for (const string& a: pkg_args)
+        if (a.find ('=') != string::npos)
+          args.push_back (a);
+
+      if (!args.empty ())
+        args.push_back ("--");
+    }
+
     for (const project& prj: prjs)
     {
       if (prj.fetch)
@@ -309,9 +320,11 @@ namespace bdep
       }
     }
 
-    // Finally, add pkg_args, if any.
+    // Finally, add packages from pkg_args, if any.
     //
-    args.insert (args.end (), pkg_args.begin (), pkg_args.end ());
+    for (const string& a: pkg_args)
+      if (a.find ('=') == string::npos)
+        args.push_back (a);
 
     // We do a separate fetch instead of letting pkg-build do it. This way we
     // get better control of the diagnostics (no "fetching ..." for the
