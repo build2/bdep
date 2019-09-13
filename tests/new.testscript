@@ -706,7 +706,6 @@ status += -d prj
   {
     : remote-hooks
     :
-    if $posix
     {
       $* -t empty prj 2>! &prj/***;
 
@@ -724,12 +723,12 @@ status += -d prj
         CMakeCache.txt
         EOI
 
-      $* --package -t lib -d prj libprj <'y' 2>>~%EOE%;
+      $* --package -t lib -d prj libprj <'y' 2>>/~%EOE%;
         %remote hook commands in .+/.build2/bdep-new-package.options:%
           pre:  mv .gitignore .gitignore.bak
           post: cat .gitignore.bak >>.gitignore
           post: rm .gitignore.bak
-        %execute\? \[y/n\] created new library package libprj in .+/prj/libprj/%
+        %execute\? \[y.n\] created new library package libprj in .+/prj/libprj/%
         EOE
 
       cat prj/libprj/.gitignore >>~%EOO%;
@@ -767,7 +766,6 @@ status += -d prj
 
   : post-hook
   :
-  if $posix
   {
     : success
     :
@@ -776,7 +774,7 @@ status += -d prj
          --post-hook "echo .idea/ >>.gitignore"         \
          --post-hook "echo @mode@ @name@ @base@ @stem@" \
          --post-hook "echo @type@ @lang@ @vcs@ @root@"  \
-         >>"EOO" 2>>/"EOE" &prj/***;
+         >>/"EOO" 2>>/"EOE" &prj/***;
         project prj prj prj
         empty c++ git $~/prj
         EOO
@@ -791,7 +789,7 @@ status += -d prj
       $* --package prj -d prj                                  \
          --post-hook "echo @@@@TODO >>NEWS"                    \
          --post-hook "echo @mode@ @name@ @base@ @stem@ @root@" \
-         >>"EOO" 2>>/"EOE" &prj/prj/***;
+         >>/"EOO" 2>>/"EOE" &prj/prj/***;
         package prj prj prj $~/prj
         EOO
         created new executable package prj in $~/prj/prj/
@@ -802,7 +800,7 @@ status += -d prj
       $* --package -t lib libprj.bash -d prj                   \
          --post-hook "echo @@@@TODO >>NEWS"                    \
          --post-hook "echo @mode@ @name@ @base@ @stem@ @root@" \
-         >>"EOO" 2>>/"EOE" &prj/prj/***;
+         >>/"EOO" 2>>/"EOE" &prj/prj/***;
         package libprj.bash libprj prj $~/prj
         EOO
         created new library package libprj.bash in $~/prj/libprj.bash/
@@ -810,21 +808,23 @@ status += -d prj
 
       cat prj/libprj.bash/NEWS >'@@TODO';
 
-      cat <<EOI >=hook;
-        #!/bin/sh
-        echo "$(pwd)"
-        echo "$BDEP_NEW_MODE $BDEP_NEW_ROOT"
-        EOI
+      if $posix
+        cat <<EOI >=hook
+          #!/bin/sh
+          echo "$(pwd)"
+          echo "$BDEP_NEW_MODE $BDEP_NEW_ROOT"
+          EOI
 
-      chmod u+x hook;
+        chmod u+x hook
 
-      $* -t lib --subdirectory libprj -d prj/prj --post-hook "'$~/hook'" \
-         >>"EOO" 2>>/"EOE" &prj/prj/libprj/***
-        $~/prj/prj/libprj
-        subdirectory $~/prj/prj
-        EOO
-        created new library source subdirectory libprj in $~/prj/prj/libprj/
-        EOE
+        $* -t lib --subdirectory libprj -d prj/prj --post-hook "'$~/hook'" \
+           >>"EOO" 2>>/"EOE" &prj/prj/libprj/***
+          $~/prj/prj/libprj
+          subdirectory $~/prj/prj
+          EOO
+          created new library source subdirectory libprj in $~/prj/prj/libprj/
+          EOE
+      end
     }
 
     : failure
@@ -838,7 +838,7 @@ status += -d prj
 
       : open-redirect
       :
-      $* prj --post-hook 'echo foo >>bar/baz' 2>>/~%EOE% &prj/*** != 0
+      $* prj --post-hook 'echo foo >>bar/baz' 2>>~%EOE% &prj/*** != 0
         %error: unable to execute post hook 'echo foo >>bar/baz': unable to open stdout redirect file '.+baz'.*%
         EOE
 
@@ -852,7 +852,6 @@ status += -d prj
 
   : pre-hook
   :
-  if $posix
   {
     : success
     :

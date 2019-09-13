@@ -490,11 +490,12 @@ namespace bdep
        source directory.
 
        The <command> value is interpreted as a whitespace-separated,
-       potentially quoted command line consisting of the program optionally
-       followed by arguments and redirects. Specifically, a single level of
-       quotes (either single or double) is removed and whitespaces are not
-       treated as separators inside such quoted fragments. Currently only the
-       \cb{stdout} redirect to a file is supported. For example:
+       potentially quoted command line consisting of a program or a portable
+       \l{testscript#builtins builtin} optionally followed by arguments and
+       redirects. Specifically, a single level of quotes (either single or
+       double) is removed and whitespaces are not treated as separators inside
+       such quoted fragments. Currently only the \cb{stdout} redirect to a
+       file is supported. For example:
 
        \
        $ bdep new --post-hook \"echo '.idea/ # IDE' >>.gitignore\" hello

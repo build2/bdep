@@ -661,7 +661,9 @@ namespace bdep
           fail << "unable to execute " << what << " hook '" << cmd << "': "
                << e;
         }
-        catch (const process_error& e)
+        // Also handles process_error exception (derived from system_error).
+        //
+        catch (const system_error& e)
         {
           fail << "unable to execute " << what << " hook '" << cmd << "': "
                << e;

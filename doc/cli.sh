@@ -40,6 +40,7 @@ function compile ()
 --include-base-last "${o[@]}" --generate-html --html-prologue-file \
 man-prologue.xhtml --html-epilogue-file man-epilogue.xhtml --html-suffix .xhtml \
 --link-regex '%b([-.].+)%../../build2/doc/b$1%' \
+--link-regex '%testscript(#.+)?%../../build2/doc/build2-testscript-manual.xhtml$1%' \
 --link-regex '%bpkg([-.].+)%../../bpkg/doc/bpkg$1%' \
 --link-regex '%bpkg(#.+)?%../../bpkg/doc/build2-package-manager-manual.xhtml$1%' \
 --link-regex '%brep(#.+)?%../../brep/doc/build2-repository-interface-manual.xhtml$1%' \
