@@ -14,7 +14,7 @@
 
 #include <libbutl/ft/lang.hxx>
 
-#include <libbutl/utility.mxx>         // casecmp(), reverse_iterate(), etc
+#include <libbutl/utility.mxx>         // icasecmp(), reverse_iterate(), etc
 #include <libbutl/prompt.mxx>
 #include <libbutl/fdstream.mxx>
 #include <libbutl/filesystem.mxx>
@@ -45,7 +45,7 @@ namespace bdep
   //
   using butl::ucase;
   using butl::lcase;
-  using butl::casecmp;
+  using butl::icasecmp;
 
   using butl::trim;
   using butl::next_word;

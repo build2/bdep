@@ -315,7 +315,7 @@ namespace bdep
         auto header = [&l] (const char* name) -> optional<string>
         {
           size_t n (string::traits_type::length (name));
-          if (!(casecmp (name, l, n) == 0 && l[n] == ':'))
+          if (!(icasecmp (name, l, n) == 0 && l[n] == ':'))
             return nullopt;
 
           string r;
@@ -364,7 +364,7 @@ namespace bdep
 
         if (ctype)
         {
-          if (casecmp ("text/manifest", *ctype, 13) == 0)
+          if (icasecmp ("text/manifest", *ctype, 13) == 0)
           {
             parser p (is, "manifest");
             name_value nv (p.next ());
@@ -427,7 +427,7 @@ namespace bdep
 
             status = c;
           }
-          else if (casecmp ("text/plain", *ctype, 10) == 0)
+          else if (icasecmp ("text/plain", *ctype, 10) == 0)
             getline (is, message); // Can result in the empty message.
         }
 

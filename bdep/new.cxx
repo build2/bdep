@@ -27,7 +27,7 @@ namespace bdep
 {
   // License id to full name map.
   //
-  static const map<string, string, case_compare_string> licenses = {
+  static const map<string, string, icase_compare_string> licenses = {
     {"MIT",               "MIT License"                            },
     {"BSD2",              "Simplified 2-clause BSD License"        },
     {"BSD3",              "New 3-clause BSD License"               },
@@ -180,7 +180,7 @@ namespace bdep
 
       if (next ())
       {
-        if (casecmp (l, "# " + n) == 0)
+        if (icasecmp (l, "# " + n) == 0)
         {
           if (next ())
           {
@@ -749,7 +749,7 @@ namespace bdep
       {
         if (!license_o)
           license = *license_e;
-        else if (casecmp (*license_e, license) != 0)
+        else if (icasecmp (*license_e, license) != 0)
           fail << "extracted license does not match requested" <<
             info << "extracted: " << *license_e <<
             info << "requested: " << license;
@@ -957,7 +957,7 @@ namespace bdep
           }
           else
           {
-            if (casecmp (license, "BSD") == 0)
+            if (icasecmp (license, "BSD") == 0)
               warn << "BSD license name is ambiguous" <<
                 info << "consider using BSD3 for \"New 3-clause BSD License\"";
           }
