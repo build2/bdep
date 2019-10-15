@@ -2,10 +2,22 @@
 # copyright : Copyright (c) 2014-2019 Code Synthesis Ltd
 # license   : MIT; see accompanying LICENSE file
 
-cmds =             \
-bdep-help          \
-bdep-init          \
-bdep-config
+cmds =       \
+bdep-new     \
+bdep-help    \
+bdep-init    \
+bdep-sync    \
+bdep-fetch   \
+bdep-status  \
+bdep-ci      \
+bdep-release \
+bdep-publish \
+bdep-deinit  \
+bdep-config  \
+bdep-test    \
+bdep-update  \
+bdep-clean
+
 
 define css: file
 css{*}: extension = css
@@ -13,8 +25,8 @@ css{*}: extension = css
 define xhtml: doc
 xhtml{*}: extension = xhtml
 
-./: {man1 xhtml}{bdep bdep-common-options $cmds} \
-    css{common pre-box man}                      \
+./: {man1 xhtml}{bdep bdep-common-options bdep-projects-configs $cmds} \
+    css{common pre-box man}                                            \
     file{man-*}
 
 ./: file{cli.sh}
