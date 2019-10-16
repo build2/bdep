@@ -1,2 +1,3 @@
-test/
-test-*/
+# Note that these can be symlinks (so no trailing /).
+test
+test-*
