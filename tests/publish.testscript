@@ -30,7 +30,7 @@ end
 test.arguments += --repository "$repository"  --yes \
  --author-name user --author-email user@example.com
 
-cxx = cc config.cxx="'$recall($cxx.path)'"
+cxx = cc config.cxx="\\'$recall($cxx.path)\\'"
 
 new  += 2>!
 init += $cxx -d prj 2>! &prj/**/bootstrap/***
