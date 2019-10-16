@@ -4,10 +4,10 @@
 
 .include common.testscript
 
-cxx = cc config.cxx="$recall($cxx.path)"
+cxx = cc config.cxx="'$recall($cxx.path)'"
 
 new    += 2>!
-init   += cc "config.cxx=$config.cxx" -d prj 2>!
+init   += cc "'config.cxx=$config.cxx'" -d prj 2>!
 deinit += -d prj
 
 : single-pkg-cfg

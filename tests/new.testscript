@@ -14,8 +14,8 @@ c_tests = ($c.target.class != 'windows' && $c.target.class != 'macos')
 #
 test.arguments += --no-checks
 
-c = config.c="$recall($c.path)"
-cxx = config.cxx="$recall($cxx.path)"
+c = config.c="'$recall($c.path)'"
+cxx = config.cxx="'$recall($cxx.path)'"
 
 status += -d prj
 

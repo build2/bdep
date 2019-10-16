@@ -7,7 +7,7 @@
 
 .include common.testscript project.testscript
 
-cxx = cc config.cxx="$recall($cxx.path)"
+cxx = cc config.cxx="'$recall($cxx.path)'"
 
 status += -d prj
 deinit += -d prj

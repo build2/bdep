@@ -17,6 +17,8 @@ build = $recall($build.path)
 # Disable loading the user's default options files (that may affect the test
 # commands execution) for bdep, bpkg, and build2.
 #
+# @@ Quote paths similar to config.cxx (how does it even work on Windows)?
+#
 options_guard = $~/.build2
 +mkdir $options_guard
 
