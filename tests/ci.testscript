@@ -52,10 +52,10 @@ repository='http://example.com/prj.git'
 test.arguments += --yes --repository "$repository" --server "$server" \
 --simulate 'success'
 
-cxx = cc config.cxx="\\'$recall($cxx.path)\\'"
+config_cxx = cc config.cxx=$quote($recall($cxx.path) $cxx.mode, true)
 
 new  += 2>!
-init += $cxx -d prj 2>! &prj/**/bootstrap/***
+init += $config_cxx -d prj 2>! &prj/**/bootstrap/***
 
 windows = ($cxx.target.class == 'windows')
 

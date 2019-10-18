@@ -4,10 +4,10 @@
 
 .include common.testscript project.testscript
 
-cxx = cc config.cxx="\\'$recall($cxx.path)\\'"
+config_cxx = cc config.cxx=$quote($recall($cxx.path) $cxx.mode, true)
 
 new    += 2>!
-init   += $cxx -d prj 2>!
+init   += $config_cxx -d prj 2>!
 status += --all -d prj
 deinit += -d prj
 

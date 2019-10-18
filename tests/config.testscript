@@ -7,7 +7,7 @@
 
 .include common.testscript project.testscript
 
-cxx = cc config.cxx="\\'$recall($cxx.path)\\'"
+config_cxx = cc config.cxx=$quote($recall($cxx.path) $cxx.mode, true)
 
 status += -d prj
 init   += -d prj
@@ -22,7 +22,7 @@ deinit += -d prj
   {
     $clone_root_prj;
 
-    $* create @cfg cfg-dir $cxx 2>>/"EOE" &cfg-dir/***;
+    $* create @cfg cfg-dir $config_cxx 2>>/"EOE" &cfg-dir/***;
       created configuration @cfg $~/cfg-dir/ 1 default,forwarded,auto-synchronized
       EOE
 
@@ -56,7 +56,7 @@ deinit += -d prj
   {
     $clone_root_prj;
 
-    $* create -- @cfg $cxx 2>>/"EOE" &prj-cfg/***;
+    $* create -- @cfg $config_cxx 2>>/"EOE" &prj-cfg/***;
       created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
       EOE
 
@@ -88,7 +88,7 @@ deinit += -d prj
   {
     $clone_root_prj;
 
-    $* create cfg $cxx 2>>/"EOE" &cfg/***;
+    $* create cfg $config_cxx 2>>/"EOE" &cfg/***;
       created configuration $~/cfg/ 1 default,forwarded,auto-synchronized
       EOE
 
@@ -123,12 +123,12 @@ deinit += -d prj
     mkdir --no-cleanup cfg;
     touch --no-cleanup cfg/a;
 
-    $* create cfg $cxx 2>>/"EOE" != 0;
+    $* create cfg $config_cxx 2>>/"EOE" != 0;
       error: directory $~/cfg/ is not empty
         info: use --wipe to clean it up but be careful
       EOE
 
-    $* create --wipe cfg $cxx 2>>/"EOE" &cfg/***
+    $* create --wipe cfg $config_cxx 2>>/"EOE" &cfg/***
       created configuration $~/cfg/ 1 default,forwarded,auto-synchronized
       EOE
   }
@@ -141,8 +141,8 @@ deinit += -d prj
 
   # Pre-create configurations.
   #
-  $new -C prj-cfg1 tmp1 $cxx 2>! &prj-cfg1/*** &tmp1/***;
-  $new -C prj-cfg2 tmp2 $cxx 2>! &prj-cfg2/*** &tmp2/***;
+  $new -C prj-cfg1 tmp1 $config_cxx 2>! &prj-cfg1/*** &tmp1/***;
+  $new -C prj-cfg2 tmp2 $config_cxx 2>! &prj-cfg2/*** &tmp2/***;
 
   $* add @cfg1 prj-cfg1 2>>/"EOE";
     added configuration @cfg1 $~/prj-cfg1/ 1 default,forwarded,auto-synchronized
@@ -201,7 +201,7 @@ deinit += -d prj
 {
   $clone_root_prj;
 
-  $* create -- @cfg $cxx &prj-cfg/*** 2>>/"EOE";
+  $* create -- @cfg $config_cxx &prj-cfg/*** 2>>/"EOE";
     created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
     EOE
 
@@ -233,7 +233,7 @@ deinit += -d prj
 {
   $clone_root_prj;
 
-  $* create -- @cfg $cxx 2>>/"EOE" &prj-cfg/***;
+  $* create -- @cfg $config_cxx 2>>/"EOE" &prj-cfg/***;
     created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
     EOE
 
@@ -265,8 +265,8 @@ deinit += -d prj
 {
   $clone_root_prj;
 
-  $* create -- @cfg1 $cxx 2>! &prj-cfg1/***;
-  $* create -- @cfg2 $cxx 2>! &prj-cfg2/***;
+  $* create -- @cfg1 $config_cxx 2>! &prj-cfg1/***;
+  $* create -- @cfg2 $config_cxx 2>! &prj-cfg2/***;
 
   $init --all 2>!;
 

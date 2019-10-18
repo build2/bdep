@@ -7,16 +7,16 @@
 
 .include common.testscript
 
-cxx = cc config.cxx="\\'$recall($cxx.path)\\'"
+config_cxx = cc config.cxx=$quote($recall($cxx.path) $cxx.mode, true)
 
 new    += 2>!
-init   += $cxx -d prj 2>!
+init   += $config_cxx -d prj 2>!
 deinit += -d prj
 
 : single-pkg-cfg
 :
 {
-  $new -C @cfg prj $cxx &prj/*** &prj-cfg/***;
+  $new -C @cfg prj $config_cxx &prj/*** &prj-cfg/***;
 
   $* -d prj 2>>~%EOE%;
     %(mkdir|c\+\+|ld) .+%{3}

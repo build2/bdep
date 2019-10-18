@@ -14,8 +14,8 @@ c_tests = ($c.target.class != 'windows' && $c.target.class != 'macos')
 #
 test.arguments += --no-checks
 
-c = config.c="\\'$recall($c.path)\\'"
-cxx = config.cxx="\\'$recall($cxx.path)\\'"
+config_c = config.c=$quote($recall($c.path) $c.mode, true)
+config_cxx = config.cxx=$quote($recall($cxx.path) $cxx.mode, true)
 
 status += -d prj
 
@@ -33,7 +33,7 @@ status += -d prj
       created new executable project prj-foo in $~/prj-foo/
       EOE
 
-    $build prj-foo/ $cxx 2>>~%EOE%
+    $build prj-foo/ $config_cxx 2>>~%EOE%
       %(c\+\+|ld) .+%{2}
       EOE
   }
@@ -45,7 +45,7 @@ status += -d prj
       created new library project libprj-foo in $~/libprj-foo/
       EOE
 
-    $build libprj-foo/ $cxx 2>>~%EOE%
+    $build libprj-foo/ $config_cxx 2>>~%EOE%
       %(version\.in|c\+\+|ar|ld) .+%{7}
       EOE
   }
@@ -57,7 +57,7 @@ status += -d prj
       created new executable project foo in $~/foo/
       EOE
 
-    $build foo/ $cxx 2>>~%EOE%
+    $build foo/ $config_cxx 2>>~%EOE%
       %(c\+\+|ld|ar) .+%{5}
       EOE
   }
@@ -69,7 +69,7 @@ status += -d prj
       created new library project libfoo in $~/libfoo/
       EOE
 
-    $build libfoo/ $cxx 2>>~%EOE%
+    $build libfoo/ $config_cxx 2>>~%EOE%
       %(version\.in|c\+\+|ar|ld) .+%{11}
       EOE
   }
@@ -81,7 +81,7 @@ status += -d prj
       created new executable project foo in $~/foo/
       EOE
 
-    $build foo/ $cxx 2>>~%EOE%
+    $build foo/ $config_cxx 2>>~%EOE%
       %(c\+\+|ld|ar) .+%{5}
       EOE
   }
@@ -93,7 +93,7 @@ status += -d prj
       created new library project libfoo in $~/libfoo/
       EOE
 
-    $build libfoo/ $cxx 2>>~%EOE%
+    $build libfoo/ $config_cxx 2>>~%EOE%
       %(version\.in|c\+\+|ar|ld) .+%{11}
       EOE
   }
@@ -122,7 +122,7 @@ status += -d prj
         %.*
         EOE
 
-      $build foo/ $cxx 2>>~%EOE%
+      $build foo/ $config_cxx 2>>~%EOE%
         %(c\+\+|ld) .+%{2}
         EOE
     }
@@ -136,7 +136,7 @@ status += -d prj
 
       test -f foo/README.md == 1;
 
-      $build foo/ $cxx 2>>~%EOE%
+      $build foo/ $config_cxx 2>>~%EOE%
         %(c\+\+|ld) .+%{2}
         EOE
     }
@@ -149,7 +149,7 @@ status += -d prj
       created new library project libfoo in $~/libfoo/
       EOE
 
-    $build libfoo/ $cxx 2>>~%EOE%
+    $build libfoo/ $config_cxx 2>>~%EOE%
       %(c\+\+|ar|ld) .+%{10}
       EOE
   }
@@ -161,7 +161,7 @@ status += -d prj
       created new library project libfoo in $~/libfoo/
       EOE
 
-    $build libfoo/ $cxx 2>>~%EOE%
+    $build libfoo/ $config_cxx 2>>~%EOE%
       %(version\.in|c\+\+|ld) .+%{3}
       EOE
   }
@@ -173,7 +173,7 @@ status += -d prj
       created new library project libfoo in $~/libfoo/
       EOE
 
-    $build libfoo/ $cxx 2>>~%EOE%
+    $build libfoo/ $config_cxx 2>>~%EOE%
       %(version\.in|c\+\+|ld) .+%{5}
       EOE
   }
@@ -187,7 +187,7 @@ status += -d prj
       created new executable project prj-foo in $~/prj-foo/
       EOE
 
-    $build prj-foo/ $c 2>>~%EOE%
+    $build prj-foo/ $config_c 2>>~%EOE%
       %(c|ld) .+%{2}
       EOE
   }
@@ -199,7 +199,7 @@ status += -d prj
       created new executable project foo in $~/foo/
       EOE
 
-    $build foo/ $c 2>>~%EOE%
+    $build foo/ $config_c 2>>~%EOE%
       %(c|ld|ar) .+%{5}
       EOE
   }
@@ -212,7 +212,7 @@ status += -d prj
       created new library project libprj-foo in $~/libprj-foo/
       EOE
 
-    $build libprj-foo/ $c 2>>~%EOE%
+    $build libprj-foo/ $config_c 2>>~%EOE%
       %(version\.in|c|ar|ld) .+%{7}
       EOE
   }
@@ -225,7 +225,7 @@ status += -d prj
       created new library project libfoo in $~/libfoo/
       EOE
 
-    $build libfoo/ $c 2>>~%EOE%
+    $build libfoo/ $config_c 2>>~%EOE%
       %(version\.in|c|ar|ld) .+%{11}
       EOE
   }
@@ -282,7 +282,7 @@ status += -d prj
         created new library package libprj in $~/prj/libprj/
         EOE
 
-      $build prj/libprj/ $cxx 2>>~%EOE%
+      $build prj/libprj/ $config_cxx 2>>~%EOE%
         %(version\.in|c\+\+|ar|ld) .+%{7}
         EOE
     }
@@ -336,7 +336,7 @@ status += -d prj
       #
       test -f prj/libprj/README.md == 1;
 
-      $build prj/ $cxx 2>>~%EOE%
+      $build prj/ $config_cxx 2>>~%EOE%
         %(c\+\+|ar|ld) .+%{6}
         EOE
     }
@@ -358,7 +358,7 @@ status += -d prj
         created new executable source subdirectory prj in $~/prj/prj/
         EOE
 
-      $build prj/ $cxx 2>>~%EOE%
+      $build prj/ $config_cxx 2>>~%EOE%
         %(c\+\+|ar|ld) .+%{6}
         EOE
     }
@@ -376,7 +376,7 @@ status += -d prj
         created new library source subdirectory prj in $~/prj/core/prj/
         EOE
 
-      $build prj/ $cxx 2>>~%EOE%
+      $build prj/ $config_cxx 2>>~%EOE%
         %(c\+\+|ar|ld) .+%{8}
         EOE
     }
@@ -395,7 +395,7 @@ status += -d prj
       test -f libprj/libprj/prj.cxx;
       test -f libprj/libprj/prj.hxx;
 
-      $build libprj/ $cxx 2>>~%EOE%
+      $build libprj/ $config_cxx 2>>~%EOE%
         %(version\.in|c\+\+|ar|ld) .+%{7}
         EOE
     }
@@ -410,7 +410,7 @@ status += -d prj
       test -f libprj/libprj/prj.cpp;
       test -f libprj/libprj/prj.hpp;
 
-      $build libprj/ $cxx 2>>~%EOE%
+      $build libprj/ $config_cxx 2>>~%EOE%
         %(version\.in|c\+\+|ar|ld) .+%{7}
         EOE
     }
@@ -425,7 +425,7 @@ status += -d prj
       test -f libprj/libprj/prj.c++;
       test -f libprj/libprj/prj.h++;
 
-      $build libprj/ $cxx 2>>~%EOE%
+      $build libprj/ $config_cxx 2>>~%EOE%
         %(version\.in|c\+\+|ar|ld) .+%{7}
         EOE
     }
@@ -440,7 +440,7 @@ status += -d prj
       test -f libprj/libprj/prj.cc;
       test -f libprj/libprj/prj.hh;
 
-      $build libprj/ $cxx 2>>~%EOE%
+      $build libprj/ $config_cxx 2>>~%EOE%
         %(version\.in|c\+\+|ar|ld) .+%{7}
         EOE
     }
@@ -455,7 +455,7 @@ status += -d prj
       test -f libprj/libprj/prj.c;
       test -f libprj/libprj/prj.h;
 
-      $build libprj/ $cxx 2>>~%EOE%
+      $build libprj/ $config_cxx 2>>~%EOE%
         %(version\.in|c\+\+|ar|ld) .+%{7}
         EOE
     }
@@ -470,7 +470,7 @@ status += -d prj
       test -f libprj/libprj/prj.cxx;
       test -f libprj/libprj/prj;
 
-      $build libprj/ $cxx 2>>~%EOE%
+      $build libprj/ $config_cxx 2>>~%EOE%
         %(version\.in|c\+\+|ar|ld) .+%{7}
         EOE
     }
@@ -496,7 +496,7 @@ status += -d prj
         %.+
         EOO
 
-      $build libprj/ $cxx 2>>~%EOE%
+      $build libprj/ $config_cxx 2>>~%EOE%
         %(version\.in|c\+\+|ar|ld) .+%{7}
         EOE
     }
@@ -511,7 +511,7 @@ status += -d prj
       test -f libprj/libprj/prj.cpp;
       test -f libprj/libprj/prj.hxx;
 
-      $build libprj/ $cxx 2>>~%EOE%
+      $build libprj/ $config_cxx 2>>~%EOE%
         %(version\.in|c\+\+|ar|ld) .+%{7}
         EOE
     }
@@ -525,7 +525,7 @@ status += -d prj
       test -f libprj/libprj/prj.cpp;
       test -f libprj/libprj/prj.hpp;
 
-      $build libprj/ $cxx 2>>~%EOE%
+      $build libprj/ $config_cxx 2>>~%EOE%
         %(version\.in|c\+\+|ar|ld) .+%{7}
         EOE
     }
@@ -605,7 +605,7 @@ status += -d prj
           %.+
           EOO
 
-        $build prj/ $cxx 2>>~%EOE%
+        $build prj/ $config_cxx 2>>~%EOE%
           %(c|ar|ld) .+%{5}
           EOE
       }
@@ -620,7 +620,7 @@ status += -d prj
         test -f libprj/buildfile;
         test -f libprj/libprj/version.h.in == 1;
 
-        $build libprj/ $cxx 2>>~%EOE%
+        $build libprj/ $config_cxx 2>>~%EOE%
           %(c|ar|ld) .+%{6}
           EOE
       }
@@ -635,7 +635,7 @@ status += -d prj
         test -f libprj/build2file;
         test -d libprj/libprj == 1;
 
-        $build libprj/ $cxx 2>>~%EOE%
+        $build libprj/ $config_cxx 2>>~%EOE%
           %info: .+ is up to date%
           EOE
       }
@@ -664,7 +664,7 @@ status += -d prj
         test -f libprj/libprj/prj;
         test -f libprj/libprj/prj.cpp;
 
-        $build libprj/ $cxx 2>>~%EOE%
+        $build libprj/ $config_cxx 2>>~%EOE%
           %(c\+\+|ar|ld) .+%{6}
           EOE
       }
@@ -680,7 +680,7 @@ status += -d prj
         test -f libprj/libprj/prj.h;
         test -f libprj/libprj/prj.c;
 
-        $build libprj/ $cxx 2>>~%EOE%
+        $build libprj/ $config_cxx 2>>~%EOE%
           %(c|ar|ld) .+%{6}
           EOE
       }
@@ -738,7 +738,7 @@ status += -d prj
         CMakeCache.txt
         EOO
 
-      $build prj/libprj/ $cxx 2>>~%EOE%
+      $build prj/libprj/ $config_cxx 2>>~%EOE%
         %(version\.in|c\+\+|ar|ld) .+%{7}
         EOE
     }
@@ -892,7 +892,7 @@ status += -d prj
   : dir-and-name
   :
   {
-    $* -C prj-config @cfg prj cc $cxx 2>>/~"%EOE%" &prj/*** &prj-config/***;
+    $* -C prj-config @cfg prj cc $config_cxx 2>>/~"%EOE%" &prj/*** &prj-config/***;
       created new executable project prj in $~/prj/
       created configuration @cfg $~/prj-config/ 1 default,forwarded,auto-synchronized
       synchronizing:
@@ -914,7 +914,7 @@ status += -d prj
   : character is special).
   :
   {
-    $* -C -@cfg prj cc $cxx 2>>/~"%EOE%" &prj/*** &prj-cfg/***;
+    $* -C -@cfg prj cc $config_cxx 2>>/~"%EOE%" &prj/*** &prj-cfg/***;
       created new executable project prj in $~/prj/
       created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
       synchronizing:

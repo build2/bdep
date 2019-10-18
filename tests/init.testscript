@@ -7,7 +7,7 @@
 
 .include common.testscript project.testscript
 
-cxx = cc config.cxx="\\'$recall($cxx.path)\\'"
+config_cxx = cc config.cxx=$quote($recall($cxx.path) $cxx.mode, true)
 
 status += -d prj
 deinit += -d prj
@@ -26,7 +26,7 @@ deinit += -d prj
   {
     $clone_prj;
 
-    $* -C @cfg $cxx 'config.cc.poptions=-DTEST' -- '?sys:libprj/*' 2>>/~"%EOE%" &prj-cfg/***;
+    $* -C @cfg $config_cxx 'config.cc.poptions=-DTEST' -- '?sys:libprj/*' 2>>/~"%EOE%" &prj-cfg/***;
       initializing in project $~/prj/
       created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
       synchronizing:
@@ -66,7 +66,7 @@ deinit += -d prj
   {
     $clone_prj;
 
-    $* -C @cfg -- $cxx 'config.cc.poptions=-DTEST' -- '?sys:libprj/*' 2>>/~"%EOE%" &prj-cfg/***;
+    $* -C @cfg -- $config_cxx 'config.cc.poptions=-DTEST' -- '?sys:libprj/*' 2>>/~"%EOE%" &prj-cfg/***;
       initializing in project $~/prj/
       created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
       synchronizing:
@@ -118,8 +118,8 @@ deinit += -d prj
 
   # Pre-create configurations.
   #
-  $new  -C prj-cfg1    tmp $cxx 2>! &prj-cfg1/*** &tmp/***;
-  $init -C prj-cfg2 -d tmp $cxx 2>! &prj-cfg2/***;
+  $new  -C prj-cfg1    tmp $config_cxx 2>! &prj-cfg1/*** &tmp/***;
+  $init -C prj-cfg2 -d tmp $config_cxx 2>! &prj-cfg2/***;
 
   $* -A @cfg1 '?sys:libprj/*' 2>>/~"%EOE%";
     initializing in project $~/prj/
@@ -179,7 +179,7 @@ deinit += -d prj
   #
   cp --no-cleanup -pr ../prj ./ &prj/***;
 
-  $* -C @cfg $cxx 2>>/~"%EOE%" &prj-cfg/***;
+  $* -C @cfg $config_cxx 2>>/~"%EOE%" &prj-cfg/***;
     initializing in project $~/prj/
     created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
     synchronizing:
