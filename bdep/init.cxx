@@ -103,12 +103,19 @@ namespace bdep
       }
 
       // Should we sync then commit the database or commit and then sync?
-      // Either way we can end up with an incosistent state. Note, however,
+      // Either way we can end up with an inconsistent state. Note, however,
       // that the state in the build configuration can in most cases be
       // corrected with a retry (e.g., "upgrade" the package to the fixed
       // version, etc) while if we think (from the database state) that the
       // package has already been initialized, then there will be no way to
-      // retry anything.
+      // retry anything (though it could probably be corrected with a sync or,
+      // failed that, deinit/init).
+      //
+      // However, there is a drawback to doing it this way: if we trigger an
+      // implicit sync (e.g., via a hook) of something that uses the same
+      // database, we will get the "database is used by another process"
+      // error. This can be worked around by disabling the implicit sync
+      // (BDEP_SYNC=0).
       //
       cmd_sync (o, prj, c, pkg_args, false /* implicit */);
 
