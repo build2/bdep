@@ -7,6 +7,8 @@
 
 #include <odb/core.hxx>
 
+#include <libbutl/b.mxx>
+
 #include <libbpkg/package-name.hxx>
 
 #include <bdep/types.hxx>
@@ -266,6 +268,13 @@ namespace bdep
   package_version (const common_options&,
                    const dir_path& cfg,
                    const package_name&);
+
+  // Obtain build2 project info for package source or output directory.
+  //
+  using package_info = butl::b_project_info;
+
+  package_info
+  package_b_info (const common_options&, const dir_path&);
 }
 
 #endif // BDEP_PROJECT_HXX

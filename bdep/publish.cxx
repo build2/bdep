@@ -49,6 +49,8 @@ namespace bdep
       info << "use --control to specify explicitly" << endf;
   }
 
+  // If cfg is empty, then use each package's (forwarded) source directory.
+  //
   static int
   cmd_publish (const cmd_publish_options& o,
                const dir_path& prj,
@@ -109,11 +111,12 @@ namespace bdep
     struct package
     {
       package_name     name;
+      dir_path         path;
       standard_version version;
       package_name     project;
       string           section; // alpha|beta|stable (or --section)
 
-      path             archive;
+      bdep::path       archive;
       string           checksum;
 
       package_manifest manifest;
@@ -146,7 +149,9 @@ namespace bdep
       package_name n (move (pl.name));
       package_name p (pl.project ? move (*pl.project) : n);
 
-      standard_version v (package_version (o, cfg, n));
+      standard_version v (cfg.empty ()
+                          ? package_version (o, prj / pl.path)
+                          : package_version (o, cfg, n));
 
       // Should we allow publishing snapshots and, if so, to which section?
       // For example, is it correct to consider a "between betas" snapshot a
@@ -185,6 +190,7 @@ namespace bdep
                 v.beta ()                     ? "beta"  : "stable");
 
       pkgs.push_back (package {move (n),
+                               move (pl.path),
                                move (v),
                                move (p),
                                move (s),
@@ -249,10 +255,13 @@ namespace bdep
       // build2's version module by default does not allow distribution of
       // uncommitted projects.
       //
+      dir_path d (cfg.empty ()
+                  ? prj / p.path
+                  : dir_path (cfg) /= p.name.string ());
       run_b (
         o,
         "dist:",
-        "'" + (dir_path (cfg) /= p.name.string ()).representation () + "'",
+        "'" + d.representation () + "'",
         "config.dist.root='" + dr.representation () + "'",
         "config.dist.archives=tar.gz",
         "config.dist.checksums=sha256",
@@ -793,6 +802,15 @@ namespace bdep
   {
     tracer trace ("publish");
 
+    if (o.forward ())
+    {
+      if (const char* n = (o.config_name_specified () ? "@<cfg-name>" :
+                           o.config_id_specified ()   ? "--config-id" :
+                           o.config_specified ()      ? "--config|-c" :
+                           o.all ()                   ? "--all|-a"    : nullptr))
+        fail << n << " specified together with --forward";
+    }
+
     // If we are publishing the entire project, then we have two choices: we
     // can publish all the packages in the project or we can only do so for
     // packages that were initialized in the configuration that we are going
@@ -808,33 +826,68 @@ namespace bdep
 
     const dir_path& prj (pp.project);
 
-    // We need a single configuration to prepare package distribution.
+    // Unless we are using the forwarded configurations, we need a single
+    // configuration to prepare package distributions.
     //
-    shared_ptr<configuration> cfg;
+    dir_path cfg_dir;
+
+    if (o.forward ())
     {
-      // Don't keep the database open longer than necessary.
+      // Note: in this case we don't even open the database.
       //
-      database db (open (prj, trace));
+      dir_paths cfgs;
 
-      transaction t (db.begin ());
-      configurations cfgs (find_configurations (o, prj, t));
-      t.commit ();
+      for (const package_location& pl: pp.packages)
+      {
+        dir_path d (prj / pl.path);
 
-      if (cfgs.size () > 1)
-        fail << "multiple configurations specified for publish";
+        package_info pi (package_b_info (o, d));
 
-      // Verify packages are present in the configuration.
+        if (pi.src_root == pi.out_root)
+          fail << "package " << pl.name << " source directory is not forwarded" <<
+            info << "package source directory is " << d;
+
+        // Get the configuration root.
+        //
+        (pi.out_root /= pi.amalgamation).normalize ();
+
+        if (find (cfgs.begin (), cfgs.end (), pi.out_root) == cfgs.end ())
+          cfgs.push_back (move (pi.out_root));
+      }
+
+      // Pre-sync the configurations to avoid triggering the build system hook
+      // (see sync for details).
       //
-      verify_project_packages (pp, cfgs);
+      for (const dir_path& cfg: cfgs)
+        cmd_sync_implicit (o, cfg);
+    }
+    else
+    {
+      shared_ptr<configuration> cfg;
+      {
+        // Don't keep the database open longer than necessary.
+        //
+        database db (open (prj, trace));
 
-      cfg = move (cfgs[0]);
+        transaction t (db.begin ());
+        configurations cfgs (find_configurations (o, prj, t));
+        t.commit ();
+
+        if (cfgs.size () > 1)
+          fail << "multiple configurations specified for publish";
+
+        // Verify packages are present in the configuration.
+        //
+        verify_project_packages (pp, cfgs);
+
+        cfg = move (cfgs[0]);
+      }
+
+      cmd_sync (o, prj, cfg, strings () /* pkg_args */, true /* implicit */);
+
+      cfg_dir = cfg->path;
     }
 
-    // Pre-sync the configuration to avoid triggering the build system hook
-    // (see sync for details).
-    //
-    cmd_sync (o, prj, cfg, strings () /* pkg_args */, true /* implicit */);
-
-    return cmd_publish (o, prj, cfg->path, move (pp.packages));
+    return cmd_publish (o, prj, cfg_dir, move (pp.packages));
   }
 }

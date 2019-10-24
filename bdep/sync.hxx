@@ -31,6 +31,16 @@ namespace bdep
             bool yes = true,
             bool name_cfg = false);
 
+  // As above but perform an implicit sync without a configuration object
+  // (i.e., as if from the hook).
+  //
+  void
+  cmd_sync_implicit (const common_options&,
+                     const dir_path& cfg,
+                     bool fetch = true,
+                     bool yes = true,
+                     bool name_cfg = true);
+
   int
   cmd_sync (cmd_sync_options&&, cli::group_scanner& args);
 

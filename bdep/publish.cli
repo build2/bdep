@@ -24,7 +24,7 @@ namespace bdep
 
      \c{<pkg-spec> = (\b{--directory}|\b{-d} <pkg-dir>)... | <prj-spec>\n
         <prj-spec> = \b{--directory}|\b{-d} <prj-dir>\n
-        <cfg-spec> = \b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>}
+        <cfg-spec> = \b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir> | \b{--forward}}
 
      \h|DESCRIPTION|
 
@@ -142,6 +142,12 @@ namespace bdep
        the package). The commonly used outcome value is \cb{success}. For
        other recognized outcomes refer to the submission service
        documentation."
+    }
+
+    bool --forward
+    {
+      "Use the forwarded configuration for each package instead of the
+       default configuration."
     }
   };
 

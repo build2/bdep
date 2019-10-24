@@ -5,7 +5,6 @@
 #include <bdep/project.hxx>
 #include <bdep/project-odb.hxx>
 
-#include <libbutl/b.mxx>
 #include <libbutl/manifest-parser.mxx>
 
 #include <libbpkg/manifest.hxx>
@@ -406,10 +405,8 @@ namespace bdep
     }
   }
 
-  // Obtain build2 project info for package source or output directories.
-  //
-  static b_project_info
-  package_info (const common_options& o, const dir_path& d)
+  package_info
+  package_b_info (const common_options& o, const dir_path& d)
   {
     try
     {
@@ -437,7 +434,7 @@ namespace bdep
   standard_version
   package_version (const common_options& o, const dir_path& d)
   {
-    b_project_info pi (package_info (o, d));
+    package_info pi (package_b_info (o, d));
 
     if (pi.version.empty ())
       fail << "empty version for package directory " << d;
@@ -456,7 +453,7 @@ namespace bdep
     // Note: the package directory inside the configuration is a bit of an
     // assumption.
     //
-    b_project_info pi (package_info (o, (dir_path (cfg) /= p.string ())));
+    package_info pi (package_b_info (o, (dir_path (cfg) /= p.string ())));
 
     if (pi.version.empty ())
       fail << "empty version for package " << p;

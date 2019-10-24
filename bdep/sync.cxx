@@ -604,6 +604,29 @@ namespace bdep
                 strings ()           /* dep_pkgs  */);
   }
 
+  void
+  cmd_sync_implicit (const common_options& co,
+                     const dir_path& cfg,
+                     bool fetch,
+                     bool yes,
+                     bool name_cfg)
+  {
+    if (!synced (cfg, true /* implicit */))
+      cmd_sync (co,
+                cfg,
+                dir_path (),
+                nullptr,
+                strings (),
+                true /* implicit */,
+                fetch,
+                yes,
+                name_cfg,
+                nullopt              /* upgrade   */,
+                nullopt              /* recursive */,
+                package_locations () /* prj_pkgs  */,
+                strings ()           /* dep_pkgs  */);
+  }
+
   int
   cmd_sync (cmd_sync_options&& o, cli::group_scanner& args)
   {
