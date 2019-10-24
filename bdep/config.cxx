@@ -187,20 +187,14 @@ namespace bdep
             info << "use 'bdep config set --no-default' to clear";
       }
 
-      // By default the default configuration is forwarded unless another
-      // is already forwarded.
+      // By default the default configuration is forwarded unless another is
+      // already forwarded.
       //
       if (ao.forward () || ao.no_forward ())
         fwd = ao.forward ()  && !ao.no_forward ();
 
       if (!fwd)
         fwd = *def && db.query_one<configuration> (query::forward) == nullptr;
-      else if (*fwd)
-      {
-        if (auto p = db.query_one<configuration> (query::forward))
-          fail << "configuration " << *p << " is already forwarded" <<
-            info << "use 'bdep config set --no-forward' to clear";
-      }
     }
 
     shared_ptr<configuration> r (
@@ -701,23 +695,39 @@ namespace bdep
               info << "while updating configuration " << *c;
         }
 
-        c->default_   = *d;
+        c->default_ = *d;
       }
 
       if (f)
       {
         if (*f && !c->forward)
         {
-          if (auto p = db.query_one<configuration> (query::forward))
-            fail << "configuration " << *p << " is already forwarded" <<
-              info << "while updating configuration " << *c;
+          // Make sure there are no other forwarded configurations with the
+          // same package as us.
+          //
+          for (const shared_ptr<configuration>& o:
+                 pointer_result (db.query<configuration> (query::forward)))
+          {
+            auto i (find_first_of (
+                      o->packages.begin (), o->packages.end (),
+                      c->packages.begin (), c->packages.end (),
+                      [] (const package_state& x, const package_state& y)
+                      {
+                        return x.name == y.name;
+                      }));
+
+            if (i != o->packages.end ())
+              fail << "configuration " << *o << " is also forwarded and "
+                   << "also has package " << i->name << " initialized" <<
+                info << "while updating configuration " << *c;
+          }
         }
 
-        c->forward    = *f;
+        c->forward = *f;
       }
 
       if (s)
-        c->auto_sync  = *s;
+        c->auto_sync = *s;
 
       db.update (c);
     }

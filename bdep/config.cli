@@ -90,8 +90,11 @@ namespace bdep
          configuration is already designated as forwarded. When a project is
          initialized in a forwarded build configuration, its source directory
          is configured to forward to this configuration (see \l{b(1)} for
-         details on forwarded configurations). To forward to a non-default
-         configuration use the \cb{--forward} option.
+         details on forwarded configurations). To designate a non-default
+         configuration as forwarded use the \cb{--forward} option. Note also
+         that it is possible to have multiple forwarded configurations,
+         however, any given package within a project can only be initialized
+         in one such configuration.
 
          Unless the \cb{--no-auto-sync} option is specified, an added or
          created build configuration will be automatically synchronized on

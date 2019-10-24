@@ -94,6 +94,33 @@ namespace bdep
           continue;
         }
 
+        // If this configuration is forwarded, verify there is no other
+        // forwarded configuration that also has this package.
+        //
+        if (c->forward)
+        {
+          using query = bdep::query<configuration>;
+
+          for (const shared_ptr<configuration>& o:
+                 pointer_result (db.query<configuration> (query::forward)))
+          {
+            if (o == c)
+              continue;
+
+            if (find_if (o->packages.begin (),
+                         o->packages.end (),
+                         [&p] (const package_state& s)
+                         {
+                           return p.name == s.name;
+                         }) != o->packages.end ())
+            {
+              fail << "forwarded configuration " << *o << " also has package "
+                   << p.name << " initialized" <<
+                info << "while initializing in forwarded configuration " << *c;
+            }
+          }
+        }
+
         // If we are initializing multiple packages, print their names.
         //
         if (verb && pkgs.size () > 1)
