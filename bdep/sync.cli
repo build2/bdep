@@ -35,10 +35,10 @@ namespace bdep
      \h|DESCRIPTION|
 
      The \cb{sync} command synchronizes a project with its build
-     configurations. The first form (no arguments nor \cb{--upgrade} or
-     \cb{--patch} are specified) upgrades the project packages to the latest
-     version/iteration, adjusts their dependencies according to the latest
-     manifest information, and updates the lockfile.
+     configurations. The first form (no \cb{--upgrade} or \cb{--patch} and
+     only <pkg-args> arguments, if any, are specified) upgrades the project
+     packages to the latest version/iteration, adjusts their dependencies
+     according to the latest manifest information, and updates the lockfile.
 
      If no project or package directory is specified, then the current working
      directory is assumed. If no configuration is specified, then the default
@@ -54,9 +54,9 @@ namespace bdep
      \c{\b{--recursive}|\b{-r}} is specified) dependencies of the specified
      project packages.
 
-     The third form (one or more arguments are specified), in addition to the
-     first form's functionality, also upgrades (by default or if
-     \cb{--upgrade} is specified) or patches (if \cb{--patch} is specified)
+     The third form (one or more <dep-spec> arguments are specified), in
+     addition to the first form's functionality, also upgrades (by default or
+     if \cb{--upgrade} is specified) or patches (if \cb{--patch} is specified)
      the specified dependencies. If \c{\b{--immediate}|\b{-i}} or
      \c{\b{--recursive}|\b{-r}} is specified, then it also upgrades or patches
      the immediate or all dependencies of the specified dependencies,

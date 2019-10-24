@@ -117,6 +117,8 @@ namespace bdep
       // error. This can be worked around by disabling the implicit sync
       // (BDEP_SYNC=0).
       //
+      // Note: semantically equivalent to the first form of the sync command.
+      //
       cmd_sync (o, prj, c, pkg_args, false /* implicit */);
 
       db.update (c);
