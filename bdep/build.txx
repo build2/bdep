@@ -45,11 +45,17 @@ namespace bdep
 
     const dir_path& prj (pp.project);
 
-    database db (open (prj, trace));
+    // Load the configurations without keeping the database open longer
+    // than necessary.
+    //
+    configurations cfgs;
+    {
+      database db (open (prj, trace));
 
-    transaction t (db.begin ());
-    configurations cfgs (find_configurations (o, prj, t));
-    t.commit ();
+      transaction t (db.begin ());
+      cfgs = find_configurations (o, prj, t);
+      t.commit ();
+    }
 
     // If specified, verify packages are present in each configuration.
     //

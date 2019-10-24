@@ -33,11 +33,17 @@ namespace bdep
     tracer trace ("fetch");
 
     dir_path prj (find_project (o));
-    database db (open (prj, trace));
 
-    transaction t (db.begin ());
-    configurations cfgs (find_configurations (o, prj, t));
-    t.commit ();
+    configurations cfgs;
+    {
+      // Don't keep the database open longer than necessary.
+      //
+      database db (open (prj, trace));
+
+      transaction t (db.begin ());
+      cfgs = find_configurations (o, prj, t);
+      t.commit ();
+    }
 
     bool first (true);
     for (const shared_ptr<configuration>& c: cfgs)

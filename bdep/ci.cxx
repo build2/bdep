@@ -200,10 +200,13 @@ namespace bdep
                              false /* load_packages   */));
 
     const dir_path& prj (pp.project);
-    database db (open (prj, trace));
 
     shared_ptr<configuration> cfg;
     {
+      // Don't keep the database open longer than necessary.
+      //
+      database db (open (prj, trace));
+
       transaction t (db.begin ());
       configurations cfgs (find_configurations (o, prj, t));
       t.commit ();

@@ -807,12 +807,15 @@ namespace bdep
                              true  /* load_packages   */));
 
     const dir_path& prj (pp.project);
-    database db (open (prj, trace));
 
     // We need a single configuration to prepare package distribution.
     //
     shared_ptr<configuration> cfg;
     {
+      // Don't keep the database open longer than necessary.
+      //
+      database db (open (prj, trace));
+
       transaction t (db.begin ());
       configurations cfgs (find_configurations (o, prj, t));
       t.commit ();

@@ -111,14 +111,16 @@ namespace bdep
 
     database db (open (prj, trace));
 
-    transaction t (db.begin ());
-    configurations cfgs (
-      find_configurations (o,
-                           prj,
-                           t,
-                           true   /* fallback_default */,
-                           !force /* validate */));
-    t.commit ();
+    configurations cfgs;
+    {
+      transaction t (db.begin ());
+      cfgs = find_configurations (o,
+                                  prj,
+                                  t,
+                                  true   /* fallback_default */,
+                                  !force /* validate */);
+      t.commit ();
+    }
 
     // If specified, verify packages are present in each configuration.
     //
