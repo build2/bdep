@@ -48,7 +48,8 @@ namespace bdep
             database& db,
             const configurations& cfgs,
             const package_locations& pkgs,
-            const strings& pkg_args)
+            const strings& pkg_args,
+            bool sync)
   {
     // We do each configuration in a separate transaction so that our state
     // reflects the bpkg configuration as closely as possible.
@@ -121,10 +122,11 @@ namespace bdep
           }
         }
 
-        // If we are initializing multiple packages, print their names.
+        // If we are initializing multiple packages or there will be no sync,
+        // print their names.
         //
-        if (verb && pkgs.size () > 1)
-          text << "initializing package " << p.name;
+        if (verb && (pkgs.size () > 1 || !sync))
+          text << "initializing package " << p.name;;
 
         c->packages.push_back (package_state {p.name});
       }
@@ -146,7 +148,8 @@ namespace bdep
       //
       // Note: semantically equivalent to the first form of the sync command.
       //
-      cmd_sync (o, prj, c, pkg_args, false /* implicit */);
+      if (sync)
+        cmd_sync (o, prj, c, pkg_args, false /* implicit */);
 
       db.update (c);
       t.commit ();
@@ -163,8 +166,9 @@ namespace bdep
 
     if (o.empty ())
     {
-      if (ca) fail << "both --empty and --config-add specified";
-      if (cc) fail << "both --empty and --config-create specified";
+      if (ca)           fail << "both --empty and --config-add specified";
+      if (cc)           fail << "both --empty and --config-create specified";
+      if (o.no_sync ()) fail << "both --empty and --no-sync specified";
     }
 
     if (const char* n = cmd_config_validate_add (o))
@@ -265,7 +269,8 @@ namespace bdep
               db,
               cfgs,
               pp.packages,
-              scan_arguments (args) /* pkg_args */);
+              scan_arguments (args) /* pkg_args */,
+              !o.no_sync ());
 
     return 0;
   }

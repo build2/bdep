@@ -27,7 +27,8 @@ namespace bdep
                    bool config_create_specified);
 
   // Initialize each package in each configuration skipping those that are
-  // already initialized. Then synchronize each configuration.
+  // already initialized. Then synchronize each configuration unless sync
+  // is false.
   //
   void
   cmd_init (const common_options&,
@@ -35,7 +36,8 @@ namespace bdep
             database&,
             const configurations&,
             const package_locations&,
-            const strings& pkg_args);
+            const strings& pkg_args,
+            bool sync = true);
 
   int
   cmd_init (const cmd_init_options&, cli::group_scanner& args);

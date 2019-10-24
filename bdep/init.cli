@@ -166,5 +166,12 @@ namespace bdep
       "<dir>",
       "Create a new build configuration in <dir>."
     }
+
+    bool --no-sync
+    {
+      "Enter the project into the database but do not initialize it in the
+       build configurations. The initialization can be finished later with
+       an explicit \l{bdep-sync(1)} command."
+    }
   };
 }
