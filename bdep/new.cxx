@@ -1407,10 +1407,10 @@ namespace bdep
                  <<                                                       endl
                  << "#include <" << ip << exph << ">"                  << endl
                  <<                                                       endl
-                 << "// Print a greeting for the specified name into the specified"  << endl
-                 << "// stream. On success, return the number of character printed." << endl
-                 << "// On failure, set errno and return a negative value."          << endl
-                 << "//"                                                             << endl
+                 << "/* Print a greeting for the specified name into the specified"   << endl
+                 << " * stream. On success, return the number of characters printed." << endl
+                 << " * On failure, set errno and return a negative value."           << endl
+                 << " */"                                                             << endl
                  << mp << "_SYMEXPORT int"                             << endl
                  << "say_hello (FILE *, const char *name);"            << endl;
               os.close ();
@@ -1935,6 +1935,14 @@ namespace bdep
           {
           case lang::c:
             {
+              // It would have been nice if we could use something like
+              // open_memstream() or fmemopen() but these are not portable.
+              // So we resort to tmpfile(), which, turns out, is broken on
+              // Windows (it may try to create a file in the root directory of
+              // a drive and that may require elevated privileges). So we
+              // provide our own implementation for that. Who thought writing
+              // portable C could be so hard?
+
               // tests/basics/driver.c
               //
               open (td / "driver.c");
@@ -1947,29 +1955,70 @@ namespace bdep
                 os << "#include <" << ip << verh << ">"                << endl;
               os << "#include <" << ip << apih << ">"                  << endl
                  <<                                                       endl
+                 << "#ifdef _WIN32"                                    << endl
+                 << "#define tmpfile mytmpfile"                        << endl
+                 << "static FILE *mytmpfile ();"                       << endl
+                 << "#endif"                                           << endl
+                 <<                                                       endl
                  << "int main ()"                                      << endl
                  << "{"                                                << endl
                  << "  char b[256];"                                   << endl
                  <<                                                       endl
-                 << "  // Basics."                                     << endl
-                 << "  //"                                             << endl
+                 << "  /* Basics."                                     << endl
+                 << "   */"                                            << endl
                  << "  {"                                              << endl
-                 << "    FILE *o = fmemopen (b, sizeof (b), \"w\");"   << endl
+                 << "    FILE *o = tmpfile ();"                        << endl
                  << "    assert (say_hello (o, \"World\") > 0);"       << endl
+                 << "    rewind (o);"                                  << endl
+                 << "    assert (fread (b, 1, sizeof (b), o) == 14 &&" << endl
+                 << "            strncmp (b, \"Hello, World!\\n\", 14) == 0);" << endl
                  << "    fclose (o);"                                  << endl
-                 << "    assert (strcmp (b, \"Hello, World!\\n\") == 0);" << endl
                  << "  }"                                              << endl
                  <<                                                       endl
-                 << "  // Empty name."                                 << endl
-                 << "  //"                                             << endl
+                 << "  /* Empty name."                                 << endl
+                 << "   */"                                            << endl
                  << "  {"                                              << endl
-                 << "    FILE *o = fmemopen (b, sizeof (b), \"w\");"   << endl
+                 << "    FILE *o = tmpfile ();"                        << endl
                  << "    assert (say_hello (o, \"\") < 0 && errno == EINVAL);" << endl
                  << "    fclose (o);"                                  << endl
                  << "  }"                                              << endl
                  <<                                                       endl
                  << "  return 0;"                                      << endl
-                 << "}"                                                << endl;
+                 << "}"                                                << endl
+                 <<                                                       endl
+                 << "#ifdef _WIN32"                                    << endl
+                 << "#include <windows.h>"                             << endl
+                 << "#include <fcntl.h>"                               << endl
+                 << "#include <io.h>"                                  << endl
+                 <<                                                       endl
+                 << "FILE *mytmpfile ()"                               << endl
+                 << "{"                                                << endl
+                 << "  char d[MAX_PATH + 1], p[MAX_PATH + 1];"         << endl
+                 << "  if (GetTempPathA (sizeof (d), d) == 0 ||"       << endl
+                 << "      GetTempFileNameA (d, \"tmp\", 0, p) == 0)"  << endl
+                 << "    return NULL;"                                 << endl
+                 <<                                                       endl
+                 << "  HANDLE h = CreateFileA (p,"                     << endl
+                 << "                          GENERIC_READ | GENERIC_WRITE," << endl
+                 << "                          0,"                     << endl
+                 << "                          NULL,"                  << endl
+                 << "                          CREATE_ALWAYS,"         << endl
+                 << "                          FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE," << endl
+                 << "                          NULL);"                 << endl
+                 << "  if (h == INVALID_HANDLE_VALUE)"                 << endl
+                 << "    return NULL;"                                 << endl
+                 <<                                                       endl
+                 << "  int fd = _open_osfhandle ((intptr_t) h, _O_RDWR);" << endl
+                 << "  if (fd == -1)"                                  << endl
+                 << "    return NULL;"                                 << endl
+                 <<                                                       endl
+                 << "  FILE *f = _fdopen (fd, \"wb+\");"               << endl
+                 << "  if (f == NULL)"                                 << endl
+                 << "    _close (fd);"                                 << endl
+                 <<                                                       endl
+                 << "  return f;"                                      << endl
+                 << "}"                                                << endl
+                 << "#endif"                                           << endl;
               os.close ();
 
               break;

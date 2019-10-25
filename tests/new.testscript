@@ -6,10 +6,6 @@
 
 posix = ($cxx.target.class != 'windows')
 
-# Our C tests use fmemopen() which is not always available.
-#
-c_tests = ($c.target.class != 'windows' && $c.target.class != 'macos')
-
 # Disable nesting checks in the created projects.
 #
 test.arguments += --no-checks
@@ -206,7 +202,6 @@ status += -d prj
 
   : lib-c
   :
-  if $c_tests
   {
     $* -t lib -l c libprj-foo 2>>/"EOE" &libprj-foo/***;
       created new library project libprj-foo in $~/libprj-foo/
@@ -219,7 +214,6 @@ status += -d prj
 
   : lib-c-unit-tests
   :
-  if $c_tests
   {
     $* -t lib,unit-tests -l c libfoo 2>>/"EOE" &libfoo/***;
       created new library project libfoo in $~/libfoo/
@@ -587,7 +581,6 @@ status += -d prj
 
     : type
     :
-    if $c_tests
     {
       : exe
       :
@@ -671,7 +664,6 @@ status += -d prj
 
       : c
       :
-      if $c_tests
       {
         $* -l c libprj 2>>/"EOE" &libprj/***;
           created new library project libprj in $~/libprj/
