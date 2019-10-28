@@ -557,7 +557,43 @@ namespace bdep
     }
   };
 
-  "\h|ENVIRONMENT|
+  "
+   \h|DEFAULT OPTIONS FILES|
+
+    See \l{bdep-default-options-files(1)} for an overview of the default
+    options files. For the \cb{new} command the search start directory is the
+    project directory in the package and subdirectory modes and the parent
+    directory of the new project in all other modes. The following options
+    files are searched for in each directory and, if found, loaded in the
+    order listed:
+
+    \
+    bdep.options
+    bdep-{config config-add}.options                # if --config-add|-A
+    bdep-{config config-add config-create}.options  # if --config-create|-C
+    bdep-new.options
+    bdep-new-{project|package|subdirectory}.options # (mode-dependent)
+    \
+
+    The following \cb{new} command options cannot be specified in the
+    default options files:
+
+    \
+    --output-dir|-o
+    --directory|-d
+    --package
+    --subdirectory
+    --no-checks
+    --config-add|-A
+    --config-create|-C
+    --wipe
+    \
+
+    While the presence of the \cb{--pre-hook} or \cb{--post-hook} options in
+    remote default options files will trigger a prompt.
+
+
+   \h|ENVIRONMENT|
 
    The \cb{BDEP_AUTHOR_EMAIL} environment variable can be used to specify the
    package email address. If not set, the \cb{new} command will first try to

@@ -2180,6 +2180,8 @@ namespace bdep
   default_options_files
   options_files (const char*, const cmd_new_options& o, const strings&)
   {
+    // NOTE: remember to update the documentation if changing anything here.
+
     // bdep.options
     // bdep-{config config-add}.options               # -A
     // bdep-{config config-add config-create}.options # -C
@@ -2255,6 +2257,8 @@ namespace bdep
   merge_options (const default_options<cmd_new_options>& defs,
                  const cmd_new_options& cmd)
   {
+    // NOTE: remember to update the documentation if changing anything here.
+
     // While validating/merging the default options, check for the "remote"
     // hooks presence and prepare the prompt, if that's the case.
     //
