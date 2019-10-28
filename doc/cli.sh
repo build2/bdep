@@ -63,10 +63,10 @@ o="--suppress-undocumented --output-prefix bdep- --class-doc bdep::common_option
 compile "common" $o --output-suffix "-options" --class-doc bdep::common_options=long
 compile "bdep" $o --output-prefix "" --class-doc bdep::commands=short --class-doc bdep::topics=short
 
-# NOTE: remember to update a similar list in buildfile.
+# NOTE: remember to update a similar list in buildfile as well as in bdep.cli.
 #
 pages="new help init sync fetch status ci release publish deinit config test \
-update clean projects-configs"
+update clean projects-configs default-options-files"
 
 for p in $pages; do
   compile $p $o

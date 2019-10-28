@@ -1,0 +1,73 @@
+// file      : bdep/default-options-files.cli
+// copyright : Copyright (c) 2014-2019 Code Synthesis Ltd
+// license   : MIT; see accompanying LICENSE file
+
+include <bdep/common-options.hxx>;
+
+"\section=1"
+"\name=bdep-default-options-files"
+"\summary=specifying default options"
+
+{
+  "<command> <mode-options>",
+
+  "
+  \h|SYNOPSIS|
+
+  \c{\b{bdep} <command> [<mode-options>] ...}
+
+  \h|DESCRIPTION|
+
+  Instead of having a separate config file format for tool configuration, the
+  \cb{build2} toolchain uses \i{default options files} which contain the same
+  options as what can be specified on the command line. The default options
+  files are like options files that one can specify with \cb{--options-file}
+  (\l{bdep-common-options(1)}) except that they are loaded by default.
+
+  The default options files are searched for in the \cb{.build2/} and
+  \cb{.build2/local/} subdirectories of each outer directory beginning from
+  the \i{start directory} and until reaching either the home directory or the
+  filesystem root directory (both excluding). Then in the \cb{.build2/}
+  subdirectory of the home directory and finally in the system directory (for
+  example, \cb{/etc/build2/}) if configured.
+
+  Once the search is complete, the files are loaded in the reverse order, that
+  is, beginning from the system directory (if any), followed by the home
+  directory, ending with the start directory, and finishing off with the
+  options specified on the command line.  In other words, the files are loaded
+  from the more generic to the more specific with the command line options
+  having the ability to override any values specified in the default options
+  files.
+
+  The start directory, the names of the default options files, and in which
+  order they are loaded within each directory are determined by the <command>
+  and potentially its <mode-options>. See each command's DEFAULT OPTIONS FILES
+  section for details.
+
+  If a default options file contains \cb{--no-default-options}, then the
+  search is stopped at the directory containing this file and no outer files
+  are loaded. If this option is specified on the command line, then none of
+  the default options files are searched for or loaded.
+
+  An additional directory containing default options files can be specified
+  with \cb{--default-options}. If such a directory is a subdirectory of the
+  start directory or is between the start directory and the end of the outer
+  search, then its configuration files are loaded at the corresponding point
+  in the directory hierarchy. Otherwise, they are loaded after the home
+  directory.
+
+  The presence of the \cb{.git} filesystem entry causes the default options
+  files in this directory and any of its subdirectories to be considered
+  remote. Depending on the command, some security-sensitive options may be
+  disallowed or trigger a prompt when specified in remote options files (in
+  the current implementation this is the case even for files from the
+  \cb{.build2/local/} subdirectory since the mere location is not a sufficient
+  ground to definitively conclude that the file is not remote; to be sure we
+  would need to query the version control system). Note that additional
+  default options files specified with \cb{--default-options} are never
+  considered remote.
+
+  The order in which default options files are loaded is traced at the
+  verbosity level 3 (\cb{-V} option) or higher.
+  "
+}
