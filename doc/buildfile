@@ -26,7 +26,7 @@ define xhtml: doc
 xhtml{*}: extension = xhtml
 
 ./: {man1 xhtml}{bdep bdep-common-options bdep-projects-configs \
-                 default-options-files $cmds}                   \
+                 bdep-default-options-files $cmds}              \
     css{common pre-box man}                                     \
     file{man-*}
 
