@@ -874,17 +874,15 @@ namespace bdep
             // @@ Maybe we should generate a "Hello, World" description and
             //    usage example as a guide, at least for a library?
 
-            os << "# " << n << " - " << l << " " << t                  << endl
+            os << "# " << n                                            << endl
                <<                                                         endl
-               << "TODO"                                               << endl;
+               << l << " " << t                                        << endl;
             break;
           }
         case type::bare:
         case type::empty:
           {
-            os << "# " << n                                            << endl
-               <<                                                         endl
-               << "TODO"                                               << endl;
+            os << "# " << n                                            << endl;
             break;
           }
         }
