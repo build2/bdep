@@ -257,11 +257,12 @@ namespace bdep
     // will most likely be wrong). All this seems reasonable for what this
     // mode is expected to be used ("end-product" kind of projects).
     //
-    bool readme (false); // !no-readme
-    bool altn   (false); // alt-naming
-    bool itest  (false); // !no-tests
-    bool utest  (false); // unit-tests
-    bool ver    (false); // !no-version
+    bool readme  (false); // !no-readme
+    bool altn    (false); // alt-naming
+    bool itest   (false); // !no-tests
+    bool utest   (false); // unit-tests
+    bool install (false); // !no-install
+    bool ver     (false); // !no-version
 
     string license;
     bool   license_o (false);
@@ -277,6 +278,7 @@ namespace bdep
           altn    =  t.exe_opt.alt_naming ();
           itest   = !t.exe_opt.no_tests ();
           utest   =  t.exe_opt.unit_tests ();
+          install = !t.exe_opt.no_install ();
 
           if (!sub)
           {
@@ -291,6 +293,7 @@ namespace bdep
           altn    =  t.lib_opt.alt_naming ();
           itest   = !t.lib_opt.no_tests ()   && !sub;
           utest   =  t.lib_opt.unit_tests ();
+          install = !t.lib_opt.no_install ();
           ver     = !t.lib_opt.no_version () && !sub;
 
           if (!sub)
@@ -308,6 +311,7 @@ namespace bdep
           readme  = !t.bare_opt.no_readme ();
           altn    =  t.bare_opt.alt_naming ();
           itest   = !t.bare_opt.no_tests ();
+          install = !t.bare_opt.no_install ();
 
           if (!sub)
           {
@@ -1108,8 +1112,9 @@ namespace bdep
            << "using config"                                           << endl;
         if (itest || utest)
           os << "using test"                                           << endl;
-        os << "using install"                                          << endl
-           << "using dist"                                             << endl;
+        if (install)
+          os << "using install"                                        << endl;
+        os << "using dist"                                             << endl;
         os.close ();
 
         // build/root.build
@@ -1178,7 +1183,7 @@ namespace bdep
         os << "./: {*/ -" << build_dir.posix_representation () << "}"  <<
           (readme ? " doc{README.md}" : "") << " manifest"             << endl;
 
-        if (itest && t == type::lib) // Have tests/ subproject.
+        if (itest && install && t == type::lib) // Have tests/ subproject.
           os <<                                                           endl
              << "# Don't install tests."                               << endl
              << "#"                                                    << endl
@@ -1269,14 +1274,18 @@ namespace bdep
 
             os <<                                                         endl
                << "# Unit tests."                                      << endl
-               << "#"                                                  << endl
+               << "#"                                                  << endl;
 
-               << "exe{*.test}:"                                       << endl
-               << "{"                                                  << endl
-               << "  test = true"                                      << endl
-               << "  install = false"                                  << endl
-               << "}"                                                  << endl
-               <<                                                         endl
+            if (install)
+              os << "exe{*.test}:"                                     << endl
+                 << "{"                                                << endl
+                 << "  test = true"                                    << endl
+                 << "  install = false"                                << endl
+                 << "}"                                                << endl;
+            else
+              os << "exe{*.test}: test = true"                         << endl;
+
+            os <<                                                         endl
                << "for t: " << x << "{**.test...}"                     << endl
                << "{"                                                  << endl
                << "  d = $directory($t)"                               << endl
@@ -1655,13 +1664,18 @@ namespace bdep
 
             os <<                                                         endl
                << "# Unit tests."                                      << endl
-               << "#"                                                  << endl
-               << "exe{*.test}:"                                       << endl
-               << "{"                                                  << endl
-               << "  test = true"                                      << endl
-               << "  install = false"                                  << endl
-               << "}"                                                  << endl
-               <<                                                         endl
+               << "#"                                                  << endl;
+
+            if (install)
+              os << "exe{*.test}:"                                     << endl
+                 << "{"                                                << endl
+                 << "  test = true"                                    << endl
+                 << "  install = false"                                << endl
+                 << "}"                                                << endl;
+            else
+              os << "exe{*.test}: test = true"                         << endl;
+
+            os <<                                                         endl
                << "for t: " << x << "{**.test...}"                     << endl
                << "{"                                                  << endl
                << "  d = $directory($t)"                               << endl
@@ -1733,15 +1747,17 @@ namespace bdep
 
           // Installation.
           //
-          os <<                                                           endl
-             << "# Install into the " << ip << " subdirectory of, say, /usr/include/" << endl
-             << "# recreating subdirectories."                                        << endl
-             << "#"                                                                   << endl
-             << "{" << hs << "}{*}:"                                   << endl
-             << "{"                                                    << endl
-             << "  install         = include/" << ip                   << endl
-             << "  install.subdirs = true"                             << endl
-             << "}"                                                    << endl;
+          if (install)
+            os <<                                                         endl
+               << "# Install into the " << ip << " subdirectory of, say, /usr/include/" << endl
+               << "# recreating subdirectories."                                        << endl
+               << "#"                                                                   << endl
+               << "{" << hs << "}{*}:"                                 << endl
+               << "{"                                                  << endl
+               << "  install         = include/" << ip                 << endl
+               << "  install.subdirs = true"                           << endl
+               << "}"                                                  << endl;
+
           os.close ();
 
           // <base>/.gitignore

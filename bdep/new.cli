@@ -150,6 +150,10 @@ namespace bdep
 
          Add support for unit testing.|
 
+     \li|\n\ \ \ \cb{no-install}
+
+         Don't add support for installing.|
+
      \li|\n\ \ \ \c{\b{license=}\i{name}}|
 
      \li|\ \ \ \cb{no-readme}|
@@ -173,6 +177,10 @@ namespace bdep
 
          Add support for unit testing.|
 
+     \li|\n\ \ \ \cb{no-install}
+
+         Don't add support for installing.|
+
      \li|\n\ \ \ \cb{no-version}
 
          Don't add support for generating the version header.|
@@ -195,6 +203,10 @@ namespace bdep
      \li|\n\ \ \ \cb{no-tests}
 
          Don't add support for testing.|
+
+     \li|\n\ \ \ \cb{no-install}
+
+         Don't add support for installing.|
 
      \li|\n\ \ \ \c{\b{license=}\i{name}}|
 
@@ -357,6 +369,7 @@ namespace bdep
   {
     bool no-tests;
     bool unit-tests;
+    bool no-install;
     string license = "proprietary";
     bool no-readme;
     bool alt-naming;
@@ -366,6 +379,7 @@ namespace bdep
   {
     bool no-tests;
     bool unit-tests;
+    bool no-install;
     bool no-version;
     string license = "proprietary";
     bool no-readme;
@@ -375,6 +389,7 @@ namespace bdep
   class cmd_new_bare_options
   {
     bool no-tests;
+    bool no-install;
     string license = "proprietary";
     bool no-readme;
     bool alt-naming;
