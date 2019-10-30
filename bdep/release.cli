@@ -237,4 +237,29 @@ namespace bdep
        current working directory."
     }
   };
+
+  "
+   \h|DEFAULT OPTIONS FILES|
+
+   See \l{bdep-default-options-files(1)} for an overview of the default
+   options files. For the \cb{release} command the search start directory is
+   the project directory. The following options files are searched for in
+   each directory and, if found, loaded in the order listed:
+
+   \
+   bdep.options
+   bdep-release.options
+   bdep-release-{version|revision|open|tag}.options # (mode-dependent)
+   \
+
+   The following \cb{release} command options cannot be specified in the
+   default options files:
+
+   \
+   --directory|-d
+   --revision
+   --open
+   --tag
+   \
+  "
 }

@@ -27,4 +27,18 @@ namespace bdep
   {
     //"\h|HELP OPTIONS|"
   };
+
+  "
+   \h|DEFAULT OPTIONS FILES|
+
+   See \l{bdep-default-options-files(1)} for an overview of the default
+   options files. For the \cb{help} command the following options files are
+   searched for only in the predefined directories (home, system, etc) and, if
+   found, loaded in the order listed:
+
+   \
+   bdep.options
+   bdep-help.options
+   \
+  "
 }

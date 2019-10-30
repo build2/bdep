@@ -1321,9 +1321,11 @@ namespace bdep
   default_options_files
   options_files (const char*, const cmd_release_options& o, const strings&)
   {
+    // NOTE: remember to update the documentation if changing anything here.
+
     // bdep.options
     // bdep-release.options
-    // bdep-release{version|revision|open|tag}.options
+    // bdep-release-{version|revision|open|tag}.options
 
     default_options_files r {
       {path ("bdep.options"), path ("bdep-release.options")},
@@ -1343,6 +1345,8 @@ namespace bdep
   merge_options (const default_options<cmd_release_options>& defs,
                  const cmd_release_options& cmd)
   {
+    // NOTE: remember to update the documentation if changing anything here.
+
     return merge_default_options (
       defs,
       cmd,

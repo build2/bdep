@@ -164,4 +164,29 @@ namespace bdep
   {
     "\h|CONFIG OPTIONS|"
   };
+
+
+  "
+   \h|DEFAULT OPTIONS FILES|
+
+   See \l{bdep-default-options-files(1)} for an overview of the default
+   options files. For the \cb{config} command the search start directory is
+   the project directory. The following options files are searched for in
+   each directory and, if found, loaded in the order listed:
+
+   \
+   bdep.options
+   bdep-config.options
+   bdep-config-add.options          # if the create subcommand
+   bdep-config-<subcommand>.options # (subcommand-dependent)
+   \
+
+   The following \cb{config} command options cannot be specified in the
+   default options files:
+
+   \
+   --directory|-d
+   --wipe
+   \
+  "
 }

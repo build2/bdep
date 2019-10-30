@@ -50,4 +50,25 @@ namespace bdep
       "Perform a full re-fetch of all the repositories."
     }
   };
+
+  "
+   \h|DEFAULT OPTIONS FILES|
+
+   See \l{bdep-default-options-files(1)} for an overview of the default
+   options files. For the \cb{fetch} command the search start directory is
+   the project directory. The following options files are searched for in
+   each directory and, if found, loaded in the order listed:
+
+   \
+   bdep.options
+   bdep-fetch.options
+   \
+
+   The following \cb{fetch} command options cannot be specified in the
+   default options files:
+
+   \
+   --directory|-d
+   \
+  "
 }

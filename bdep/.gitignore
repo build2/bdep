@@ -3,6 +3,7 @@ bdep
 *-odb.?xx
 *-options.?xx
 projects-configs.?xx
+default-options-files.?xx
 version.hxx
 
 # Testscript output directory (can be symlink).

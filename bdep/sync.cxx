@@ -900,6 +900,8 @@ namespace bdep
   default_options_files
   options_files (const char*, const cmd_sync_options& o, const strings&)
   {
+    // NOTE: remember to update the documentation if changing anything here.
+
     // bdep.options
     // bdep-{sync|sync-implicit}.options
 
@@ -934,6 +936,8 @@ namespace bdep
   merge_options (const default_options<cmd_sync_options>& defs,
                  const cmd_sync_options& cmd)
   {
+    // NOTE: remember to update the documentation if changing anything here.
+
     return merge_default_options (
       defs,
       cmd,

@@ -46,4 +46,25 @@ namespace bdep
   {
     "\h|CLEAN OPTIONS|"
   };
+
+  "
+   \h|DEFAULT OPTIONS FILES|
+
+   See \l{bdep-default-options-files(1)} for an overview of the default
+   options files. For the \cb{clean} command the search start directory is
+   the project directory. The following options files are searched for in
+   each directory and, if found, loaded in the order listed:
+
+   \
+   bdep.options
+   bdep-clean.options
+   \
+
+   The following \cb{clean} command options cannot be specified in the
+   default options files:
+
+   \
+   --directory|-d
+   \
+  "
 }

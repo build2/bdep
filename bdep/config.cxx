@@ -799,6 +799,8 @@ namespace bdep
                  const cmd_config_options& o,
                  const strings& args)
   {
+    // NOTE: remember to update the documentation if changing anything here.
+
     // bdep.options
     // bdep-config.options
     // bdep-config-<subcmd>.options
@@ -841,6 +843,8 @@ namespace bdep
   merge_options (const default_options<cmd_config_options>& defs,
                  const cmd_config_options& cmd)
   {
+    // NOTE: remember to update the documentation if changing anything here.
+
     return merge_default_options (
       defs,
       cmd,

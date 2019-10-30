@@ -151,7 +151,28 @@ namespace bdep
     }
   };
 
-  "\h|ENVIRONMENT|
+  "
+   \h|DEFAULT OPTIONS FILES|
+
+   See \l{bdep-default-options-files(1)} for an overview of the default
+   options files. For the \cb{publish} command the search start directory is
+   the project directory. The following options files are searched for in
+   each directory and, if found, loaded in the order listed:
+
+   \
+   bdep.options
+   bdep-publish.options
+   \
+
+   The following \cb{publish} command options cannot be specified in the
+   default options files:
+
+   \
+   --directory|-d
+   \
+
+
+   \h|ENVIRONMENT|
 
    The \cb{BDEP_AUTHOR_NAME} and \cb{BDEP_AUTHOR_EMAIL} environment variables
    can be used to specify the publisher's name and email address,

@@ -222,7 +222,32 @@ namespace bdep
     uint16_t --hook = 0;
   };
 
-  "\h|ENVIRONMENT|
+  "
+   \h|DEFAULT OPTIONS FILES|
+
+   See \l{bdep-default-options-files(1)} for an overview of the default
+   options files. For the \cb{sync} command the search start directory is the
+   project directory, except for the implicit mode for which only the
+   predefined directories (system, etc) are searched in. The following options
+   files are searched for in each directory and, if found, loaded in the order
+   listed:
+
+   \
+   bdep.options
+   bdep-{sync|sync-implicit}.options # (mode-dependent)
+   \
+
+   The following \cb{sync} command options cannot be specified in the
+   default options files:
+
+   \
+   --directory|-d
+   --implicit
+   --config|-c
+   \
+
+
+   \h|ENVIRONMENT|
 
    The \cb{BDEP_SYNC} environment variable can be used to suppress automatic
    synchronization on build system invocation. If set, auto-synchronization

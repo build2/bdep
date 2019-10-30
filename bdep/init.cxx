@@ -278,6 +278,8 @@ namespace bdep
   default_options_files
   options_files (const char*, const cmd_init_options& o, const strings&)
   {
+    // NOTE: remember to update the documentation if changing anything here.
+
     // bdep.options
     // bdep-{config config-add}.options               # -A
     // bdep-{config config-add config-create}.options # -C
@@ -308,6 +310,8 @@ namespace bdep
   merge_options (const default_options<cmd_init_options>& defs,
                  const cmd_init_options& cmd)
   {
+    // NOTE: remember to update the documentation if changing anything here.
+
     return merge_default_options (
       defs,
       cmd,
