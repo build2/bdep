@@ -2106,7 +2106,7 @@ namespace bdep
     }
     catch (const io_error& e)
     {
-      fail << "unable to write " << cf << ": " << e;
+      fail << "unable to write to " << cf << ": " << e;
     }
 
     // Cancel auto-removal of the files we have created.
@@ -2131,7 +2131,7 @@ namespace bdep
       }
       catch (const io_error& e)
       {
-        fail << "unable to write " << f << ": " << e;
+        fail << "unable to write to " << f << ": " << e;
       }
     }
 

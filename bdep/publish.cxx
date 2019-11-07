@@ -644,7 +644,7 @@ namespace bdep
           }
           catch (const io_error& e)
           {
-            fail << "unable to write " << mf << ": " << e;
+            fail << "unable to write to " << mf << ": " << e;
           }
 
           run_git (git_ver,

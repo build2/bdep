@@ -262,7 +262,7 @@ namespace bdep
     try
     {
       if (f.string () == "-")
-        return parse_manifest<T> (std::cin, "stdin", what, iu);
+        return parse_manifest<T> (std::cin, "<stdin>", what, iu);
 
       if (!file_exists (f))
         fail << what << " manifest file " << f << " does not exist";
@@ -352,7 +352,8 @@ namespace bdep
     }
     catch (const io_error& e)
     {
-      fail << "unable to write " << what << " manifest " << name << ": " << e;
+      fail << "unable to write to " << what << " manifest " << name << ": "
+           << e;
     }
   }
 
