@@ -598,7 +598,7 @@ status += -d prj
           %.+
           EOO
 
-        $build prj/ $config_cxx 2>>~%EOE%
+        $build prj/ $config_c 2>>~%EOE%
           %(c|ar|ld) .+%{5}
           EOE
       }
@@ -613,7 +613,7 @@ status += -d prj
         test -f libprj/buildfile;
         test -f libprj/libprj/version.h.in == 1;
 
-        $build libprj/ $config_cxx 2>>~%EOE%
+        $build libprj/ $config_c 2>>~%EOE%
           %(c|ar|ld) .+%{6}
           EOE
       }
@@ -628,7 +628,7 @@ status += -d prj
         test -f libprj/build2file;
         test -d libprj/libprj == 1;
 
-        $build libprj/ $config_cxx 2>>~%EOE%
+        $build libprj/ $config_c 2>>~%EOE%
           %info: .+ is up to date%
           EOE
       }
@@ -672,7 +672,7 @@ status += -d prj
         test -f libprj/libprj/prj.h;
         test -f libprj/libprj/prj.c;
 
-        $build libprj/ $config_cxx 2>>~%EOE%
+        $build libprj/ $config_c 2>>~%EOE%
           %(c|ar|ld) .+%{6}
           EOE
       }
