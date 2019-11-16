@@ -1,3 +1,84 @@
+Version 0.12.0
+
+  * Support for creating new projects with existing files.
+
+    The bdep-new command now also recognizes and handles the following
+    existing filesystem entries in the project root:
+
+      .git      -- assume VCS is already initialized and is Git
+      LICENSE   -- try to guess the manifest license from contents
+      README.md -- try to extract the manifest summary line from contents
+
+    Overall, the idea is to streamline the workflow where one creates a
+    project on one of the hosting services (GitHub, GitLab, etc) and then
+    initializes it with bdep-new.
+
+    Also, to this effect, specifying the project name is now optional and if
+    omitted, the current working directory (or --output-dir, if specified) is
+    assumed to be the project name.
+
+    An example of this streamlined workflow:
+
+    $ # create project with LICENSE and README.md on a Git hosting service
+    $ git clone .../libhello.git
+    $ cd libhello
+    $ bdep new -t lib
+
+    Finally, with this change it now makes sense to have support for pre-
+    creation hooks (--pre-hook) in addition to post-creation (--post-hook).
+
+  * Support for default options files (aka tool config files).
+
+    See the bdep-default-options-files(1) help topic for background and the
+    DEFAULT OPTIONS FILES section in each command's man pages for specifics.
+
+  * New bdep-new no-install project type sub-option.
+
+    In particular, this should be useful when creating *-tests packages.
+
+  * The C library projects created by bdep-new are now portable.
+
+    Specifically, the use of fmemopen() was replaced with tmpfile().
+
+  * The pre and post-creation hooks now make use of portable builtins.
+
+    To instead use a system-provided program, prefix the name with `^`, for
+    example:
+
+    $ bdep new --post-hook "^cat --squeeze-blank .../.gitignore >>.gitignore"
+
+    See bdep-new(1) for details.
+
+  * Ability to specify <pkg-args> in the bdep-init command's -A and -C forms.
+
+  * Ability to keep/update/remove the current tag in the bdep-release
+    command's revision mode.
+
+    Note also that previously the default was to update while now it is to
+    keep.
+
+  * Ability to have multiple forwarded configurations.
+
+    The new constraint is that such configurations should not have any common
+    packages (a package's source directory cannot be forwarded to multiple
+    configurations).
+
+  * New bdep-submit --forward option.
+
+    This option instructs bdep-submit to use each package's forwarded
+    configuration in order to prepare the distributions. This help with setups
+    where there is no single configuration that has all the packages (such as
+    a build system module project).
+
+  * New bdep-init --no-sync option.
+
+    This allows postponing initialization in the build configurations to a
+    later explicit bdep-sync. One subtle difference with such an explicit sync
+    is that it will be performed without having the project's database open,
+    which can be important if the initialization triggers an implicit sync
+    (via a hook) of a project that uses the same database (as is the case with
+    build system module projects).
+
 Version 0.11.0
 
   * The bdep-new command now by default adds a README.md template. This can be
