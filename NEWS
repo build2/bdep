@@ -66,9 +66,9 @@ Version 0.12.0
   * New bdep-submit --forward option.
 
     This option instructs bdep-submit to use each package's forwarded
-    configuration in order to prepare the distributions. This help with setups
-    where there is no single configuration that has all the packages (such as
-    a build system module project).
+    configuration in order to prepare the distributions. This helps with
+    setups where there is no single configuration that has all the packages
+    (such as a build system module project).
 
   * New bdep-init --no-sync option.
 
