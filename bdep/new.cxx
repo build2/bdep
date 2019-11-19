@@ -983,8 +983,8 @@ namespace bdep
           os << "description-file: README.md"                          << endl;
         os << "url: https://example.org/" << (pn ? pn->string () : n)  << endl
            << "email: " << pe                                          << endl
-           << "depends: * build2 >= 0.11.0"                            << endl
-           << "depends: * bpkg >= 0.11.0"                              << endl
+           << "depends: * build2 >= 0.12.0"                            << endl
+           << "depends: * bpkg >= 0.12.0"                              << endl
            << "#depends: libhello ^1.0.0"                              << endl;
         os.close ();
       }
