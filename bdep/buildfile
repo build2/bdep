@@ -84,10 +84,14 @@ if $build.version.stage
 
 # Disable "unknown pragma" warnings.
 #
-if ($cxx.class == 'msvc')
-  cxx.coptions += /wd4068
-elif ($cxx.class == 'gcc')
-  cxx.coptions += -Wno-unknown-pragmas
+switch $cxx.class
+{
+  case 'msvc'
+    cxx.coptions += /wd4068
+
+  case 'gcc'
+    cxx.coptions += -Wno-unknown-pragmas
+}
 
 # Make sure backtrace includes function names.
 #
