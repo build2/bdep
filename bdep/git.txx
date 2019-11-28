@@ -82,9 +82,49 @@ namespace bdep
   {
     git_check_version (min_ver);
 
-    return start (forward<I> (in), forward<O> (out), forward<E> (err),
-                  "git",
-                  forward<A> (args)...);
+    try
+    {
+      using namespace butl;
+
+      // On startup git prepends the PATH environment variable value with the
+      // computed directory path where its sub-programs are supposedly located
+      // (--exec-path option, GIT_EXEC_PATH environment variable, etc; see
+      // cmd_main() in git's git.c for details).
+      //
+      // Then, when git needs to run itself or one of its components as a
+      // child process, it resolves the full executable path searching in
+      // directories listed in PATH (see locate_in_PATH() in git's
+      // run-command.c for details).
+      //
+      // On Windows we install git and its components into a place where it is
+      // not expected to be, which results in the wrong path in PATH as set by
+      // git (for example, c:/build2/libexec/git-core) which in turn may lead
+      // to running some other git that appear in the PATH variable. To
+      // prevent this we pass the git's exec directory via the --exec-path
+      // option explicitly.
+      //
+      string ep;
+      process_path pp (process::path_search ("git", true /* init */));
+
+#ifdef _WIN32
+      ep = "--exec-path=" + pp.effect.directory ().string ();
+#endif
+
+      return process_start_callback (
+        [] (const char* const args[], size_t n)
+        {
+          if (verb >= 2)
+            print_process (args, n);
+        },
+        forward<I> (in), forward<O> (out), forward<E> (err),
+        pp,
+        !ep.empty () ? ep.c_str () : nullptr,
+        forward<A> (args)...);
+    }
+    catch (const process_error& e)
+    {
+      fail << "unable to execute git: " << e << endf;
+    }
   }
 
   template <typename... A>
