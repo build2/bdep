@@ -303,6 +303,15 @@ namespace bdep
     scan_arguments (r, s);
     return r;
   }
+
+  // Verify that a string is a valid UTF-8 byte sequence encoding only the
+  // graphic Unicode codepoints. Issue diagnostics (including a suggestion to
+  // use option opt, if specified) and fail if that's not the case.
+  //
+  void
+  validate_utf8_graphic (const string&,
+                         const char* what,
+                         const char* opt = nullptr);
 }
 
 #include <bdep/utility.txx>

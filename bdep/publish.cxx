@@ -63,15 +63,15 @@ namespace bdep
 
     // Control repository URL.
     //
-    optional<url> ctrl;
+    optional<string> ctrl;
     if (!o.control_specified ())
     {
-      ctrl = control_url (prj);
+      ctrl = control_url (prj).string ();
     }
     else if (o.control () != "none")
     try
     {
-      ctrl = url (o.control ());
+      ctrl = url (o.control ()).string ();
     }
     catch (const invalid_argument& e)
     {
@@ -100,6 +100,21 @@ namespace bdep
     if (!author.email || author.email->empty ())
       fail << "unable to obtain publisher's email" <<
         info << "use --author-email to specify explicitly";
+
+    // Make sure that parameters we post to the submission service are UTF-8
+    // encoded and contain only the graphic Unicode codepoints.
+    //
+    validate_utf8_graphic (*author.name,  "author name",  "--author-name");
+    validate_utf8_graphic (*author.email, "author email", "--author-email");
+
+    if (o.section_specified ())
+      validate_utf8_graphic (o.section (), "--section option value");
+
+    if (ctrl)
+      validate_utf8_graphic (*ctrl, "control URL", "--control");
+
+    if (o.simulate_specified ())
+      validate_utf8_graphic (o.simulate (), "--simulate option value");
 
     // Collect package information (version, project, section, archive
     // path/checksum, and manifest).
@@ -777,7 +792,7 @@ namespace bdep
                           {parameter::text, "author-email", *author.email}});
 
       if (ctrl)
-        params.push_back ({parameter::text, "control", ctrl->string ()});
+        params.push_back ({parameter::text, "control", *ctrl});
 
       if (o.simulate_specified ())
         params.push_back ({parameter::text, "simulate", o.simulate ()});

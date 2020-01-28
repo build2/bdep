@@ -251,7 +251,15 @@ namespace bdep
     // Get the server and repository URLs.
     //
     const url& srv (o.server_specified () ? o.server () : default_server);
-    const repository_location rep (repository_url (o, prj));
+    string rep (repository_url (o, prj).string ());
+
+    // Make sure that parameters we post to the CI service are UTF-8 encoded
+    // and contain only the graphic Unicode codepoints.
+    //
+    validate_utf8_graphic (rep, "repository URL", "--repository");
+
+    if (o.simulate_specified ())
+      validate_utf8_graphic (o.simulate (), "--simulate option value");
 
     // Print the plan and ask for confirmation.
     //
@@ -291,7 +299,7 @@ namespace bdep
 
       using namespace http_service;
 
-      parameters params ({{parameter::text, "repository", rep.string ()}});
+      parameters params ({{parameter::text, "repository", move (rep)}});
 
       for (const package& p: pkgs)
         params.push_back ({parameter::text,

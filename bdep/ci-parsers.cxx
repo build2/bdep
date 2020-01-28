@@ -35,16 +35,34 @@ namespace bdep
 
       string v (s.next ());
 
+      // Make sure that values we post to the CI service are UTF-8 encoded and
+      // contain only the graphic Unicode codepoints.
+      //
+      auto validate_value = [&o, &v] ()
+      {
+        if (!utf8 (v, codepoint_types::graphic))
+          throw invalid_value (o,
+                               v,
+                               "not UTF-8 encoded or contains non-graphic "
+                               "Unicode codepoints");
+      };
+
       if (o == "--build-email")
       {
+        validate_value ();
+
         add ("build-email", move (v));
       }
       else if (o == "--builds")
       {
+        validate_value ();
+
         add ("builds", move (v));
       }
       else if (o == "--override")
       {
+        validate_value ();
+
         // Validate that the value has the <name>:<value> form.
         //
         // Note that the value semantics will be verified later, with the
