@@ -1,5 +1,4 @@
 # file      : tests/init.testscript
-# copyright : Copyright (c) 2014-2019 Code Synthesis Ltd
 # license   : MIT; see accompanying LICENSE file
 
 # Here we test both init and deinit commands.

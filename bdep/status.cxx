@@ -1,5 +1,4 @@
 // file      : bdep/status.cxx -*- C++ -*-
-// copyright : Copyright (c) 2014-2019 Code Synthesis Ltd
 // license   : MIT; see accompanying LICENSE file
 
 #include <bdep/status.hxx>

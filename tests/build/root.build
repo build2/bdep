@@ -1,5 +1,4 @@
 # file      : tests/build/root.build
-# copyright : Copyright (c) 2014-2019 Code Synthesis Ltd
 # license   : MIT; see accompanying LICENSE file
 
 # We need to configure C/C++ modules to pass the compiler paths to some of

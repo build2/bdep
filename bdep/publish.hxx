@@ -1,5 +1,4 @@
 // file      : bdep/publish.hxx -*- C++ -*-
-// copyright : Copyright (c) 2014-2019 Code Synthesis Ltd
 // license   : MIT; see accompanying LICENSE file
 
 #ifndef BDEP_PUBLISH_HXX

@@ -1,5 +1,4 @@
 # file      : tests/project.testscript
-# copyright : Copyright (c) 2014-2019 Code Synthesis Ltd
 # license   : MIT; see accompanying LICENSE file
 
 # Create and initialize a sample build2 C++ executable project that will be

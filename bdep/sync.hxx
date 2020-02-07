@@ -1,5 +1,4 @@
 // file      : bdep/sync.hxx -*- C++ -*-
-// copyright : Copyright (c) 2014-2019 Code Synthesis Ltd
 // license   : MIT; see accompanying LICENSE file
 
 #ifndef BDEP_SYNC_HXX

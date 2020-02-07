@@ -1,5 +1,4 @@
 // file      : bdep/release-types.hxx -*- C++ -*-
-// copyright : Copyright (c) 2014-2019 Code Synthesis Ltd
 // license   : MIT; see accompanying LICENSE file
 
 #ifndef BDEP_RELEASE_TYPES_HXX
