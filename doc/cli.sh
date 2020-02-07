@@ -1,13 +1,15 @@
 #! /usr/bin/env bash
 
 version=0.13.0-a.0.z
-date="$(date +"%B %Y")"
 
 trap 'exit 1' ERR
 set -o errtrace # Trap in functions.
 
 function info () { echo "$*" 1>&2; }
 function error () { info "$*"; exit 1; }
+
+date="$(date +"%B %Y")"
+copyright="$(sed -n -re 's%^Copyright \(c\) (.+)\.$%\1%p' ../COPYRIGHT)"
 
 while [ $# -gt 0 ]; do
   case $1 in
@@ -36,9 +38,15 @@ function compile ()
     shift
   done
 
-  cli -I .. -v project="bdep" -v version="$version" -v date="$date" \
---include-base-last "${o[@]}" --generate-html --html-prologue-file \
-man-prologue.xhtml --html-epilogue-file man-epilogue.xhtml --html-suffix .xhtml \
+  cli -I .. \
+-v project="bdep" \
+-v version="$version" \
+-v date="$date" \
+-v copyright="$copyright" \
+--include-base-last "${o[@]}" \
+--generate-html --html-suffix .xhtml \
+--html-prologue-file man-prologue.xhtml \
+--html-epilogue-file man-epilogue.xhtml \
 --link-regex '%b([-.].+)%../../build2/doc/b$1%' \
 --link-regex '%testscript(#.+)?%../../build2/doc/build2-testscript-manual.xhtml$1%' \
 --link-regex '%bpkg([-.].+)%../../bpkg/doc/bpkg$1%' \
@@ -47,9 +55,15 @@ man-prologue.xhtml --html-epilogue-file man-epilogue.xhtml --html-suffix .xhtml 
 --link-regex '%bdep(#.+)?%build2-project-manager-manual.xhtml$1%' \
 ../bdep/$n.cli
 
-  cli -I .. -v project="bdep" -v version="$version" -v date="$date" \
---include-base-last "${o[@]}" --generate-man --man-prologue-file \
-man-prologue.1 --man-epilogue-file man-epilogue.1 --man-suffix .1 \
+  cli -I .. \
+-v project="bdep" \
+-v version="$version" \
+-v date="$date" \
+-v copyright="$copyright" \
+--include-base-last "${o[@]}" \
+--generate-man --man-suffix .1 \
+--man-prologue-file man-prologue.1 \
+--man-epilogue-file man-epilogue.1 \
 --link-regex '%bpkg(#.+)?%$1%' \
 --link-regex '%brep(#.+)?%$1%' \
 --link-regex '%bdep(#.+)?%$1%' \
@@ -91,12 +105,14 @@ function xhtml_to_ps () # <from> <to> [<html2ps-options>]
 cli -I .. \
 -v version="$(echo "$version" | sed -e 's/^\([^.]*\.[^.]*\).*/\1/')" \
 -v date="$date" \
+-v copyright="$copyright" \
 --generate-html --html-suffix .xhtml \
 --html-prologue-file doc-prologue.xhtml \
 --html-epilogue-file doc-epilogue.xhtml \
 --link-regex '%b([-.].+)%../../build2/doc/b$1%' \
 --link-regex '%build2(#.+)?%../../build2/doc/build2-build-system-manual.xhtml$1%' \
---output-prefix build2-project-manager- manual.cli
+--output-prefix build2-project-manager- \
+manual.cli
 
 xhtml_to_ps build2-project-manager-manual.xhtml build2-project-manager-manual-a4.ps -f doc.html2ps:a4.html2ps
 ps2pdf14 -sPAPERSIZE=a4 -dOptimize=true -dEmbedAllFonts=true build2-project-manager-manual-a4.ps build2-project-manager-manual-a4.pdf
