@@ -131,7 +131,7 @@ namespace bdep
   git_line (const semantic_version& min_ver, bool ie, char delim, A&&... args)
   {
     fdpipe pipe (open_pipe ());
-    auto_fd null (ie ? open_dev_null () : auto_fd ());
+    auto_fd null (ie ? open_null () : auto_fd ());
 
     process pr (start_git (min_ver,
                            0                    /* stdin  */,

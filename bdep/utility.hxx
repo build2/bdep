@@ -180,7 +180,7 @@ namespace bdep
   open_pipe ();
 
   auto_fd
-  open_dev_null ();
+  open_null ();
 
   // Run a process.
   //

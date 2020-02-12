@@ -402,7 +402,7 @@ namespace bdep
       auto worktree_add = [&prj, &wd] ()
       {
         bool q (verb < 2);
-        auto_fd null (q ? open_dev_null () : auto_fd ());
+        auto_fd null (q ? open_null () : auto_fd ());
 
         process pr (start_git (git_ver,
                                prj,
@@ -488,7 +488,7 @@ namespace bdep
         {
           // Create the empty tree object.
           //
-          auto_fd null (open_dev_null ());
+          auto_fd null (open_null ());
           fdpipe pipe (open_pipe ());
 
           process pr (start_git (git_ver,
