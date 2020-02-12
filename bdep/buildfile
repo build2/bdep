@@ -75,6 +75,14 @@ for t: cxx{**.test...}
 #
 obj{utility}: cxx.poptions += -DBDEP_EXE_SUFFIX='"'$bin.exe.suffix'"'
 
+# Pass the copyright notice extracted from the COPYRIGHT file.
+#
+copyright = $process.run_regex(cat $src_root/COPYRIGHT,  \
+                               'Copyright \(c\) (.+)\.', \
+                               '\1')
+
+obj{bdep}: cxx.poptions += -DBDEP_COPYRIGHT=\"$copyright\"
+
 # For now assume this is a staged toolchain if we are building with the staged
 # build system (see build.version.stage for details on the final plan).
 #
