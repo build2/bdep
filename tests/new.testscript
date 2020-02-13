@@ -173,6 +173,18 @@ status += -d prj
       EOE
   }
 
+  : lib-alt-source
+  :
+  {
+    $* -l c++ -t lib,source=libprj/foo libprj-foo 2>>/"EOE" &libprj-foo/***;
+      created new library project libprj-foo in $~/libprj-foo/
+      EOE
+
+    $build libprj-foo/ $config_cxx 2>>~%EOE%
+      %(version\.in|c\+\+|ar|ld) .+%{7}
+      EOE
+  }
+
   # C versions of the above.
   #
   : exe-c

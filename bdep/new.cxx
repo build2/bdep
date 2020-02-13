@@ -380,6 +380,26 @@ namespace bdep
     const string   build_ext      (altn ? "build2"     : "build");
     const path     buildfile_file (altn ? "build2file" : "buildfile");
 
+    // User-supplied source subdirectory (--type,source).
+    //
+    // Should we derive the C++ namespace from this (e.g., foo::bar from
+    // libfoo/bar) and allow its customization (e.g., --type,namespace)? That
+    // was the initial impulse but doing this will complicate things quite a
+    // bit. In particular, we will have to handle varying indentation levels.
+    // On the other hand, our goal is not to produce a project that requires
+    // an absolute minimum of changes but rather a project that is easy to
+    // tweak. And changing the namespace is straightforward (unlike changing
+    // the source subdirectory, which appears in quite a few places). So let's
+    // keep it simple for now.
+    //
+    const dir_path* source (t == type::exe ? (t.exe_opt.source_specified ()
+                                              ? &t.exe_opt.source ()
+                                              : nullptr) :
+                            t == type::lib ? (t.lib_opt.source_specified ()
+                                              ? &t.lib_opt.source ()
+                                              : nullptr) :
+                            nullptr);
+
     // Validate vcs options.
     //
     vcs  vc   (o.vcs ());
@@ -396,13 +416,21 @@ namespace bdep
       if (!o.output_dir_specified ())
       {
         // Reduce this case (for the logic that follows) to as-if the current
-        // working directory was specified as the output directory.
+        // working directory was specified as the output directory. Unless we
+        // are in the subdirectory mode and the source sub-option was
+        // specified (see the relevant code below for the whole picture).
         //
-        o.output_dir (path::current_directory ());
-        o.output_dir_specified (true);
+        if (o.subdirectory () && source != nullptr)
+          a = source->leaf ().string ();
+        else
+        {
+          o.output_dir (path::current_directory ());
+          o.output_dir_specified (true);
+        }
       }
 
-      a = o.output_dir ().leaf ().string ();
+      if (a.empty ())
+        a = o.output_dir ().leaf ().string ();
     }
 
     // If the project type is not empty then the project name is also a package
@@ -481,15 +509,15 @@ namespace bdep
       }
     }
 
-    dir_path prj;           // Project.
+    dir_path prj;           // Project root directory.
     dir_path out;           // Project/package/subdirectory output directory.
-    optional<dir_path> pkg; // Package relative to its project root.
+    optional<dir_path> pkg; // Package directory relative to its project root.
     optional<dir_path> sub; // Source subdirectory relative to its
                             // project/package root.
     {
       // Figure the final output and tentative project directories.
       //
-      if (o.package () || o.subdirectory ())
+      if (o.package ())
       {
         if (o.directory_specified ())
           prj = normalize (o.directory (), "project");
@@ -497,6 +525,26 @@ namespace bdep
           prj = current_directory ();
 
         out = o.output_dir_specified () ? o.output_dir () : prj / dir_path (n);
+        normalize (out, "output");
+      }
+      else if (o.subdirectory ())
+      {
+        // In the subdirectory mode --output-dir|-o is the source subdirectory
+        // so for this mode we have two ways of specifying the same thing (but
+        // see also the output directory fallback above for a special case).
+        //
+        if (o.output_dir_specified () && source != nullptr)
+          fail << "both --output-dir|-o and --type|-t,source specified";
+
+        if (o.directory_specified ())
+          prj = normalize (o.directory (), "project");
+        else
+          prj = current_directory ();
+
+        out = o.output_dir_specified ()
+          ? o.output_dir ()
+          : prj / (source != nullptr ? *source : dir_path (n));
+
         normalize (out, "output");
       }
       else
@@ -684,7 +732,7 @@ namespace bdep
 
     // Source directory relative to package root.
     //
-    const dir_path& d (sub ? *sub : dir_path (b));
+    const dir_path& d (sub ? *sub : source != nullptr ? *source : dir_path (b));
 
     // Check if certain things already exist.
     //
@@ -728,7 +776,7 @@ namespace bdep
 
           if (license_e->empty () && !license_o)
             fail << "unable to guess project license from " << f <<
-              info << "use license --type|-t sub-option to specify explicitly";
+              info << "use --type|-t,license sub-option to specify explicitly";
         }
       }
 
@@ -748,7 +796,8 @@ namespace bdep
       if (readme_e)
       {
         if (!readme)
-          fail << "no-readme sub-option specified but README already exists";
+          fail << "--type|-t,no-readme sub-option specified but README "
+               << "already exists";
       }
 
       if (license_e)
@@ -1196,10 +1245,10 @@ namespace bdep
       if (t == type::bare)
         break; // Done
 
-      // <base>/ (source subdirectory).
+      // <base>/ (source subdirectory, can be overriden).
       //
       const dir_path& sd (sub ? out : out / d);
-      mk (sd);
+      mk_p (sd);
 
       switch (t)
       {
