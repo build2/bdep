@@ -157,10 +157,6 @@ namespace bdep
 
          A C++ project. Recognized language sub-options:|
 
-     \li|\n\ \ \ \cb{binless}
-
-         Create a header-only library.|
-
      \li|\n\ \ \ \cb{cpp}
 
          Use the \cb{.cpp}, \cb{.hpp}, \cb{.ipp}, \cb{.tpp}, and \cb{.mpp}
@@ -206,7 +202,7 @@ namespace bdep
      source files:
 
      \
-     $ bdep new -l c++,binless,hxx=h,cxx=cpp -t lib libhello
+     $ bdep new -l c++,hxx=h,cxx=cpp -t lib,binless libhello
      \
 
      The project type can be specified with the \c{\b{--type}|\b{-t}} option.
@@ -251,6 +247,10 @@ namespace bdep
 
          A project that builds a sample C or C++ library. Recognized library
          project sub-options:|
+
+     \li|\n\ \ \ \cb{binless}
+
+         Create a header-only C++ library.|
 
      \li|\n\ \ \ \cb{no-tests}
 
@@ -381,7 +381,27 @@ namespace bdep
      "
   }
 
-  //--type options
+  // --lang options
+  //
+  class cmd_new_c_options
+  {
+  };
+
+  // The cpp flag is the "extension=?pp" alias and is mutually exclusive with
+  // extension=.
+  //
+  class cmd_new_cxx_options
+  {
+    bool cpp;
+    string extension;
+    string hxx;
+    string cxx;
+    string ixx;
+    string txx;
+    string mxx;
+  };
+
+    //--type options
   //
   class cmd_new_exe_options
   {
@@ -396,6 +416,7 @@ namespace bdep
 
   class cmd_new_lib_options
   {
+    bool binless;
     bool no-tests;
     bool unit-tests;
     bool no-install;
@@ -418,27 +439,6 @@ namespace bdep
   class cmd_new_empty_options
   {
     bool no-readme;
-  };
-
-  // --lang options
-  //
-  class cmd_new_c_options
-  {
-  };
-
-  // The cpp flag is the "extension=?pp" alias and is mutually exclusive with
-  // extension=.
-  //
-  class cmd_new_cxx_options
-  {
-    bool binless;
-    bool cpp;
-    string extension;
-    string hxx;
-    string cxx;
-    string ixx;
-    string txx;
-    string mxx;
   };
 
   // --vcs options

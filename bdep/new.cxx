@@ -325,6 +325,9 @@ namespace bdep
         }
       case type::lib:
         {
+          if (t.lib_opt.binless () && l != lang::cxx)
+            fail << "--type|-t,binless is only valid for C++ libraries";
+
           readme  = !t.lib_opt.no_readme ()  && !sub;
           altn    =  t.lib_opt.alt_naming ();
           itest   = !t.lib_opt.no_tests ()   && !sub;
@@ -366,12 +369,6 @@ namespace bdep
           break;
         }
       }
-
-      // @@ TODO: move into the lib case once binless is a project type
-      //    suboption.
-      //
-      if (l == lang::cxx && l.cxx_opt.binless () && t != type::lib)
-        fail << "'binless' is only valid for libraries";
     }
 
     // Standard/alternative build file/directory naming scheme.
@@ -1495,7 +1492,7 @@ namespace bdep
               break;
             }
           case lang::cxx:
-            if (l.cxx_opt.binless ())
+            if (t.lib_opt.binless ())
             {
               apih = s + he;
               verh = ver ? "version" + he : string ();
@@ -1668,7 +1665,7 @@ namespace bdep
             os.close ();
           }
 
-          bool binless (l == lang::cxx && l.cxx_opt.binless ());
+          bool binless (t.lib_opt.binless ());
 
           // buildfile
           //
