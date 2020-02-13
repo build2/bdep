@@ -161,7 +161,7 @@ namespace bdep
          project naming):
 
          \
-         $ bdep new -t exe -l c++ hello
+         $ bdep new -l c++ -t exe hello
          \
 
          Similar to version control tools, we normally run \cb{bdep} from the

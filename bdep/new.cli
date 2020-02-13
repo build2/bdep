@@ -28,9 +28,9 @@ namespace bdep
         \b{bdep new} [<options>] \b{--package} [<prj-spec>] <spec> [<name>]\n
         \b{bdep new} [<options>] \b{--subdirectory} [<prj-spec>] <spec> [<name>]}
 
-     \c{<spec> \ \ \ \ = [<type>] [<lang>] [<vcs>]\n
-        <type> \ \ \ \ = \b{--type}|\b{-t} (\b{exe}|\b{lib}|\b{bare}|\b{empty})[\b{,}<type-opt>...]\n
+     \c{<spec> \ \ \ \ = [<lang>] [<type>] [<vcs>]\n
         <lang> \ \ \ \ = \b{--lang}|\b{-l} (\b{c}|\b{c++})[\b{,}<lang-opt>...]\n
+        <type> \ \ \ \ = \b{--type}|\b{-t} (\b{exe}|\b{lib}|\b{bare}|\b{empty})[\b{,}<type-opt>...]\n
         <vcs> \ \ \ \ \ = \b{--vcs}|\b{-s} \ (\b{git}|\b{none})[\b{,}<vcs-opt>...]\n
         <prj-spec> = \b{--directory}|\b{-d} <prj-dir>\n
         <cfg-args> = [\b{--} <bpkg-options>] [\b{--existing}|\b{-e} | (<module> | <cfg-var>)...]}
@@ -50,7 +50,7 @@ namespace bdep
      \l{bdep-init(1)} command with the \cb{--empty} option. For example:
 
      \
-     $ bdep new -t exe -l c++ hello
+     $ bdep new -l c++ -t exe hello
      \
 
      Similarly, the second and third forms add an existing or create new build
@@ -59,7 +59,7 @@ namespace bdep
      \cb{--config-create} option, respectively. For example:
 
      \
-     $ bdep new -t exe -l c++ -C @gcc hello cc config.cxx=g++
+     $ bdep new -l c++ -t exe -C @gcc hello cc config.cxx=g++
      \
 
      The \cb{--package} form adds the new package to the
@@ -72,8 +72,8 @@ namespace bdep
      $ bdep new -t empty hello
      $ cd hello
 
-     $ bdep new --package -t lib -l c++ libhello
-     $ bdep new --package -t exe -l c++ hello
+     $ bdep new --package -l c++ -t lib  libhello
+     $ bdep new --package -l c++ -t exe  hello
 
      $ bdep init -C @gcc cc config.cxx=g++
      \
@@ -93,8 +93,8 @@ namespace bdep
      $ bdep new -t bare hello
      $ cd hello
 
-     $ bdep new --subdirectory -t lib -l c++ libhello
-     $ bdep new --subdirectory -t exe -l c++ hello
+     $ bdep new --subdirectory -l c++ -t lib libhello
+     $ bdep new --subdirectory -l c++ -t exe  hello
 
      $ bdep init -C @gcc cc config.cxx=g++
      \
@@ -121,133 +121,14 @@ namespace bdep
      $ git clone .../libhello.git
      $ cd libhello
 
-     $ bdep new -t lib -l c++
+     $ bdep new -l c++ -t lib
      \
 
-     The project parameters such as type (executable, library, etc), language,
+     The project parameters such as language, type (executable, library, etc),
      and version control system can be customized as described next. Some of
      these parameters also support parameter-specific sub-options (such as the
      file extensions to use in a C++ project) that can be specified with a
      comma after the parameter value.
-
-     The project type can be specified with the \c{\b{--type}|\b{-t}} option.
-     Valid values for this option and their semantics are described next. If
-     unspecified, an executable project is created by default.
-
-     \dl|
-
-     \li|\cb{exe}
-
-         A project that builds a sample executable. Recognized
-         executable project sub-options:|
-
-     \li|\n\ \ \ \cb{no-tests}
-
-         Don't add support for functional/integration testing.|
-
-     \li|\n\ \ \ \cb{unit-tests}
-
-         Add support for unit testing.|
-
-     \li|\n\ \ \ \cb{no-install}
-
-         Don't add support for installing.|
-
-     \li|\n\ \ \ \c{\b{license=}\i{name}}|
-
-     \li|\ \ \ \cb{no-readme}|
-
-     \li|\ \ \ \cb{alt-naming}
-
-         See \cb{common} sub-options below.||
-
-     \dl|
-
-     \li|\cb{lib}
-
-         A project that builds a sample library. Recognized library
-         project sub-options:|
-
-     \li|\n\ \ \ \cb{no-tests}
-
-         Don't add support for functional/integration testing.|
-
-     \li|\n\ \ \ \cb{unit-tests}
-
-         Add support for unit testing.|
-
-     \li|\n\ \ \ \cb{no-install}
-
-         Don't add support for installing.|
-
-     \li|\n\ \ \ \cb{no-version}
-
-         Don't add support for generating the version header.|
-
-     \li|\n\ \ \ \c{\b{license=}\i{name}}|
-
-     \li|\ \ \ \cb{no-readme}|
-
-     \li|\ \ \ \cb{alt-naming}
-
-         See \cb{common} sub-options below.||
-
-     \dl|
-
-     \li|\cb{bare}
-
-         A project without any source code that can be filled later
-         (see \cb{--subdirectory}). Recognized bare project sub-options:|
-
-     \li|\n\ \ \ \cb{no-tests}
-
-         Don't add support for testing.|
-
-     \li|\n\ \ \ \cb{no-install}
-
-         Don't add support for installing.|
-
-     \li|\n\ \ \ \c{\b{license=}\i{name}}|
-
-     \li|\ \ \ \cb{no-readme}|
-
-     \li|\ \ \ \cb{alt-naming}
-
-         See \cb{common} sub-options below.||
-
-     \dl|
-
-     \li|\cb{empty}
-
-         An empty project that can be filled with packages (see
-         \cb{--package}). Note that the project language is ignored for this
-         project type. Recognized empty project sub-options:|
-
-     \li|\n\ \ \ \cb{no-readme}
-
-         See \cb{common} sub-options below.||
-
-     \dl|
-
-     \li|\cb{common}
-
-         Common project type sub-options:|
-
-     \li|\n\ \ \ \c{\b{license=}\i{name}}
-
-         Specify the project's license. Commonly used license names are
-         \cb{MIT}, \cb{ASLv2} (Apache License 2.0), \cb{GPLv3}, and
-         \cb{proprietary}. If unspecified, then \cb{proprietary} is
-         assumed. See the \l{bpkg#manifest-package-license \cb{license}}
-         package manifest value for details.|
-
-     \li|\n\ \ \ \cb{no-readme}
-
-         Don't add \cb{README.md}.|
-
-     \li|\n\ \ \ \cb{alt-naming}
-
-         Use the alternative build file/directory naming scheme.||
 
      The project language can be specified with the \c{\b{--lang}|\b{-l}}
      option. Valid values for this option and their semantics are described
@@ -314,8 +195,127 @@ namespace bdep
      source files:
 
      \
-     $ bdep new -t lib -l c++,binless,hxx=h,cxx=cpp libhello
+     $ bdep new -l c++,binless,hxx=h,cxx=cpp -t lib libhello
      \
+
+     The project type can be specified with the \c{\b{--type}|\b{-t}} option.
+     The \cb{empty} project type is language-agnostic with the semantics and
+     valid sub-options for the rest being language-dependant, as described
+     next. If unspecified, an executable project is created by default.
+
+     \dl|
+
+     \li|\cb{exe}
+
+         A project that builds a sample C or C++ executable. Recognized
+         executable project sub-options:|
+
+     \li|\n\ \ \ \cb{no-tests}
+
+         Don't add support for functional/integration testing.|
+
+     \li|\n\ \ \ \cb{unit-tests}
+
+         Add support for unit testing.|
+
+     \li|\n\ \ \ \cb{no-install}
+
+         Don't add support for installing.|
+
+     \li|\n\ \ \ \c{\b{license=}\i{name}}|
+
+     \li|\ \ \ \cb{no-readme}|
+
+     \li|\ \ \ \cb{alt-naming}
+
+         See \cb{common} sub-options below.||
+
+     \dl|
+
+     \li|\cb{lib}
+
+         A project that builds a sample C or C++ library. Recognized library
+         project sub-options:|
+
+     \li|\n\ \ \ \cb{no-tests}
+
+         Don't add support for functional/integration testing.|
+
+     \li|\n\ \ \ \cb{unit-tests}
+
+         Add support for unit testing.|
+
+     \li|\n\ \ \ \cb{no-install}
+
+         Don't add support for installing.|
+
+     \li|\n\ \ \ \cb{no-version}
+
+         Don't add support for generating the version header.|
+
+     \li|\n\ \ \ \c{\b{license=}\i{name}}|
+
+     \li|\ \ \ \cb{no-readme}|
+
+     \li|\ \ \ \cb{alt-naming}
+
+         See \cb{common} sub-options below.||
+
+     \dl|
+
+     \li|\cb{bare}
+
+         A project without any source code that can be filled later
+         (see \cb{--subdirectory}). Recognized bare project sub-options:|
+
+     \li|\n\ \ \ \cb{no-tests}
+
+         Don't add support for testing.|
+
+     \li|\n\ \ \ \cb{no-install}
+
+         Don't add support for installing.|
+
+     \li|\n\ \ \ \c{\b{license=}\i{name}}|
+
+     \li|\ \ \ \cb{no-readme}|
+
+     \li|\ \ \ \cb{alt-naming}
+
+         See \cb{common} sub-options below.||
+
+     \dl|
+
+     \li|\cb{empty}
+
+         An empty project that can be filled with packages (see
+         \cb{--package}). Recognized empty project sub-options:|
+
+     \li|\n\ \ \ \cb{no-readme}
+
+         See \cb{common} sub-options below.||
+
+     \dl|
+
+     \li|\cb{common}
+
+         Common project type sub-options:|
+
+     \li|\n\ \ \ \c{\b{license=}\i{name}}
+
+         Specify the project's license. Commonly used license names are
+         \cb{MIT}, \cb{ASLv2} (Apache License 2.0), \cb{GPLv3}, and
+         \cb{proprietary}. If unspecified, then \cb{proprietary} is
+         assumed. See the \l{bpkg#manifest-package-license \cb{license}}
+         package manifest value for details.|
+
+     \li|\n\ \ \ \cb{no-readme}
+
+         Don't add \cb{README.md}.|
+
+     \li|\n\ \ \ \cb{alt-naming}
+
+         Use the alternative build file/directory naming scheme.||
 
      The project version control system can be specified with the
      \c{\b{--vcs}|\b{-s}} option. Valid values for this option and their

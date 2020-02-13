@@ -246,6 +246,43 @@ namespace bdep
         fail << "--wipe specified without --config-create";
     }
 
+    // Validate language options.
+    //
+    const lang& l (o.lang ());
+
+    switch (l)
+    {
+    case lang::c:
+      {
+        break;
+      }
+    case lang::cxx:
+      {
+        auto& o (l.cxx_opt);
+
+        if (o.cpp () && o.extension_specified ())
+          fail << "'extension' and 'cpp' are mutually exclusive c++ options";
+
+        // Verify that none of the extensions are specified as empty, except
+        // for hxx.
+        //
+        auto empty_ext = [] (const string& v, const char* o)
+        {
+          if (v.empty () || (v.size () == 1 && v[0] == '.'))
+            fail << "empty extension specified with '" << o << "' c++ option";
+        };
+
+        if (o.extension_specified ()) empty_ext (o.extension (), "extension");
+
+        if (o.cxx_specified ()) empty_ext (o.cxx (), "cxx");
+        if (o.ixx_specified ()) empty_ext (o.ixx (), "ixx");
+        if (o.txx_specified ()) empty_ext (o.txx (), "txx");
+        if (o.mxx_specified ()) empty_ext (o.mxx (), "mxx");
+
+        break;
+      }
+    }
+
     // Validate type options.
     //
     const type& t (o.type ());
@@ -329,6 +366,12 @@ namespace bdep
           break;
         }
       }
+
+      // @@ TODO: move into the lib case once binless is a project type
+      //    suboption.
+      //
+      if (l == lang::cxx && l.cxx_opt.binless () && t != type::lib)
+        fail << "'binless' is only valid for libraries";
     }
 
     // Standard/alternative build file/directory naming scheme.
@@ -336,46 +379,6 @@ namespace bdep
     const dir_path build_dir      (altn ? "build2"     : "build");
     const string   build_ext      (altn ? "build2"     : "build");
     const path     buildfile_file (altn ? "build2file" : "buildfile");
-
-    // Validate language options.
-    //
-    const lang& l (o.lang ());
-
-    switch (l)
-    {
-    case lang::c:
-      {
-        break;
-      }
-    case lang::cxx:
-      {
-        auto& o (l.cxx_opt);
-
-        if (o.cpp () && o.extension_specified ())
-          fail << "'extension' and 'cpp' are mutually exclusive c++ options";
-
-        // Verify that none of the extensions are specified as empty, except
-        // for hxx.
-        //
-        auto empty_ext = [] (const string& v, const char* o)
-        {
-          if (v.empty () || (v.size () == 1 && v[0] == '.'))
-            fail << "empty extension specified with '" << o << "' c++ option";
-        };
-
-        if (o.extension_specified ()) empty_ext (o.extension (), "extension");
-
-        if (o.cxx_specified ()) empty_ext (o.cxx (), "cxx");
-        if (o.ixx_specified ()) empty_ext (o.ixx (), "ixx");
-        if (o.txx_specified ()) empty_ext (o.txx (), "txx");
-        if (o.mxx_specified ()) empty_ext (o.mxx (), "mxx");
-
-        if (o.binless () && t != type::lib)
-          fail << "'binless' is only valid for libraries";
-
-        break;
-      }
-    }
 
     // Validate vcs options.
     //
