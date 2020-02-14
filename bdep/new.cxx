@@ -765,9 +765,9 @@ namespace bdep
               info << "using generic summary in manifest";
         }
 
-        // LICENSE
+        // LICENSE or UNLICENSE
         //
-        if (exists ((f = out / "LICENSE")))
+        if (exists ((f = out / "LICENSE")) || exists ((f = out / "UNLICENSE")))
         {
           license_e = extract_license (f);
 
