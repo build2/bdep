@@ -733,9 +733,12 @@ namespace bdep
 
     // Check if certain things already exist.
     //
-    optional<vcs::vcs_type> vc_e;      // Detected version control system.
-    optional<string>        readme_e;  // Extracted summary line.
-    optional<string>        license_e; // Extracted license id.
+    optional<vcs::vcs_type> vc_e;        // Detected version control system.
+    optional<string>        readme_e;    // Extracted summary line.
+    optional<path>          readme_f;    // README file path.
+    optional<string>        license_e;   // Extracted license id.
+    optional<path>          license_f;   // LICENSE file path.
+    optional<path>          copyright_f; // COPYRIGHT file path.
     {
       if (!sub)
       {
@@ -763,6 +766,8 @@ namespace bdep
           if (readme_e->empty ())
             warn << "unable to extract project summary from " << f <<
               info << "using generic summary in manifest";
+
+          readme_f = move (f);
         }
 
         // LICENSE or UNLICENSE
@@ -774,6 +779,15 @@ namespace bdep
           if (license_e->empty () && !license_o)
             fail << "unable to guess project license from " << f <<
               info << "use --type|-t,license sub-option to specify explicitly";
+
+          license_f = move (f);
+        }
+
+        // COPYRIGHT
+        //
+        if (exists ((f = out / "COPYRIGHT")))
+        {
+          copyright_f = move (f);
         }
       }
 
@@ -790,7 +804,7 @@ namespace bdep
             info << "requested: " << vc;
       }
 
-      if (readme_e)
+      if (readme_f)
       {
         if (!readme)
           fail << "--type|-t,no-readme sub-option specified but README "
@@ -915,9 +929,9 @@ namespace bdep
 
       // README.md
       //
-      if (!readme_e && readme)
+      if (!readme_f && readme)
       {
-        open (out / "README.md");
+        open (*(readme_f = out / "README.md"));
         switch (t)
         {
         case type::exe:
@@ -1027,8 +1041,8 @@ namespace bdep
           os << "license: " << license                                 << endl;
         else
           os << "license: " << license << " ; " << ln << "."           << endl;
-        if (readme)
-          os << "description-file: README.md"                          << endl;
+        if (readme_f)
+          os << "description-file: " << readme_f->leaf (out).posix_representation () << endl;
         os << "url: https://example.org/" << (pn ? pn->string () : n)  << endl
            << "email: " << pe                                          << endl
            << "depends: * build2 >= 0.12.0"                            << endl
@@ -1228,8 +1242,22 @@ namespace bdep
       {
         open (out / buildfile_file);
 
-        os << "./: {*/ -" << build_dir.posix_representation () << "}"  <<
-          (readme ? " doc{README.md}" : "") << " manifest"             << endl;
+        os << "./: {*/ -" << build_dir.posix_representation () << "} ";
+        if (readme_f || license_f || copyright_f)
+        {
+          auto write = [&os, &out, s = ""] (const path& f) mutable
+          {
+            os << s << f.leaf (out).posix_representation ();
+            s = " ";
+          };
+
+          os << "doc{";
+          if (readme_f)    write (*readme_f);
+          if (license_f)   write (*license_f);
+          if (copyright_f) write (*copyright_f);
+          os << "} ";
+        }
+        os << "manifest" << endl;
 
         if (itest && install && t == type::lib) // Have tests/ subproject.
           os <<                                                           endl
