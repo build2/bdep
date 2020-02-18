@@ -739,6 +739,7 @@ namespace bdep
     optional<string>        license_e;   // Extracted license id.
     optional<path>          license_f;   // LICENSE file path.
     optional<path>          copyright_f; // COPYRIGHT file path.
+    optional<path>          authors_f;   // AUTHORS file path.
     {
       if (!sub)
       {
@@ -788,6 +789,18 @@ namespace bdep
         if (exists ((f = out / "COPYRIGHT")))
         {
           copyright_f = move (f);
+        }
+
+        // AUTHORS
+        //
+        // Note that some projects distinguish between AUTHORS (legal names
+        // for copyright purposes) and CONTRIBUTORS (individuals that have
+        // contribute and/or are allowed to contribute to the project). It's
+        // not clear whether we should distribute/install CONTRIBUTORS.
+        //
+        if (exists ((f = out / "AUTHORS")))
+        {
+          authors_f = move (f);
         }
       }
 
@@ -1243,7 +1256,7 @@ namespace bdep
         open (out / buildfile_file);
 
         os << "./: {*/ -" << build_dir.posix_representation () << "} ";
-        if (readme_f || license_f || copyright_f)
+        if (readme_f || license_f || copyright_f || authors_f)
         {
           auto write = [&os, &out, s = ""] (const path& f) mutable
           {
@@ -1255,6 +1268,7 @@ namespace bdep
           if (readme_f)    write (*readme_f);
           if (license_f)   write (*license_f);
           if (copyright_f) write (*copyright_f);
+          if (authors_f)   write (*authors_f);
           os << "} ";
         }
         os << "manifest" << endl;
