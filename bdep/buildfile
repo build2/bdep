@@ -75,11 +75,12 @@ for t: cxx{**.test...}
 #
 obj{utility}: cxx.poptions += -DBDEP_EXE_SUFFIX='"'$bin.exe.suffix'"'
 
-# Pass the copyright notice extracted from the COPYRIGHT file.
+# Pass the copyright notice extracted from the LICENSE file.
 #
-copyright = $process.run_regex(cat $src_root/COPYRIGHT,  \
-                               'Copyright \(c\) (.+)\.', \
-                               '\1')
+copyright = $process.run_regex(                      \
+  cat $src_root/LICENSE,                             \
+  'Copyright \(c\) (.+) \(see the AUTHORS file\)\.', \
+  '\1')
 
 obj{bdep}: cxx.poptions += -DBDEP_COPYRIGHT=\"$copyright\"
 
