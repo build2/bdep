@@ -1,11 +1,6 @@
-ODB is licensed under the MIT-compatible terms with a license
-exception:
-
-https://git.codesynthesis.com/cgit/odb/odb-etc/tree/license-exceptions/build2-odb-license-exception.txt
-
 MIT License
 
-Copyright (c) 2014-2020 the build2 authors (see the AUTHORS file).
+Copyright (c) 2014-2020 the build2 authors (see the AUTHORS and LEGAL files).
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
