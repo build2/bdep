@@ -879,7 +879,7 @@ namespace bdep
         }
       };
 
-      // .gitignore
+      // .gitignore & .gitattributes
       //
       // See also tests/.gitignore below.
       //
@@ -887,7 +887,7 @@ namespace bdep
       {
         if (vc == vcs::git)
         {
-          // Use POSIX directory separators here.
+          // Note: use POSIX directory separators in these files.
           //
           open (out / ".gitignore");
           if (!pkg)
@@ -917,6 +917,28 @@ namespace bdep
                << "*.exe.dlls/"                                        << endl
                << "*.exe.manifest"                                     << endl
                << "*.pc"                                               << endl;
+          os.close ();
+
+          open (out / ".gitattributes");
+          os << "# This is a good default: files that are auto-detected by git to be text are" << endl
+             << "# converted to the platform-native line ending (LF on Unix, CRLF on Windows)" << endl
+             << "# in the working tree and to LF in the repository."   << endl
+             << "#"                                                    << endl
+             << "* text=auto"<< endl
+             <<                                                           endl
+             << "# Use `eol=crlf` for files that should have the CRLF line ending both in the" << endl
+             << "# working tree (even on Unix) and in the repository." << endl
+             << "#"                                                    << endl
+             << "#*.bat text eol=crlf"                                 << endl
+             <<                                                           endl
+             << "# Use `eol=lf` for files that should have the LF line ending both in the" << endl
+             << "# working tree (even on Windows) in the repository."  << endl
+             << "#"                                                    << endl
+             << "#*.sh text eol=lf"                                    << endl
+             <<                                                           endl
+             << "# Use `binary` to make sure certain files are never auto-detected as text." << endl
+             << "#"                                                    << endl
+             << "#*.png binary"                                        << endl;
           os.close ();
         }
       }
