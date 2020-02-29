@@ -883,9 +883,9 @@ namespace bdep
       //
       // See also tests/.gitignore below.
       //
-      if (!sub)
+      if (vc == vcs::git)
       {
-        if (vc == vcs::git)
+        if (!sub)
         {
           // Note: use POSIX directory separators in these files.
           //
@@ -918,7 +918,10 @@ namespace bdep
                << "*.exe.manifest"                                     << endl
                << "*.pc"                                               << endl;
           os.close ();
+        }
 
+        if (!pkg && !sub)
+        {
           open (out / ".gitattributes");
           os << "# This is a good default: files that are auto-detected by git to be text are" << endl
              << "# converted to the platform-native line ending (LF on Unix, CRLF on Windows)" << endl
