@@ -39,11 +39,9 @@ namespace bdep
       //
       auto validate_value = [&o, &v] ()
       {
-        if (!utf8 (v, codepoint_types::graphic))
-          throw invalid_value (o,
-                               v,
-                               "not UTF-8 encoded or contains non-graphic "
-                               "Unicode codepoints");
+        string what;
+        if (!utf8 (v, what, codepoint_types::graphic))
+          throw invalid_value (o, v, what);
       };
 
       if (o == "--build-email")

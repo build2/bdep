@@ -300,11 +300,11 @@ namespace bdep
   void
   validate_utf8_graphic (const string& s, const char* what, const char* opt)
   {
-    if (!utf8 (s, codepoint_types::graphic))
+    string ed;
+    if (!utf8 (s, ed, codepoint_types::graphic))
     {
       diag_record dr (fail);
-      dr << what << " '" << s << "' is not UTF-8 encoded or contains "
-         << "non-graphic Unicode codepoints";
+      dr << "invalid " << what << " '" << s << "': " << ed;
 
       if (opt != nullptr)
         dr << info << "consider using " << opt << " to override";
