@@ -11,16 +11,7 @@
   exit
 end
 
-# Server to use for the CI request submissions simulation.
-#
-# Note that the empty config.bdep.test.repository value is used to suppress
-# these tests (which require network access).
-#
-server = ($config.bdep.test.repository == [null] \
-          ? ($build.version.stage                \
-             ? 'https://stage.build2.org'        \
-             : 'https://ci.cppget.org')          \
-          : "$config.bdep.test.repository")
+server = $config.bdep.tests.ci.server
 
 +if ("$server" == '')
   exit

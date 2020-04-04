@@ -1,6 +1,29 @@
 # file      : tests/build/root.build
 # license   : MIT; see accompanying LICENSE file
 
+# Server to use for the CI request submissions simulation. Use the empty
+# string to disable the CI tests (which require network access).
+#
+# Note that by default we test against the ci-dir handler on stage and the
+# ci-load handler on public (thus it's not ci.stage.build2.org).
+#
+config [string] config.bdep.tests.ci.server ?= \
+  ($build.version.stage                        \
+   ? 'https://stage.build2.org'                \
+   : 'https://ci.cppget.org')
+
+# Repository to use for the package submissions simulation. Use the empty
+# string to disable the package submission tests (which require network
+# access).
+#
+# Note that by default we test against the submit-dir handler on stage and the
+# submit-git handler on public.
+#
+config [string] config.bdep.tests.publish.repository ?= \
+  ($build.version.stage                                 \
+   ? 'https://stage.build2.org'                         \
+   : 'https://cppget.org')
+
 # We need to configure C/C++ modules to pass the compiler paths to some of
 # bdep test commands.
 #

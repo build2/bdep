@@ -11,16 +11,7 @@
   exit
 end
 
-# Repository to use for the package submissions simulation.
-#
-# Note that the empty config.bdep.test.repository value is used to suppress
-# these tests (which require network access).
-#
-repository = ($config.bdep.test.repository == [null] \
-              ? ($build.version.stage                \
-                 ? 'https://stage.build2.org'        \
-                 : 'https://cppget.org')             \
-              : "$config.bdep.test.repository")
+repository = $config.bdep.tests.publish.repository
 
 +if ("$repository" == '')
   exit
