@@ -75,6 +75,10 @@ namespace bdep
      builds build-{include,exclude}
      \
 
+     Note also that the build constraints group values are overridden
+     hierarchically so that the \cb{build-{include,exclude\}} overrides don't
+     affect the \cb{builds} values.
+
      While the exact interpretation of the CI request depends on the specific
      service, normally, the CI server will respond with a reference that can
      be used to query the results. See \l{brep#ci Package CI} for details on
