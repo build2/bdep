@@ -1682,11 +1682,16 @@ namespace bdep
                << "#else"                                                       << endl
                << "// If none of the above macros are defined, then we assume we are being used"  << endl
                << "// by some third-party build system that cannot/doesn't signal the library"    << endl
-               << "// type. Note that this fallback works for both static and shared but in case" << endl
-               << "// of shared will be sub-optimal compared to having dllimport."                << endl
-               << "//"                                                                            << endl
+               << "// type. Note that this fallback works for both static and shared libraries" << endl
+               << "// provided the library only exports functions (in other words, no global" << endl
+               << "// exported data) and for the shared case the result will be sub-optimal" << endl
+               << "// compared to having dllimport. If, however, your library does export data," << endl
+               << "// then you will probably want to replace the fallback with the (commented" << endl
+               << "// out) error since it won't work for the shared case."              << endl
+               << "//"                                                                  << endl
                << "#  define " << mp << "_SYMEXPORT         // Using static or shared." << endl
-               << "#endif"                                                             << endl;
+               << "//#  error define " << mp << "_STATIC or " << mp << "_SHARED preprocessor macro to signal " << n << " library type being linked" << endl
+               << "#endif"                                                              << endl;
             os.close ();
           }
 
