@@ -1267,9 +1267,10 @@ namespace bdep
         if (vc == vcs::git)
         {
           open (bd / ".gitignore");
-          os << "config." << build_ext                                 << endl
-             << "root/"                                                << endl
-             << "bootstrap/"                                           << endl;
+          os << "/config." << build_ext                                << endl
+             << "/root/"                                               << endl
+             << "/bootstrap/"                                          << endl
+             << "build/"                                               << endl;
           os.close ();
         }
       }
@@ -2032,9 +2033,10 @@ namespace bdep
           if (vc == vcs::git)
           {
             open (tbd / ".gitignore");
-            os << "config." << build_ext                               << endl
-               << "root/"                                              << endl
-               << "bootstrap/"                                         << endl;
+            os << "/config." << build_ext                              << endl
+               << "/root/"                                             << endl
+               << "/bootstrap/"                                        << endl
+               << "build/"                                             << endl;
             os.close ();
           }
 
