@@ -8,10 +8,18 @@
 define xml: file
 xml{*}: extension = xml
 
+import libodb = libodb%lib{odb}
+
 import libs  = libbpkg%lib{bpkg}
 import libs += libbutl%lib{butl}
-import libs += libodb%lib{odb}
+libs += $libodb
 import libs += libodb-sqlite%lib{odb-sqlite}
+
+# Import the odb program only if it is present as a project or in the
+# system. This way a distribution that includes pre-generated files can be
+# built without installing odb.
+#
+import? [metadata] odb = odb%exe{odb}
 
 # @@ Why don't we generate these with wildcard patterns (and rules below with
 # a for-loop)?
@@ -53,6 +61,40 @@ libue{bdep}: {hxx ixx txx cxx}{** -bdep                    \
              xml{*}
 
 hxx{version}: in{version} $src_root/manifest
+
+# Generate the database mapping source files if the odb program is imported
+# and assume they are present in the source directory otherwise (the package
+# distribution case).
+#
+# Note that we include all the generated files into the distribution and don't
+# remove them when cleaning in src (so that clean results in a state identical
+# to distributed).
+#
+# "-I$out_root"
+if ($odb != [null])
+{
+  print AAAAAAAAAAAA $($libodb:cxx.export.poptions)
+
+  odb_options =  \
+     -DLIBODB_BUILD2 -DLIBODB_SQLITE_BUILD2                           \
+    -d sqlite --std c++14 --generate-query                            \
+    --odb-epilogue "'#include <bdep/wrapper-traits.hxx>'"             \
+    --hxx-prologue "'#include <bdep/wrapper-traits.hxx>'"             \
+    --include-with-brackets --include-prefix bdep --guard-prefix BDEP \
+    --sqlite-override-null
+
+  <{hxx ixx cxx}{project-odb}>: hxx{project} $odb
+  {
+    odb_options += --generate-schema
+
+    dist  = true
+    clean = ($src_root != $out_root)
+  }
+  {{
+    $odb $odb_options $path($<[0])
+  }}
+#    --hxx-prologue "'#include <bdep/value-traits.hxx>'"
+}
 
 # Unit tests.
 #
