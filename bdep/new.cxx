@@ -1726,6 +1726,7 @@ namespace bdep
                << "#define " << mp << "_VERSION       $" << v << ".version.project_number$ULL" << endl
                << "#define " << mp << "_VERSION_STR   \"$" << v << ".version.project$\""       << endl
                << "#define " << mp << "_VERSION_ID    \"$" << v << ".version.project_id$\""    << endl
+               << "#define " << mp << "_VERSION_FULL  \"$" << v << ".version$\"" << endl
                <<                                                                                  endl
                << "#define " << mp << "_VERSION_MAJOR $" << v << ".version.major$" << endl
                << "#define " << mp << "_VERSION_MINOR $" << v << ".version.minor$" << endl
