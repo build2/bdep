@@ -543,7 +543,7 @@ g = git -C prj >! 2>!
     # Push again into the build2-control branch from another local repository
     # (see above for details).
     #
-    $g2 pull;
+    $g2 pull --ff-only;
     $g2 commit --allow-empty -m 'Dummy2';
     $g2 push;
 
@@ -567,7 +567,7 @@ g = git -C prj >! 2>!
     # Note that the prj repository master branch pull fetches the
     # build2-control branch implicitly, so the subsequent publishing succeeds.
     #
-    $g pull;
+    $g pull --ff-only;
 
     $* 2>>~%EOE%;
       %package submission is queued(: \.*prj/1.0.14)?%d

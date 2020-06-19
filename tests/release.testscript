@@ -50,7 +50,7 @@ release += 2>!
 #
 gp2    = $g -C prj2
 clone2 = $g clone prj.git prj2 &prj2/***
-pull2  = $gp2 pull
+pull2  = $gp2 pull --ff-only
 fetch2 = $gp2 fetch
 log2   = $gp2 log '--pretty=format:"%d %s"'
 
