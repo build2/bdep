@@ -1282,6 +1282,7 @@ namespace bdep
         open (out / buildfile_file);
 
         os << "./: {*/ -" << build_dir.posix_representation () << "} ";
+#if 1 // @@ TMP
         if (readme_f || license_f || copyright_f || authors_f)
         {
           auto write = [&os, &out, s = ""] (const path& f) mutable
@@ -1297,6 +1298,37 @@ namespace bdep
           if (authors_f)   write (*authors_f);
           os << "} ";
         }
+#else
+        if (readme_f || license_f || copyright_f || authors_f)
+        {
+          const char* s;
+          auto write = [&os, &out, &s] (const path& f)
+          {
+            os << s << f.leaf (out).posix_representation ();
+            s = " ";
+          };
+
+          if (readme_f)
+          {
+            s = "";
+
+            os << "doc{";
+            write (*readme_f);
+            os << "} ";
+          }
+
+          if (license_f || copyright_f || authors_f)
+          {
+            s = "";
+
+            os << "legal{";
+            if (license_f)   write (*license_f);
+            if (copyright_f) write (*copyright_f);
+            if (authors_f)   write (*authors_f);
+            os << "} ";
+          }
+        }
+#endif
         os << "manifest" << endl;
 
         if (itest && install && t == type::lib) // Have tests/ subproject.
