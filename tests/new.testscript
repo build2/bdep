@@ -836,7 +836,7 @@ status += -d prj
       : substitution
       :
       $* prj --post-hook 'echo foo >>@bar@' 2>>EOE &prj/*** != 0
-        error: invalid post hook 'echo foo >>@bar@': unknown variable 'bar'
+        error: invalid post hook 'echo foo >>@bar@': unknown substitution variable 'bar'
         EOE
 
       : open-redirect
@@ -884,7 +884,7 @@ status += -d prj
       : substitution
       :
       $* prj --pre-hook 'echo foo >>@bar@' 2>>EOE &prj/*** != 0
-        error: invalid pre hook 'echo foo >>@bar@': unknown variable 'bar'
+        error: invalid pre hook 'echo foo >>@bar@': unknown substitution variable 'bar'
         EOE
     }
   }
