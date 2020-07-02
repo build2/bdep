@@ -26,29 +26,44 @@ namespace bdep
 {
   // License id to full name map.
   //
+  // Used for the license full name search for the auto-detected and
+  // explicitly specified license ids and for obtaining their canonical case.
+  //
   static const map<string, string, icase_compare_string> licenses = {
-    {"MIT",               "MIT License"                            },
-    {"BSD2",              "Simplified 2-clause BSD License"        },
-    {"BSD3",              "New 3-clause BSD License"               },
-    {"BSD4",              "Original 4-clause BSD License"          },
-    {"GPLv2",             "GNU General Public License v2.0"        },
-    {"GPLv3",             "GNU General Public License v3.0"        },
-    {"LGPLv2",            "GNU Lesser General Public License v2.0" },
-    {"LGPLv2.1",          "GNU Lesser General Public License v2.1" },
-    {"LGPLv3",            "GNU Lesser General Public License v3.0" },
-    {"AGPLv2",            "Affero General Public License v2.0"     },
-    {"AGPLv3",            "GNU Affero General Public License v3.0" },
-    {"ASLv1",             "Apache License v1.0"                    },
-    {"ASLv1.1",           "Apache License v1.1"                    },
-    {"ASLv2",             "Apache License v2.0"                    },
-    {"MPLv2",             "Mozilla Public License v2.0"            },
+    {"MIT",               "MIT License"                                       },
+    {"BSD-1-Clause",      "BSD 1-Clause License"                              },
+    {"BSD-2-Clause",      "BSD 2-Clause \"Simplified\" License"               },
+    {"BSD-3-Clause",      "BSD 3-Clause \"New\" or \"Revised\" License"       },
+    {"BSD-4-Clause",      "BSD 4-Clause \"Original\" or \"Old\" License"      },
+    {"GPL-2.0-only",      "GNU General Public License v2.0 only"              },
+    {"GPL-2.0-or-later",  "GNU General Public License v2.0 or later"          },
+    {"GPL-3.0-only",      "GNU General Public License v3.0 only"              },
+    {"GPL-3.0-or-later",  "GNU General Public License v3.0 or later"          },
+    {"LGPL-2.0-only",     "GNU Library General Public License v2 only"        },
+    {"LGPL-2.0-or-later", "GNU Library General Public License v2 or later"    },
+    {"LGPL-2.1-only",     "GNU Lesser General Public License v2.1 only"       },
+    {"LGPL-2.1-or-later", "GNU Lesser General Public License v2.1 or later"   },
+    {"LGPL-3.0-only",     "GNU Lesser General Public License v3.0 only"       },
+    {"LGPL-3.0-or-later", "GNU Lesser General Public License v3.0 or later"   },
+    {"AGPL-1.0-only",     "Affero General Public License v1.0 only"           },
+    {"AGPL-1.0-or-later", "Affero General Public License v1.0 or later"       },
+    {"AGPL-2.0-only",     "Affero General Public License v2.0 only"           },
+    {"AGPL-2.0-or-later", "Affero General Public License v2.0 or later"       },
+    {"AGPL-3.0-only",     "GNU Affero General Public License v3.0 only"       },
+    {"AGPL-3.0-or-later", "GNU Affero General Public License v3.0 or later"   },
+    {"Apache-1.0",        "Apache License 1.0"                                },
+    {"Apache-1.1",        "Apache License 1.1"                                },
+    {"Apache-2.0",        "Apache License 2.0"                                },
+    {"MPL-1.0",           "Mozilla Public License 1.0"                        },
+    {"MPL-1.1",           "Mozilla Public License 1.1"                        },
+    {"MPL-2.0",           "Mozilla Public License 2.0"                        },
+    {"BSL-1.0",           "Boost Software License 1.0"                        },
+    {"Unlicense",         "The Unlicense (public domain)"                     },
 
-    // Note: entries with empty full name are here to get canonical case.
-    //
-    {"public domain" ,    ""                                       },
-    {"available source",  "Not free software/open source"          },
-    {"proprietary",       ""                                       },
-    {"TODO",              "License is not yet decided"             }};
+    {"other: public domain",    "Released into the public domain"             },
+    {"other: available source", "Not free/open source with public source code"},
+    {"other: proprietary",      "Not free/open source"                        },
+    {"other: TODO",             "License is not yet decided"                  }};
 
 
   // Extract a license id from a license file returning an empty string if
@@ -129,18 +144,32 @@ namespace bdep
       return p.second;
     };
 
-    // Note that some licenses (like ASL, MPL) always spell the minor verison,
-    // even if it is there (unlike the GNU licenses). So for them we need to
-    // ignore the zero minor component.
+    // Note that some licenses (for example, GNU licenses) don't spell the
+    // zero minor version. So for them we may need to provide two properly
+    // ordered regular expressions.
     //
-    (test ("MIT License",                                         "MIT")     ||
-     test ("BSD ([1234])-Clause License",                         "BSD$1")   ||
-     test ("Apache License Version ([0-9]+(\\.[1-9])?)",          "ASLv$1")  ||
-     test ("Mozilla Public License Version ([0-9]+(\\.[1-9])?)",  "MPLv$1")  ||
-     test ("GNU GENERAL PUBLIC LICENSE Version ([0-9.]+)",        "GPLv$1")  ||
-     test ("GNU LESSER GENERAL PUBLIC LICENSE Version ([0-9.]+)", "LGPLv$1") ||
-     test ("GNU AFFERO GENERAL PUBLIC LICENSE Version ([0-9.]+)", "AGPLv$1") ||
-     test ("public domain",                                 "public domain"));
+    (test ("MIT License",                                            "MIT") ||
+     test ("BSD ([1234])-Clause License",                  "BSD-$1-Clause") ||
+     test ("Apache License Version ([0-9]+\\.[0-9])",          "Apache-$1") ||
+     test ("Mozilla Public License Version ([0-9]+\\.[0-9])",     "MPL-$1") ||
+     test ("GNU GENERAL PUBLIC LICENSE Version ([0-9]+)",  "GPL-$1.0-only") ||
+
+     test ("GNU LESSER GENERAL PUBLIC LICENSE Version ([0-9]+\\.[0-9]+)",
+           "LGPL-$1-only")                                                  ||
+
+     test ("GNU LESSER GENERAL PUBLIC LICENSE Version ([0-9]+)",
+           "LGPL-$1.0-only")                                                ||
+
+     test ("GNU AFFERO GENERAL PUBLIC LICENSE Version ([0-9]+)",
+           "AGPL-$1.0-only")                                                ||
+
+     test ("Boost Software License - Version ([0-9]+\\.[0-9]+)",  "BSL-$1") ||
+
+     test ("This is free and unencumbered software released into the "
+           "public domain\\.",
+           "Unlicense")                                                     ||
+
+     test ("public domain",                           "other: public domain"));
 
     return r;
   }
@@ -827,8 +856,14 @@ namespace bdep
       if (license_e)
       {
         if (!license_o)
+        {
+          // We should have failed earlier if the license wasn't recognized.
+          //
+          assert (!license_e->empty ());
+
           license = *license_e;
-        else if (icasecmp (*license_e, license) != 0)
+        }
+        else if (!license_e->empty () && icasecmp (*license_e, license) != 0)
           fail << "extracted license does not match requested" <<
             info << "extracted: " << *license_e <<
             info << "requested: " << license;
@@ -1056,12 +1091,6 @@ namespace bdep
           {
             ln = i->second;
             license = i->first; // Use canonical case.
-          }
-          else
-          {
-            if (icasecmp (license, "BSD") == 0)
-              warn << "BSD license name is ambiguous" <<
-                info << "consider using BSD3 for \"New 3-clause BSD License\"";
           }
         }
 

@@ -264,7 +264,7 @@ status += -d prj
       EOE
     test -f libfoo/.gitignore;
     sed -n -e 's/^summary: (.+)$/\1/p'      libfoo/manifest >'cool foo';
-    sed -n -e 's/^license: ([^ ]+).*$/\1/p' libfoo/manifest >'ASLv2'
+    sed -n -e 's/^license: ([^ ]+).*$/\1/p' libfoo/manifest >'Apache-2.0'
   }
 
   : pkg

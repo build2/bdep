@@ -322,11 +322,48 @@ namespace bdep
 
      \li|\n\ \ \ \c{\b{license=}\i{name}}
 
-         Specify the project's license. Commonly used license names are
-         \cb{MIT}, \cb{ASLv2} (Apache License 2.0), \cb{GPLv3}, and
-         \cb{proprietary}. If unspecified, then \cb{proprietary} is
-         assumed. See the \l{bpkg#manifest-package-license \cb{license}}
-         package manifest value for details.|
+         Specify the project's license. The license name can be an
+         \l{https://spdx.org/licenses/ SPDX License Expression}, which, in its
+         simplest form, is just the license ID. Or it can be a free form name
+         in the \cb{other:} license name scheme. If unspecified, then
+         \cb{other: proprietary} is assumed. The following tables lists the
+         most commonly used free/open source software license IDs as well as a
+         number of pre-defined \cb{other:} names. See the
+         \l{bpkg#manifest-package-license \cb{license}} package manifest value
+         for more information.
+
+         \
+         MIT                MIT License.
+
+         BSD-2-Clause       BSD 2-Clause \"Simplified\" License
+         BSD-3-Clause       BSD 3-Clause \"New\" or \"Revised\" License
+
+         GPL-3.0-only       GNU General Public License v3.0 only
+         GPL-3.0-or-later   GNU General Public License v3.0 or later
+
+         LGPL-3.0-only      GNU Lesser General Public License v3.0 only
+         LGPL-3.0-or-later  GNU Lesser General Public License v3.0 or later
+
+         AGPL-3.0-only      GNU Affero General Public License v3.0 only
+         AGPL-3.0-or-later  GNU Affero General Public License v3.0 or later
+
+         Apache-2.0         Apache License 2.0
+
+         MPL-2.0            Mozilla Public License 2.0
+
+         BSL-1.0            Boost Software License 1.0
+
+         Unlicense          The Unlicense (public domain)
+         \
+
+         \
+         other: public domain     Released into the public domain
+         other: available source  Not free/open source with public source code
+         other: proprietary       Not free/open source
+         other: TODO              License is not yet decided
+         \
+
+         |
 
      \li|\n\ \ \ \cb{no-readme}
 
@@ -409,7 +446,7 @@ namespace bdep
     bool unit-tests;
     bool no-install;
     dir_path "source";
-    string license = "proprietary";
+    string license = "other: proprietary";
     bool no-readme;
     bool alt-naming;
   };
@@ -422,7 +459,7 @@ namespace bdep
     bool no-install;
     bool no-version;
     dir_path "source";
-    string license = "proprietary";
+    string license = "other: proprietary";
     bool no-readme;
     bool alt-naming;
   };
@@ -431,7 +468,7 @@ namespace bdep
   {
     bool no-tests;
     bool no-install;
-    string license = "proprietary";
+    string license = "other: proprietary";
     bool no-readme;
     bool alt-naming;
   };
