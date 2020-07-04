@@ -27,8 +27,8 @@ config [string] config.bdep.tests.publish.repository ?= \
 # We need to configure C/C++ modules to pass the compiler paths to some of
 # bdep test commands.
 #
-using c
-using cxx
+using c.config
+using cxx.config
 
 # Setup the bdep that we are testing.
 #
