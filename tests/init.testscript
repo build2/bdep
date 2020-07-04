@@ -89,6 +89,14 @@ deinit += -d prj
   {
     $clone_prj;
 
+    # Note that not passing the C++ configuration arguments (see above) for
+    # the sake of testing, we may end up with the 'not built with default C++
+    # compiler' error. To avoid this, we just make sure this is not a C++
+    # project.
+    #
+    echo ''            >=prj/build/root.build;
+    echo './: prj.cxx' >=prj/prj/buildfile;
+
     $* -C @cfg -- -- '?sys:libprj/*' 2>>/~"%EOE%" &prj-cfg/***;
       initializing in project $~/prj/
       created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
