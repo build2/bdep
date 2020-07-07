@@ -426,6 +426,10 @@ namespace bdep
                                               : nullptr) :
                             nullptr);
 
+    if (source != nullptr && source->absolute ())
+      fail << "invalid value '" << *source << "' for option "
+           << "--type|-t,source: absolute path";
+
     // Validate vcs options.
     //
     vcs  vc   (o.vcs ());
