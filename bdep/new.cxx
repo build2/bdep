@@ -639,7 +639,7 @@ namespace bdep
             prj = move (pkg);
         }
 
-        if (!out.sub (prj))
+        if (!out.sub (prj) || out == prj)
           fail << "source subdirectory " << out << " is not a subdirectory of "
                << "package directory " << prj;
 
