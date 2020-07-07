@@ -90,7 +90,7 @@ namespace bdep
      working directory is assumed. For example:
 
      \
-     $ bdep new -t bare hello
+     $ bdep new -l c++ -t bare hello
      $ cd hello
 
      $ bdep new --subdirectory -l c++ -t lib libhello
