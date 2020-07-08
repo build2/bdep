@@ -26,7 +26,7 @@ namespace bdep
         \b{bdep new} [<options>] \b{--config-create|-C} <cfg-dir> [\b{@}<cfg-name>] <spec> [<name>]\n
         \ \ \ \ \ \ \ \ \ [<cfg-args>]\n
         \b{bdep new} [<options>] \b{--package} [<prj-spec>] <spec> [<name>]\n
-        \b{bdep new} [<options>] \b{--subdirectory} [<prj-spec>] <spec> [<name>]}
+        \b{bdep new} [<options>] \b{--source} [<prj-spec>] <spec> [<name>]}
 
      \c{<spec> \ \ \ \ = [<lang>] [<type>] [<vcs>]\n
         <lang> \ \ \ \ = \b{--lang}|\b{-l} (\b{c}|\b{c++})[\b{,}<lang-opt>...]\n
@@ -40,8 +40,8 @@ namespace bdep
      The \cb{new} command creates and initializes a new project (the first
      three forms), a new package in an already existing project (the
      \cb{--package} form), or a new source subdirectory in an already existing
-     project/package (the \cb{--subdirectory} form). All the forms except
-     \cb{--subdirectory} first create according to <spec> a new \cb{build2}
+     project/package (the \cb{--source} form). All the forms except
+     \cb{--source} first create according to <spec> a new \cb{build2}
      project/package called <name> in the <name> subdirectory of the current
      working directory (unless overridden with \c{\b{--output-dir}|\b{-o}}).
 
@@ -51,6 +51,14 @@ namespace bdep
 
      \
      $ bdep new -l c++ -t exe hello
+
+     $ tree hello/
+     hello/
+     ├── hello/
+     │   ├── hello.cxx
+     │   └── buildfile
+     ├── buildfile
+     └── manifest
      \
 
      Similarly, the second and third forms add an existing or create new build
@@ -76,15 +84,30 @@ namespace bdep
      $ bdep new --package -l c++ -t exe hello
 
      $ bdep init -C @gcc cc config.cxx=g++
+
+     $ cd ..
+     $ tree hello/
+     hello/
+     ├── hello/
+     │   ├── hello/
+     │   │   ├── hello.cxx
+     │   │   └── buildfile
+     │   ├── buildfile
+     │   └── manifest
+     ├── libhello/
+     │   ├── libhello/
+     │   │   ├── hello.hxx
+     │   │   ├── hello.cxx
+     │   │   └── buildfile
+     │   ├── buildfile
+     │   └── manifest
+     └── packages.manifest
      \
 
-     After executing these commands the \cb{hello} project will contain two
-     packages, \cb{libhello} and \cb{hello}.
-
-     The \cb{--subdirectory} form operates \i{as-if} by first creating
-     according to <spec> a temporary project called <name> and then copying
-     its source subdirectory (\c{\i{name}\b{/}\i{name}\b{/}} by default) over
-     to the current working directory (unless overridden with
+     The \cb{--source} form operates \i{as-if} by first creating according to
+     <spec> a temporary project called <name> and then copying its source
+     subdirectory (\c{\i{name}\b{/}\i{name}\b{/}} by default) over to the
+     current working directory (unless overridden with
      \c{\b{--output-dir}|\b{-o}}). If no project/package directory is
      explicitly specified with \c{\b{--directory}|\b{-d}}, then the current
      working directory is assumed. For example:
@@ -93,30 +116,78 @@ namespace bdep
      $ bdep new -l c++ -t bare hello
      $ cd hello
 
-     $ bdep new --subdirectory -l c++ -t lib libhello
-     $ bdep new --subdirectory -l c++ -t exe hello
+     $ bdep new --source -l c++ -t lib libhello
+     $ bdep new --source -l c++ -t exe hello
 
      $ bdep init -C @gcc cc config.cxx=g++
-     \
 
-     After executing these commands the \cb{hello} project will contain two
-     source subdirectories, \cb{libhello/} and \cb{hello/}.
+     $ cd ..
+     $ tree hello/
+     hello/
+     ├── hello/
+     │   ├── hello.cxx
+     │   └── buildfile
+     ├── libhello/
+     │   ├── hello.hxx
+     │   ├── hello.cxx
+     │   └── buildfile
+     ├── buildfile
+     └── manifest
+     \
 
      In all the forms, if <name> is omitted, then the current working
      directory name (unless overridden with \c{\b{--output-dir}|\b{-o}}) is
-     used as the project/package/subdirectory name. See \l{bpkg#package-name
-     Package Name} for details on project/package names.
+     used as the project/package/source subdirectory name. See
+     \l{bpkg#package-name Package Name} for details on project/package names.
 
-     The source subdirectory can be customized with the \cb{source} project
+     The source subdirectory can be customized with the \cb{subdir} project
      type sub-option (see below for details). For example:
 
      \
-     $ bdep new -l c++ -t lib,source=libhello/io libhello-io
+     $ bdep new -l c++ -t lib,subdir=libhello/io libhello-io
+
+     $ tree libhello-io/
+     libhello-io/
+     └── libhello/
+         └── io/
+             ├── hello-io.hxx
+             └── hello-io.cxx
      \
 
-     After executing this command the \cb{libhello-io} project will contain
-     the \cb{libhello/io/} source subdirectory instead of the default
-     \cb{libhello-io/}.
+     By default the source subdirectory is created in the project/package root
+     directory and contains both headers (including public headers for
+     libraries) as well as sources. This can be customized in a number of ways
+     using the \cb{prefix*} and \cb{split} project type sub-options (see below
+     for details). For example, to move the source subdirectory inside
+     \c{src/}:
+
+     \
+     $ bdep new -l c++ -t exe,prefix=src hello
+
+     $ tree hello/
+     hello/
+     └── src/
+         └── hello/
+             └── hello.cxx
+     \
+
+     And to split the library source subdirectory into public headers and
+     other source files:
+
+     \
+     $ bdep new -l c++ -t lib,split libhello
+
+     $ tree libhello/
+     libhello/
+     ├── include/
+     │   └── libhello/
+     │       └── hello.hxx
+     └── src/
+         └── libhello/
+             └── hello.cxx
+     \
+
+     See the SOURCE LAYOUT section for details and more examples.
 
      The output directory may already contain existing files provided they
      don't clash with the files to be created. The \cb{new} command also
@@ -229,9 +300,17 @@ namespace bdep
 
          Don't add support for installing.|
 
-     \li|\n\ \ \ \c{\b{source=}\i{dir}}
+     \li|\n\ \ \ \c{\b{prefix=}\i{dir}}
 
-         Alternative source subdirectory relative to project/package root.|
+         Optional source prefix relative to project/package root.|
+
+     \li|\n\ \ \ \c{\b{subdir=}\i{dir}}
+
+         Alternative source subdirectory relative to source prefix.|
+
+     \li|\n\ \ \ \cb{no-subdir}
+
+         Omit the source subdirectory.|
 
      \li|\n\ \ \ \c{\b{license=}\i{name}}|
 
@@ -268,9 +347,34 @@ namespace bdep
 
          Don't add support for generating the version header.|
 
-     \li|\n\ \ \ \c{\b{source=}\i{dir}}
+     \li|\n\ \ \ \c{\b{prefix-include=}\i{dir}}
 
-         Alternative source subdirectory relative to project/package root.|
+         Optional public header prefix relative to project/package root.|
+
+     \li|\n\ \ \ \c{\b{prefix-source=}\i{dir}}
+
+         Optional source prefix relative to project/package root.|
+
+     \li|\n\ \ \ \c{\b{prefix=}\i{dir}}
+
+         Shortcut for \c{\b{prefix-include=}\i{dir}\b{,prefix-source=}\i{dir}}.|
+
+     \li|\n\ \ \ \cb{split}
+
+         Shortcut for \cb{prefix-include=include,prefix-source=src}.|
+
+     \li|\n\ \ \ \c{\b{subdir=}\i{dir}}
+
+         Alternative source subdirectory relative to header/source prefix.|
+
+     \li|\n\ \ \ \cb{no-subdir}
+
+         Omit the source subdirectory.|
+
+     \li|\n\ \ \ \cb{no-subdir-source}
+
+         Omit the source subdirectory relative to the source prefix but still
+         create one relative to the header prefix.|
 
      \li|\n\ \ \ \c{\b{license=}\i{name}}|
 
@@ -285,7 +389,7 @@ namespace bdep
      \li|\cb{bare}
 
          A project without any source code that can be filled later
-         (see \cb{--subdirectory}). Recognized bare project sub-options:|
+         (see \cb{--source}). Recognized bare project sub-options:|
 
      \li|\n\ \ \ \cb{no-tests}
 
@@ -391,13 +495,13 @@ namespace bdep
 
          Don't initialize a version control system inside the project.||
 
-     The created project, package, or subdirectory can be further customized
-     using the pre and post-creation hooks specified with the \cb{--pre-hook}
-     and \cb{--post-hook} options, respectively. The pre hooks are executed
-     before any new files are created and the post hook \- after all the files
-     have been created. The hook commands are executed in the project,
-     package, or source directory as their current working directory. For
-     example:
+     The created project, package, or source subdirectory can be further
+     customized using the pre and post-creation hooks specified with the
+     \cb{--pre-hook} and \cb{--post-hook} options, respectively. The pre hooks
+     are executed before any new files are created and the post hook \- after
+     all the files have been created. The hook commands are executed in the
+     project, package, or source directory as their current working directory.
+     For example:
 
      \
      $ bdep new --post-hook \"echo .idea/ >>.gitignore\" hello
@@ -438,17 +542,27 @@ namespace bdep
     string mxx;
   };
 
-    //--type options
+  //--type options
+  //
+  // Note that we only support combined executable source layouts.
   //
   class cmd_new_exe_options
   {
     bool no-tests;
     bool unit-tests;
     bool no-install;
-    dir_path "source";
+    dir_path prefix;
+    dir_path subdir;
+    bool no-subdir;
     string license = "other: proprietary";
     bool no-readme;
     bool alt-naming;
+
+    // Old name for the subdir sub-option (thus undocumented).
+    //
+    // If specified, we will fail suggesting to use the new sub-option instead.
+    //
+    dir_path "source";
   };
 
   class cmd_new_lib_options
@@ -458,10 +572,22 @@ namespace bdep
     bool unit-tests;
     bool no-install;
     bool no-version;
-    dir_path "source";
+    dir_path prefix-source;
+    dir_path prefix-include;
+    dir_path prefix;
+    bool split;
+    dir_path subdir;
+    bool no-subdir;
+    bool no-subdir-source;
     string license = "other: proprietary";
     bool no-readme;
     bool alt-naming;
+
+    // Old name for the subdir sub-option (thus undocumented).
+    //
+    // If specified, we will fail suggesting to use the new sub-option instead.
+    //
+    dir_path "source";
   };
 
   class cmd_new_bare_options
@@ -503,11 +629,17 @@ namespace bdep
        new project."
     }
 
-    bool --subdirectory
+    bool --source
     {
       "Create a new source subdirectory inside an already existing project or
        package rather than a new project."
     }
+
+    // Old name for the --source option (thus undocumented).
+    //
+    // If specified, we will fail suggesting to use the new option instead.
+    //
+    bool --subdirectory;
 
     dir_path --output-dir|-o
     {
@@ -521,7 +653,7 @@ namespace bdep
       "<dir>",
       "Assume the project/package is in the specified directory rather than
        in the current working directory. Only used with \cb{--package} or
-       \cb{--subdirectory}."
+       \cb{--source}."
     }
 
     cmd_new_type --type|-t
@@ -581,15 +713,23 @@ namespace bdep
        serving as an escape sequence.
 
        \
-       @mode@ - one of 'project', 'package', or 'subdirectory'
-       @name@ - project, package, or subdirectory name
+       @mode@ - one of 'project', 'package', or 'source'
+       @name@ - project, package, or source subdirectory name
        @base@ - name base (name without extension)
        @stem@ - name stem (name base without 'lib' prefix)
+       @root@ - project/package root directory
+       @pfx@  - combined prefix relative to project/package root
+       @inc@  - split header prefix relative to project/package root
+       @src@  - split source prefix relative to project/package root
+       @sub@  - source subdirectory relative to header/source prefix
        @type@ - type (--type|-t value: 'exe', 'lib', etc)
        @lang@ - language (--lang|-l value: 'c', 'c++', etc)
        @vcs@  - version control system (--vcs|-s value: 'git', etc)
-       @root@ - project/package root directory
        \
+
+       Note that the \cb{@inc@} and \cb{@src@} variables are only set if the
+       header/source prefix is split with the combined \cb{@pfx@} variable set
+       otherwise.
 
        For example:
 
@@ -630,21 +770,310 @@ namespace bdep
   };
 
   "
+   \h#src-layout|SOURCE LAYOUT|
+
+   C and C++ projects employ a bewildering variety of source code layouts most
+   of which fit into two broad classes: \i{combined} where all source code for
+   a single executable or library resides in the same directory and \i{split}
+   where headers (typically public headers of a library) and other source
+   files reside in separate directories (most commonly called \cb{include/}
+   and \cb{src/}).
+
+   To support creation of such varying layouts the \cb{new} command divides
+   paths leading to source code inside a package/project into a number of
+   customizable components:
+
+   \
+   libhello/{include,src}/hello/
+       ^         ^          ^
+       |         |          |
+    project/   source    source
+    package    prefix  subdirectory
+     root
+   \
+
+   Note that while the same physical layout can be achieved with various
+   combinations of source prefix and subdirectory, there will be differences
+   in semantics since the headers in the project are included with the source
+   subdirectory (if any) as a prefix.
+
+   As we have already seen, the source subdirectory can be customized with the
+   \cb{subdir} project type sub-option. For example:
+
+   \
+   # libhello/hello/
+
+   $ bdep new -l c++ -t lib,subdir=hello libhello
+
+   $ tree libhello/
+   libhello/
+   └── hello/
+       ├── hello.hxx
+       └── hello.cxx
+   \
+
+   The source prefix can be combined, in which case it can be customized with
+   the single \cb{prefix} project type sub-option. For example:
+
+   \
+   # hello/src/hello/
+
+   $ bdep new -l c++ -t exe,prefix=src hello
+
+   $ tree hello/
+   hello/
+   └── src/
+       └── hello/
+           └── hello.cxx
+   \
+
+   The prefix can also be split, in which case the \cb{prefix-include} and
+   \cb{prefix-source} sub-options can be used to customize the respective
+   directories independently. For example:
+
+   \
+   # libhello/{include,.}/libhello/
+
+   $ bdep new -l c++ -t lib,prefix-include=include libhello
+
+   $ tree libhello/
+   libhello/
+   ├── include/
+   │   └── libhello/
+   │       └── hello.hxx
+   └── libhello/
+       └── hello.cxx
+   \
+
+   The \cb{split} sub-option is a convenient shortcut for the most common case
+   where the header prefix is \cb{include/} and source prefix is \cb{src/}. For
+   example:
+
+   \
+   # libhello/{include,src}/libhello/
+
+   $ bdep new -l c++ -t lib,split libhello
+
+   $ tree libhello/
+   libhello/
+   ├── include/
+   │   └── libhello/
+   │       └── hello.hxx
+   └── src/
+       └── libhello/
+           └── hello.cxx
+   \
+
+   The source subdirectory can be omitted by specifying the \c{no-subdir}
+   project type sub-option. For example:
+
+   \
+   # hello/src/
+
+   $ bdep new -l c++ -t exe,prefix=src,no-subdir hello
+
+   $ tree hello/
+   hello/
+   └── src/
+       └── hello.cxx
+   \
+
+   The same but for the split layout (we also have to disable generating the
+   version header that is not supported in this layout):
+
+   \
+   # libhello/{include,src}/
+
+   $ bdep new -l c++ -t lib,split,no-subdir,no-version libhello
+
+   $ tree libhello/
+   libhello/
+   ├── include/
+   │   └── hello.hxx
+   └── src/
+       └── hello.cxx
+   \
+
+   To achieve the layout where all the source code resides in the project
+   root, we omit both the source prefix and subdirectory (we also have to
+   disable a couple of other features that are not supported in this layout):
+
+   \
+   # hello/
+
+   $ bdep new -l c++ -t lib,no-subdir,no-version,no-tests libhello
+
+   $ tree libhello/
+   libhello/
+   ├── hello.cxx
+   └── hello.hxx
+   \
+
+   We can also omit the source subdirectory but only in the source prefix of
+   the split layout by specifying the \c{no-subdir-source} sub-option. For
+   example:
+
+   \
+   # libhello/{include/hello,src}/
+
+   $ bdep new -l c++ -t lib,split,subdir=hello,no-subdir-source libhello
+
+   $ tree libhello/
+   libhello/
+   ├── include/
+   │   └── hello/
+   │       └── hello.hxx
+   └── src/
+       └── hello.cxx
+   \
+
+   To achieve the split layout where the \c{include/} directory is inside
+   \c{src/}:
+
+   \
+   # libhello/src/{include,.}/hello/
+
+   $ bdep new                                                         \
+     -l c++                                                           \
+     -t lib,prefix-include=src/include,prefix-source=src,subdir=hello \
+     libhello
+
+   $ tree libhello/
+   libhello/
+   └── src/
+       ├── hello/
+       │   └── hello.cxx
+       └── include/
+           └── hello/
+               └── hello.hxx
+   \
+
+   A similar layout but without the source subdirectory in \c{src/}:
+
+   \
+   # libhello/src/{include/hello,.}/
+
+   $ bdep new                                                         \
+     -l c++                                                           \
+     -t lib,prefix-include=src/include,prefix-source=src,\
+   subdir=hello,no-subdir-source                                      \
+     libhello
+
+   $ tree libhello/
+   libhello/
+   └── src/
+       ├── include/
+       │   └── hello/
+       │       └── hello.hxx
+       └── hello.cxx
+   \
+
+   The layout used by the Boost libraries:
+
+   \
+   # libhello/{include/hello,libs/hello/src}/
+
+   $ bdep new                                                         \
+     -l c++                                                           \
+     -t lib,prefix-include=include,prefix-source=libs/hello/src,\
+   subdir=hello,no-subdir-source                                      \
+     libhello
+
+   $ tree libhello/
+   libhello/
+   ├── include/
+   │   └── hello/
+   │       └── hello.hxx
+   └── libs/
+       └── hello/
+           └── src/
+               └── hello.cxx
+   \
+
+   A layout where multiple components each have their own \c{include/src}
+   split:
+
+   \
+   # hello/libhello1/{include/hello1,src}/
+   # hello/libhello2/{include/hello2,src}/
+
+   $ bdep new -l c++ -t bare hello
+
+   $ bdep new -d hello --source                                       \
+     -l c++                                                           \
+     -t lib,\
+   prefix-include=libhello1/include,prefix-source=libhello1/src,\
+   subdir=hello1,no-subdir-source                                     \
+     libhello1
+
+   $ bdep new -d hello --source                                       \
+     -l c++                                                           \
+     -t lib,\
+   prefix-include=libhello2/include,prefix-source=libhello2/src,\
+   subdir=hello2,no-subdir-source                                     \
+     libhello2
+
+   $ tree hello/
+   hello/
+   ├── libhello1/
+   │   ├── include/
+   │   │   └── hello1/
+   │   │       └── hello1.hxx
+   │   └── src/
+   │       └── hello1.cxx
+   └── libhello2/
+       ├── include/
+       │   └── hello2/
+       │       └── hello2.hxx
+       └── src/
+           └── hello2.cxx
+   \
+
+   A layout where libraries and executables have different prefixes:
+
+   \
+   # hello/libs/libhello/{include/hello,src}/
+   # hello/src/hello/
+
+   $ bdep new -l c++ -t bare hello
+
+   $ bdep new -d hello --source                                       \
+     -l c++                                                           \
+     -t lib,\
+   prefix-include=libs/libhello/include,prefix-source=libs/libhello/src,\
+   subdir=hello,no-subdir-source                                      \
+     libhello
+
+   $ bdep new -d hello --source -l c++ -t exe,prefix=src hello
+
+   $ tree hello/
+   hello/
+   ├── libs/
+   │   └── libhello/
+   │       ├── include/
+   │       │   └── hello/
+   │       │       └── hello.hxx
+   │       └── src/
+   │           └── hello.cxx
+   └── src/
+       └── hello/
+           └── hello.cxx
+   \
+
    \h|DEFAULT OPTIONS FILES|
 
    See \l{bdep-default-options-files(1)} for an overview of the default
    options files. For the \cb{new} command the search start directory is the
-   project directory in the package and subdirectory modes and the parent
-   directory of the new project in all other modes. The following options
-   files are searched for in each directory and, if found, loaded in the
-   order listed:
+   project directory in the package and source modes and the parent directory
+   of the new project in all other modes. The following options files are
+   searched for in each directory and, if found, loaded in the order listed:
 
    \
    bdep.options
    bdep-{config config-add}.options                # if --config-add|-A
    bdep-{config config-add config-create}.options  # if --config-create|-C
    bdep-new.options
-   bdep-new-{project|package|subdirectory}.options # (mode-dependent)
+   bdep-new-{project|package|source}.options # (mode-dependent)
    \
 
    The following \cb{new} command options cannot be specified in the
@@ -654,7 +1083,7 @@ namespace bdep
    --output-dir|-o
    --directory|-d
    --package
-   --subdirectory
+   --source
    --no-checks
    --config-add|-A
    --config-create|-C
@@ -671,6 +1100,6 @@ namespace bdep
    package email address. If not set, the \cb{new} command will first try to
    obtain the email from the version control system (if used) and then from
    the \cb{EMAIL} environment variable. If all these methods fail, a dummy
-   \cb{@example.org} email is used.
+   \cb{you@example.org} email is used.
   "
 }

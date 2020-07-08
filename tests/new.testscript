@@ -45,6 +45,66 @@ status += -d prj
       EOE
   }
 
+  : exe-prefix
+  :
+  {
+    $* -t exe,prefix=src -l c++ prj-foo 2>>/"EOE" &prj-foo/***;
+      created new executable project prj-foo in $~/prj-foo/
+      EOE
+
+    $build prj-foo/ $config_cxx 2>>~%EOE%
+      %(c\+\+|ld) .+%{2}
+      EOE
+  }
+
+  : lib-prefix
+  :
+  {
+    $* -t lib,prefix=src -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***;
+      created new library project libprj-foo in $~/libprj-foo/
+      EOE
+
+    $build libprj-foo/ $config_cxx 2>>~%EOE%
+      %(version\.in|c\+\+|ar|ld) .+%{7}
+      EOE
+  }
+
+  : lib-split
+  :
+  {
+    $* -t lib,split -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***;
+      created new library project libprj-foo in $~/libprj-foo/
+      EOE
+
+    $build libprj-foo/ $config_cxx 2>>~%EOE%
+      %(version\.in|c\+\+|ar|ld) .+%{7}
+      EOE
+  }
+
+  : lib-split-binless
+  :
+  {
+    $* -t lib,split,binless -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***;
+      created new library project libprj-foo in $~/libprj-foo/
+      EOE
+
+    $build libprj-foo/ $config_cxx 2>>~%EOE%
+      %(version\.in|c\+\+|ld) .+%{3}
+      EOE
+  }
+
+  : lib-split-binless-unit-tests
+  :
+  {
+    $* -t lib,split,binless,unit-tests -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***;
+      created new library project libprj-foo in $~/libprj-foo/
+      EOE
+
+    $build libprj-foo/ $config_cxx 2>>~%EOE%
+      %(version\.in|c\+\+|ld) .+%{5}
+      EOE
+  }
+
   : exe-unit-tests
   :
   {
@@ -173,10 +233,10 @@ status += -d prj
       EOE
   }
 
-  : lib-alt-source
+  : lib-alt-subdir
   :
   {
-    $* -l c++ -t lib,source=libprj/foo libprj-foo 2>>/"EOE" &libprj-foo/***;
+    $* -l c++ -t lib,subdir=libprj/foo libprj-foo 2>>/"EOE" &libprj-foo/***;
       created new library project libprj-foo in $~/libprj-foo/
       EOE
 
@@ -191,6 +251,18 @@ status += -d prj
   :
   {
     $* -t exe -l c prj-foo 2>>/"EOE" &prj-foo/***;
+      created new executable project prj-foo in $~/prj-foo/
+      EOE
+
+    $build prj-foo/ $config_c 2>>~%EOE%
+      %(c|ld) .+%{2}
+      EOE
+  }
+
+  : exe-c-prefix
+  :
+  {
+    $* -t exe,prefix=src -l c prj-foo 2>>/"EOE" &prj-foo/***;
       created new executable project prj-foo in $~/prj-foo/
       EOE
 
@@ -215,6 +287,30 @@ status += -d prj
   :
   {
     $* -t lib -l c libprj-foo 2>>/"EOE" &libprj-foo/***;
+      created new library project libprj-foo in $~/libprj-foo/
+      EOE
+
+    $build libprj-foo/ $config_c 2>>~%EOE%
+      %(version\.in|c|ar|ld) .+%{7}
+      EOE
+  }
+
+  : lib-c-prefix
+  :
+  {
+    $* -t lib,prefix=src -l c libprj-foo 2>>/"EOE" &libprj-foo/***;
+      created new library project libprj-foo in $~/libprj-foo/
+      EOE
+
+    $build libprj-foo/ $config_c 2>>~%EOE%
+      %(version\.in|c|ar|ld) .+%{7}
+      EOE
+  }
+
+  : lib-c-split
+  :
+  {
+    $* -t lib,split -l c libprj-foo 2>>/"EOE" &libprj-foo/***;
       created new library project libprj-foo in $~/libprj-foo/
       EOE
 
@@ -292,6 +388,78 @@ status += -d prj
         EOE
     }
 
+    : add-prefix
+    :
+    : As above but also specify the source subdirectory prefix.
+    :
+    {
+      $* -t empty prj 2>>/"EOE" &prj/***;
+        created new empty project prj in $~/prj/
+        EOE
+
+      $* --package -t lib,prefix=libs/src libprj -d prj 2>>/"EOE";
+        created new library package libprj in $~/prj/libprj/
+        EOE
+
+      $build prj/libprj/ $config_cxx 2>>~%EOE%
+        %(version\.in|c\+\+|ar|ld) .+%{7}
+        EOE
+    }
+
+    : add-split
+    :
+    : As the above 'add' test above but perform the split.
+    :
+    {
+      $* -t empty prj 2>>/"EOE" &prj/***;
+        created new empty project prj in $~/prj/
+        EOE
+
+      $* --package -t lib,split libprj -d prj 2>>/"EOE";
+        created new library package libprj in $~/prj/libprj/
+        EOE
+
+      $build prj/libprj/ $config_cxx 2>>~%EOE%
+        %(version\.in|c\+\+|ar|ld) .+%{7}
+        EOE
+    }
+
+    : add-split-binless
+    :
+    : As above but also binless.
+    :
+    {
+      $* -t empty prj 2>>/"EOE" &prj/***;
+        created new empty project prj in $~/prj/
+        EOE
+
+      $* --package -t lib,split,binless libprj -d prj 2>>/"EOE";
+        created new library package libprj in $~/prj/libprj/
+        EOE
+
+      $build prj/libprj/ $config_cxx 2>>~%EOE%
+        %(version\.in|c\+\+|ld) .+%{3}
+        EOE
+    }
+
+    : add-split-binless-unit-tests
+    :
+    : As above but also with unit-tests.
+    :
+    {
+      $* -t empty prj 2>>/"EOE" &prj/***;
+        created new empty project prj in $~/prj/
+        EOE
+
+      $* --package -t lib,split,binless,unit-tests libprj -d prj 2>>/"EOE";
+        created new library package libprj in $~/prj/libprj/
+        EOE
+
+      $build prj/libprj/ $config_cxx 2>>~%EOE%
+        %(version\.in|c\+\+|ld) .+%{5}
+        EOE
+    }
+
     : name
     :
     : Test that the package/project name is validated.
@@ -321,10 +489,10 @@ status += -d prj
     }
   }
 
-  : sub
+  : source
   :
   {
-    : exe
+    : lib
     :
     : Test adding a library source subdirectory to an executable project.
     :
@@ -333,7 +501,7 @@ status += -d prj
         created new executable project prj in $~/prj/
         EOE
 
-      $* --subdirectory -t lib libprj -d prj 2>>/"EOE";
+      $* --source -t lib libprj -d prj 2>>/"EOE";
         created new library source subdirectory libprj in $~/prj/libprj/
         EOE
 
@@ -346,6 +514,82 @@ status += -d prj
         EOE
     }
 
+    : lib-prefix
+    :
+    : As above but also specify the source subdirectory prefix.
+    :
+    {
+      $* -t exe prj 2>>/"EOE" &prj/***;
+        created new executable project prj in $~/prj/
+        EOE
+
+      $* --source -t lib,prefix=libs/src libprj -d prj 2>>/"EOE";
+        created new library source subdirectory libprj in $~/prj/libs/src/libprj/
+        EOE
+
+      $build prj/ $config_cxx 2>>~%EOE%
+        %(c\+\+|ar|ld) .+%{6}
+        EOE
+    }
+
+    : lib-split
+    :
+    : As the above 'lib' test above but perform the split.
+    :
+    {
+      $* -t exe prj 2>>/"EOE" &prj/***;
+        created new executable project prj in $~/prj/
+        EOE
+
+      $* --source -t lib,split libprj -d prj 2>>/"EOE";
+        created new library source subdirectory libprj in
+          $~/prj/include/libprj/
+          $~/prj/src/libprj/
+        EOE
+
+      $build prj/ $config_cxx 2>>~%EOE%
+        %(c\+\+|ar|ld) .+%{6}
+        EOE
+    }
+
+    : lib-split-binless
+    :
+    : As above but also binless.
+    :
+    {
+      $* -t exe prj 2>>/"EOE" &prj/***;
+        created new executable project prj in $~/prj/
+        EOE
+
+      $* --source -t lib,split,binless libprj -d prj 2>>/"EOE";
+        created new library source subdirectory libprj in $~/prj/include/libprj/
+        EOE
+
+      $build prj/ $config_cxx 2>>~%EOE%
+        %(c\+\+|ld) .+%{2}
+        EOE
+    }
+
+    : lib-split-binless-unit-tests
+    :
+    : As above but also with unit-tests.
+    :
+    {
+      $* -t exe prj 2>>/"EOE" &prj/***;
+        created new executable project prj in $~/prj/
+        EOE
+
+      $* --source -t lib,split,binless,unit-tests libprj -d prj 2>>/"EOE";
+        created new library source subdirectory libprj in
+          $~/prj/include/libprj/
+          $~/prj/src/libprj/
+        EOE
+
+      $build prj/ $config_cxx 2>>~%EOE%
+        %(c\+\+|ld) .+%{4}
+        EOE
+    }
+
     : bare
     :
     : Test filling a bare project with source subdirectories.
@@ -355,11 +599,11 @@ status += -d prj
         created new bare project prj in $~/prj/
         EOE
 
-      $* --subdirectory -t lib libprj -d prj 2>>/"EOE";
+      $* --source -t lib libprj -d prj 2>>/"EOE";
         created new library source subdirectory libprj in $~/prj/libprj/
         EOE
 
-      $* --subdirectory -t exe prj -d prj 2>>/"EOE";
+      $* --source -t exe prj -d prj 2>>/"EOE";
         created new executable source subdirectory prj in $~/prj/prj/
         EOE
 
@@ -377,7 +621,7 @@ status += -d prj
         created new bare project prj in $~/prj/
         EOE
 
-      $* --subdirectory -t lib,unit-tests prj -d prj -o prj/core/prj 2>>/"EOE";
+      $* --source -t lib,unit-tests prj -d prj -o prj/core/prj 2>>/"EOE";
         created new library source subdirectory prj in $~/prj/core/prj/
         EOE
 
@@ -800,11 +1044,11 @@ status += -d prj
 
       cat prj/prj/NEWS >'@@TODO';
 
-      $* --package -t lib libprj.bash -d prj                   \
-         --post-hook "echo @@@@TODO >>NEWS"                    \
-         --post-hook "echo @mode@ @name@ @base@ @stem@ @root@" \
+      $* --package -t lib libprj.bash -d prj                               \
+         --post-hook "echo @@@@TODO >>NEWS"                                \
+         --post-hook "echo @mode@ @name@ @base@ @stem@ @root@ @pfx@ @sub@" \
          >>/"EOO" 2>>/"EOE" &prj/prj/***;
-        package libprj.bash libprj prj $~/prj
+        package libprj.bash libprj prj $~/prj  libprj
         EOO
         created new library package libprj.bash in $~/prj/libprj.bash/
         EOE
@@ -815,17 +1059,17 @@ status += -d prj
         cat <<EOI >=hook
           #!/bin/sh
           echo "$(pwd)"
-          echo "$BDEP_NEW_MODE $BDEP_NEW_ROOT"
+          echo "$BDEP_NEW_MODE $BDEP_NEW_ROOT $BDEP_NEW_PFX $BDEP_NEW_SUB"
           EOI
 
         chmod u+x hook
 
-        $* -t lib --subdirectory libprj -d prj/prj --post-hook "'$~/hook'" \
-           >>"EOO" 2>>/"EOE" &prj/prj/libprj/***
-          $~/prj/prj/libprj
-          subdirectory $~/prj/prj
+        $* -t lib,prefix=src --source libprj -d prj/prj --post-hook "'$~/hook'" \
+           >>"EOO" 2>>/"EOE" &prj/prj/src/libprj/***
+          $~/prj/prj
+          source $~/prj/prj src libprj
           EOO
-          created new library source subdirectory libprj in $~/prj/prj/libprj/
+          created new library source subdirectory libprj in $~/prj/prj/src/libprj/
           EOE
       end
     }
@@ -885,6 +1129,259 @@ status += -d prj
       :
       $* prj --pre-hook 'echo foo >>@bar@' 2>>EOE &prj/*** != 0
         error: invalid pre hook 'echo foo >>@bar@': unknown substitution variable 'bar'
+        EOE
+    }
+  }
+
+  : common-source-layouts
+  :
+  : Here we smoke test the common source code layouts listed in bdep-new(1).
+  :
+  {
+    t = $build test:
+
+    : subdir
+    :
+    {
+      $* -l c++ -t lib,subdir=hello libhello 2>>/"EOE" &libhello/***;
+        created new library project libhello in $~/libhello/
+        EOE
+
+      $build libhello/ $config_cxx 2>>~%EOE%;
+        %(version\.in|c\+\+|ld|ar) .+%{7}
+        EOE
+
+      $t libhello/ $config_cxx 2>>~%EOE%
+        %test .+%
+        EOE
+    }
+
+    : combined-prefix
+    :
+    {
+      $* -l c++ -t exe,prefix=src hello 2>>/"EOE" &hello/***;
+        created new executable project hello in $~/hello/
+        EOE
+
+      $build hello/ $config_cxx 2>>~%EOE%;
+        %(c\+\+|ld) .+%{2}
+        EOE
+
+      $t hello/ $config_cxx 2>>~%EOE%
+        %test .+%
+        EOE
+    }
+
+    : include-prefix
+    :
+    {
+      $* -l c++ -t lib,prefix-include=include libhello 2>>/"EOE" &libhello/***;
+        created new library project libhello in $~/libhello/
+        EOE
+
+      $build libhello/ $config_cxx 2>>~%EOE%;
+        %(version\.in|c\+\+|ld|ar) .+%{7}
+        EOE
+
+      $t libhello/ $config_cxx 2>>~%EOE%
+        %test .+%
+        EOE
+    }
+
+    : split
+    :
+    {
+      $* -l c++ -t lib,split libhello 2>>/"EOE" &libhello/***;
+        created new library project libhello in $~/libhello/
+        EOE
+
+      $build libhello/ $config_cxx 2>>~%EOE%;
+        %(version\.in|c\+\+|ld|ar) .+%{7}
+        EOE
+
+      $t libhello/ $config_cxx 2>>~%EOE%
+        %test .+%
+        EOE
+    }
+
+    : prefix-no-subdir
+    :
+    {
+      $* -l c++ -t exe,prefix=src,no-subdir hello 2>>/"EOE" &hello/***;
+        created new executable project hello in $~/hello/
+        EOE
+
+      $build hello/ $config_cxx 2>>~%EOE%;
+        %(c\+\+|ld) .+%{2}
+        EOE
+
+      $t hello/ $config_cxx 2>>~%EOE%
+        %test .+%
+        EOE
+    }
+
+    : split-no-subdir
+    :
+    {
+      $* -l c++ -t lib,split,no-subdir,no-version libhello 2>>/"EOE" &libhello/***;
+        created new library project libhello in $~/libhello/
+        EOE
+
+      $build libhello/ $config_cxx 2>>~%EOE%;
+        %(c\+\+|ld|ar) .+%{6}
+        EOE
+
+      $t libhello/ $config_cxx 2>>~%EOE%
+        %test .+%
+        EOE
+    }
+
+    : no-subdir
+    :
+    {
+      $* -l c++ -t lib,no-subdir,no-version,no-tests libhello 2>>/"EOE" &libhello/***;
+        created new library project libhello in $~/libhello/
+        EOE
+
+      $build libhello/ $config_cxx 2>>~%EOE%
+        %(c\+\+|ld|ar) .+%{4}
+        EOE
+    }
+
+    : split-no-subdir-source
+    :
+    {
+      $* -l c++ -t lib,split,subdir=hello,no-subdir-source libhello 2>>/"EOE" &libhello/***;
+        created new library project libhello in $~/libhello/
+        EOE
+
+      $build libhello/ $config_cxx 2>>~%EOE%;
+        %(version\.in|c\+\+|ld|ar) .+%{7}
+        EOE
+
+      $t libhello/ $config_cxx 2>>~%EOE%
+        %test .+%
+        EOE
+    }
+
+    : include-in-src
+    :
+    {
+      $* -l c++                                                           \
+         -t lib,prefix-include=src/include,prefix-source=src,subdir=hello \
+         libhello 2>>/"EOE" &libhello/***;
+        created new library project libhello in $~/libhello/
+        EOE
+
+      $build libhello/ $config_cxx 2>>~%EOE%;
+        %(version\.in|c\+\+|ld|ar) .+%{7}
+        EOE
+
+      $t libhello/ $config_cxx 2>>~%EOE%
+        %test .+%
+        EOE
+    }
+
+    : include-in-src-no-subdir-source
+    :
+    {
+      $* -l c++                                              \
+         -t lib,prefix-include=src/include,prefix-source=src,\
+subdir=hello,no-subdir-source                                \
+         libhello 2>>/"EOE" &libhello/***;
+        created new library project libhello in $~/libhello/
+        EOE
+
+      $build libhello/ $config_cxx 2>>~%EOE%;
+        %(version\.in|c\+\+|ld|ar) .+%{7}
+        EOE
+
+      $t libhello/ $config_cxx 2>>~%EOE%
+        %test .+%
+        EOE
+    }
+
+    : boost
+    :
+    {
+      $* -l c++                                                     \
+         -t lib,prefix-include=include,prefix-source=libs/hello/src,\
+subdir=hello,no-subdir-source                                       \
+         libhello 2>>/"EOE" &libhello/***;
+        created new library project libhello in $~/libhello/
+        EOE
+
+      $build libhello/ $config_cxx 2>>~%EOE%;
+        %(version\.in|c\+\+|ld|ar) .+%{7}
+        EOE
+
+      $t libhello/ $config_cxx 2>>~%EOE%
+        %test .+%
+        EOE
+    }
+
+    : multiple-components
+    :
+    {
+      $* -l c++ -t bare hello 2>>/"EOE" &hello/***;
+        created new bare project hello in $~/hello/
+        EOE
+
+      $* -d hello --source                                   \
+         -l c++                                              \
+         -t lib,\
+prefix-include=libhello1/include,prefix-source=libhello1/src,\
+subdir=hello1,no-subdir-source                               \
+         libhello1 2>>/"EOE";
+        created new library source subdirectory libhello1 in
+          $~/hello/libhello1/include/hello1/
+          $~/hello/libhello1/src/
+        EOE
+
+      $* -d hello --source                                   \
+         -l c++                                              \
+         -t lib,\
+prefix-include=libhello2/include,prefix-source=libhello2/src,\
+subdir=hello2,no-subdir-source                               \
+         libhello2 2>>/"EOE";
+        created new library source subdirectory libhello2 in
+          $~/hello/libhello2/include/hello2/
+          $~/hello/libhello2/src/
+        EOE
+
+      $build hello/ $config_cxx 2>>~%EOE%
+        %(c\+\+|ld|ar) .+%{8}
+        EOE
+    }
+
+    : multiple-components-diff-prefixes
+    :
+    {
+      $* -l c++ -t bare hello 2>>/"EOE" &hello/***;
+        created new bare project hello in $~/hello/
+        EOE
+
+      $* -d hello --source                                           \
+         -l c++                                                      \
+         -t lib,\
+prefix-include=libs/libhello/include,prefix-source=libs/libhello/src,\
+subdir=hello,no-subdir-source                                        \
+         libhello 2>>/"EOE";
+        created new library source subdirectory libhello in
+          $~/hello/libs/libhello/include/hello/
+          $~/hello/libs/libhello/src/
+        EOE
+
+      $* -d hello --source -l c++ -t exe,prefix=src hello 2>>/"EOE";
+        created new executable source subdirectory hello in $~/hello/src/hello/
+        EOE
+
+      $build hello/ $config_cxx 2>>~%EOE%;
+        %(c\+\+|ld|ar) .+%{6}
+        EOE
+
+      $t hello/ $config_cxx 2>>~%EOE%
+        %test .+%
         EOE
     }
   }
