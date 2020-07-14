@@ -278,7 +278,7 @@ namespace bdep
 
      The project type can be specified with the \c{\b{--type}|\b{-t}} option.
      The \cb{empty} project type is language-agnostic with the semantics and
-     valid sub-options for the rest being language-dependant, as described
+     valid sub-options for the rest being language-dependent, as described
      next. If unspecified, an executable project is created by default.
 
      \dl|
@@ -795,10 +795,12 @@ namespace bdep
    Note that while the same physical layout can be achieved with various
    combinations of source prefix and subdirectory, there will be differences
    in semantics since the headers in the project are included with the source
-   subdirectory (if any) as a prefix.
+   subdirectory (if any) as a prefix. See \l{intro#proj-struct Canonical
+   Project Structure} for details.
 
    As we have already seen, the source subdirectory can be customized with the
-   \cb{subdir} project type sub-option. For example:
+   \cb{subdir} project type sub-option. For example (pass \cb{-l\ c++,cpp} for
+   the \cb{.hpp}/\cb{.cpp} naming scheme):
 
    \
    # libhello/hello/
@@ -941,11 +943,11 @@ namespace bdep
    $ tree libhello/
    libhello/
    └── src/
-       ├── hello/
-       │   └── hello.cxx
-       └── include/
-           └── hello/
-               └── hello.hxx
+       ├── include/
+       │   └── hello/
+       │       └── hello.hxx
+       └── hello/
+           └── hello.cxx
    \
 
    A similar layout but without the source subdirectory in \c{src/}:

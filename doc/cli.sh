@@ -53,6 +53,7 @@ function compile ()
 --link-regex '%bpkg(#.+)?%../../bpkg/doc/build2-package-manager-manual.xhtml$1%' \
 --link-regex '%brep(#.+)?%../../brep/doc/build2-repository-interface-manual.xhtml$1%' \
 --link-regex '%bdep(#.+)?%build2-project-manager-manual.xhtml$1%' \
+--link-regex '%intro(#.+)?%../../build2-toolchain/doc/build2-toolchain-intro.xhtml$1%' \
 ../bdep/$n.cli
 
   cli -I .. \
