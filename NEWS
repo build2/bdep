@@ -12,6 +12,9 @@ Version 0.13.0
     See the SOURCE LAYOUT section in bdep-new(1) for details and a large
     number of layout examples.
 
+  * The bdep-new command in the --package mode now creates the glue buildfile
+    for the project.
+
   * The bdep-new command now generates the .gitattributes file.
 
   * The bdep-new --subdirectory mode option has been renamed to --source.

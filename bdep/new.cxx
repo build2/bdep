@@ -2833,7 +2833,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
   for (auto& rm: rms)
     rm.cancel ();
 
-  // packages.manifest
+  // packages.manifest and glue buildfile
   //
   if (pkg)
   {
@@ -2851,6 +2851,30 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
     catch (const io_error& e)
     {
       fail << "unable to write to " << f << ": " << e;
+    }
+
+    // Only create the glue buildfile if we've also created packages.manifest.
+    //
+    if (!e)
+    {
+      path f (prj / buildfile_file);
+      if (!exists (f))
+      try
+      {
+        ofdstream os (f, (fdopen_mode::out    |
+                          fdopen_mode::create |
+                          fdopen_mode::exclusive));
+        os << "# Glue buildfile that \"pulls\" all the packages in the project." << '\n'
+           << "#"                                                      << '\n'
+           << "import pkgs = */"                                       << '\n'
+           <<                                                             '\n'
+           << "./: $pkgs"                                              << '\n';
+        os.close ();
+      }
+      catch (const io_error& e)
+      {
+        fail << "unable to write to " << f << ": " << e;
+      }
     }
   }
 
