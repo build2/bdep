@@ -9,8 +9,8 @@ posix = ($cxx.target.class != 'windows')
 #
 test.arguments += --no-checks
 
-config_c = config.c=$quote($recall($c.path) $c.mode, true)
-config_cxx = config.cxx=$quote($recall($cxx.path) $cxx.mode, true)
+config_c = config.c=$quote($recall($c.path) $c.config.mode, true)
+config_cxx = config.cxx=$quote($recall($cxx.path) $cxx.config.mode, true)
 
 status += -d prj
 

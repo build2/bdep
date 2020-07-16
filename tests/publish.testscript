@@ -20,7 +20,7 @@ end
 test.arguments += --repository "$repository"  --yes \
  --author-name user --author-email user@example.com
 
-config_cxx = cc config.cxx=$quote($recall($cxx.path) $cxx.mode, true)
+config_cxx = cc config.cxx=$quote($recall($cxx.path) $cxx.config.mode, true)
 
 new  += 2>!
 init += $config_cxx -d prj 2>! &prj/**/bootstrap/***

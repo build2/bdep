@@ -6,7 +6,7 @@
 
 .include common.testscript project.testscript
 
-config_cxx = cc config.cxx=$quote($recall($cxx.path) $cxx.mode, true)
+config_cxx = cc config.cxx=$quote($recall($cxx.path) $cxx.config.mode, true)
 
 status += -d prj
 init   += -d prj
