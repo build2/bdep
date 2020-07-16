@@ -1561,23 +1561,6 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
       &os, &out,
       &readme_f, &license_f, &copyright_f, &authors_f] (bool newline = false)
     {
-#if 1 // @@ TMP
-      if (readme_f || license_f || copyright_f || authors_f)
-      {
-        auto write = [&os, &out, s = ""] (const path& f) mutable
-        {
-          os << s << f.leaf (out).posix_representation ();
-          s = " ";
-        };
-
-        os << "doc{";
-        if (readme_f)    write (*readme_f);
-        if (license_f)   write (*license_f);
-        if (copyright_f) write (*copyright_f);
-        if (authors_f)   write (*authors_f);
-        os << "} ";
-      }
-#else
       if (readme_f || license_f || copyright_f || authors_f)
       {
         const char* s;
@@ -1607,7 +1590,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           os << "} ";
         }
       }
-#endif
+
       os << "manifest";
 
       if (newline)
