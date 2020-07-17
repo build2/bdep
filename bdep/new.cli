@@ -61,10 +61,11 @@ namespace bdep
      └── manifest
      \
 
-     Similarly, the second and third forms add an existing or create new build
-     configuration and then initialize the project in that configuration as if
-     by executing the \l{bdep-init(1)} command with the \cb{--config-add} or
-     \cb{--config-create} option, respectively. For example:
+     Similarly, the second and third forms add an existing or create a new
+     build configuration and then initialize the project in that configuration
+     as if by executing the \l{bdep-init(1)} command with the
+     \cb{--config-add} or \cb{--config-create} option, respectively. For
+     example:
 
      \
      $ bdep new -l c++ -t exe -C @gcc hello cc config.cxx=g++
@@ -187,7 +188,7 @@ namespace bdep
              └── hello.cxx
      \
 
-     See the SOURCE LAYOUT section for details and more examples.
+     See the SOURCE LAYOUT section below for details and more examples.
 
      The output directory may already contain existing files provided they
      don't clash with the files to be created. The \cb{new} command also
@@ -374,7 +375,7 @@ namespace bdep
      \li|\n\ \ \ \cb{no-subdir-source}
 
          Omit the source subdirectory relative to the source prefix but still
-         create one relative to the header prefix.|
+         create it relative to the header prefix.|
 
      \li|\n\ \ \ \c{\b{license=}\i{name}}|
 
@@ -773,15 +774,15 @@ namespace bdep
    \h#src-layout|SOURCE LAYOUT|
 
    C and C++ projects employ a bewildering variety of source code layouts most
-   of which fit into two broad classes: \i{combined} where all source code for
-   a single executable or library resides in the same directory and \i{split}
-   where headers (typically public headers of a library) and other source
-   files reside in separate directories (most commonly called \cb{include/}
-   and \cb{src/}).
+   of which fit into two broad classes: \i{combined}, where all the source
+   code for a single executable or library resides in the same directory and
+   \i{split}, where headers (typically public headers of a library) and other
+   source files reside in separate directories (most commonly called
+   \cb{include/} and \cb{src/}).
 
-   To support creation of such varying layouts the \cb{new} command divides
-   paths leading to source code inside a package/project into a number of
-   customizable components:
+   To support the creation of such varying layouts the \cb{new} command
+   divides paths leading to source code inside a package/project into a number
+   of customizable components:
 
    \
    libhello/{include,src}/hello/
@@ -796,11 +797,10 @@ namespace bdep
    combinations of source prefix and subdirectory, there will be differences
    in semantics since the headers in the project are included with the source
    subdirectory (if any) as a prefix. See \l{intro#proj-struct Canonical
-   Project Structure} for details.
+   Project Structure} for rationale and details.
 
    As we have already seen, the source subdirectory can be customized with the
-   \cb{subdir} project type sub-option. For example (pass \cb{-l\ c++,cpp} for
-   the \cb{.hpp}/\cb{.cpp} naming scheme):
+   \cb{subdir} project type sub-option. For example:
 
    \
    # libhello/hello/
@@ -813,6 +813,9 @@ namespace bdep
        ├── hello.hxx
        └── hello.cxx
    \
+
+   Note: pass \cb{-l\ c++,cpp} if you prefer the \cb{.hpp}/\cb{.cpp} source
+   file naming scheme.
 
    The source prefix can be combined, in which case it can be customized with
    the single \cb{prefix} project type sub-option. For example:
@@ -831,7 +834,8 @@ namespace bdep
 
    The prefix can also be split, in which case the \cb{prefix-include} and
    \cb{prefix-source} sub-options can be used to customize the respective
-   directories independently. For example:
+   directories independently. If either is omitted, then the corresponding
+   prefix is left empty. For example:
 
    \
    # libhello/{include,.}/libhello/
@@ -866,7 +870,7 @@ namespace bdep
            └── hello.cxx
    \
 
-   The source subdirectory can be omitted by specifying the \c{no-subdir}
+   The source subdirectory can be omitted by specifying the \cb{no-subdir}
    project type sub-option. For example:
 
    \
@@ -880,7 +884,7 @@ namespace bdep
        └── hello.cxx
    \
 
-   The same but for the split layout (we also have to disable generating the
+   The same but for the split layout (we also have to disable the generated
    version header that is not supported in this layout):
 
    \
@@ -912,7 +916,7 @@ namespace bdep
    \
 
    We can also omit the source subdirectory but only in the source prefix of
-   the split layout by specifying the \c{no-subdir-source} sub-option. For
+   the split layout by specifying the \cb{no-subdir-source} sub-option. For
    example:
 
    \
@@ -929,8 +933,8 @@ namespace bdep
        └── hello.cxx
    \
 
-   To achieve the split layout where the \c{include/} directory is inside
-   \c{src/}:
+   To achieve the split layout where the \cb{include/} directory is inside
+   \cb{src/}:
 
    \
    # libhello/src/{include,.}/hello/
@@ -950,7 +954,7 @@ namespace bdep
            └── hello.cxx
    \
 
-   A similar layout but without the source subdirectory in \c{src/}:
+   A similar layout but without the source subdirectory in \cb{src/}:
 
    \
    # libhello/src/{include/hello,.}/
@@ -992,7 +996,7 @@ namespace bdep
                └── hello.cxx
    \
 
-   A layout where multiple components each have their own \c{include/src}
+   A layout where multiple components each have their own \cb{include/src}
    split:
 
    \
