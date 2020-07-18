@@ -1361,8 +1361,8 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
         os << "description-file: " << readme_f->leaf (out).posix_representation ()   << '\n';
       os << "url: https://example.org/" << (pn ? pn->string () : n)    << '\n'
          << "email: " << pe                                            << '\n'
-         << "depends: * build2 >= 0.13.0-"                             << '\n'
-         << "depends: * bpkg >= 0.13.0-"                               << '\n'
+         << "depends: * build2 >= 0.13.0"                              << '\n'
+         << "depends: * bpkg >= 0.13.0"                                << '\n'
          << "#depends: libhello ^1.0.0"                                << '\n';
       os.close ();
     }
