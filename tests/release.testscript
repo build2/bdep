@@ -902,10 +902,11 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       +$clone_repos
 
       +echo '' >+ prj/repositories.manifest
-      +$gp commit -a -m 'Fix repositories.manifest'
+      +$gp commit -a -m 'Fix repositories.manifest' --no-verify
 
       +echo '' >+ prj/buildfile
-      +$gp commit -a -m 'Fix buildfile' -m "Add '\n' to the end of the file."
+      +$gp commit -a -m 'Fix buildfile' -m "Add '\n' to the end of the file." \
+           --no-verify
 
       +echo '' >+ prj/manifest
       +$gp add manifest
@@ -974,7 +975,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
       {
         $clone_repos;
 
-        $gp commit -a -m 'Change manifest';
+        $gp commit -a -m 'Change manifest' --no-verify;
 
         $*;
 
