@@ -295,6 +295,9 @@ namespace bdep
     {
       for (const dir_path& d: dirs)
       {
+        if (!exists (d))
+          fail << "project/package directory " << d << " does not exist";
+
         project_package p (find_project_package (d));
 
         // We only work on one project at a time.
