@@ -1189,17 +1189,24 @@ namespace bdep
       // the repository and refspecs explicitly.
       //
       // Upstream is normally in the <remote>/<branch> form, for example
-      // 'origin/master'.
+      // 'origin/master'. Note, however, that if any of these names contains
+      // '/', then the split is ambiguous. Thus, we retrieve the remote name
+      // via git-config and use it to also deduce the remote branch name from
+      // the upstream branch.
       //
       string remote;
       string brspec;
       {
-        size_t p (path::traits_type::rfind_separator (st.upstream));
+        optional<string> rem (git_line (git_ver,
+                                        prj.path,
+                                        false /* ignore_error */,
+                                        "config",
+                                        "branch." + st.branch + ".remote"));
 
-        if (p == string::npos)
-          fail << "unable to extract remote from '" << st.upstream << "'";
+        if (!rem)
+          fail << "unable to obtain remote for '" << st.branch << "'";
 
-        remote = string (st.upstream, 0, p);
+        remote = move (*rem);
 
         // Push the branch if the mode is other than tagging (and so the
         // version change is committed) or the local branch is ahead (probably
@@ -1213,7 +1220,16 @@ namespace bdep
           //
           brspec = st.branch;
 
-          string b (st.upstream, p + 1);
+          // For good measure verify that the remote name is a prefix for the
+          // upstream branch.
+          //
+          size_t n (remote.size ());
+          if (st.upstream.compare (0, n, remote) != 0 ||
+              !path::traits_type::is_separator (st.upstream[n]))
+            fail << "remote '" << remote << "' is not a prefix for upstream "
+                 << "branch '" << st.upstream << "'";
+
+          string b (st.upstream, n + 1);
           if (b != st.branch)
           {
             brspec += ':';

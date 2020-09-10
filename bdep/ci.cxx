@@ -22,6 +22,11 @@ namespace bdep
 {
   using bpkg::repository_location;
 
+  // Note: the git_status() function, that we use, requires git 2.11.0 or
+  // higher.
+  //
+  static const semantic_version git_ver {2, 11, 0};
+
   static const url default_server (
 #ifdef BDEP_STAGE
     "https://ci.stage.build2.org"
@@ -67,15 +72,35 @@ namespace bdep
           info << "run 'git status' for details";
 
       // Upstream is normally in the <remote>/<branch> form, for example
-      // 'origin/master'.
+      // 'origin/master'. Note, however, that we cannot unambiguously split it
+      // into the remote and branch names (see release.cxx for details).
       //
-      if (s.upstream.empty ())
-        fail << "no upstream branch set for local branch '"
-             << s.branch << "'" <<
-          info << "run 'git push --set-upstream' to set";
+      {
+        if (s.upstream.empty ())
+          fail << "no upstream branch set for local branch '"
+               << s.branch << "'" <<
+            info << "run 'git push --set-upstream' to set";
 
-      size_t p (path::traits_type::rfind_separator (s.upstream));
-      branch = p != string::npos ? string (s.upstream, p + 1) : s.upstream;
+        optional<string> rem (git_line (git_ver,
+                                        prj,
+                                        false /* ignore_error */,
+                                        "config",
+                                        "branch." + s.branch + ".remote"));
+
+        if (!rem)
+          fail << "unable to obtain remote for '" << s.branch << "'";
+
+        // For good measure verify that the remote name is a prefix for the
+        // upstream branch.
+        //
+        size_t n (rem->size ());
+        if (s.upstream.compare (0, n, *rem) != 0 ||
+            !path::traits_type::is_separator (s.upstream[n]))
+          fail << "remote '" << *rem << "' is not a prefix for upstream "
+               << "branch '" << s.upstream << "'";
+
+        branch.assign (s.upstream, n + 1);
+      }
 
       // Note: not forcible (for now). While the use case is valid, the
       // current and committed package versions are likely to differ (in
