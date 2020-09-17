@@ -99,7 +99,7 @@ namespace bdep
           fail << "remote '" << *rem << "' is not a prefix for upstream "
                << "branch '" << s.upstream << "'";
 
-        branch.assign (s.upstream, n + 1);
+        branch.assign (s.upstream, n + 1, string::npos);
       }
 
       // Note: not forcible (for now). While the use case is valid, the
