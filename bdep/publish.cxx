@@ -405,6 +405,7 @@ namespace bdep
         auto_fd null (q ? open_null () : auto_fd ());
 
         process pr (start_git (git_ver,
+                               true                /* system */,
                                prj,
                                0                   /* stdin  */,
                                q ? null.get () : 1 /* stdout */,
@@ -433,7 +434,13 @@ namespace bdep
 
       auto worktree_prune = [&prj] ()
       {
-        run_git (git_ver, prj, "worktree", "prune", verb > 2 ? "-v" : nullptr);
+        run_git (git_ver,
+                 true /* system */,
+                 prj,
+                 "worktree",
+                 "prune",
+                 verb > 2 ? "-v" :
+                 nullptr);
       };
 
       // Create the build2-control branch if it doesn't exist, from scratch if
@@ -449,6 +456,7 @@ namespace bdep
       // fetch command and re-try.
       //
       bool local_exists (git_line (git_ver,
+                                   false /* system */,
                                    prj,
                                    false /* ignore_error */,
                                    "branch",
@@ -459,6 +467,7 @@ namespace bdep
       //    everywhere) via the --remote option or smth? Maybe later.
       //
       bool remote_exists (git_line (git_ver,
+                                    false /* system */,
                                     prj,
                                     false /* ignore_error */,
                                     "branch",
@@ -492,10 +501,11 @@ namespace bdep
           fdpipe pipe (open_pipe ());
 
           process pr (start_git (git_ver,
+                                 true  /* system */,
                                  prj,
-                                 null /* stdin  */,
-                                 pipe /* stdout */,
-                                 2    /* stderr */,
+                                 null  /* stdin  */,
+                                 pipe  /* stdout */,
+                                 2     /* stderr */,
                                  "hash-object",
                                  "-wt", "tree",
                                  "--stdin"));
@@ -508,6 +518,7 @@ namespace bdep
           // Create the (empty) root commit.
           //
           optional<string> commit (git_line (git_ver,
+                                             true /* system */,
                                              prj,
                                              false,
                                              "commit-tree",
@@ -524,11 +535,12 @@ namespace bdep
           // tighten things up a bit.
           //
           run_git (git_ver,
+                   true /* system */,
                    prj,
                    "update-ref",
                    "refs/heads/build2-control",
                    *commit,
-                   "" /* oldvalue */);
+                   ""   /* oldvalue */);
 
           // Checkout the branch. Note that the upstream branch is not setup
           // for it yet. This will be done by the push operation.
@@ -547,6 +559,7 @@ namespace bdep
           // branch.
           //
           run_git (git_ver,
+                   true /* system */,
                    prj,
                    "branch",
                    verb < 2 ? "-q" : nullptr,
@@ -618,10 +631,11 @@ namespace bdep
         // Note that fast-forwarding can potentially fail. That will mean the
         // local branch has diverged from the remote one for some reason
         // (e.g., inability to revert the commit, etc.). We again leave it to
-        // the use to deal with.
+        // the user to deal with.
         //
         if (local_exists && remote_exists)
           run_git (git_ver,
+                   true /* system */,
                    wd,
                    "merge",
                    verb < 2 ? "-q" : verb > 2 ? "-v" : nullptr,
@@ -662,6 +676,7 @@ namespace bdep
           }
 
           run_git (git_ver,
+                   true /* system */,
                    wd,
                    "add",
                    verb > 2 ? "-v" : nullptr,
@@ -700,6 +715,7 @@ namespace bdep
           }
 
           run_git (git_ver,
+                   true /* system */,
                    wd,
                    "commit",
                    verb < 2 ? "-q" : verb > 2 ? "-v" : nullptr,
@@ -730,6 +746,7 @@ namespace bdep
                   worktree_remove (); // Release the branch before removal.
 
                   run_git (git_ver,
+                           true /* system */,
                            prj,
                            "branch",
                            verb < 2 ? "-q" : nullptr,
@@ -738,6 +755,7 @@ namespace bdep
                 }
                 else
                   run_git (git_ver,
+                           true /* system */,
                            wd,
                            "reset",
                            verb < 2 ? "-q" : nullptr,

@@ -99,6 +99,7 @@ namespace bdep
   // <libbutl/process.mxx>
   //
   using butl::process;
+  using butl::process_env;
   using butl::process_path;
   using butl::process_exit;
   using butl::process_error;

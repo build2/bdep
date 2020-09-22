@@ -81,7 +81,11 @@ namespace bdep
                << s.branch << "'" <<
             info << "run 'git push --set-upstream' to set";
 
+        // It's unlikely that the branch remote is configured globally, so we
+        // use the bundled git.
+        //
         optional<string> rem (git_line (git_ver,
+                                        false /* system */,
                                         prj,
                                         false /* ignore_error */,
                                         "config",

@@ -37,6 +37,7 @@ namespace bdep
         // be queried with the GIT_AUTHOR_IDENT logical variable.
         //
         if (optional<string> l = git_line (semantic_version {2, 1, 0},
+                                           true /* system */,
                                            prj,
                                            true /* ignore_error */,
                                            "var", "GIT_AUTHOR_IDENT"))

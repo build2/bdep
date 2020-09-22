@@ -6,6 +6,7 @@ namespace bdep
   template <typename... A>
   void
   run_git (const semantic_version& min_ver,
+           bool system,
            bool progress,
            const dir_path& repo,
            A&&... args)
@@ -28,6 +29,7 @@ namespace bdep
     // messages to stdout.
     //
     process pr (start_git (min_ver,
+                           system,
                            repo,
                            0   /* stdin  */,
                            err /* stdout */,
@@ -71,43 +73,38 @@ namespace bdep
   }
 
   void
-  git_check_version (const semantic_version& min_ver);
+  git_check_version (const semantic_version& min_ver, bool system);
+
+  const pair<process_path, optional<string>>&
+  git_search (bool system);
 
   template <typename I, typename O, typename E, typename... A>
   process
   start_git (const semantic_version& min_ver,
+             bool system,
              I&& in, O&& out, E&& err,
              A&&... args)
   {
-    git_check_version (min_ver);
+    git_check_version (min_ver, system);
 
     try
     {
-      using namespace butl;
+      const pair<process_path, optional<string>>& git (git_search (system));
 
-      // On startup git prepends the PATH environment variable value with the
-      // computed directory path where its sub-programs are supposedly located
-      // (--exec-path option, GIT_EXEC_PATH environment variable, etc; see
-      // cmd_main() in git's git.c for details).
-      //
-      // Then, when git needs to run itself or one of its components as a
-      // child process, it resolves the full executable path searching in
-      // directories listed in PATH (see locate_in_PATH() in git's
-      // run-command.c for details).
-      //
-      // On Windows we install git and its components into a place where it is
-      // not expected to be, which results in the wrong path in PATH as set by
-      // git (for example, c:/build2/libexec/git-core) which in turn may lead
-      // to running some other git that appear in the PATH variable. To
-      // prevent this we pass the git's exec directory via the --exec-path
-      // option explicitly.
-      //
-      string ep;
-      process_path pp (process::path_search ("git", true /* init */));
+      const optional<string>& ep (git.second); // --exec-path
 
-#ifdef _WIN32
-      ep = "--exec-path=" + pp.effect.directory ().string ();
-#endif
+      // Note that if we are running the bundled git (on Windows) and there is
+      // no vi editor in PATH, then some commands (e.g. commit) may fail with
+      // the 'cannot spawn vi' error. To avoid this error, we will pass the
+      // EDITOR=notepad environment variable as a fallback for the git's
+      // editor search sequence (GIT_EDITOR, core.editor, VISUAL, EDITOR, vi),
+      // unless it is already set.
+      //
+      const char* vars[] = {nullptr, nullptr};
+      process_env pe (git.first, vars);
+
+      if (ep && !getenv ("EDITOR"))
+        vars[0] = "EDITOR=notepad";
 
       return process_start_callback (
         [] (const char* const args[], size_t n)
@@ -116,8 +113,8 @@ namespace bdep
             print_process (args, n);
         },
         forward<I> (in), forward<O> (out), forward<E> (err),
-        pp,
-        !ep.empty () ? ep.c_str () : nullptr,
+        pe,
+        ep,
         forward<A> (args)...);
     }
     catch (const process_error& e)
@@ -128,12 +125,17 @@ namespace bdep
 
   template <typename... A>
   optional<string>
-  git_line (const semantic_version& min_ver, bool ie, char delim, A&&... args)
+  git_line (const semantic_version& min_ver,
+            bool system,
+            bool ie,
+            char delim,
+            A&&... args)
   {
     fdpipe pipe (open_pipe ());
     auto_fd null (ie ? open_null () : auto_fd ());
 
     process pr (start_git (min_ver,
+                           system,
                            0                    /* stdin  */,
                            pipe                 /* stdout */,
                            ie ? null.get () : 2 /* stderr */,
@@ -144,16 +146,30 @@ namespace bdep
 
   template <typename... A>
   inline optional<string>
-  git_line (const semantic_version& min_ver, bool ie, A&&... args)
+  git_line (const semantic_version& min_ver,
+            bool system,
+            bool ie,
+            A&&... args)
   {
-    return git_line (min_ver, ie, '\n' /* delim */, forward<A> (args)...);
+    return git_line (min_ver,
+                     system,
+                     ie,
+                     '\n' /* delim */,
+                     forward<A> (args)...);
   }
 
   template <typename... A>
   inline optional<string>
-  git_string (const semantic_version& min_ver, bool ie, A&&... args)
+  git_string (const semantic_version& min_ver,
+              bool system,
+              bool ie,
+              A&&... args)
   {
-    return git_line (min_ver, ie, '\0' /* delim */, forward<A> (args)...);
+    return git_line (min_ver,
+                     system,
+                     ie,
+                     '\0' /* delim */,
+                     forward<A> (args)...);
   }
 
   template <typename... A>
@@ -184,6 +200,7 @@ namespace bdep
       v.push_back ("-v");
 
     run_git (semantic_version {2, 1, 0},
+             true /* system */,
              progress,
              repo,
              "push",

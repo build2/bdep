@@ -934,10 +934,11 @@ namespace bdep
       //
       process pr (
         start_git (git_ver,
+                   true /* system */,
                    prj.path,
-                   0 /* stdin  */,
-                   2 /* stdout */,
-                   2 /* stderr */,
+                   0    /* stdin  */,
+                   2    /* stdout */,
+                   2    /* stderr */,
                    "commit",
                    verb < 1 ? "-q" : verb >= 2 ? "-v" : nullptr,
                    amend ? "--amend" : nullptr,
@@ -1040,8 +1041,9 @@ namespace bdep
         //
         optional<string> ms (
           git_string (git_ver,
+                      false     /* system */,
                       prj.path,
-                      false /* ignore_error */,
+                      false     /* ignore_error */,
                       "log",
                       "--format=%B",
                       "HEAD~" + to_string (o.squash ()) + "..HEAD"));
@@ -1062,6 +1064,7 @@ namespace bdep
         // Squash commits, reverting them into the index.
         //
         run_git (git_ver,
+                 true /* system */,
                  prj.path,
                  "reset",
                   verb < 1 ? "-q" : nullptr,
@@ -1085,6 +1088,7 @@ namespace bdep
           if (e.normal ())
           {
             run_git (git_ver,
+                     true /* system */,
                      prj.path,
                      "reset",
                      verb < 1 ? "-q" : nullptr,
@@ -1131,6 +1135,7 @@ namespace bdep
       const optional<project::current_tag>& ct (prj.cur_tag);
 
       run_git (git_ver,
+               true /* system */,
                prj.path,
                "tag",
                (ct && ct->action == cmd_release_current_tag::update
@@ -1141,7 +1146,12 @@ namespace bdep
                *prj.tag);
 
       if (ct && ct->action == cmd_release_current_tag::remove)
-        run_git (git_ver, prj.path, "tag", "--delete", ct->name);
+        run_git (git_ver,
+                 true /* system */,
+                 prj.path,
+                 "tag",
+                 "--delete",
+                 ct->name);
     }
 
     // Open.
@@ -1197,7 +1207,11 @@ namespace bdep
       string remote;
       string brspec;
       {
+        // It's unlikely that the branch remote is configured globally, so we
+        // use the bundled git.
+        //
         optional<string> rem (git_line (git_ver,
+                                        false /* system */,
                                         prj.path,
                                         false /* ignore_error */,
                                         "config",

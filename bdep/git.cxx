@@ -11,36 +11,137 @@ using namespace butl;
 
 namespace bdep
 {
-  static optional<semantic_version> git_ver;
+  static pair<process_path, optional<string>> sys_git;
+  static optional<semantic_version>           sys_git_ver;
+
+// On POSIX the system git is always assumed.
+//
+#ifndef _WIN32
+  static pair<process_path, optional<string>>& bun_git     (sys_git);
+  static optional<semantic_version>&           bun_git_ver (sys_git_ver);
+#else
+  static pair<process_path, optional<string>> bun_git;
+  static optional<semantic_version>           bun_git_ver;
+#endif
 
   // Check that git is at least of the specified minimum supported version.
   //
   void
-  git_check_version (const semantic_version& min_ver)
+  git_check_version (const semantic_version& min_ver, bool system)
   {
     // Query and cache git version on the first call.
     //
-    if (!git_ver)
+    optional<semantic_version>& gv (system ? sys_git_ver : bun_git_ver);
+
+    if (!gv)
     {
       // Make sure that the getline() function call doesn't end up with an
       // infinite recursion.
       //
-      git_ver = semantic_version ();
+      gv = semantic_version ();
 
-      optional<string> s (git_line (*git_ver,
-                                    false /* ignore_error */,
-                                    "--version"));
+      optional<string> s (
+        git_line (*gv, system, false /* ignore_error */, "--version"));
 
-      if (!s || !(git_ver = git_version (*s)))
+      if (!s || !(gv = git_version (*s)))
         fail << "unable to obtain git version";
     }
 
     // Note that we don't expect the min_ver to contain the build component,
     // that doesn't matter functionality-wise for git.
     //
-    if (*git_ver < min_ver)
-      fail << "unsupported git version " << *git_ver <<
+    if (*gv < min_ver)
+      fail << "unsupported git version " << *gv <<
         info << "minimum supported version is " << min_ver << endf;
+  }
+
+  // Return git process path and the --exec-path option, if it is required for
+  // the execution.
+  //
+  const pair<process_path, optional<string>>&
+  git_search (bool system)
+  {
+    tracer trace ("git_search");
+
+    // On the first call search for the git process path, calculate the
+    // --exec-path option value required for its execution, and cache them for
+    // subsequent use.
+    //
+    pair<process_path, optional<string>>& git (system ? sys_git : bun_git);
+
+    if (git.first.empty ())
+    {
+      // On startup git prepends the PATH environment variable value with the
+      // computed directory path where its sub-programs are supposedly located
+      // (--exec-path option, GIT_EXEC_PATH environment variable, etc; see
+      // cmd_main() in git's git.c for details).
+      //
+      // Then, when git needs to run itself or one of its components as a
+      // child process, it resolves the full executable path searching in
+      // directories listed in PATH (see locate_in_PATH() in git's
+      // run-command.c for details).
+      //
+      // On Windows we install git and its components into a place where it is
+      // not expected to be, which results in the wrong path in PATH as set by
+      // git (for example, c:/build2/libexec/git-core) which in turn may lead
+      // to running some other git that appears in the PATH variable. To
+      // prevent this we pass the git's exec directory via the --exec-path
+      // option explicitly.
+      //
+      process_path pp;
+
+#ifdef _WIN32
+
+      // Figure out the bundle absolute directory path based on our own
+      // process path and realize it for comparison. Though, we only need it
+      // when searching for the system git.
+      //
+      dir_path bd;
+
+      if (system)
+      {
+        // We should be able to construct/realize our process path so we don't
+        // handle invalid_path.
+        //
+        bd = path (process::path_search (argv0, true /* init */).
+                   effect_string ()).directory ().realize ();
+
+        // Search in PATH first and fallback to the bundle directory.
+        //
+        pp = process::path_search ("git",
+                                   true /* init */,
+                                   bd,
+                                   true /* path_only */);
+      }
+      else
+#endif
+        pp = process::path_search ("git", true /* init */);
+
+      optional<string> ep;
+#ifdef _WIN32
+
+      // Note that we need to add --exec-path not only if the bundled git is
+      // requested but also if we ended up with the bundled git while
+      // searching for the system one.
+
+      // Realize for comparison.
+      //
+      // We should be able to realize the existing program parent directory
+      // path so we don't handle invalid_path.
+      //
+      dir_path d (pp.effect.directory ().realize ());
+
+      if (!system || d == bd)
+        ep = "--exec-path=" + d.string ();
+
+      l4 ([&]{trace << (system ? "system: '" : "bundled: '") << pp.effect
+                    << "'" << (ep ? " " + *ep : "");});
+#endif
+
+      git = make_pair (move (pp), move (ep));
+    }
+
+    return git;
   }
 
   optional<string>
@@ -93,9 +194,13 @@ namespace bdep
   {
     auto git_config = [&repo] (const char* name) -> optional<string>
     {
+      // It's unlikely that the remote URL is configured globally, thus we use
+      // the bundled git.
+      //
       return git_line (semantic_version {2, 1, 0},
+                       false /* system */,
                        repo,
-                       true /* ignore_error */,
+                       true  /* ignore_error */,
                        "config",
                        "--get",
                        name);
@@ -259,10 +364,11 @@ namespace bdep
     fdpipe pipe (open_pipe ()); // Text mode seems appropriate.
 
     process pr (start_git (semantic_version {2, 11, 0},
+                           false /* system */,
                            repo,
-                           0    /* stdin  */,
-                           pipe /* stdout */,
-                           2    /* stderr */,
+                           0     /* stdin  */,
+                           pipe  /* stdout */,
+                           2     /* stderr */,
                            "status",
                            "--porcelain=2",
                            "--branch"));

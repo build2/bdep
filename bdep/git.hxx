@@ -17,15 +17,30 @@ namespace bdep
   // All functions that start git process take the minimum supported git
   // version as an argument.
   //
+  // They also take the system flag (only considered on Windows) that if true
+  // causes these functions to prefer the system git program (determined via
+  // PATH) over the bundled one (the bundled git is still used as a fallback).
+  // Normally, the caller should use the system git when operating on behalf
+  // of the user (commits, pushes, etc), so that the user interacts with the
+  // git program they expect. For the query requests (git repository status,
+  // etc) the bundled git should be used instead to avoid compatibility issues
+  // (e.g., symlink handling, etc; but when querying for potentially global
+  // configuration values such as author, system git should be used). Note
+  // that on POSIX the system git is used for everything.
+  //
   // Start git process.
   //
   template <typename I, typename O, typename E, typename... A>
   process
-  start_git (const semantic_version&, I&& in, O&& out, E&& err, A&&... args);
+  start_git (const semantic_version&,
+             bool system,
+             I&& in, O&& out, E&& err,
+             A&&... args);
 
   template <typename I, typename O, typename E, typename... A>
   process
   start_git (const semantic_version&,
+             bool system,
              const dir_path& repo,
              I&& in, O&& out, E&& err,
              A&&... args);
@@ -33,11 +48,13 @@ namespace bdep
   template <typename I, typename O, typename E, typename... A>
   inline process
   start_git (const semantic_version& min_ver,
+             bool system,
              dir_path& repo,
              I&& in, O&& out, E&& err,
              A&&... args)
   {
     return start_git (min_ver,
+                      system,
                       const_cast<const dir_path&> (repo),
                       forward<I> (in), forward<O> (out), forward<E> (err),
                       forward<A> (args)...);
@@ -53,15 +70,23 @@ namespace bdep
   template <typename... A>
   void
   run_git (const semantic_version&,
+           bool system,
            bool progress,
            const dir_path& repo,
            A&&... args);
 
   template <typename... A>
   inline void
-  run_git (const semantic_version& min_ver, const dir_path& repo, A&&... args)
+  run_git (const semantic_version& min_ver,
+           bool system,
+           const dir_path& repo,
+           A&&... args)
   {
-    run_git (min_ver, true /* progress */, repo, forward<A> (args)...);
+    run_git (min_ver,
+             system,
+             true /* progress */,
+             repo,
+             forward<A> (args)...);
   }
 
   // Return the first line of the git output. If ignore_error is true, then
@@ -69,11 +94,15 @@ namespace bdep
   //
   template <typename... A>
   optional<string>
-  git_line (const semantic_version&, bool ignore_error, A&&... args);
+  git_line (const semantic_version&,
+            bool system,
+            bool ignore_error,
+            A&&... args);
 
   template <typename... A>
   optional<string>
   git_line (const semantic_version&,
+            bool system,
             const dir_path& repo,
             bool ignore_error,
             A&&... args);
@@ -88,11 +117,15 @@ namespace bdep
   //
   template <typename... A>
   optional<string>
-  git_string (const semantic_version&, bool ignore_error, A&&... args);
+  git_string (const semantic_version&,
+              bool system,
+              bool ignore_error,
+              A&&... args);
 
   template <typename... A>
   optional<string>
   git_string (const semantic_version&,
+              bool system,
               const dir_path& repo,
               bool ignore_error,
               A&&... args);
