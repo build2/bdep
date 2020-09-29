@@ -408,11 +408,12 @@ namespace bdep
   }
 
   package_info
-  package_b_info (const common_options& o, const dir_path& d)
+  package_b_info (const common_options& o, const dir_path& d, bool ext_mods)
   {
     try
     {
       return b_info (d,
+                     ext_mods,
                      verb,
                      [] (const char* const args[], size_t n)
                      {
@@ -436,7 +437,7 @@ namespace bdep
   standard_version
   package_version (const common_options& o, const dir_path& d)
   {
-    package_info pi (package_b_info (o, d));
+    package_info pi (package_b_info (o, d, false /* ext_mods */));
 
     if (pi.version.empty ())
       fail << "empty version for package directory " << d;
@@ -455,7 +456,9 @@ namespace bdep
     // Note: the package directory inside the configuration is a bit of an
     // assumption.
     //
-    package_info pi (package_b_info (o, (dir_path (cfg) /= p.string ())));
+    package_info pi (package_b_info (o,
+                                     (dir_path (cfg) /= p.string ()),
+                                     false /* ext_mods */));
 
     if (pi.version.empty ())
       fail << "empty version for package " << p;

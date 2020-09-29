@@ -873,7 +873,7 @@ namespace bdep
       {
         dir_path d (prj / pl.path);
 
-        package_info pi (package_b_info (o, d));
+        package_info pi (package_b_info (o, d, false /* ext_mods */));
 
         if (pi.src_root == pi.out_root)
           fail << "package " << pl.name << " source directory is not forwarded" <<

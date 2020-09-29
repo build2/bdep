@@ -273,7 +273,7 @@ namespace bdep
   using package_info = butl::b_project_info;
 
   package_info
-  package_b_info (const common_options&, const dir_path&);
+  package_b_info (const common_options&, const dir_path&, bool ext_mods);
 }
 
 #endif // BDEP_PROJECT_HXX
