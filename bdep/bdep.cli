@@ -514,5 +514,11 @@ namespace bdep
   "\h|EXIT STATUS|
 
   Non-zero exit status is returned in case of an error.
+
+  \h|ENVIRONMENT|
+
+  The \cb{BDEP_DEF_OPT} environment variable is used to suppress loading of
+  default options files in nested \cb{bdep} invocations. Its values are
+  \cb{false} or \cb{0} to suppress and \cb{true} or \cb{1} to load.
   "
 }
