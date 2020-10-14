@@ -4,7 +4,7 @@ version: 0.14.0-a.0.z
 project: build2
 summary: build2 project dependency manager
 license: MIT
-topics: package dependency management, build toolchain
+topics: project dependency management, build toolchain
 description-file: README
 changes-file: NEWS
 url: https://build2.org
