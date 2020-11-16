@@ -43,7 +43,7 @@ namespace bdep
 
     // Default is exe with no options.
     //
-    cmd_new_type_template (): type (exe) {}
+    cmd_new_type_template (type_type t = exe): type (t) {}
 
     const std::string
     string () const
@@ -62,9 +62,9 @@ namespace bdep
     }
 
     friend ostream&
-    operator<< (ostream& os, const cmd_new_type_template& t)
+    operator<< (ostream& os, type_type t)
     {
-      return os << t.string ();
+      return os << cmd_new_type_template (t).string ();
     }
   };
 
@@ -88,7 +88,7 @@ namespace bdep
 
     // Default is C++ with no options.
     //
-    cmd_new_lang_template (): lang (cxx) {}
+    cmd_new_lang_template (lang_type l = cxx): lang (l) {}
 
     const std::string
     string (bool lower = false) const
@@ -105,9 +105,9 @@ namespace bdep
     }
 
     friend ostream&
-    operator<< (ostream& os, const cmd_new_lang_template& l)
+    operator<< (ostream& os, lang_type l)
     {
-      return os << l.string ();
+      return os << cmd_new_lang_template (l).string ();
     }
   };
 
@@ -134,7 +134,7 @@ namespace bdep
 
     // Default is git with no options.
     //
-    cmd_new_vcs_template (): vcs (git) {}
+    cmd_new_vcs_template (vcs_type v = git): vcs (v) {}
 
     const std::string
     string () const
@@ -148,6 +148,12 @@ namespace bdep
       }
 
       return std::string (); // Should never reach.
+    }
+
+    friend ostream&
+    operator<< (ostream& os, vcs_type v)
+    {
+      return os << cmd_new_vcs_template (v).string ();
     }
   };
 
