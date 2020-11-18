@@ -71,6 +71,10 @@ include <bdep/common-options.hxx>;
   $ bdep status @gcc @clang
   \
 
+  Note to Windows users: a command line argument with leading \cb{@} has a
+  special meaning in PowerShell. To work around this, you can use the
+  alternative \cb{-@gcc} syntax or the \cb{-n\ gcc} option.
+
   A configuration without a name can be specified as a directory using the
   \c{\b{--config}|\b{-c}} option. Name and directory specifications can be
   mixed. For example:
