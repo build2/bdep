@@ -311,6 +311,11 @@ namespace bdep
   validate_utf8_graphic (const string&,
                          const char* what,
                          const char* opt = nullptr);
+
+  // Return the canonical name of a directory repository location.
+  //
+  string
+  repository_name (const dir_path&);
 }
 
 #include <bdep/utility.txx>

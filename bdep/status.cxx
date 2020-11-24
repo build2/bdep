@@ -33,7 +33,7 @@ namespace bdep
                 "fetch",
                 "-d", cfg,
                 "--shallow",
-                "dir:" + prj.string ());
+                repository_name (prj));
 
     // Don't show the hold status since the only packages that will normally
     // be held are the project's. But do show dependency constraints.

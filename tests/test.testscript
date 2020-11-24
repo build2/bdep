@@ -77,22 +77,22 @@ deinit += -d prj
     tags: c++
     EOI
 
-  $* -d prj/pkg2 2>>/~"%EOE%";               # Default (cfg1).
-    fetching dir:$~/libprj \(prerequisite of dir:$~/prj\)
+  $* -d prj/pkg2 2>>/~%EOE%;               # Default (cfg1).
+    %fetching dir:.+/libprj \(prerequisite of dir:.+/prj\)%
     synchronizing:
-    %  new libprj.+ \\\(required by pkg1\\\)%
+    %  new libprj.+ \(required by pkg1\)%
     %  upgrade pkg1.+19700101000000#1%
     %  upgrade pkg2.+19700101000000#1%
-    %\(mkdir|c\\+\\+|ld|test\) .+%{4}
+    %(mkdir|c\+\+|ld|test) .+%{4}
     EOE
 
-  $* @cfg2 -d prj/pkg2 2>>/~"%EOE%";         # By name (cfg2).
-    fetching dir:$~/libprj \(prerequisite of dir:$~/prj\)
+  $* @cfg2 -d prj/pkg2 2>>/~%EOE%;         # By name (cfg2).
+    %fetching dir:.+/libprj \(prerequisite of dir:.+/prj\)%
     synchronizing:
-    %  new libprj.+ \\\(required by pkg1\\\)%
+    %  new libprj.+ \(required by pkg1\)%
     %  upgrade pkg1.+19700101000000#1%
     %  upgrade pkg2.+19700101000000#1%
-    %\(mkdir|c\\+\\+|ld|test\) .+%{4}
+    %(mkdir|c\+\+|ld|test) .+%{4}
     EOE
 
   $* -a --recursive -d prj/pkg1 2>>~%EOE%   # All configs recursive.

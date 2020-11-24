@@ -256,7 +256,7 @@ namespace bdep
     for (const project& prj: prjs)
     {
       if (prj.fetch)
-        reps.push_back ("dir:" + prj.path.string ());
+        reps.push_back (repository_name (prj.path));
 
       for (const package_state& pkg: prj.config->packages)
       {

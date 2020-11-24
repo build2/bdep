@@ -23,7 +23,7 @@ namespace bdep
               o,
               "fetch",
               "-d", c->path,
-              (full ? nullptr : ("dir:" + prj.string ()).c_str ()));
+              (full ? nullptr : repository_name (prj).c_str ()));
   }
 
   int

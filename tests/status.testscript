@@ -82,10 +82,10 @@ deinit += -d prj
     depends: libprj
     EOI
 
-  $* --recursive >>EOO 2>>/"EOE"; # Note: implicitly fetches in cfg.
+  $* --recursive >>EOO 2>>/~%EOE%; # Note: implicitly fetches in cfg.
     prj configured 0.1.0-a.0.19700101000000 available 0.1.0-a.0.19700101000000#1
     EOO
-    fetching dir:$~/libprj \(prerequisite of dir:$~/prj\)
+    %fetching dir:.+/libprj \(prerequisite of dir:.+/prj\)%
     EOE
 
   $sync;

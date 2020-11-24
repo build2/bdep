@@ -310,4 +310,18 @@ namespace bdep
         dr << info << "consider using " << opt << " to override";
     }
   }
+
+  string
+  repository_name (const dir_path& d)
+  {
+    // We could probably obtain the canonical name by creating the repository
+    // URL and then the repository location, but let's keep it simple and
+    // produce it directly.
+    //
+    #ifdef _WIN32
+    return "dir:" + lcase (d.string ());
+    #else
+    return "dir:" + d.string ();
+    #endif
+  }
 }

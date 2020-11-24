@@ -214,7 +214,7 @@ namespace bdep
                   o,
                   "remove",
                   "-d", c->path,
-                  "dir:" + prj.string ());
+                  repository_name (prj));
     }
 
     return 0;

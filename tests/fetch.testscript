@@ -35,9 +35,9 @@ deinit += -d prj
     depends: libbar
     EOI
 
-  $* 2>>/"EOE";
-    fetching dir:$~/libbar \(complements dir:$~/prj\)
-    fetching dir:$~/libfoo \(prerequisite of dir:$~/prj\)
+  $* 2>>/~%EOE%;
+    %fetching dir:.+/libbar \(complements dir:.+/prj\)%
+    %fetching dir:.+/libfoo \(prerequisite of dir:.+/prj\)%
     EOE
 
   $status libfoo libbar >>~%EOO%;
