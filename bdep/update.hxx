@@ -25,6 +25,8 @@ namespace bdep
                : strings ()),
               "update",
               "-d", c->path,
+              (o.immediate () ? "--immediate" :
+               o.recursive () ? "--recursive" : nullptr),
               cfg_vars,
               pkgs);
   }

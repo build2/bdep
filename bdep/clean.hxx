@@ -25,6 +25,8 @@ namespace bdep
                : strings ()),
               "clean",
               "-d", c->path,
+              (o.immediate () ? "--immediate" :
+               o.recursive () ? "--recursive" : nullptr),
               cfg_vars,
               pkgs);
   }
