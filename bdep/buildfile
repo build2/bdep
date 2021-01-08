@@ -73,7 +73,8 @@ for t: cxx{**.test...}
 
 # Build options.
 #
-obj{utility}: cxx.poptions += -DBDEP_EXE_SUFFIX='"'$bin.exe.suffix'"'
+obj{utility}: cxx.poptions += -DBDEP_EXE_PREFIX='"'$bin.exe.prefix'"' \
+-DBDEP_EXE_SUFFIX='"'$bin.exe.suffix'"'
 
 # Pass the copyright notice extracted from the LICENSE file.
 #

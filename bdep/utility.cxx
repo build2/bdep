@@ -267,7 +267,7 @@ namespace bdep
   {
     return co.bpkg_specified ()
       ? co.bpkg ().string ().c_str ()
-      : "bpkg" BDEP_EXE_SUFFIX;
+      : BDEP_EXE_PREFIX "bpkg" BDEP_EXE_SUFFIX;
   }
 
   const char*
@@ -275,7 +275,7 @@ namespace bdep
   {
     return co.build_specified ()
       ? co.build ().string ().c_str ()
-      : "b" BDEP_EXE_SUFFIX;
+      : BDEP_EXE_PREFIX "b" BDEP_EXE_SUFFIX;
   }
 
   void
