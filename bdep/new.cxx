@@ -1513,6 +1513,12 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
              <<                                                           '\n'
              << "h{*}: extension = h"                                  << '\n'
              << "c{*}: extension = c"                                  << '\n';
+
+          os <<                                                           '\n'
+             << "# Assume headers are importable unless stated otherwise." << '\n'
+             << "#"                                                    << '\n'
+             << "h{*}: c.importable = true"                            << '\n';
+
           break;
         }
       case lang::cxx:
@@ -1527,6 +1533,11 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           if (ie) os << "ixx{*}: extension = " << pure_ext (*ie)       << '\n';
           if (te) os << "txx{*}: extension = " << pure_ext (*te)       << '\n';
           os         << "cxx{*}: extension = " << pure_ext (xe)        << '\n';
+
+          os <<                                                           '\n'
+             << "# Assume headers are importable unless stated otherwise." << '\n'
+             << "#"                                                    << '\n'
+             << "hxx{*}: cxx.importable = true"                        << '\n';
 
           break;
         }
@@ -2125,6 +2136,10 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                << "  clean = ($src_root != $out_root)"                 << '\n'
                << "}"                                                  << '\n';
 
+          if (!exph.empty ())
+            os <<                                                         '\n'
+               << h << "{export}@./: " << m << ".importable = false"   << '\n';
+
           if (binless)
           {
             string pi (pfx_inc.posix_representation ());
@@ -2173,9 +2188,9 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
         // <src>/buildfile
         //
-        // Note that there is no <src>/buildfile for a splitted binless
-        // library with the unit tests disabled, since there are no files in
-        // <src>/ in this case.
+        // Note that there is no <src>/buildfile for a split binless library
+        // with the unit tests disabled, since there are no files in <src>/ in
+        // this case.
         //
         if (!(binless && !utest && split))
         {
@@ -2281,8 +2296,8 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
             else
               os << "exe{*.test}: test = true"                         << '\n';
 
-            // Note that for a splitted binless library all headers in <src>/
-            // are presumably for unit tests.
+            // Note that for a split binless library all headers in <src>/ are
+            // presumably for unit tests.
             //
             os <<                                                         '\n'
                << "for t: " << x << "{**.test...}"                     << '\n'
@@ -2313,6 +2328,10 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                << "  dist  = true"                                     << '\n'
                << "  clean = ($src_root != $out_root)"                 << '\n'
                << "}"                                                  << '\n';
+
+          if (!exph.empty () && !split)
+            os <<                                                         '\n'
+               << h << "{export}@./: " << m << ".importable = false"   << '\n';
 
           // Build.
           //
@@ -2364,8 +2383,8 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
           if (!binless)
             os <<                                                         '\n'
-               << "obja{*}: " << m << ".poptions += -D" << mp << "_STATIC_BUILD" << '\n'
-               << "objs{*}: " << m << ".poptions += -D" << mp << "_SHARED_BUILD" << '\n';
+               << "{hbmia obja}{*}: " << m << ".poptions += -D" << mp << "_STATIC_BUILD" << '\n'
+               << "{hbmis objs}{*}: " << m << ".poptions += -D" << mp << "_SHARED_BUILD" << '\n';
 
           // Export.
           //
@@ -2599,6 +2618,12 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
               <<                                                          '\n'
               << "h{*}: extension = h"                                 << '\n'
               << "c{*}: extension = c"                                 << '\n';
+
+            os <<                                                           '\n'
+               << "# Assume headers are importable unless stated otherwise." << '\n'
+               << "#"                                                    << '\n'
+               << "h{*}: c.importable = true"                            << '\n';
+
             break;
           }
         case lang::cxx:
@@ -2613,6 +2638,11 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
             if (ie) os << "ixx{*}: extension = " << pure_ext (*ie)     << '\n';
             if (te) os << "txx{*}: extension = " << pure_ext (*te)     << '\n';
             os         << "cxx{*}: extension = " << pure_ext (xe)      << '\n';
+
+            os <<                                                           '\n'
+               << "# Assume headers are importable unless stated otherwise." << '\n'
+               << "#"                                                    << '\n'
+               << "hxx{*}: cxx.importable = true"                        << '\n';
 
             break;
           }
