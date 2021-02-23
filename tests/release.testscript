@@ -1103,7 +1103,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
   # Create the remote repository.
   #
   +mkdir --no-cleanup prj.git
-  +git -C prj.git init --bare 2>! >&2 &prj.git/***
+  +git -C prj.git init --bare --quiet &prj.git/***
 
   # Create the local repository.
   #

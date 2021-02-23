@@ -20,7 +20,7 @@ end
 # Create the remote repository.
 #
 +mkdir --no-cleanup prj.git
-+git -C prj.git init --bare 2>! >&2 &prj.git/***
++git -C prj.git init --bare --quiet &prj.git/***
 
 # Adjust the local repository and push it to the remote one.
 #
@@ -241,7 +241,7 @@ windows = ($cxx.target.class == 'windows')
   # Create the remote repository.
   #
   +mkdir --no-cleanup prj.git
-  +git -C prj.git init --bare 2>! >&2 &prj.git/***
+  +git -C prj.git init --bare --quiet &prj.git/***
 
   # Create the local repository and push it to the remote one.
   #
