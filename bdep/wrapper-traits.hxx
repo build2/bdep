@@ -37,7 +37,7 @@ namespace odb
     static void
     set_null (wrapper_type& o)
     {
-      o = wrapper_type ();
+      o = butl::nullopt;
     }
 
     static const wrapped_type&
