@@ -331,7 +331,7 @@ status += -d prj
       EOE
   }
 
-  # Test create-from-existin functionality.
+  # Test create-from-existing functionality.
   #
   : exist
   :
@@ -1130,6 +1130,100 @@ status += -d prj
       $* prj --pre-hook 'echo foo >>@bar@' 2>>EOE &prj/*** != 0
         error: invalid pre hook 'echo foo >>@bar@': unknown substitution variable 'bar'
         EOE
+    }
+  }
+
+  : flat-layouts
+  :
+  : Here we test layouts where the source directory is the project/package
+  : root. Note that such layouts use non-recursive wildcards in buildfiles.
+  :
+  {
+    : exe
+    :
+    {
+      : basics
+      :
+      {
+        $* -l c++ -t exe,no-subdir hello 2>>/"EOE" &hello/***;
+          created new executable project hello in $~/hello/
+          EOE
+
+        mkdir hello/tests;
+        touch hello/tests/hello.test.cxx;
+
+        $build hello/ $config_cxx 2>>~%EOE%
+          %(c\+\+|ld) .+%{2}
+          EOE
+      }
+
+      : unit-tests
+      :
+      {
+        $* -l c++ -t exe,no-subdir,unit-tests hello 2>>/"EOE" &hello/***;
+          created new executable project hello in $~/hello/
+          EOE
+
+        mkdir hello/tests;
+        touch hello/tests/hello.test.cxx;
+
+        $build hello/ $config_cxx 2>>~%EOE%
+          %(c\+\+|ld|ar) .+%{5}
+          EOE
+      }
+    }
+
+    : lib
+    :
+    {
+      : basics
+      :
+      {
+        $* -l c++ -t lib,no-subdir,no-version,no-tests libhello 2>>/"EOE" &libhello/***;
+          created new library project libhello in $~/libhello/
+          EOE
+
+        mkdir libhello/tests;
+        touch libhello/tests/hello.test.cxx;
+
+        $build libhello/ $config_cxx 2>>~%EOE%
+          %(c\+\+|ld|ar) .+%{4}
+          EOE
+      }
+
+      : unit-tests
+      :
+      {
+        : binful
+        :
+        {
+          $* -l c++ -t lib,no-subdir,no-version,no-tests,unit-tests libhello 2>>/"EOE" &libhello/***;
+            created new library project libhello in $~/libhello/
+            EOE
+
+          mkdir libhello/tests;
+          touch libhello/tests/hello.test.cxx;
+
+          $build libhello/ $config_cxx 2>>~%EOE%
+            %(c\+\+|ld|ar) .+%{8}
+            EOE
+        }
+
+        : binless
+        :
+        {
+          $* -l c++ -t lib,no-subdir,no-version,no-tests,unit-tests,binless libhello 2>>/"EOE" &libhello/***;
+            created new library project libhello in $~/libhello/
+            EOE
+
+          mkdir libhello/tests;
+          touch libhello/tests/hello.test.cxx;
+
+          $build libhello/ $config_cxx 2>>~%EOE%
+            %(c\+\+|ld) .+%{2}
+            EOE
+        }
+      }
     }
   }
 

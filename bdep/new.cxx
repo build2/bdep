@@ -1696,15 +1696,21 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           os <<                                                           '\n';
         }
 
+        // If the source directory is the project/package root, then use the
+        // non-recursive sources wildcard not to accidentally pick up unrelated
+        // files (documentation examples, integration tests, etc).
+        //
+        const char* w (out_src == out ? "*" : "**");
+
         if (!utest)
           os << "exe{" << s << "}: "                                   <<
-            "{" << hs << ' ' << x << "}{**} "                          <<
+            "{" << hs << ' ' << x << "}{" << w << "} "                 <<
             "$libs"                                                    <<
             (itest ? " testscript" : "")                               << '\n';
         else
         {
           os << "./: exe{" << s << "}: libue{" << s << "}: "           <<
-            "{" << hs << ' ' << x << "}{** -**.test...} $libs"         << '\n';
+            "{" << hs << ' ' << x << "}{" << w << " -" << w << ".test...} $libs" << '\n';
 
           if (itest)
             os << "exe{" << s << "}: testscript"                       << '\n';
@@ -1723,7 +1729,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
             os << "exe{*.test}: test = true"                           << '\n';
 
           os <<                                                           '\n'
-             << "for t: " << x << "{**.test...}"                       << '\n'
+             << "for t: " << x << "{" << w << ".test...}"              << '\n'
              << "{"                                                    << '\n'
              << "  d = $directory($t)"                                 << '\n'
              << "  n = $name($t)..."                                   << '\n'
@@ -2100,13 +2106,19 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
           open (out_inc / buildfile_file);
 
+          // Use the recursive headers wildcard since the include directory
+          // cannot be the project/package root for a split layout (see
+          // above).
+          //
+          const char* w ("**");
+
           if (binless)
           {
             os << "intf_libs = # Interface dependencies."              << '\n'
                << "impl_libs = # Implementation dependencies."         << '\n'
                << "#import impl_libs += libhello%lib{hello}"           << '\n'
                <<                                                         '\n'
-               << "lib{" << s << "}: {" << hs << "}{**";
+               << "lib{" << s << "}: {" << hs << "}{" << w;
             if (ver)
               os << " -version} " << h << "{version}";
             else
@@ -2115,7 +2127,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           }
           else
           {
-            os << "pub_hdrs = {" << hs << "}{**";
+            os << "pub_hdrs = {" << hs << "}{" << w;
             if (ver)
               os << " -version} " << h << "{version}"                  << '\n';
             else
@@ -2227,6 +2239,11 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
             os <<                                                         '\n';
           }
 
+          // If the source directory is the project/package root, then use the
+          // non-recursive sources wildcard (see above for details).
+          //
+          const char* w (out_src == out ? "*" : "**");
+
           if (!utest)
           {
             if (split)
@@ -2240,7 +2257,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
             }
 
             os << "lib{" << s << "}: "
-               << "{" << hs << (binless ? "" : ' ' + x) << "}{**";
+               << "{" << hs << (binless ? "" : ' ' + x) << "}{" << w;
 
             if (ver && !split)
               os << " -version} " << h << "{version}";
@@ -2261,7 +2278,8 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                 os << "./: lib{" << s << "}: ";
 
               os << "libul{" << s << "}: "
-                 << "{" << hs << ' ' << x << "}{** -**.test...";
+                 << "{" << hs << ' ' << x << "}{" << w << " -" << w
+                 << ".test...";
 
               if (ver && !split)
                 os << " -version} \\"                                  << '\n'
@@ -2274,7 +2292,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
             else if (!split) // Binless.
             {
               os << "./: lib{" << s << "}: "
-                 << "{" << hs << "}{** -**.test...";
+                 << "{" << hs << "}{" << w << " -" << w << ".test...";
               if (ver)
                 os << " -version} " << h << "{version} \\"             << '\n'
                    << " ";
@@ -2300,13 +2318,13 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
             // presumably for unit tests.
             //
             os <<                                                         '\n'
-               << "for t: " << x << "{**.test...}"                     << '\n'
+               << "for t: " << x << "{" << w << ".test...}"            << '\n'
                << "{"                                                  << '\n'
                << "  d = $directory($t)"                               << '\n'
                << "  n = $name($t)..."                                 << '\n'
                <<                                                         '\n'
                << "  ./: $d/exe{$n}: $t $d/{" << hs << "}{"
-               << (split && binless ? "**" : "+$n") << "} $d/testscript{+$n}";
+               << (split && binless ? w : "+$n") << "} $d/testscript{+$n}";
 
             if (binless)
               os << (split ? " $pub/" : " ") << "lib{" << s << "}"     << '\n';
