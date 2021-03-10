@@ -51,7 +51,9 @@ namespace bdep
      upgrades or patches immediate (by default or if
      \c{\b{--immediate}|\b{-i}} is specified) or all (if
      \c{\b{--recursive}|\b{-r}} is specified) dependencies of the specified
-     project packages.
+     project packages. If no project packages are specified explicitly, then
+     this form upgrades or patches dependencies of all the initialized
+     packages in a project.
 
      The third form (one or more <dep-spec> arguments are specified), in
      addition to the first form's functionality, also upgrades (by default or
@@ -127,7 +129,7 @@ namespace bdep
      Upgrade \cb{libx} and its immediate dependencies to the latest version:
 
      \
-     prj/$ bdep sync -i libx
+     prj/$ bdep sync -u -i libx
      \
 
      Upgrade \cb{libx} to the latest patch version:

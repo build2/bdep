@@ -262,26 +262,39 @@ namespace bdep
       {
         if (upgrade && !prj.implicit)
         {
-          // We synchronize all the init'ed packages but only upgrade the
-          // specified.
+          // We synchronize all the init'ed packages, including those from
+          // other projects. But if the dependencies are not specified, we
+          // only upgrade dependencies of the packages specified explicitly or
+          // init'ed in the origin project.
           //
-          if (find_if (prj_pkgs.begin (),
-                       prj_pkgs.end (),
-                       [&pkg] (const package_location& pl)
-                       {
-                         return pl.name == pkg.name;
-                       }) != prj_pkgs.end ())
+          if (dep_pkgs.empty ())
           {
-            // The project package itself must always be upgraded to the
-            // latest version/iteration. So we have to translate to
-            // dependency-only --{upgrade,patch}-{recursive,immediate}.
-            //
-            args.push_back ("{");
-            args.push_back (
-              *upgrade
-              ? *recursive ? "--upgrade-recursive" : "--upgrade-immediate"
-              : *recursive ? "--patch-recursive"   : "--patch-immediate");
-            args.push_back ("}+");
+            auto contains = [] (const auto& pkgs, const package_state& pkg)
+            {
+              return find_if (pkgs.begin (), pkgs.end (),
+                              [&pkg] (const auto& p)
+                              {
+                                return p.name == pkg.name;
+                              }) != pkgs.end ();
+            };
+
+            if (prj_pkgs.empty () && origin_config != nullptr
+                ? contains (origin_config->packages, pkg)
+                : contains (prj_pkgs, pkg))
+            {
+              // The project package itself must always be upgraded to the
+              // latest version/iteration. So we have to translate to
+              // dependency-only --{upgrade,patch}-{recursive,immediate}.
+              //
+              assert (recursive);
+
+              args.push_back ("{");
+              args.push_back (
+                *upgrade
+                ? *recursive ? "--upgrade-recursive" : "--upgrade-immediate"
+                : *recursive ? "--patch-recursive"   : "--patch-immediate");
+              args.push_back ("}+");
+            }
           }
         }
 
