@@ -761,8 +761,9 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
     // Get the actual project/package information as "seen" from the output
     // directory.
     //
-    project_package pp (
-      find_project_package (out, true /* ignore_not_found */));
+    project_package pp (find_project_package (out,
+                                              true /* allow_subdir */,
+                                              true /* ignore_not_found */));
 
     // Finalize the tentative project directory and do some sanity checks
     // (nested packages, etc; you would be surprised what people come up
@@ -3034,6 +3035,7 @@ options_files (const char*, const cmd_new_options& o, const strings&)
     // Get the actual project directory.
     //
     project_package pp (find_project_package (*start,
+                                              true /* allow_subdir */,
                                               true /* ignore_not_found */));
 
     if (!pp.project.empty ())

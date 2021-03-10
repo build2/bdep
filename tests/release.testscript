@@ -705,7 +705,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
          Create
         EOO
 
-      tag = $release --tag --push -q --yes -d prj/prj
+      tag = $release --tag --push -q --yes -d prj
 
       : update
       :

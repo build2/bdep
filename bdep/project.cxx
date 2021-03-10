@@ -127,7 +127,9 @@ namespace bdep
   }
 
   project_package
-  find_project_package (const dir_path& start, bool ignore_nf)
+  find_project_package (const dir_path& start,
+                        bool allow_subdir,
+                        bool ignore_nf)
   {
     dir_path prj;
     optional<dir_path> pkg;
@@ -170,6 +172,12 @@ namespace bdep
         prj = move (d);
         break;
       }
+
+      // If this directory is not a package nor project root and search from
+      // within their subdirs is disallowed, then bail out to fail.
+      //
+      if (!allow_subdir && !pkg)
+        break;
     }
 
     if (prj.empty ())
@@ -179,7 +187,10 @@ namespace bdep
         if (ignore_nf)
           return project_package ();
 
-        fail << start << " is not a (sub)directory of a package or project";
+        fail << start << " is not a "
+             << (allow_subdir
+                 ? "(sub)directory of a package or project"
+                 : "package or project directory");
       }
 
       // Project and package are the same.
@@ -298,7 +309,8 @@ namespace bdep
         if (!exists (d))
           fail << "project/package directory " << d << " does not exist";
 
-        project_package p (find_project_package (d));
+        project_package p (
+          find_project_package (d, false /* allow_subdir */));
 
         // We only work on one project at a time.
         //
@@ -334,7 +346,8 @@ namespace bdep
     }
     else
     {
-      project_package p (find_project_package (current_directory ()));
+      project_package p (
+        find_project_package (current_directory (), true /* allow_subdir */));
 
       r.project = move (p.project);
 

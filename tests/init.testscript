@@ -219,6 +219,13 @@ deinit += -d prj
     created new library package libprj in $~/prj/libprj/
     EOE
 
+  # While at it, make sure we fail if misspell the package directory.
+  #
+  mkdir prj/libpr;
+  $init --all -d prj/libpr 2>>/~"%EOE%" != 0;
+    error: prj/libpr/ is not a package or project directory
+    EOE
+
   $init --all -d prj/libprj 2>>/~"%EOE%";
     initializing in project $~/prj/
     synchronizing:

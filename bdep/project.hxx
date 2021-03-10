@@ -178,13 +178,13 @@ namespace bdep
                        bool fallback_default = true,
                        bool validate = true);
 
-  // Given a directory which can be a project root, a package root, or one of
-  // their subdirectories, return the absolute project (first) and relative
-  // package (second) directories. The package directory may be absent if the
-  // given directory is not within a package root or empty if the project and
-  // package roots are the same.
+  // Given a directory which can be a project root, a package root, or, if
+  // requested, one of their subdirectories, return the absolute project
+  // (first) and relative package (second) directories. The package directory
+  // may be absent if the given directory is not within a package root or
+  // empty if the project and package roots are the same.
   //
-  // If ignore_not_found is true then insteading of issuing diagnostics and
+  // If ignore_not_found is true then instead of issuing diagnostics and
   // failing return empty project directory if no project is found.
   //
   struct project_package
@@ -194,7 +194,9 @@ namespace bdep
   };
 
   project_package
-  find_project_package (const dir_path&, bool ignore_not_found = false);
+  find_project_package (const dir_path&,
+                        bool allow_subdir,
+                        bool ignore_not_found = false);
 
   // Given the project options (and CWD) locate the packages and their
   // project. The result is an absolute and normalized project directory and a
@@ -227,7 +229,8 @@ namespace bdep
   };
 
   // Search project packages in the specified directories or the current
-  // directory if none were specified.
+  // directory if none were specified. Fail if the specified directories are
+  // not project or package root directories.
   //
   project_packages
   find_project_packages (const dir_paths&,
