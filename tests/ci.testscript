@@ -156,7 +156,7 @@ windows = ($cxx.target.class == 'windows')
          --override 'build-error-email: error@example.com' \
          --override 'builds: &gcc' \
          --override 'build-include: linux*' \
-         --override 'build-exclude: *' 2>>~"%EOE%"
+         --override 'build-exclude: *' 2>>~%EOE%
         %CI request is queued.*%
         %reference: .+%
         EOE
@@ -233,6 +233,67 @@ windows = ($cxx.target.class == 'windows')
       }
     }
   }
+
+  : interactive
+  :
+  {
+    +$clone_root_prj
+    +$init -C @cfg &prj-cfg/***
+
+    test.options += --no-progress
+
+    : valid
+    :
+    {
+      $clone_prj;
+
+      $* --interactive 'linux_debian_8-gcc_4.9/warning' 2>>~%EOE%
+        %CI request is queued.*%
+        %reference: .+%
+        EOE
+    }
+
+    : def-breakpoint
+    :
+    {
+      $clone_prj;
+
+      $* --interactive 'linux_debian_8-gcc_4.9' 2>>~%EOE%
+        %CI request is queued.*%
+        %reference: .+%
+        EOE
+    }
+
+    : config-empty
+    :
+    {
+      $clone_prj;
+
+      $* --interactive '/warning' 2>>EOE != 0
+        error: invalid --interactive|-i option value '/warning': configuration name is empty
+        EOE
+    }
+
+    : config-pattern
+    :
+    {
+      $clone_prj;
+
+      $* --interactive 'linux_debian_8-gcc_4.*' 2>>EOE != 0
+        error: invalid --interactive|-i option value 'linux_debian_8-gcc_4.*': configuration name is a pattern
+        EOE
+    }
+
+    : overrides
+    :
+    {
+      $clone_prj;
+
+      $* --interactive 'linux_debian_8-gcc_4.9' --builds '&gcc' 2>>EOE != 0
+        error: 'builds' override specified together with --interactive|-i
+        EOE
+    }
+  }
 }
 
 : multi-pkg
@@ -285,6 +346,17 @@ windows = ($cxx.target.class == 'windows')
     $* 2>>~%EOE%
       %CI request is queued.*%
       %reference: .+%
+      EOE
+  }
+
+  : interactive
+  :
+  {
+    $clone_prj;
+    $init -C @cfg &prj-cfg/***;
+
+    $* --interactive 'linux_debian_8-gcc_4.9' 2>>EOE != 0
+      error: multiple packages specified with --interactive|-i
       EOE
   }
 

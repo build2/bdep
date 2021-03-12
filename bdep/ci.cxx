@@ -5,6 +5,7 @@
 
 #include <sstream>
 
+#include <libbutl/path-pattern.mxx>
 #include <libbutl/manifest-types.mxx>
 
 #include <libbpkg/manifest.hxx>
@@ -176,17 +177,36 @@ namespace bdep
   {
     tracer trace ("ci");
 
-    // Create the default override.
+    vector<manifest_name_value> overrides;
+
+    auto override = [&overrides] (string n, string v)
+    {
+      overrides.push_back (
+        manifest_name_value {move (n), move (v),    // Name and value.
+                             0, 0, 0, 0, 0, 0, 0}); // Locations, etc.
+    };
+
+    // Add the default overrides.
     //
-    vector<manifest_name_value> overrides ({
-        manifest_name_value {"build-email", "",      // Name and value.
-                             0, 0, 0, 0, 0, 0, 0}}); // Locations, etc.
+    override ("build-email", "");
 
     // Validate and append the specified overrides.
     //
     if (o.overrides_specified ())
     try
     {
+      if (o.interactive_specified ())
+      {
+        for (const manifest_name_value& nv: o.overrides ())
+        {
+          if (nv.name == "builds"        ||
+              nv.name == "build-include" ||
+              nv.name == "build-exclude")
+            fail << "'" << nv.name << "' override specified together with "
+                 << "--interactive|-i";
+        }
+      }
+
       bpkg::package_manifest::validate_overrides (o.overrides (),
                                                   "" /* name */);
 
@@ -276,6 +296,49 @@ namespace bdep
         add_package (p.name);
     }
 
+    // Extract the interactive mode configuration and breakpoint from the
+    // --interactive|-i option value, reducing the former to the build
+    // manifest value overrides.
+    //
+    // Both are present in the interactive mode and are absent otherwise.
+    //
+    optional<string> icfg;
+    optional<string> ibpk;
+
+    if (o.interactive_specified ())
+    {
+      if (pkgs.size () > 1)
+        fail << "multiple packages specified with --interactive|-i";
+
+      const string& s (o.interactive ());
+      validate_utf8_graphic (s, "--interactive|-i option value");
+
+      size_t p (s.find ('/'));
+
+      if (p != string::npos)
+      {
+        icfg = string (s, 0, p);
+        ibpk = string (s, p + 1);
+      }
+      else
+        icfg = s;
+
+      if (icfg->empty ())
+        fail << "invalid --interactive|-i option value '" << s
+             << "': configuration name is empty";
+
+      if (path_pattern (*icfg))
+        fail << "invalid --interactive|-i option value '" << s
+             << "': configuration name is a pattern";
+
+      override ("builds", "all");
+      override ("build-include", *icfg);
+      override ("build-exclude", "**");
+
+      if (!ibpk)
+        ibpk = "error";
+    }
+
     // Get the server and repository URLs.
     //
     const url& srv (o.server_specified () ? o.server () : default_server);
@@ -310,6 +373,13 @@ namespace bdep
            << "  version: " << p.version;
       }
 
+      if (icfg)
+      {
+        assert (ibpk);
+        text << "  config:  " << *icfg << '\n'
+             << "  b/point: " << *ibpk;
+      }
+
       if (!yn_prompt ("continue? [y/n]"))
         return 1;
     }
@@ -333,6 +403,9 @@ namespace bdep
         params.push_back ({parameter::text,
                            "package",
                            p.name.string () + '/' + p.version.string ()});
+
+      if (ibpk)
+        params.push_back ({parameter::text, "interactive", move (*ibpk)});
 
       try
       {
