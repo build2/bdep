@@ -330,7 +330,7 @@ namespace bdep
 
      \li|\n\ \ \ \cb{binless}
 
-         Create a header-only C++ library.|
+         Create a header-only library.|
 
      \li|\n\ \ \ \cb{no-tests}
 

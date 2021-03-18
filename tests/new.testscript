@@ -295,6 +295,18 @@ status += -d prj
       EOE
   }
 
+  : lib-c-binless
+  :
+  {
+    $* -t lib,binless -l c libprj-foo 2>>/"EOE" &libprj-foo/***;
+      created new library project libprj-foo in $~/libprj-foo/
+      EOE
+
+    $build libprj-foo/ $config_c 2>>~%EOE%
+      %(version\.in|c|ar|ld) .+%{3}
+      EOE
+  }
+
   : lib-c-prefix
   :
   {
@@ -319,6 +331,30 @@ status += -d prj
       EOE
   }
 
+  : lib-c-split-binless
+  :
+  {
+    $* -t lib,split,binless -l c libprj-foo 2>>/"EOE" &libprj-foo/***;
+      created new library project libprj-foo in $~/libprj-foo/
+      EOE
+
+    $build libprj-foo/ $config_c 2>>~%EOE%
+      %(version\.in|c|ld) .+%{3}
+      EOE
+  }
+
+  : lib-c-split-binless-unit-tests
+  :
+  {
+    $* -t lib,split,binless,unit-tests -l c libfoo 2>>/"EOE" &libfoo/***;
+      created new library project libfoo in $~/libfoo/
+      EOE
+
+    $build libfoo/ $config_c 2>>~%EOE%
+      %(version\.in|c|ar|ld) .+%{5}
+      EOE
+  }
+
   : lib-c-unit-tests
   :
   {
@@ -328,6 +364,18 @@ status += -d prj
 
     $build libfoo/ $config_c 2>>~%EOE%
       %(version\.in|c|ar|ld) .+%{11}
+      EOE
+  }
+
+  : lib-c-binless-unit-tests
+  :
+  {
+    $* -t lib,binless,unit-tests -l c libfoo 2>>/"EOE" &libfoo/***;
+      created new library project libfoo in $~/libfoo/
+      EOE
+
+    $build libfoo/ $config_c 2>>~%EOE%
+      %(version\.in|c|ld) .+%{5}
       EOE
   }
 

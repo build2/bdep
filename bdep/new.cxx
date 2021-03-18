@@ -361,9 +361,6 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
       }
     case type::lib:
       {
-        if (t.lib_opt.binless () && l != lang::cxx)
-          fail << "--type|-t,binless is only valid for C++ libraries";
-
         readme  = !t.lib_opt.no_readme ()  && !src;
         altn    =  t.lib_opt.alt_naming ();
         itest   = !t.lib_opt.no_tests ()   && !src;
@@ -1868,54 +1865,91 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
         string exph; // Export header name (empty if binless).
         string verh; // Version header name.
 
+        bool binless (t.lib_opt.binless ());
+
         switch (l)
         {
         case lang::c:
           {
-            apih = s + ".h";
-            exph = "export.h";
-            verh = ver ? "version.h" : string ();
+            if (binless)
+            {
+              apih = s + ".h";
+              verh = ver ? "version.h" : string ();
 
-            // <inc>/<stem>.h
-            //
-            open (out_inc / apih);
-            os << "#pragma once"                                       << '\n'
-               <<                                                         '\n'
-               << "#include <stdio.h>"                                 << '\n'
-               <<                                                         '\n'
-               << "#include <" << ip << exph << ">"                    << '\n'
-               <<                                                         '\n'
-               << "/* Print a greeting for the specified name into the specified" << '\n'
-               << " * stream. On success, return the number of characters printed." << '\n'
-               << " * On failure, set errno and return a negative value." << '\n'
-               << " */"                                                << '\n'
-               << mp << "_SYMEXPORT int"                               << '\n'
-               << "say_hello (FILE *, const char *name);"              << '\n';
-            os.close ();
+              // <inc>/<stem>.h
+              //
+              open (out_inc / apih);
+              os << "#pragma once"                                     << '\n'
+                 <<                                                       '\n'
+                 << "#include <stdio.h>"                               << '\n'
+                 << "#include <errno.h>"                               << '\n'
+                 <<                                                       '\n'
+                 << "/* Print a greeting for the specified name into the specified" << '\n'
+                 << " * stream. On success, return the number of characters printed." << '\n'
+                 << " * On failure, set errno and return a negative value." << '\n'
+                 << " */"                                              << '\n'
+                 << "static inline int"                                << '\n'
+                 << "say_hello (FILE *f, const char* name)"            << '\n'
+                 << "{"                                                << '\n'
+                 << "  if (f == NULL || name == NULL || *name == '\\0')" << '\n'
+                 << "  {"                                              << '\n'
+                 << "    errno = EINVAL;"                              << '\n'
+                 << "    return -1;"                                   << '\n'
+                 << "  }"                                              << '\n'
+                 <<                                                       '\n'
+                 << "  return fprintf (f, \"Hello, %s!\\n\", name);"   << '\n'
+                 << "}"                                                << '\n';
+              os.close ();
 
-            // <src>/<stem>.c
-            //
-            open (out_src / s + ".c");
-            os << "#include <" << ip << apih << ">"                    << '\n'
-               <<                                                         '\n'
-               << "#include <errno.h>"                                 << '\n'
-               <<                                                         '\n'
-               << "int say_hello (FILE *f, const char* n)"             << '\n'
-               << "{"                                                  << '\n'
-               << "  if (f == NULL || n == NULL || *n == '\\0')"       << '\n'
-               << "  {"                                                << '\n'
-               << "    errno = EINVAL;"                                << '\n'
-               << "    return -1;"                                     << '\n'
-               << "  }"                                                << '\n'
-               <<                                                         '\n'
-               << "  return fprintf (f, \"Hello, %s!\\n\", n);"        << '\n'
-               << "}"                                                  << '\n';
-            os.close ();
+              break;
+            }
+            else
+            {
+              apih = s + ".h";
+              exph = "export.h";
+              verh = ver ? "version.h" : string ();
 
-            break;
+              // <inc>/<stem>.h
+              //
+              open (out_inc / apih);
+              os << "#pragma once"                                     << '\n'
+                 <<                                                       '\n'
+                 << "#include <stdio.h>"                               << '\n'
+                 <<                                                       '\n'
+                 << "#include <" << ip << exph << ">"                  << '\n'
+                 <<                                                       '\n'
+                 << "/* Print a greeting for the specified name into the specified" << '\n'
+                 << " * stream. On success, return the number of characters printed." << '\n'
+                 << " * On failure, set errno and return a negative value." << '\n'
+                 << " */"                                              << '\n'
+                 << mp << "_SYMEXPORT int"                             << '\n'
+                 << "say_hello (FILE *, const char *name);"            << '\n';
+              os.close ();
+
+              // <src>/<stem>.c
+              //
+              open (out_src / s + ".c");
+              os << "#include <" << ip << apih << ">"                  << '\n'
+                 <<                                                       '\n'
+                 << "#include <errno.h>"                               << '\n'
+                 <<                                                       '\n'
+                 << "int say_hello (FILE *f, const char* n)"           << '\n'
+                 << "{"                                                << '\n'
+                 << "  if (f == NULL || n == NULL || *n == '\\0')"     << '\n'
+                 << "  {"                                              << '\n'
+                 << "    errno = EINVAL;"                              << '\n'
+                 << "    return -1;"                                   << '\n'
+                 << "  }"                                              << '\n'
+                 <<                                                       '\n'
+                 << "  return fprintf (f, \"Hello, %s!\\n\", n);"      << '\n'
+                 << "}"                                                << '\n';
+              os.close ();
+
+              break;
+            }
           }
         case lang::cxx:
-          if (t.lib_opt.binless ())
+          if (binless)
           {
             apih = s + he;
             verh = ver ? "version" + he : string ();
@@ -2093,8 +2127,6 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
              << "#define " << mp << "_SNAPSHOT_ID   \"$" << v << ".version.snapshot_id$\""   << '\n';
           os.close ();
         }
-
-        bool binless (t.lib_opt.binless ());
 
         // <inc>/buildfile
         //
