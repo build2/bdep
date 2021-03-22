@@ -512,10 +512,14 @@ namespace bdep
       //
       path.swap (c->path);
 
-      diag_record dr (text);
-      dr << "moved configuration ";
-      print_configuration (dr, c, false /* flags */);
-      dr << " to " << path;
+      {
+        diag_record dr (text);
+        dr << "moved configuration ";
+        print_configuration (dr, c, false /* flags */);
+        dr << " to " << path;
+      }
+
+      info << "explicit sync command is required for changes to take effect";
     }
 
     return 0;
@@ -742,7 +746,7 @@ namespace bdep
         print_configuration (dr, c);
       }
 
-      info << "explicit bdep-sync is required for changes to take effect";
+      info << "explicit sync command is required for changes to take effect";
     }
 
     return 0;

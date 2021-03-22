@@ -214,6 +214,7 @@ deinit += -d prj
 
   $* move @cfg prj-cfg2 2>>/"EOE";
     moved configuration @cfg $~/prj-cfg/ 1 to $~/prj-cfg2/
+    info: explicit sync command is required for changes to take effect
     EOE
 
   $update --all 2>>~%EOE%;
@@ -300,7 +301,7 @@ deinit += -d prj
 
   $* set @cfg2 --default --forward --no-auto-sync 2>>/"EOE";
     updated configuration @cfg2 $~/prj-cfg2/ 2 default,forwarded
-    info: explicit bdep-sync is required for changes to take effect
+    info: explicit sync command is required for changes to take effect
     EOE
 
   $* list >>/"EOO";
