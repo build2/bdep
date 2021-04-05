@@ -221,7 +221,13 @@ namespace bdep
 
      \li|\cb{c}
 
-         A C project.||
+         A C project. Recognized language sub-options:|
+
+     \li|\n\ \ \ \cb{c++}
+
+         A C project that can also use C++. If specified, then the \cb{hxx},
+         \cb{cxx}, \cb{ixx}, \cb{txx}, and \cb{mxx} \cb{c++} language
+         sub-options can also be specified.||
 
      \dl|
 
@@ -267,7 +273,11 @@ namespace bdep
      \li|\n\ \ \ \c{\b{mxx=}\i{extension}}
 
          Use the specified \ci{extension} for module interface files. If
-         unspecified, then assume no modules are used by the project.||
+         unspecified, then assume no modules are used by the project.|
+
+     \li|\n\ \ \ \cb{c}
+
+         A C++ project that can also use C.||
 
      As an example, the following command creates a header-only C++ library
      that uses the \cb{.h} extension for header files and \cb{.cpp} \- for
@@ -525,8 +535,17 @@ namespace bdep
 
   // --lang options
   //
+  // The ?xx sub-options can only be specified if the c++ sub-option is
+  // specified.
+  //
   class cmd_new_c_options
   {
+    bool cpp|"c++";
+    string hxx;
+    string cxx;
+    string ixx;
+    string txx;
+    string mxx;
   };
 
   // The cpp flag is the "extension=?pp" alias and is mutually exclusive with
@@ -541,6 +560,7 @@ namespace bdep
     string ixx;
     string txx;
     string mxx;
+    bool c;
   };
 
   //--type options

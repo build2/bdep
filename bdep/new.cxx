@@ -282,10 +282,46 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
   //
   const lang& l (o.lang ());
 
+  // Verify that the specified extension is not empty.
+  //
+  auto empty_ext = [] (const string& v, const char* o, const char* lang)
+  {
+    if (v.empty () || (v.size () == 1 && v[0] == '.'))
+      fail << "empty extension specified with '" << o << "' " << lang
+           << " option";
+  };
+
   switch (l)
   {
   case lang::c:
     {
+      auto& o (l.c_opt);
+
+      // If the c++ option is specified, then verify that none of the C++
+      // extensions are specified as empty, except for hxx. Otherwise, verify
+      // that none of the C++ extensions is specified.
+      //
+      if (o.cpp ())
+      {
+        if (o.cxx_specified ()) empty_ext (o.cxx (), "cxx", "c");
+        if (o.ixx_specified ()) empty_ext (o.ixx (), "ixx", "c");
+        if (o.txx_specified ()) empty_ext (o.txx (), "txx", "c");
+        if (o.mxx_specified ()) empty_ext (o.mxx (), "mxx", "c");
+      }
+      else
+      {
+        auto unexpected = [] (const char* o)
+        {
+          fail << "'" << o << "' c option specified without 'c++'";
+        };
+
+        if (o.hxx_specified ()) unexpected ("hxx");
+        if (o.cxx_specified ()) unexpected ("cxx");
+        if (o.ixx_specified ()) unexpected ("ixx");
+        if (o.txx_specified ()) unexpected ("txx");
+        if (o.mxx_specified ()) unexpected ("mxx");
+      }
+
       break;
     }
   case lang::cxx:
@@ -298,18 +334,13 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
       // Verify that none of the extensions are specified as empty, except for
       // hxx.
       //
-      auto empty_ext = [] (const string& v, const char* o)
-      {
-        if (v.empty () || (v.size () == 1 && v[0] == '.'))
-          fail << "empty extension specified with '" << o << "' c++ option";
-      };
+      if (o.extension_specified ())
+        empty_ext (o.extension (), "extension", "c++");
 
-      if (o.extension_specified ()) empty_ext (o.extension (), "extension");
-
-      if (o.cxx_specified ()) empty_ext (o.cxx (), "cxx");
-      if (o.ixx_specified ()) empty_ext (o.ixx (), "ixx");
-      if (o.txx_specified ()) empty_ext (o.txx (), "txx");
-      if (o.mxx_specified ()) empty_ext (o.mxx (), "mxx");
+      if (o.cxx_specified ()) empty_ext (o.cxx (), "cxx", "c++");
+      if (o.ixx_specified ()) empty_ext (o.ixx (), "ixx", "c++");
+      if (o.txx_specified ()) empty_ext (o.txx (), "txx", "c++");
+      if (o.mxx_specified ()) empty_ext (o.mxx (), "mxx", "c++");
 
       break;
     }
@@ -1366,10 +1397,13 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
       os.close ();
     }
 
-    string m;  // Language module.
-    string x;  // Source target type.
-    string h;  // Header target type.
-    string hs; // All header-like target types.
+    string mp; // Primary language module.
+    string mc; // Common language module if this a multi-language project and
+               // the (primary) language module otherwise. Used for setting
+               // common compiler/linker options, etc.
+    string xa; // All source target types.
+    string ha; // All header-like target types.
+    string hg; // Generated headers (version, export, etc) target type.
     string xe; // Source file extension (including leading dot).
     string he; // Header file extension (including leading dot unless empty).
 
@@ -1384,22 +1418,76 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
     {
     case lang::c:
       {
-        m  = "c";
-        x  = "c";
-        h  = "h";
-        hs = "h";
+        const auto& opt (l.c_opt);
+
+        mp = "c";
+        mc = !opt.cpp () ? "c" : "cc";
+        xa = !opt.cpp () ? "c" : "c cxx";
+        ha = !opt.cpp () ? "h" : "h hxx";
+        hg = "h";
         xe = ".c";
         he = ".h";
+
+        if (opt.cpp ())
+        {
+          // If specified (s) return the extension (v) or return the default
+          // (d) if any.
+          //
+          auto ext = [] (bool s,
+                         const string& v,
+                         const char* d = nullptr) -> optional<string>
+          {
+            optional<string> r;
+
+            if (s)
+              r = v;
+            else if (d != nullptr)
+              r = d;
+
+            // Add leading dot if absent.
+            //
+            if (r && !r->empty () && r->front () != '.')
+              r = '.' + *r;
+
+            return r;
+          };
+
+          xe = *ext (opt.cxx_specified (), opt.cxx (), "cxx");
+          he = *ext (opt.hxx_specified (), opt.hxx (), "hxx");
+
+          // We only want default .ixx/.txx/.mxx if the user didn't specify
+          // any of the extension-related options explicitly.
+          //
+          bool d (!opt.cxx_specified () &&
+                  !opt.hxx_specified () &&
+                  !opt.ixx_specified () &&
+                  !opt.txx_specified () &&
+                  !opt.mxx_specified ());
+
+          ie = ext (opt.ixx_specified (), opt.ixx (), d ? "ixx" : nullptr);
+          te = ext (opt.txx_specified (), opt.txx (), d ? "txx" : nullptr);
+
+          // For now only include mxx in buildfiles if its extension was
+          // explicitly specified with mxx=.
+          //
+          me = ext (opt.mxx_specified (), opt.mxx ());
+
+          if (ie) ha += " ixx";
+          if (te) ha += " txx";
+          if (me) ha += " mxx";
+        }
+
         break;
       }
     case lang::cxx:
       {
         const auto& opt (l.cxx_opt);
 
-        m  = "cxx";
-        x  = "cxx";
-        h  = "hxx";
-        hs = "hxx";
+        mp = "cxx";
+        mc = !opt.c () ? "cxx" : "cc";
+        xa = !opt.c () ? "cxx" : "cxx c";
+        ha = "hxx"; // Note: 'h' target type will potentially be added below.
+        hg = "hxx";
 
         // Return the extension (v), if specified (s), derive the extension
         // from the pattern and type (t), or return the default (d), if
@@ -1451,11 +1539,12 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
         // For now only include mxx in buildfiles if its extension was
         // explicitly specified with mxx=.
         //
-        me = ext (opt.mxx_specified (), opt.mxx (), nullopt, nullptr);
+        me = ext (opt.mxx_specified (), opt.mxx (), nullopt);
 
-        if (ie) hs += " ixx";
-        if (te) hs += " txx";
-        if (me) hs += " mxx";
+        if (ie)       ha += " ixx";
+        if (te)       ha += " txx";
+        if (me)       ha += " mxx";
+        if (opt.c ()) ha += " h";
 
         break;
       }
@@ -1468,6 +1557,52 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
     {
       assert (e.empty () || e[0] == '.');
       return e.c_str () + (e.empty () ? 0 : 1);
+    };
+
+    // Write the C and C++ module initialization code to the stream,
+    // optionally adding an additional newline at the end.
+    //
+    auto write_c_module = [&os] (bool newline = false)
+    {
+      // @@ TODO: 'latest' in c.std.
+      //
+      // << "c.std = latest"                                           << '\n'
+      // <<                                                               '\n'
+      os << "using c"                                                  << '\n'
+         <<                                                               '\n'
+         << "h{*}: extension = h"                                      << '\n'
+         << "c{*}: extension = c"                                      << '\n';
+
+      os <<                                                               '\n'
+         << "# Assume headers are importable unless stated otherwise." << '\n'
+         << "#"                                                        << '\n'
+         << "h{*}: c.importable = true"                                << '\n';
+
+      if (newline)
+        os <<                                                             '\n';
+    };
+
+    auto write_cxx_module = [&os, &me, &he, &ie, &te, &xe, &pure_ext]
+                            (bool newline = false)
+    {
+      os << "cxx.std = latest"                                         << '\n'
+         <<                                                               '\n'
+         << "using cxx"                                                << '\n'
+         <<                                                               '\n';
+
+      if (me) os << "mxx{*}: extension = " << pure_ext (*me)           << '\n';
+      os         << "hxx{*}: extension = " << pure_ext (he)            << '\n';
+      if (ie) os << "ixx{*}: extension = " << pure_ext (*ie)           << '\n';
+      if (te) os << "txx{*}: extension = " << pure_ext (*te)           << '\n';
+      os         << "cxx{*}: extension = " << pure_ext (xe)            << '\n';
+
+      os <<                                                               '\n'
+         << "# Assume headers are importable unless stated otherwise." << '\n'
+         << "#"                                                        << '\n'
+         << "hxx{*}: cxx.importable = true"                            << '\n';
+
+      if (newline)
+        os <<                                                             '\n';
     };
 
     // build/
@@ -1503,49 +1638,29 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
       {
       case lang::c:
         {
-          // @@ TODO: 'latest' in c.std.
-          //
-          // << "c.std = latest"                                       << '\n'
-          // <<                                                           '\n'
-          os << "using c"                                              << '\n'
-             <<                                                           '\n'
-             << "h{*}: extension = h"                                  << '\n'
-             << "c{*}: extension = c"                                  << '\n';
+          write_c_module (l.c_opt.cpp ());
 
-          os <<                                                           '\n'
-             << "# Assume headers are importable unless stated otherwise." << '\n'
-             << "#"                                                    << '\n'
-             << "h{*}: c.importable = true"                            << '\n';
+          if (l.c_opt.cpp ())
+            write_cxx_module ();
 
           break;
         }
       case lang::cxx:
         {
-          os << "cxx.std = latest"                                     << '\n'
-             <<                                                           '\n'
-             << "using cxx"                                            << '\n'
-             <<                                                           '\n';
+          write_cxx_module (l.cxx_opt.c ());
 
-          if (me) os << "mxx{*}: extension = " << pure_ext (*me)       << '\n';
-          os         << "hxx{*}: extension = " << pure_ext (he)        << '\n';
-          if (ie) os << "ixx{*}: extension = " << pure_ext (*ie)       << '\n';
-          if (te) os << "txx{*}: extension = " << pure_ext (*te)       << '\n';
-          os         << "cxx{*}: extension = " << pure_ext (xe)        << '\n';
-
-          os <<                                                           '\n'
-             << "# Assume headers are importable unless stated otherwise." << '\n'
-             << "#"                                                    << '\n'
-             << "hxx{*}: cxx.importable = true"                        << '\n';
+          if (l.cxx_opt.c ())
+            write_c_module ();
 
           break;
         }
       }
 
-      if ((itest || utest) && !m.empty ())
+      if ((itest || utest) && !mp.empty ())
         os <<                                                             '\n'
            << "# The test target for cross-testing (running tests under Wine, etc)."   << '\n'
            << "#"                                                      << '\n'
-           << "test.target = $" << m << ".target"                      << '\n';
+           << "test.target = $" << mp << ".target"                     << '\n';
 
       os.close ();
 
@@ -1604,7 +1719,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
       os << "manifest";
 
       if (newline)
-        os << '\n';
+        os <<                                                             '\n';
     };
 
     if (!src && out != out_src)
@@ -1624,6 +1739,16 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
     if (t == type::bare)
       break; // Done
+
+    // If the argument contains multiple space separated target types, then
+    // return them as a group (wrapped into curly braces). Otherwise, the
+    // argument must be a single type, which is returned as is.
+    //
+    auto tt = [] (const string& ts)
+    {
+      assert (!ts.empty ());
+      return ts.find (' ') == string::npos ? ts : '{' + ts + '}';
+    };
 
     switch (t)
     {
@@ -1702,13 +1827,13 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
         if (!utest)
           os << "exe{" << s << "}: "                                   <<
-            "{" << hs << ' ' << x << "}{" << w << "} "                 <<
+            tt (ha + ' ' + xa) << "{" << w << "} "                     <<
             "$libs"                                                    <<
             (itest ? " testscript" : "")                               << '\n';
         else
         {
           os << "./: exe{" << s << "}: libue{" << s << "}: "           <<
-            "{" << hs << ' ' << x << "}{" << w << " -" << w << ".test...} $libs" << '\n';
+            tt (ha + ' ' + xa) << "{" << w << " -" << w << ".test...} $libs" << '\n';
 
           if (itest)
             os << "exe{" << s << "}: testscript"                       << '\n';
@@ -1727,13 +1852,12 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
             os << "exe{*.test}: test = true"                           << '\n';
 
           os <<                                                           '\n'
-             << "for t: " << x << "{" << w << ".test...}"              << '\n'
+             << "for t: " << tt (xa) << "{" << w << ".test...}"        << '\n'
              << "{"                                                    << '\n'
              << "  d = $directory($t)"                                 << '\n'
              << "  n = $name($t)..."                                   << '\n'
              <<                                                           '\n'
-             << "  ./: $d/exe{$n}: $t $d/{" << hs                      <<
-            "}{+$n} $d/testscript{+$n}"                                << '\n'
+             << "  ./: $d/exe{$n}: $t $d/" << tt (ha) << "{+$n} $d/testscript{+$n}" << '\n'
              << "  $d/exe{$n}: libue{" << s << "}: bin.whole = false"  << '\n'
              << "}"                                                    << '\n';
         }
@@ -1749,7 +1873,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
              << "src_pfx = [dir_path] $src_root/" << ps                << '\n';
 
         os  <<                                                            '\n'
-            << m << ".poptions =+ \"-I" << op << "\" \"-I" << sp << '"' << '\n';
+            << mc << ".poptions =+ \"-I" << op << "\" \"-I" << sp << '"' << '\n';
 
         os.close ();
 
@@ -2151,18 +2275,18 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                << "impl_libs = # Implementation dependencies."         << '\n'
                << "#import impl_libs += libhello%lib{hello}"           << '\n'
                <<                                                         '\n'
-               << "lib{" << s << "}: {" << hs << "}{" << w;
+               << "lib{" << s << "}: " << tt (ha) << "{" << w;
             if (ver)
-              os << " -version} " << h << "{version}";
+              os << " -version} " << hg << "{version}";
             else
               os << "}";
             os << " $impl_libs $intf_libs"                             << '\n';
           }
           else
           {
-            os << "pub_hdrs = {" << hs << "}{" << w;
+            os << "pub_hdrs = " << tt (ha) << "{" << w;
             if (ver)
-              os << " -version} " << h << "{version}"                  << '\n';
+              os << " -version} " << hg << "{version}"                 << '\n';
             else
               os << "}"                                                << '\n';
             os <<                                                         '\n'
@@ -2175,7 +2299,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                << "# pick up an installed one) and don't remove it when cleaning in src (so that"  << '\n'
                << "# clean results in a state identical to distributed)." << '\n'
                << "#"                                                  << '\n'
-               << h << "{version}: in{version} $src_root/manifest"     << '\n'
+               << hg << "{version}: in{version} $src_root/manifest"    << '\n'
                << "{"                                                  << '\n'
                << "  dist  = true"                                     << '\n'
                << "  clean = ($src_root != $out_root)"                 << '\n'
@@ -2183,7 +2307,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
           if (!exph.empty ())
             os <<                                                         '\n'
-               << h << "{export}@./: " << m << ".importable = false"   << '\n';
+               << hg << "{export}@./: " << mp << ".importable = false" << '\n';
 
           if (binless)
           {
@@ -2203,9 +2327,9 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
             os <<                                                         '\n'
                << "lib{" <<  s << "}:"                                 << '\n'
                << "{"                                                  << '\n'
-               << "  " << m << ".export.poptions = \"-I" << op << "\" "
-               <<                                 "\"-I" << sp << '"'  << '\n'
-               << "  " << m << ".export.libs = $intf_libs"             << '\n'
+               << "  " << mc << ".export.poptions = \"-I" << op << "\" "
+               <<                                  "\"-I" << sp << '"' << '\n'
+               << "  " << mc << ".export.libs = $intf_libs"            << '\n'
                << "}"                                                  << '\n';
           }
 
@@ -2221,7 +2345,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                  << "# Install recreating subdirectories."             << '\n'
                  << "#"                                                << '\n';
 
-            os << "{" << hs << "}{*}:"                                 << '\n'
+            os << tt (ha) << "{*}:"                                    << '\n'
                << "{"                                                  << '\n'
                << "  install         = include/" << ip                 << '\n'
                << "  install.subdirs = true"                           << '\n'
@@ -2286,14 +2410,14 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
               os << "lib{" << s << "}: $pub/{$pub_hdrs}"               << '\n'
                  <<                                                       '\n'
                  << "# Private headers and sources as well as dependencies." << '\n'
-                 << "#"                                                      << '\n';
+                 << "#"                                                << '\n';
             }
 
             os << "lib{" << s << "}: "
-               << "{" << hs << (binless ? "" : ' ' + x) << "}{" << w;
+               << tt (binless ? ha : ha + ' ' + xa) << "{" << w;
 
             if (ver && !split)
-              os << " -version} " << h << "{version}";
+              os << " -version} " << hg << "{version}";
             else
               os << "}";
             os << " $impl_libs $intf_libs"                             << '\n';
@@ -2310,13 +2434,12 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
               else
                 os << "./: lib{" << s << "}: ";
 
-              os << "libul{" << s << "}: "
-                 << "{" << hs << ' ' << x << "}{" << w << " -" << w
-                 << ".test...";
+              os << "libul{" << s << "}: " << tt (ha + ' ' + xa)       <<
+                "{" << w << " -" << w << ".test...";
 
               if (ver && !split)
                 os << " -version} \\"                                  << '\n'
-                   << "  " << h << "{version}";
+                   << "  " << hg << "{version}";
               else
                 os << "}";
               os << " $impl_libs $intf_libs"                           << '\n'
@@ -2325,9 +2448,9 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
             else if (!split) // Binless.
             {
               os << "./: lib{" << s << "}: "
-                 << "{" << hs << "}{" << w << " -" << w << ".test...";
+                 << tt (ha) << "{" << w << " -" << w << ".test...";
               if (ver)
-                os << " -version} " << h << "{version} \\"             << '\n'
+                os << " -version} " << hg << "{version} \\"            << '\n'
                    << " ";
               else
                 os << "}";
@@ -2351,18 +2474,18 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
             // presumably for unit tests.
             //
             os <<                                                         '\n'
-               << "for t: " << x << "{" << w << ".test...}"            << '\n'
+               << "for t: " << tt (xa) << "{" << w << ".test...}"      << '\n'
                << "{"                                                  << '\n'
                << "  d = $directory($t)"                               << '\n'
                << "  n = $name($t)..."                                 << '\n'
                <<                                                         '\n'
-               << "  ./: $d/exe{$n}: $t $d/{" << hs << "}{"
+               << "  ./: $d/exe{$n}: $t $d/" << tt (ha) << "{"
                << (split && binless ? w : "+$n") << "} $d/testscript{+$n}";
 
             if (binless)
               os << (split ? " $pub/" : " ") << "lib{" << s << "}"     << '\n';
             else
-              os << '\n'
+              os <<                                                       '\n'
                  << "  $d/exe{$n}: libul{" << s << "}: bin.whole = false" << '\n';
 
             os << "}"                                                  << '\n';
@@ -2374,7 +2497,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                << "# pick up an installed one) and don't remove it when cleaning in src (so that"  << '\n'
                << "# clean results in a state identical to distributed)." << '\n'
                << "#"                                                  << '\n'
-               << h << "{version}: in{version} $src_root/manifest"     << '\n'
+               << hg << "{version}: in{version} $src_root/manifest"    << '\n'
                << "{"                                                  << '\n'
                << "  dist  = true"                                     << '\n'
                << "  clean = ($src_root != $out_root)"                 << '\n'
@@ -2382,7 +2505,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
           if (!exph.empty () && !split)
             os <<                                                         '\n'
-               << h << "{export}@./: " << m << ".importable = false"   << '\n';
+               << hg << "{export}@./: " << mp << ".importable = false" << '\n';
 
           // Build.
           //
@@ -2415,8 +2538,8 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
             if (!pi.empty () || !ps.empty ())
               os <<                                                       '\n';
 
-            os << m << ".poptions =+ \"-I" << ops << "\" \"-I" << sps << "\" \\" << '\n'
-               << string (m.size () + 13, ' ')
+            os << mc << ".poptions =+ \"-I" << ops << "\" \"-I" << sps << "\" \\" << '\n'
+               << string (mc.size () + 13, ' ')
                <<                    "\"-I" << opi << "\" \"-I" << spi << '"' << '\n';
           }
           else
@@ -2429,13 +2552,13 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                  << "src_pfx = [dir_path] $src_root/" << pi            << '\n'
                  <<                                                       '\n';
 
-            os << m << ".poptions =+ \"-I" << opi << "\" \"-I" << spi << '"' << '\n';
+            os << mc << ".poptions =+ \"-I" << opi << "\" \"-I" << spi << '"' << '\n';
           }
 
           if (!binless)
             os <<                                                         '\n'
-               << "{hbmia obja}{*}: " << m << ".poptions += -D" << mp << "_STATIC_BUILD" << '\n'
-               << "{hbmis objs}{*}: " << m << ".poptions += -D" << mp << "_SHARED_BUILD" << '\n';
+               << "{hbmia obja}{*}: " << mc << ".poptions += -D" << mp << "_STATIC_BUILD" << '\n'
+               << "{hbmis objs}{*}: " << mc << ".poptions += -D" << mp << "_SHARED_BUILD" << '\n';
 
           // Export.
           //
@@ -2447,16 +2570,16 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                << "lib{" <<  s << "}:"                                 << '\n'
                << "{"                                                  << '\n';
 
-            os << "  " << m << ".export.poptions = \"-I" << opi << "\" "
-               <<                                 "\"-I" << spi << "\"" << '\n'
-               << "  " << m << ".export.libs = $intf_libs"             << '\n'
+            os << "  " << mc << ".export.poptions = \"-I" << opi << "\" "
+               <<                                  "\"-I" << spi << "\"" << '\n'
+               << "  " << mc << ".export.libs = $intf_libs"            << '\n'
                << "}"                                                  << '\n';
           }
 
           if (!binless)
             os <<                                                         '\n'
-               << "liba{" << s << "}: " << m << ".export.poptions += -D" << mp << "_STATIC" << '\n'
-               << "libs{" << s << "}: " << m << ".export.poptions += -D" << mp << "_SHARED" << '\n';
+               << "liba{" << s << "}: " << mc << ".export.poptions += -D" << mp << "_STATIC" << '\n'
+               << "libs{" << s << "}: " << mc << ".export.poptions += -D" << mp << "_SHARED" << '\n';
 
           // Library versioning.
           //
@@ -2487,7 +2610,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                    << "# Install recreating subdirectories."           << '\n'
                    << "#"                                              << '\n';
 
-              os << "{" << hs << "}{*}:"                               << '\n'
+              os << tt (ha) << "{*}:"                                  << '\n'
                  << "{"                                                << '\n'
                  << "  install         = include/" << ip               << '\n'
                  << "  install.subdirs = true"                         << '\n'
@@ -2497,7 +2620,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
               os <<                                                       '\n'
                  << "# Don't install private headers."                 << '\n'
                  << "#"                                                << '\n'
-                 << "{" << hs << "}{*}: install = false"               << '\n';
+                 << tt (ha) << "{*}: install = false"                  << '\n';
           }
 
           os.close ();
@@ -2661,51 +2784,31 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
         {
         case lang::c:
           {
-            // @@ TODO: 'latest' in c.std.
-            //
-            os //<< "c.std = latest"                                   << '\n'
-              //<<                                                        '\n'
-              << "using c"                                             << '\n'
-              <<                                                          '\n'
-              << "h{*}: extension = h"                                 << '\n'
-              << "c{*}: extension = c"                                 << '\n';
+            write_c_module (l.c_opt.cpp ());
 
-            os <<                                                           '\n'
-               << "# Assume headers are importable unless stated otherwise." << '\n'
-               << "#"                                                    << '\n'
-               << "h{*}: c.importable = true"                            << '\n';
+            if (l.c_opt.cpp ())
+              write_cxx_module ();
 
             break;
           }
         case lang::cxx:
           {
-            os << "cxx.std = latest"                                   << '\n'
-               <<                                                         '\n'
-               << "using cxx"                                          << '\n'
-               <<                                                         '\n';
+            write_cxx_module (l.cxx_opt.c ());
 
-            if (me) os << "mxx{*}: extension = " << pure_ext (*me)     << '\n';
-            os         << "hxx{*}: extension = " << pure_ext (he)      << '\n';
-            if (ie) os << "ixx{*}: extension = " << pure_ext (*ie)     << '\n';
-            if (te) os << "txx{*}: extension = " << pure_ext (*te)     << '\n';
-            os         << "cxx{*}: extension = " << pure_ext (xe)      << '\n';
-
-            os <<                                                           '\n'
-               << "# Assume headers are importable unless stated otherwise." << '\n'
-               << "#"                                                    << '\n'
-               << "hxx{*}: cxx.importable = true"                        << '\n';
+            if (l.cxx_opt.c ())
+              write_c_module ();
 
             break;
           }
         }
-        os <<                                                              '\n'
-           << "# Every exe{} in this subproject is by default a test."  << '\n'
-           << "#"                                                       << '\n'
-           << "exe{*}: test = true"                                     << '\n'
-           <<                                                              '\n'
+        os <<                                                             '\n'
+           << "# Every exe{} in this subproject is by default a test." << '\n'
+           << "#"                                                      << '\n'
+           << "exe{*}: test = true"                                    << '\n'
+           <<                                                             '\n'
            << "# The test target for cross-testing (running tests under Wine, etc)." << '\n'
-           << "#"                                                       << '\n'
-           << "test.target = $" << m << ".target"                       << '\n';
+           << "#"                                                      << '\n'
+           << "test.target = $" << mp << ".target"                     << '\n';
         os.close ();
 
         // tests/build/.gitignore
@@ -2888,8 +2991,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
         open (td / buildfile_file);
         os << "import libs = " << n << "%lib{" << s << "}"             << '\n'
            <<                                                             '\n'
-           << "exe{driver}: {" << hs << ' ' << x                       <<
-          "}{**} $libs testscript{**}"                                 << '\n';
+           << "exe{driver}: " << tt (ha + ' ' + xa) << "{**} $libs testscript{**}" << '\n';
         // <<                                                             '\n'
         // << m << ".poptions =+ \"-I$out_root\" \"-I$src_root\""      << '\n';
         os.close ();

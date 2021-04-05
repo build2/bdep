@@ -33,6 +33,25 @@ status += -d prj
       EOE
   }
 
+  : exe-c++-c
+  :
+  {
+    $* -t exe -l c++,c foo 2>>/"EOE" &foo/***;
+      created new executable project foo in $~/foo/
+      EOE
+
+    touch foo/foo/bar.h;
+
+    cat <<EOI >=foo/foo/bar.c;
+      #include <foo/bar.h>
+      int bar;
+      EOI
+
+    $build foo/ $config_cxx $config_c 2>>~%EOE%
+      %(c\+\+|c|ld) .+%{3}
+      EOE
+  }
+
   : lib
   :
   {
@@ -42,6 +61,32 @@ status += -d prj
 
     $build libprj-foo/ $config_cxx 2>>~%EOE%
       %(version\.in|c\+\+|ar|ld) .+%{7}
+      EOE
+  }
+
+  : lib-c++-c
+  :
+  {
+    $* -t lib -l c++,c libfoo 2>>/"EOE" &libfoo/***;
+      created new library project libfoo in $~/libfoo/
+      EOE
+
+    touch libfoo/libfoo/bar.h;
+
+    cat <<EOI >=libfoo/libfoo/bar.c;
+      #include <libfoo/bar.h>
+      int bar;
+      EOI
+
+    touch libfoo/tests/basics/fox.h;
+
+    cat <<EOI >=libfoo/tests/basics/fox.c;
+      #include <libfoo/bar.h>
+      #include "fox.h"
+      EOI
+
+    $build libfoo/ $config_cxx $config_c 2>>~%EOE%
+      %(version\.in|c\+\+|c|ld|ar) .+%{10}
       EOE
   }
 
@@ -81,6 +126,34 @@ status += -d prj
       EOE
   }
 
+  : lib-split-c
+  :
+  {
+    $* -t lib,split -l c++,c libfoo 2>>/"EOE" &libfoo/***;
+      created new library project libfoo in $~/libfoo/
+      EOE
+
+    touch libfoo/include/libfoo/bar.h;
+    touch libfoo/src/libfoo/baz.h;
+
+    cat <<EOI >=libfoo/src/libfoo/bar.c;
+      #include <libfoo/bar.h>
+      #include "baz.h"
+      int bar;
+      EOI
+
+    touch libfoo/tests/basics/fox.h;
+
+    cat <<EOI >=libfoo/tests/basics/fox.c;
+      #include <libfoo/bar.h>
+      #include "fox.h"
+      EOI
+
+    $build libfoo/ $config_cxx $config_c 2>>~%EOE%
+      %(version\.in|c\+\+|c|ar|ld) .+%{10}
+      EOE
+  }
+
   : lib-split-binless
   :
   {
@@ -90,6 +163,26 @@ status += -d prj
 
     $build libprj-foo/ $config_cxx 2>>~%EOE%
       %(version\.in|c\+\+|ld) .+%{3}
+      EOE
+  }
+
+  : lib-split-binless-c
+  :
+  {
+    $* -t lib,split,binless -l c++,c libfoo 2>>/"EOE" &libfoo/***;
+      created new library project libfoo in $~/libfoo/
+      EOE
+
+    touch libfoo/include/libfoo/bar.h;
+    touch libfoo/tests/basics/fox.h;
+
+    cat <<EOI >=libfoo/tests/basics/fox.c;
+      #include <libfoo/bar.h>
+      #include "fox.h"
+      EOI
+
+    $build libfoo/ $config_cxx $config_c 2>>~%EOE%
+      %(version\.in|c\+\+|c|ld) .+%{4}
       EOE
   }
 
@@ -117,6 +210,34 @@ status += -d prj
       EOE
   }
 
+  # @@ TMP Disable until the 'multiple rules matching updating' error is fixed
+  #    in build2.
+  #
+  #\
+  : exe-unit-tests-c
+  :
+  {
+    $* -t exe,unit-tests -l c++,c foo 2>>/"EOE" &foo/***;
+      created new executable project foo in $~/foo/
+      EOE
+
+    touch foo/foo/bar.h;
+
+    cat <<EOI >=foo/foo/bar.c;
+      #include <foo/bar.h>
+      int bar;
+      EOI
+
+    cat <<EOI >=foo/foo/bar.test.c;
+      #include <foo/bar.h>
+      EOI
+
+    $build foo/ $config_cxx $config_c 2>>~%EOE%
+      %(c\+\+|c|ld|ar) .+%{4}
+      EOE
+  }
+  #\
+
   : lib-unit-tests
   :
   {
@@ -128,6 +249,34 @@ status += -d prj
       %(version\.in|c\+\+|ar|ld) .+%{11}
       EOE
   }
+
+  # @@ TMP Disable until the 'multiple rules matching updating' error is fixed
+  #    in build2.
+  #
+  #\
+  : lib-unit-tests-c
+  :
+  {
+    $* -t lib,unit-tests -l c++,c libfoo 2>>/"EOE" &libfoo/***;
+      created new library project libfoo in $~/libfoo/
+      EOE
+
+    touch libfoo/libfoo/bar.h;
+
+    cat <<EOI >=libfoo/libfoo/bar.c;
+      #include <libfoo/bar.h>
+      int bar;
+      EOI
+
+    cat <<EOI >=libfoo/libfoo/bar.test.c;
+      #include <libfoo/bar.h>
+      EOI
+
+    $build libfoo/ $config_cxx $config_c 2>>~%EOE%
+      %(version\.in|c\+\+|c|ar|ld) .+%{11}
+      EOE
+  }
+  #\
 
   : exe-alt-naming
   :
@@ -259,6 +408,25 @@ status += -d prj
       EOE
   }
 
+  : exe-c-c++
+  :
+  {
+    $* -t exe -l c,c++ foo 2>>/"EOE" &foo/***;
+      created new executable project foo in $~/foo/
+      EOE
+
+    touch foo/foo/bar.hxx;
+
+    cat <<EOI >=foo/foo/bar.cxx;
+      #include <foo/bar.hxx>
+      int bar;
+      EOI
+
+    $build foo/ $config_c $config_cxx 2>>~%EOE%
+      %(c|c\+\+|ld) .+%{3}
+      EOE
+  }
+
   : exe-c-prefix
   :
   {
@@ -283,6 +451,34 @@ status += -d prj
       EOE
   }
 
+  # @@ TMP Disable until the 'multiple rules matching updating' error is fixed
+  #    in build2.
+  #
+  #\
+  : exe-c-unit-tests-c++
+  :
+  {
+    $* -t exe,unit-tests -l c,c++ foo 2>>/"EOE" &foo/***;
+      created new executable project foo in $~/foo/
+      EOE
+
+    touch foo/foo/bar.hxx;
+
+    cat <<EOI >=foo/foo/bar.cxx;
+      #include <foo/bar.hxx>
+      int bar;
+      EOI
+
+    cat <<EOI >=foo/foo/bar.test.cxx;
+      #include <foo/bar.hxx>
+      EOI
+
+    $build foo/ $config_c $config_cxx 2>>~%EOE%
+      %(c|c\+\+|ld|ar) .+%{4}
+      EOE
+  }
+  #\
+
   : lib-c
   :
   {
@@ -292,6 +488,34 @@ status += -d prj
 
     $build libprj-foo/ $config_c 2>>~%EOE%
       %(version\.in|c|ar|ld) .+%{7}
+      EOE
+  }
+
+  : lib-c-c++
+  :
+  {
+    # While at it, also test the hxx/cxx sub-options.
+    #
+    $* -t lib -l c,c++,hxx=hpp,cxx=cpp libfoo 2>>/"EOE" &libfoo/***;
+      created new library project libfoo in $~/libfoo/
+      EOE
+
+    touch libfoo/libfoo/bar.hpp;
+
+    cat <<EOI >=libfoo/libfoo/bar.cpp;
+      #include <libfoo/bar.hpp>
+      int bar;
+      EOI
+
+    touch libfoo/tests/basics/fox.hpp;
+
+    cat <<EOI >=libfoo/tests/basics/fox.cpp;
+      #include <libfoo/bar.hpp>
+      #include "fox.hpp"
+      EOI
+
+    $build libfoo/ $config_c $config_cxx 2>>~%EOE%
+      %(version\.in|c|c\+\+|ld|ar) .+%{10}
       EOE
   }
 
@@ -331,6 +555,34 @@ status += -d prj
       EOE
   }
 
+  : lib-c-split-c++
+  :
+  {
+    $* -t lib,split -l c,c++ libfoo 2>>/"EOE" &libfoo/***;
+      created new library project libfoo in $~/libfoo/
+      EOE
+
+    touch libfoo/include/libfoo/bar.hxx;
+    touch libfoo/src/libfoo/baz.hxx;
+
+    cat <<EOI >=libfoo/src/libfoo/bar.cxx;
+      #include <libfoo/bar.hxx>
+      #include "baz.hxx"
+      int bar;
+      EOI
+
+    touch libfoo/tests/basics/fox.hxx;
+
+    cat <<EOI >=libfoo/tests/basics/fox.cxx;
+      #include <libfoo/bar.hxx>
+      #include "fox.hxx"
+      EOI
+
+    $build libfoo/ $config_c $config_cxx 2>>~%EOE%
+      %(version\.in|c|c\+\+|ar|ld) .+%{10}
+      EOE
+  }
+
   : lib-c-split-binless
   :
   {
@@ -340,6 +592,26 @@ status += -d prj
 
     $build libprj-foo/ $config_c 2>>~%EOE%
       %(version\.in|c|ld) .+%{3}
+      EOE
+  }
+
+  : lib-c-split-binless-c++
+  :
+  {
+    $* -t lib,split,binless -l c,c++ libfoo 2>>/"EOE" &libfoo/***;
+      created new library project libfoo in $~/libfoo/
+      EOE
+
+    touch libfoo/include/libfoo/bar.hxx;
+    touch libfoo/tests/basics/fox.hxx;
+
+    cat <<EOI >=libfoo/tests/basics/fox.cxx;
+      #include <libfoo/bar.hxx>
+      #include "fox.hxx"
+      EOI
+
+    $build libfoo/ $config_c $config_cxx 2>>~%EOE%
+      %(version\.in|c|c\+\+|ld) .+%{4}
       EOE
   }
 
@@ -366,6 +638,34 @@ status += -d prj
       %(version\.in|c|ar|ld) .+%{11}
       EOE
   }
+
+  # @@ TMP Disable until the 'multiple rules matching updating' error is fixed
+  #    in build2.
+  #
+  #\
+  : lib-c-unit-tests-c++
+  :
+  {
+    $* -t lib,unit-tests -l c,c++ libfoo 2>>/"EOE" &libfoo/***;
+      created new library project libfoo in $~/libfoo/
+      EOE
+
+    touch libfoo/libfoo/bar.hxx;
+
+    cat <<EOI >=libfoo/libfoo/bar.cxx;
+      #include <libfoo/bar.hxx>
+      int bar;
+      EOI
+
+    cat <<EOI >=libfoo/libfoo/bar.test.cxx;
+      #include <libfoo/bar.hxx>
+      EOI
+
+    $build libfoo/ $config_c $config_cxx 2>>~%EOE%
+      %(version\.in|c|c\+\+|ar|ld) .+%{11}
+      EOE
+  }
+  #\
 
   : lib-c-binless-unit-tests
   :
