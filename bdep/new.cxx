@@ -2291,15 +2291,14 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           if (binless)
           {
             os << "intf_libs = # Interface dependencies."              << '\n'
-               << "impl_libs = # Implementation dependencies."         << '\n'
-               << "#import impl_libs += libhello%lib{hello}"           << '\n'
+               << "#import xxxx_libs += libhello%lib{hello}"           << '\n'
                <<                                                         '\n'
                << "lib{" << s << "}: " << tt (ha) << "{" << w;
             if (ver)
               os << " -version} " << hg << "{version}";
             else
               os << "}";
-            os << " $impl_libs $intf_libs"                             << '\n';
+            os << " $intf_libs"                                        << '\n';
           }
           else
           {
@@ -2385,10 +2384,15 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           open (out_src / buildfile_file);
 
           if (!(split && binless))
-            os << "intf_libs = # Interface dependencies."              << '\n'
-               << "impl_libs = # Implementation dependencies."         << '\n'
-               << "#import impl_libs += libhello%lib{hello}"           << '\n'
+          {
+            os << "intf_libs = # Interface dependencies."              << '\n';
+
+            if (!binless)
+              os << "impl_libs = # Implementation dependencies."       << '\n';
+
+            os << "#import xxxx_libs += libhello%lib{hello}"           << '\n'
                <<                                                         '\n';
+          }
 
           if (split)
           {
@@ -2439,7 +2443,11 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
               os << " -version} " << hg << "{version}";
             else
               os << "}";
-            os << " $impl_libs $intf_libs"                             << '\n';
+
+            if (binless)
+              os << " $intf_libs"                                      << '\n';
+            else
+              os << " $impl_libs $intf_libs"                           << '\n';
           }
           else
           {
@@ -2473,7 +2481,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                    << " ";
               else
                 os << "}";
-              os << " $impl_libs $intf_libs"                           << '\n'
+              os << " $intf_libs"                                      << '\n'
                  <<                                                       '\n';
             }
 
