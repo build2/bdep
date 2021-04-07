@@ -1976,18 +1976,27 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
         // In absence of the source subdirectory, fallback to the package name
         // to minimize the potential macro name clash.
         //
-        string mp (
+        string mx (
           sanitize_identifier (
             ucase (const_cast<const string&> (!ip.empty () ? ip : n))));
 
         // Strip the trailing underscore (produced from slash).
         //
         if (!ip.empty ())
-          mp.pop_back ();
+          mx.pop_back ();
 
         string apih; // API header name.
         string exph; // Export header name (empty if binless).
         string verh; // Version header name.
+
+        // Language-specific source code comment markers.
+        //
+        string O; // Open multi-line comment.
+        string X; // Middle of multi-line comment.
+        string Q; // Close multi-line comment.
+
+        string B; // Begin of a single-line comment.
+        string E; // End of a single-line comment.
 
         bool binless (t.lib_opt.binless ());
 
@@ -1995,6 +2004,12 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
         {
         case lang::c:
           {
+            O = "/* ";
+            X = " * ";
+            Q = " */";
+            B = "/* ";
+            E = " */";
+
             if (binless)
             {
               apih = s + ".h";
@@ -2024,8 +2039,6 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                  << "  return fprintf (f, \"Hello, %s!\\n\", name);"   << '\n'
                  << "}"                                                << '\n';
               os.close ();
-
-              break;
             }
             else
             {
@@ -2046,7 +2059,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                  << " * stream. On success, return the number of characters printed." << '\n'
                  << " * On failure, set errno and return a negative value." << '\n'
                  << " */"                                              << '\n'
-                 << mp << "_SYMEXPORT int"                             << '\n'
+                 << mx << "_SYMEXPORT int"                             << '\n'
                  << "say_hello (FILE *, const char *name);"            << '\n';
               os.close ();
 
@@ -2068,92 +2081,98 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                  << "  return fprintf (f, \"Hello, %s!\\n\", n);"      << '\n'
                  << "}"                                                << '\n';
               os.close ();
-
-              break;
             }
-          }
-        case lang::cxx:
-          if (binless)
-          {
-            apih = s + he;
-            verh = ver ? "version" + he : string ();
-
-            // <inc>/<stem>[.<hxx-ext>]
-            //
-            open (out_inc / apih);
-            os << "#pragma once"                                       << '\n'
-               <<                                                         '\n'
-               << "#include <string>"                                  << '\n'
-               << "#include <ostream>"                                 << '\n'
-               << "#include <stdexcept>"                               << '\n'
-               <<                                                         '\n'
-               << "namespace " << id                                   << '\n'
-               << "{"                                                  << '\n'
-               << "  // Print a greeting for the specified name into the specified" << '\n'
-               << "  // stream. Throw std::invalid_argument if the name is empty." << '\n'
-               << "  //"                                               << '\n'
-               << "  inline void"                                      << '\n'
-               << "  say_hello (std::ostream& o, const std::string& name)" << '\n'
-               << "  {"                                                << '\n'
-               << "    using namespace std;"                           << '\n'
-               <<                                                         '\n'
-               << "    if (name.empty ())"                             << '\n'
-               << "      throw invalid_argument (\"empty name\");"     << '\n'
-               <<                                                         '\n'
-               << "    o << \"Hello, \" << name << '!' << endl;"       << '\n'
-               << "  }"                                                << '\n'
-               << "}"                                                  << '\n';
-            os.close ();
 
             break;
           }
-          else
+        case lang::cxx:
           {
-            apih = s + he;
-            exph = "export" + he;
-            verh = ver ? "version" + he : string ();
+            O = "// ";
+            X = "// ";
+            Q = "// ";
+            B = "// ";
+            E = "";
 
-            // <inc>/<stem>[.<hxx-ext>]
-            //
-            open (out_inc / apih);
-            os << "#pragma once"                                       << '\n'
-               <<                                                         '\n'
-               << "#include <iosfwd>"                                  << '\n'
-               << "#include <string>"                                  << '\n'
-               <<                                                         '\n'
-               << "#include <" << ip << exph << ">"                    << '\n'
-               <<                                                         '\n'
-               << "namespace " << id                                   << '\n'
-               << "{"                                                  << '\n'
-               << "  // Print a greeting for the specified name into the specified" << '\n'
-               << "  // stream. Throw std::invalid_argument if the name is empty." << '\n'
-               << "  //"                                               << '\n'
-               << "  " << mp << "_SYMEXPORT void"                      << '\n'
-               << "  say_hello (std::ostream&, const std::string& name);" << '\n'
-               << "}"                                                  << '\n';
-            os.close ();
+            if (binless)
+            {
+              apih = s + he;
+              verh = ver ? "version" + he : string ();
 
-            // <src>/<stem>.<cxx-ext>
-            //
-            open (out_src / s + xe);
-            os << "#include <" << ip << apih << ">"                    << '\n'
-               <<                                                         '\n'
-               << "#include <ostream>"                                 << '\n'
-               << "#include <stdexcept>"                               << '\n'
-               <<                                                         '\n'
-               << "using namespace std;"                               << '\n'
-               <<                                                         '\n'
-               << "namespace " << id                                   << '\n'
-               << "{"                                                  << '\n'
-               << "  void say_hello (ostream& o, const string& n)"     << '\n'
-               << "  {"                                                << '\n'
-               << "    if (n.empty ())"                                << '\n'
-               << "      throw invalid_argument (\"empty name\");"     << '\n'
-               <<                                                         '\n'
-               << "    o << \"Hello, \" << n << '!' << endl;"          << '\n'
-               << "  }"                                                << '\n'
-               << "}"                                                  << '\n';
-            os.close ();
+              // <inc>/<stem>[.<hxx-ext>]
+              //
+              open (out_inc / apih);
+              os << "#pragma once"                                     << '\n'
+                 <<                                                       '\n'
+                 << "#include <string>"                                << '\n'
+                 << "#include <ostream>"                               << '\n'
+                 << "#include <stdexcept>"                             << '\n'
+                 <<                                                       '\n'
+                 << "namespace " << id                                 << '\n'
+                 << "{"                                                << '\n'
+                 << "  // Print a greeting for the specified name into the specified" << '\n'
+                 << "  // stream. Throw std::invalid_argument if the name is empty." << '\n'
+                 << "  //"                                             << '\n'
+                 << "  inline void"                                    << '\n'
+                 << "  say_hello (std::ostream& o, const std::string& name)" << '\n'
+                 << "  {"                                              << '\n'
+                 << "    using namespace std;"                         << '\n'
+                 <<                                                       '\n'
+                 << "    if (name.empty ())"                           << '\n'
+                 << "      throw invalid_argument (\"empty name\");"   << '\n'
+                 <<                                                       '\n'
+                 << "    o << \"Hello, \" << name << '!' << endl;"     << '\n'
+                 << "  }"                                              << '\n'
+                 << "}"                                                << '\n';
+              os.close ();
+            }
+            else
+            {
+              apih = s + he;
+              exph = "export" + he;
+              verh = ver ? "version" + he : string ();
+
+              // <inc>/<stem>[.<hxx-ext>]
+              //
+              open (out_inc / apih);
+              os << "#pragma once"                                     << '\n'
+                 <<                                                       '\n'
+                 << "#include <iosfwd>"                                << '\n'
+                 << "#include <string>"                                << '\n'
+                 <<                                                       '\n'
+                 << "#include <" << ip << exph << ">"                  << '\n'
+                 <<                                                       '\n'
+                 << "namespace " << id                                 << '\n'
+                 << "{"                                                << '\n'
+                 << "  // Print a greeting for the specified name into the specified" << '\n'
+                 << "  // stream. Throw std::invalid_argument if the name is empty." << '\n'
+                 << "  //"                                             << '\n'
+                 << "  " << mx << "_SYMEXPORT void"                    << '\n'
+                 << "  say_hello (std::ostream&, const std::string& name);" << '\n'
+                 << "}"                                                << '\n';
+              os.close ();
+
+              // <src>/<stem>.<cxx-ext>
+              //
+              open (out_src / s + xe);
+              os << "#include <" << ip << apih << ">"                  << '\n'
+                 <<                                                       '\n'
+                 << "#include <ostream>"                               << '\n'
+                 << "#include <stdexcept>"                             << '\n'
+                 <<                                                       '\n'
+                 << "using namespace std;"                             << '\n'
+                 <<                                                       '\n'
+                 << "namespace " << id                                 << '\n'
+                 << "{"                                                << '\n'
+                 << "  void say_hello (ostream& o, const string& n)"   << '\n'
+                 << "  {"                                              << '\n'
+                 << "    if (n.empty ())"                              << '\n'
+                 << "      throw invalid_argument (\"empty name\");"   << '\n'
+                 <<                                                       '\n'
+                 << "    o << \"Hello, \" << n << '!' << endl;"        << '\n'
+                 << "  }"                                              << '\n'
+                 << "}"                                                << '\n';
+              os.close ();
+            }
 
             break;
           }
@@ -2177,34 +2196,34 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                << "// the end it's all trial and error."               << '\n'
                <<                                                         '\n';
           }
-          os << "#if defined(" << mp << "_STATIC)         // Using static."    << '\n'
-             << "#  define " << mp << "_SYMEXPORT"                             << '\n'
-             << "#elif defined(" << mp << "_STATIC_BUILD) // Building static." << '\n'
-             << "#  define " << mp << "_SYMEXPORT"                             << '\n'
-             << "#elif defined(" << mp << "_SHARED)       // Using shared."    << '\n'
-             << "#  ifdef _WIN32"                                              << '\n'
-             << "#    define " << mp << "_SYMEXPORT __declspec(dllimport)"     << '\n'
-             << "#  else"                                                      << '\n'
-             << "#    define " << mp << "_SYMEXPORT"                           << '\n'
-             << "#  endif"                                                     << '\n'
-             << "#elif defined(" << mp << "_SHARED_BUILD) // Building shared." << '\n'
-             << "#  ifdef _WIN32"                                              << '\n'
-             << "#    define " << mp << "_SYMEXPORT __declspec(dllexport)"     << '\n'
-             << "#  else"                                                      << '\n'
-             << "#    define " << mp << "_SYMEXPORT"                           << '\n'
-             << "#  endif"                                                     << '\n'
-             << "#else"                                                        << '\n'
-             << "// If none of the above macros are defined, then we assume we are being used" << '\n'
-             << "// by some third-party build system that cannot/doesn't signal the library"   << '\n'
-             << "// type. Note that this fallback works for both static and shared libraries"  << '\n'
-             << "// provided the library only exports functions (in other words, no global"    << '\n'
-             << "// exported data) and for the shared case the result will be sub-optimal"     << '\n'
-             << "// compared to having dllimport. If, however, your library does export data," << '\n'
-             << "// then you will probably want to replace the fallback with the (commented"   << '\n'
-             << "// out) error since it won't work for the shared case." << '\n'
-             << "//"                                                   << '\n'
-             << "#  define " << mp << "_SYMEXPORT         // Using static or shared." << '\n'
-             << "//#  error define " << mp << "_STATIC or " << mp << "_SHARED preprocessor macro to signal " << n << " library type being linked" << '\n'
+          os << "#if defined(" << mx << "_STATIC)         " << B << "Using static." << E    << '\n'
+             << "#  define " << mx << "_SYMEXPORT"                                          << '\n'
+             << "#elif defined(" << mx << "_STATIC_BUILD) " << B << "Building static." << E << '\n'
+             << "#  define " << mx << "_SYMEXPORT"                                          << '\n'
+             << "#elif defined(" << mx << "_SHARED)       " << B << "Using shared." << E    << '\n'
+             << "#  ifdef _WIN32"                                                           << '\n'
+             << "#    define " << mx << "_SYMEXPORT __declspec(dllimport)"                  << '\n'
+             << "#  else"                                                                   << '\n'
+             << "#    define " << mx << "_SYMEXPORT"                                        << '\n'
+             << "#  endif"                                                                  << '\n'
+             << "#elif defined(" << mx << "_SHARED_BUILD) " << B << "Building shared." << E << '\n'
+             << "#  ifdef _WIN32"                                                           << '\n'
+             << "#    define " << mx << "_SYMEXPORT __declspec(dllexport)"                  << '\n'
+             << "#  else"                                                                   << '\n'
+             << "#    define " << mx << "_SYMEXPORT"                                        << '\n'
+             << "#  endif"                                                                  << '\n'
+             << "#else"                                                                     << '\n'
+             << O << "If none of the above macros are defined, then we assume we are being used" << '\n'
+             << X << "by some third-party build system that cannot/doesn't signal the library"   << '\n'
+             << X << "type. Note that this fallback works for both static and shared libraries"  << '\n'
+             << X << "provided the library only exports functions (in other words, no global"    << '\n'
+             << X << "exported data) and for the shared case the result will be sub-optimal"     << '\n'
+             << X << "compared to having dllimport. If, however, your library does export data," << '\n'
+             << X << "then you will probably want to replace the fallback with the (commented"   << '\n'
+             << X << "out) error since it won't work for the shared case."                       << '\n'
+             << Q                                                                                << '\n'
+             << "#  define " << mx << "_SYMEXPORT         " << B << "Using static or shared." << E << '\n'
+             << B << "#  error define " << mx << "_STATIC or " << mx << "_SHARED preprocessor macro to signal " << n << " library type being linked" << E << '\n'
              << "#endif"                                               << '\n';
           os.close ();
         }
@@ -2217,38 +2236,38 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
           os << "#pragma once"                                         << '\n'
              <<                                                           '\n'
-             << "// The numeric version format is AAAAABBBBBCCCCCDDDE where:" << '\n'
-             << "//"                                                   << '\n'
-             << "// AAAAA - major version number"                      << '\n'
-             << "// BBBBB - minor version number"                      << '\n'
-             << "// CCCCC - bugfix version number"                     << '\n'
-             << "// DDD   - alpha / beta (DDD + 500) version number"   << '\n'
-             << "// E     - final (0) / snapshot (1)"                  << '\n'
-             << "//"                                                   << '\n'
-             << "// When DDDE is not 0, 1 is subtracted from AAAAABBBBBCCCCC. For example:" << '\n'
-             << "//"                                                   << '\n'
-             << "// Version      AAAAABBBBBCCCCCDDDE"                  << '\n'
-             << "//"                                                   << '\n'
-             << "// 0.1.0        0000000001000000000"                  << '\n'
-             << "// 0.1.2        0000000001000020000"                  << '\n'
-             << "// 1.2.3        0000100002000030000"                  << '\n'
-             << "// 2.2.0-a.1    0000200001999990010"                  << '\n'
-             << "// 3.0.0-b.2    0000299999999995020"                  << '\n'
-             << "// 2.2.0-a.1.z  0000200001999990011"                  << '\n'
-             << "//"                                                   << '\n'
-             << "#define " << mp << "_VERSION       $" << v << ".version.project_number$ULL" << '\n'
-             << "#define " << mp << "_VERSION_STR   \"$" << v << ".version.project$\""       << '\n'
-             << "#define " << mp << "_VERSION_ID    \"$" << v << ".version.project_id$\""    << '\n'
-             << "#define " << mp << "_VERSION_FULL  \"$" << v << ".version$\""               << '\n'
+             << O << "The numeric version format is AAAAABBBBBCCCCCDDDE where:" << '\n'
+             << X                                                      << '\n'
+             << X << "AAAAA - major version number"                    << '\n'
+             << X << "BBBBB - minor version number"                    << '\n'
+             << X << "CCCCC - bugfix version number"                   << '\n'
+             << X << "DDD   - alpha / beta (DDD + 500) version number" << '\n'
+             << X << "E     - final (0) / snapshot (1)"                << '\n'
+             << X                                                      << '\n'
+             << X << "When DDDE is not 0, 1 is subtracted from AAAAABBBBBCCCCC. For example:" << '\n'
+             << X                                                      << '\n'
+             << X << "Version      AAAAABBBBBCCCCCDDDE"                << '\n'
+             << X                                                      << '\n'
+             << X << "0.1.0        0000000001000000000"                << '\n'
+             << X << "0.1.2        0000000001000020000"                << '\n'
+             << X << "1.2.3        0000100002000030000"                << '\n'
+             << X << "2.2.0-a.1    0000200001999990010"                << '\n'
+             << X << "3.0.0-b.2    0000299999999995020"                << '\n'
+             << X << "2.2.0-a.1.z  0000200001999990011"                << '\n'
+             << Q                                                      << '\n'
+             << "#define " << mx << "_VERSION       $" << v << ".version.project_number$ULL" << '\n'
+             << "#define " << mx << "_VERSION_STR   \"$" << v << ".version.project$\""       << '\n'
+             << "#define " << mx << "_VERSION_ID    \"$" << v << ".version.project_id$\""    << '\n'
+             << "#define " << mx << "_VERSION_FULL  \"$" << v << ".version$\""               << '\n'
              <<                                                                                 '\n'
-             << "#define " << mp << "_VERSION_MAJOR $" << v << ".version.major$"             << '\n'
-             << "#define " << mp << "_VERSION_MINOR $" << v << ".version.minor$"             << '\n'
-             << "#define " << mp << "_VERSION_PATCH $" << v << ".version.patch$"             << '\n'
+             << "#define " << mx << "_VERSION_MAJOR $" << v << ".version.major$"             << '\n'
+             << "#define " << mx << "_VERSION_MINOR $" << v << ".version.minor$"             << '\n'
+             << "#define " << mx << "_VERSION_PATCH $" << v << ".version.patch$"             << '\n'
              <<                                                                                 '\n'
-             << "#define " << mp << "_PRE_RELEASE   $" << v << ".version.pre_release$"       << '\n'
+             << "#define " << mx << "_PRE_RELEASE   $" << v << ".version.pre_release$"       << '\n'
              <<                                                                                 '\n'
-             << "#define " << mp << "_SNAPSHOT_SN   $" << v << ".version.snapshot_sn$ULL"    << '\n'
-             << "#define " << mp << "_SNAPSHOT_ID   \"$" << v << ".version.snapshot_id$\""   << '\n';
+             << "#define " << mx << "_SNAPSHOT_SN   $" << v << ".version.snapshot_sn$ULL"    << '\n'
+             << "#define " << mx << "_SNAPSHOT_ID   \"$" << v << ".version.snapshot_id$\""   << '\n';
           os.close ();
         }
 
@@ -2557,8 +2576,8 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
           if (!binless)
             os <<                                                         '\n'
-               << "{hbmia obja}{*}: " << mc << ".poptions += -D" << mp << "_STATIC_BUILD" << '\n'
-               << "{hbmis objs}{*}: " << mc << ".poptions += -D" << mp << "_SHARED_BUILD" << '\n';
+               << "{hbmia obja}{*}: " << mc << ".poptions += -D" << mx << "_STATIC_BUILD" << '\n'
+               << "{hbmis objs}{*}: " << mc << ".poptions += -D" << mx << "_SHARED_BUILD" << '\n';
 
           // Export.
           //
@@ -2578,8 +2597,8 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
           if (!binless)
             os <<                                                         '\n'
-               << "liba{" << s << "}: " << mc << ".export.poptions += -D" << mp << "_STATIC" << '\n'
-               << "libs{" << s << "}: " << mc << ".export.poptions += -D" << mp << "_SHARED" << '\n';
+               << "liba{" << s << "}: " << mc << ".export.poptions += -D" << mx << "_STATIC" << '\n'
+               << "libs{" << s << "}: " << mc << ".export.poptions += -D" << mx << "_SHARED" << '\n';
 
           // Library versioning.
           //
