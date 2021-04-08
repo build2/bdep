@@ -57,12 +57,13 @@ namespace bdep
 
      Some package manifest values can be overridden as part of the CI request
      submission using the \cb{--override} and \cb{--overrides-file} options as
-     well as their \cb{--builds} and \cb{--build-email} shortcuts. This is
-     primarily useful for specifying alternative build configurations and/or
-     build notification emails. For example:
+     well as their \cb{--builds}, \cb{--build-config}, and \cb{--build-email}
+     shortcuts. This is primarily useful for specifying alternative build
+     configurations and/or build notification emails. For example:
 
      \
      $ bdep ci --builds gcc
+     $ bdep ci --build-config 'linux*-gcc*'
      \
 
      Note that manifest overrides override the entire value group that they
@@ -146,6 +147,18 @@ namespace bdep
     {
       "<class-expr>",
       "Shortcut for \c{\b{--override\ builds:}<class-expr>}."
+    }
+
+    strings --build-config
+    {
+      "<cf>[/<tg>]",
+      "Shortcut for the following options sequence:
+
+       \c{\b{--override\ builds:all}}\n
+       \c{\b{--override\ build-include:}<cf>[/<tg>]}\n
+       \c{\b{--override\ build-exclude:**}}
+
+       Repeat this option to specify multiple build configurations."
     }
 
     string --build-email

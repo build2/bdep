@@ -22,6 +22,7 @@ using namespace butl;
 namespace bdep
 {
   using bpkg::repository_location;
+  using bpkg::package_manifest;
 
   // Note: the git_status() function, that we use, requires git 2.11.0 or
   // higher.
@@ -195,7 +196,7 @@ namespace bdep
     if (o.overrides_specified ())
     try
     {
-      if (o.interactive_specified ())
+      if (o.interactive_specified () || o.build_config_specified ())
       {
         for (const manifest_name_value& nv: o.overrides ())
         {
@@ -203,12 +204,13 @@ namespace bdep
               nv.name == "build-include" ||
               nv.name == "build-exclude")
             fail << "'" << nv.name << "' override specified together with "
-                 << "--interactive|-i";
+                 << (o.interactive_specified ()
+                     ? "--interactive|-i"
+                     : "--build-config");
         }
       }
 
-      bpkg::package_manifest::validate_overrides (o.overrides (),
-                                                  "" /* name */);
+      package_manifest::validate_overrides (o.overrides (), "" /* name */);
 
       overrides.insert (overrides.end (),
                         o.overrides ().begin (),
@@ -217,6 +219,32 @@ namespace bdep
     catch (const manifest_parsing& e)
     {
       fail << "invalid overrides: " << e;
+    }
+
+    // Validate the --build-config option values and convert them into build
+    // manifest value overrides.
+    //
+    if (o.build_config_specified ())
+    try
+    {
+      if (o.interactive_specified ())
+        fail << "--build-config specified together with --interactive|-i";
+
+      override ("builds", "all");
+
+      for (const string& c: o.build_config ())
+        override ("build-include", c);
+
+      override ("build-exclude", "**");
+
+      // Note that some of the overrides are knowingly valid (builds:all,
+      // etc), but let's keep it simple and validate all of them.
+      //
+      package_manifest::validate_overrides (overrides, "" /* name */);
+    }
+    catch (const manifest_parsing& e)
+    {
+      fail << "invalid --build-config option value: " << e;
     }
 
     // If we are submitting the entire project, then we have two choices: we
