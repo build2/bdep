@@ -2406,7 +2406,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                <<                                                         '\n';
 
             if (!binless)
-              os << "pub_hdrs = $($pub/pub_hdrs)"                      << '\n'
+              os << "pub_hdrs = $($pub/ pub_hdrs)"                     << '\n'
                  <<                                                       '\n';
           }
 
