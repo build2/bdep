@@ -15,6 +15,35 @@ using namespace std;
 
 namespace bdep
 {
+  void
+  mk_bdep_dir (const dir_path& d)
+  {
+    dir_path sd (d / bdep_dir);
+
+    if (!exists (sd))
+    {
+      mk (sd);
+
+      // Create the .gitignore file that ignores everything under .bdep/
+      // effectively making git ignore it (this prevents people from
+      // accidentally adding this directory to a git repository).
+      //
+      path f (sd / ".gitignore");
+      try
+      {
+        ofdstream os (f);
+        os << "# This directory should not be version-controlled." << '\n'
+           << "#"                                                  << '\n'
+           << "*"                                                  << '\n';
+        os.close ();
+      }
+      catch (const io_error& e)
+      {
+        fail << "unable to write to " << f << ": " << e;
+      }
+    }
+  }
+
   shared_ptr<configuration>
   cmd_init_config (const configuration_name_options& o,
                    const configuration_add_options& ao,
@@ -192,12 +221,7 @@ namespace bdep
 
     // Create .bdep/.
     //
-    {
-      dir_path d (prj / bdep_dir);
-
-      if (!exists (d))
-        mk (prj / bdep_dir);
-    }
+    mk_bdep_dir (prj);
 
     // Open the database creating it if necessary.
     //

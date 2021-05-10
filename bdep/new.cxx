@@ -3123,7 +3123,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
   // Create .bdep/.
   //
-  mk (prj / bdep_dir);
+  mk_bdep_dir (prj);
 
   // Initialize tmp directory.
   //

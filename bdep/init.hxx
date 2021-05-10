@@ -49,6 +49,12 @@ namespace bdep
   cmd_init_options
   merge_options (const default_options<cmd_init_options>&,
                  const cmd_init_options&);
+
+  // Create the .bdep/ subdirectory in the specified directory if it does not
+  // already exist.
+  //
+  void
+  mk_bdep_dir (const dir_path&);
 }
 
 #endif // BDEP_INIT_HXX
