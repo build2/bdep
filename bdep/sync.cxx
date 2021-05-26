@@ -380,6 +380,7 @@ namespace bdep
               "build",
               "-d", cfg,
               "--no-fetch",
+              "--no-refinement",
               "--configure-only",
               "--keep-out",
               "--plan", plan,
@@ -533,6 +534,30 @@ namespace bdep
     }
   }
 
+  // Return true if a space-separated list of double-quoted paths contains the
+  // specified path. All paths must me absolute and normalized.
+  //
+  static bool
+  contains (const string& l, const path& p)
+  {
+    const string& s (p.string ());
+
+    for (size_t b (0), e (0);
+         (e = l.find ('"', e)) != string::npos; // Skip leading ' '.
+         ++e)                                   // Skip trailing '"'.
+    {
+      size_t n (next_word (l, b, e, '"'));
+
+      // Both paths are normilized so we can just compare them as strings.
+      //
+      if (path::traits_type::compare (l.c_str () + b, n,
+                                      s.c_str (),     s.size ()) == 0)
+        return true;
+    }
+
+    return false;
+  }
+
   // The BDEP_SYNCED_CONFIGS environment variable.
   //
   // Note that it covers both depth and breadth (i.e., we don't restore the
@@ -557,33 +582,20 @@ namespace bdep
   synced (const dir_path& d, bool implicit, bool add = true)
   {
     string v;
-    const string& p (d.string ());
-
     if (optional<string> e = getenv (synced_name))
       v = move (*e);
 
-    for (size_t b (0), e (0);
-         (e = v.find ('"', e)) != string::npos; // Skip leading ' '.
-         ++e)                                   // Skip trailing '"'.
+    if (contains (v, d))
     {
-      size_t n (next_word (v, b, e, '"'));
-
-      // Both paths are normilized so we can just compare them as
-      // strings.
-      //
-      if (path::traits_type::compare (v.c_str () + b, n,
-                                      p.c_str (),     p.size ()) == 0)
-      {
-        if (implicit)
-          return true;
-        else
-          fail << "explicit re-synchronization of " << d;
-      }
+      if (implicit)
+        return true;
+      else
+        fail << "explicit re-synchronization of " << d;
     }
 
     if (add)
     {
-      v += (v.empty () ? "\"" : " \"") + p + '"';
+      v += (v.empty () ? "\"" : " \"") + d.string () + '"';
       setenv (synced_name, v);
     }
 
@@ -769,8 +781,8 @@ namespace bdep
     {
       // Implicit sync without an originating project.
       //
-      // Here, besides the BDEP_SYNCED_CONFIGS we also check BPKG_OPEN_CONFIG
-      // which will be set if we are called by bpkg while it has the database
+      // Here, besides the BDEP_SYNCED_CONFIGS we also check BPKG_OPEN_CONFIGS
+      // which will be set if we are called by bpkg while it has the databases
       // open.
       //
       // The question, of course, is whether it's a good idea to suppress sync
@@ -785,13 +797,13 @@ namespace bdep
       //    noop loads the buildfiles. Maybe need something like bootstrap
       //    and load meta-operation?
       //
-      optional<string> open (getenv ("BPKG_OPEN_CONFIG"));
+      optional<string> open (getenv ("BPKG_OPEN_CONFIGS"));
 
       for (dir_path d: o.config ())
       {
         normalize (d, "configuration");
 
-        if (open && d.string () == *open)
+        if (open && contains (*open, d))
           continue;
 
         if (synced (d, o.implicit (), false /* add */))
