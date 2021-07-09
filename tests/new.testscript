@@ -1836,7 +1836,7 @@ subdir=hello,no-subdir-source                                        \
   {
     $* -C prj-config @cfg prj cc $config_cxx 2>>/~"%EOE%" &prj/*** &prj-config/***;
       created new executable project prj in $~/prj/
-      created configuration @cfg $~/prj-config/ 1 default,forwarded,auto-synchronized
+      created configuration @cfg $~/prj-config/ 1 target default,forwarded,auto-synchronized
       synchronizing:
       %  new prj.+19700101000000%
       EOE
@@ -1858,7 +1858,7 @@ subdir=hello,no-subdir-source                                        \
   {
     $* -C -@cfg prj cc $config_cxx 2>>/~"%EOE%" &prj/*** &prj-cfg/***;
       created new executable project prj in $~/prj/
-      created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
+      created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
       synchronizing:
       %  new prj.+19700101000000%
       EOE

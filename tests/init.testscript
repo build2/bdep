@@ -27,7 +27,7 @@ deinit += -d prj
 
     $* -C @cfg $config_cxx 'config.cc.poptions=-DTEST' -- '?sys:libprj/*' 2>>/~"%EOE%" &prj-cfg/***;
       initializing in project $~/prj/
-      created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
+      created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
       synchronizing:
       %  configure sys:libprj.*%
       %  new prj.+19700101000000%
@@ -67,7 +67,7 @@ deinit += -d prj
 
     $* -C @cfg -- $config_cxx 'config.cc.poptions=-DTEST' -- '?sys:libprj/*' 2>>/~"%EOE%" &prj-cfg/***;
       initializing in project $~/prj/
-      created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
+      created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
       synchronizing:
       %  configure sys:libprj.*%
       %  new prj.+19700101000000%
@@ -99,7 +99,7 @@ deinit += -d prj
 
     $* -C @cfg -- -- '?sys:libprj/*' 2>>/~"%EOE%" &prj-cfg/***;
       initializing in project $~/prj/
-      created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
+      created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
       synchronizing:
       %  configure sys:libprj.*%
       %  new prj.+19700101000000%
@@ -125,20 +125,20 @@ deinit += -d prj
 
   # Pre-create configurations.
   #
-  $new  -C prj-cfg1    tmp $config_cxx 2>! &prj-cfg1/*** &tmp/***;
-  $init -C prj-cfg2 -d tmp $config_cxx 2>! &prj-cfg2/***;
+  $new  -C prj-cfg1 --no-default          tmp $config_cxx 2>! &prj-cfg1/*** &tmp/***;
+  $init -C prj-cfg2 --config-type host -d tmp $config_cxx 2>! &prj-cfg2/***;
 
   $* -A @cfg1 '?sys:libprj/*' 2>>/~"%EOE%";
     initializing in project $~/prj/
-    added configuration @cfg1 $~/prj-cfg1/ 1 default,forwarded,auto-synchronized
+    added configuration @cfg1 $~/prj-cfg1/ 1 target default,forwarded,auto-synchronized
     synchronizing:
     %  configure sys:libprj.*%
     %  new prj.+19700101000000%
     EOE
 
-  $* -A prj-cfg2 @cfg2 '?sys:libprj/*' 2>>/~"%EOE%";
+  $* -A prj-cfg2 --no-default @cfg2 '?sys:libprj/*' 2>>/~"%EOE%";
     initializing in project $~/prj/
-    added configuration @cfg2 $~/prj-cfg2/ 2 auto-synchronized
+    added configuration @cfg2 $~/prj-cfg2/ 2 host auto-synchronized
     synchronizing:
     %  configure sys:libprj.*%
     %  new prj.+19700101000000%
@@ -188,7 +188,7 @@ deinit += -d prj
 
   $* -C @cfg $config_cxx 2>>/~"%EOE%" &prj-cfg/***;
     initializing in project $~/prj/
-    created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
+    created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
     synchronizing:
     %  new prj.+19700101000000%
     EOE

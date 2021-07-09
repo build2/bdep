@@ -16,7 +16,7 @@ using namespace butl;
 
 namespace bdep
 {
-  configurations
+  pair<configurations, bool>
   find_configurations (const project_options& po,
                        const dir_path& prj,
                        transaction& t,
@@ -24,6 +24,7 @@ namespace bdep
                        bool validate)
   {
     configurations r;
+    bool fallback (false);
 
     // Weed out duplicates.
     //
@@ -99,12 +100,16 @@ namespace bdep
     {
       if (fallback_default)
       {
-        if (auto c = db.query_one<configuration> (query::default_))
+        for (shared_ptr<configuration> c:
+               pointer_result (db.query<configuration> (query::default_)))
           add (move (c));
-        else
+
+        if (r.empty ())
           fail << "no default configuration in project " << prj <<
             info << "use (@<cfg-name> | --config|-c <cfg-dir> | --all|-a) to "
-               << "specify configuration explicitly";
+                 << "specify configuration explicitly";
+
+        fallback = true;
       }
       else
         fail << "no configurations specified";
@@ -123,7 +128,7 @@ namespace bdep
       }
     }
 
-    return r;
+    return make_pair (move (r), fallback);
   }
 
   project_package
@@ -400,22 +405,38 @@ namespace bdep
 
   void
   verify_project_packages (const project_packages& pp,
-                           const configurations& cfgs)
+                           const pair<configurations, bool>& cfgs)
   {
-    for (const shared_ptr<configuration>& c: cfgs)
+    for (const package_location& p: pp.packages)
     {
-      for (const package_location& p: pp.packages)
+      bool init (false);
+
+      for (const shared_ptr<configuration>& c: cfgs.first)
       {
         if (find_if (c->packages.begin (),
                      c->packages.end (),
                      [&p] (const package_state& s)
                      {
                        return p.name == s.name;
-                     }) == c->packages.end ())
+                     }) != c->packages.end ())
         {
-          fail << "package " << p.name << " is not initialized "
-               << "in configuration " << *c;
+          init = true;
+          break;
         }
+      }
+
+      if (!init)
+      {
+        diag_record dr (fail);
+
+        dr << "package " << p.name << " is not initialized in ";
+
+        if (cfgs.second)
+          dr << "any default configuration(s)";
+        else if (cfgs.first.size () == 1)
+          dr << "configuration " << *cfgs.first.front ();
+        else
+          dr << "any specified configurations";
       }
     }
   }

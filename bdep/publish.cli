@@ -23,7 +23,7 @@ namespace bdep
 
      \c{<pkg-spec> = (\b{--directory}|\b{-d} <pkg-dir>)... | <prj-spec>\n
         <prj-spec> = \b{--directory}|\b{-d} <prj-dir>\n
-        <cfg-spec> = \b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir> | \b{--forward}}
+        <cfg-spec> = (\b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>)... | \b{--all}|\b{-a} | \b{--forward}}
 
      \h|DESCRIPTION|
 
@@ -32,7 +32,7 @@ namespace bdep
 
      If no project or package directory is specified, then the current working
      directory is assumed. If no configuration is specified, then the default
-     configuration is used to prepare the package distributions. If the
+     configurations are used to prepare the package distributions. If the
      specified directory is a project directory, then all the packages in the
      project are published. See \l{bdep-projects-configs(1)} for details on
      specifying projects and configurations.

@@ -22,7 +22,7 @@ namespace bdep
     if (c->name)
       o << '@' << *c->name << ' ';
 
-    o << c->path << ' ' << *c->id;
+    o << c->path << ' ' << *c->id << ' ' << c->type;
 
     if (flags)
     {
@@ -54,14 +54,15 @@ namespace bdep
     if (o.existing () && o.wipe ())
       fail << "both --existing|-e and --wipe specified";
 
-    return (o.default_ ()     ? "--default"      :
-            o.no_default ()   ? "--no-default"   :
-            o.forward ()      ? "--forward"      :
-            o.no_forward ()   ? "--no-forward"   :
-            o.auto_sync ()    ? "--auto-sync"    :
-            o.no_auto_sync () ? "--no-auto-sync" :
-            o.existing ()     ? "--existing|-e"  :
-            o.wipe ()         ? "--wipe"         : nullptr);
+    return (o.config_type_specified () ? "--config-type"  :
+            o.default_ ()              ? "--default"      :
+            o.no_default ()            ? "--no-default"   :
+            o.forward ()               ? "--forward"      :
+            o.no_forward ()            ? "--no-forward"   :
+            o.auto_sync ()             ? "--auto-sync"    :
+            o.no_auto_sync ()          ? "--no-auto-sync" :
+            o.existing ()              ? "--existing|-e"  :
+            o.wipe ()                  ? "--wipe"         : nullptr);
   }
 
   void
@@ -137,12 +138,14 @@ namespace bdep
   }
 
   shared_ptr<configuration>
-  cmd_config_add (const configuration_add_options& ao,
+  cmd_config_add (const common_options&            co,
+                  const configuration_add_options& ao,
                   const dir_path&                  prj,
                   const package_locations&         pkgs,
                   database&                        db,
                   dir_path                         path,
                   optional<string>                 name,
+                  optional<string>                 type,
                   optional<uint64_t>               id,
                   const char*                      what)
   {
@@ -161,8 +164,53 @@ namespace bdep
 
     verify_configuration_path (path, prj, pkgs);
 
-    optional<dir_path> rel_path;
-    try {rel_path = path.relative (prj);} catch (const invalid_path&) {}
+    // Use bpkg-cfg-info to query the configuration type, unless specified
+    // explicitly.
+    //
+    if (!type)
+    {
+      fdpipe pipe (open_pipe ()); // Text mode seems appropriate.
+
+      process pr (start_bpkg (3,
+                              co,
+                              pipe /* stdout */,
+                              2    /* stderr */,
+                              "cfg-info",
+                              "-d", path));
+
+      // Shouldn't throw, unless something is severely damaged.
+      //
+      pipe.out.close ();
+
+      bool io (false);
+      try
+      {
+        ifdstream is (move (pipe.in), fdstream_mode::skip, ifdstream::badbit);
+
+        for (string l; !eof (getline (is, l)); )
+        {
+          if (l.compare (0, 6, "type: ") == 0)
+          {
+            type = string (l, 6);
+            break;
+          }
+        }
+
+        is.close (); // Detect errors.
+
+        if (!type || type->empty ())
+          fail << "invalid bpkg-cfg-info output: no configuration type";
+      }
+      catch (const io_error&)
+      {
+        // Presumably the child process failed and issued diagnostics so let
+        // finish_bpkg() try to deal with that first.
+        //
+        io = true;
+      }
+
+      finish_bpkg (co, pr, io);
+    }
 
     transaction t (db.begin ());
 
@@ -172,36 +220,43 @@ namespace bdep
     {
       using query = bdep::query<configuration>;
 
-      // By default the first added configuration is the default.
+      // By default the first added for its type configuration is the default.
       //
       if (ao.default_ () || ao.no_default ())
         def = ao.default_ () && !ao.no_default ();
 
       if (!def)
-        def = (db.query_value<count> () == 0);
+        def = (db.query_value<count> (query::type == *type) == 0);
       else if (*def)
       {
-        if (auto p = db.query_one<configuration> (query::default_))
-          fail << "configuration " << *p << " is already the default" <<
+        if (auto p = db.query_one<configuration> (query::default_ &&
+                                                  query::type == *type))
+          fail << "configuration " << *p << " of type " << *type
+               << " is already the default" <<
             info << "use 'bdep config set --no-default' to clear";
       }
 
       // By default the default configuration is forwarded unless another is
-      // already forwarded.
+      // already forwarded for its configuration type.
       //
       if (ao.forward () || ao.no_forward ())
-        fwd = ao.forward ()  && !ao.no_forward ();
+        fwd = ao.forward () && !ao.no_forward ();
 
+      // Note: there can be multiple forwarded configurations for a type.
+      //
       if (!fwd)
-        fwd = *def && db.query_one<configuration> (query::forward) == nullptr;
+        fwd = *def &&
+              db.query_value<count> (query::forward &&
+                                     query::type == *type) == 0;
     }
 
     shared_ptr<configuration> r (
       new configuration {
         id,
         name,
+        move (*type),
         path,
-        move (rel_path),
+        path.try_relative (prj),
         *def,
         *fwd,
         !ao.no_auto_sync (),
@@ -258,6 +313,7 @@ namespace bdep
                      dir_path                         path,
                      const strings&                   args,
                      optional<string>                 name,
+                     string                           type,
                      optional<uint64_t>               id)
   {
     // Similar logic to *_add().
@@ -274,16 +330,22 @@ namespace bdep
               co,
               "create",
               "-d", path,
+              (name
+               ? strings ({"--name", *name})
+               : strings ()),
+              "--type", type,
               (ao.existing () ? "--existing" : nullptr),
               (ao.wipe ()     ? "--wipe"     : nullptr),
               args);
 
-    return cmd_config_add (ao,
+    return cmd_config_add (co,
+                           ao,
                            prj,
                            package_locations {}, // Already verified.
                            db,
                            move (path),
                            move (name),
+                           move (type),
                            id,
                            ao.existing () ? "initialized" : "created");
   }
@@ -324,11 +386,13 @@ namespace bdep
     database db (open (prj, trace));
 
     cmd_config_add (o,
+                    o,
                     prj,
                     load_packages (prj, true /* allow_empty */),
                     db,
                     move (path),
                     move (name),
+                    nullopt,     /* type */
                     move (id));
     return 0;
   }
@@ -382,7 +446,57 @@ namespace bdep
                        move (path),
                        cfg_args,
                        move (name),
+                       o.config_type (),
                        move (id));
+    return 0;
+  }
+
+  static int
+  cmd_config_link (const cmd_config_options& o, cli::scanner&)
+  {
+    tracer trace ("config_link");
+
+    // Load project configurations.
+    //
+    configurations cfgs;
+    {
+      dir_path prj (find_project (o));
+      database db (open (prj, trace));
+
+      transaction t (db.begin ());
+
+      cfgs = find_configurations (o,
+                                  prj,
+                                  t,
+                                  false /* fallback_default */,
+                                  true  /* validate         */).first;
+
+      t.commit ();
+    }
+
+    if (cfgs.size () != 2)
+      fail << "two configurations must be specified for config link";
+
+    const dir_path& cd (cfgs[0]->path);
+    const dir_path& ld (cfgs[1]->path);
+
+    // Call bpkg to link the configurations.
+    //
+    // If possible, rebase the linked configuration directory path relative to
+    // the other configuration path.
+    //
+    run_bpkg (2,
+              o,
+              "cfg-link",
+              ld.try_relative (cd) ? "--relative" : nullptr,
+              "-d", cd,
+              ld);
+
+    if (verb)
+      text << "linked configuration " << *cfgs[0] << " (" << cfgs[0]->type
+           << ") with configuration " << *cfgs[1] << " (" << cfgs[1]->type
+           << ")";
+
     return 0;
   }
 
@@ -405,7 +519,7 @@ namespace bdep
                                   prj,
                                   t,
                                   false /* fallback_default */,
-                                  false /* validate         */);
+                                  false /* validate         */).first;
     }
     else
     {
@@ -424,7 +538,6 @@ namespace bdep
     }
 
     t.commit ();
-
 
     for (const shared_ptr<configuration>& c: cfgs)
     {
@@ -467,7 +580,7 @@ namespace bdep
         fail << "invalid configuration directory '" << a << "'";
       }
 
-      try {rel_path = path.relative (prj);} catch (const invalid_path&) {}
+      rel_path = path.try_relative (prj);
     }
 
     database db (open (prj, trace));
@@ -480,7 +593,7 @@ namespace bdep
                            prj,
                            t,
                            false /* fallback_default */,
-                           false /* validate         */));
+                           false /* validate         */).first);
 
     if (cfgs.size () > 1)
       fail << "multiple configurations specified for config move";
@@ -499,6 +612,10 @@ namespace bdep
     }
 
     // Save the old path for diagnostics.
+    //
+    // @@ We should probably also adjust explicit and implicit links in the
+    //    respective bpkg configurations, if/when bpkg provides the required
+    //    API.
     //
     c->path.swap (path);
     c->relative_path = move (rel_path);
@@ -567,7 +684,7 @@ namespace bdep
                            prj,
                            t,
                            false /* fallback_default */,
-                           false /* validate         */));
+                           false /* validate         */).first);
 
     if (cfgs.size () > 1)
       fail << "multiple configurations specified for config rename";
@@ -625,7 +742,7 @@ namespace bdep
                            prj,
                            t,
                            false /* fallback_default */,
-                           false /* validate         */));
+                           false /* validate         */).first);
 
     for (const shared_ptr<configuration>& c: cfgs)
     {
@@ -683,19 +800,46 @@ namespace bdep
                            prj,
                            t,
                            false /* fallback_default */,
-                           false /* validate         */));
+                           false /* validate         */).first);
 
     for (const shared_ptr<configuration>& c: cfgs)
     {
       using query = bdep::query<configuration>;
 
+      // Verify that there is no other default or forwarded configuration with
+      // the same package as us.
+      //
+      auto verify = [&c, &db] (const query& q, const char* what)
+      {
+        for (const shared_ptr<configuration>& o:
+               pointer_result (db.query<configuration> (q)))
+        {
+          auto i (find_first_of (
+                    o->packages.begin (), o->packages.end (),
+                    c->packages.begin (), c->packages.end (),
+                    [] (const package_state& x, const package_state& y)
+                    {
+                      return x.name == y.name;
+                    }));
+
+          if (i != o->packages.end ())
+            fail << "configuration " << *o << " is also " << what << " and "
+                 << "also has package " << i->name << " initialized" <<
+              info << "while updating configuration " << *c;
+        }
+      };
+
       if (d)
       {
         if (*d && !c->default_)
         {
-          if (auto p = db.query_one<configuration> (query::default_))
-            fail << "configuration " << *p << " is already the default" <<
+          if (auto p = db.query_one<configuration> (query::default_ &&
+                                                    query::type == c->type))
+            fail << "configuration " << *p << " of type " << p->type
+                 << " is already the default" <<
               info << "while updating configuration " << *c;
+
+          verify (query::default_, "default");
         }
 
         c->default_ = *d;
@@ -704,27 +848,7 @@ namespace bdep
       if (f)
       {
         if (*f && !c->forward)
-        {
-          // Make sure there are no other forwarded configurations with the
-          // same package as us.
-          //
-          for (const shared_ptr<configuration>& o:
-                 pointer_result (db.query<configuration> (query::forward)))
-          {
-            auto i (find_first_of (
-                      o->packages.begin (), o->packages.end (),
-                      c->packages.begin (), c->packages.end (),
-                      [] (const package_state& x, const package_state& y)
-                      {
-                        return x.name == y.name;
-                      }));
-
-            if (i != o->packages.end ())
-              fail << "configuration " << *o << " is also forwarded and "
-                   << "also has package " << i->name << " initialized" <<
-                info << "while updating configuration " << *c;
-          }
-        }
+          verify (query::forward, "forwarded");
 
         c->forward = *f;
       }
@@ -768,6 +892,9 @@ namespace bdep
       if (!c.add () && !c.create () && !c.set ())
         fail << n << " not valid for this subcommand";
 
+      if (o.config_type_specified () && !c.create ())
+        fail << "--config-type is not valid for this subcommand";
+
       if (o.existing () && !c.create ())
         fail << "--existing|-e is not valid for this subcommand";
 
@@ -787,6 +914,7 @@ namespace bdep
     //
     if (c.add    ()) return cmd_config_add    (o, scan);
     if (c.create ()) return cmd_config_create (o, scan);
+    if (c.link   ()) return cmd_config_link   (o, scan);
     if (c.list   ()) return cmd_config_list   (o, scan);
     if (c.move   ()) return cmd_config_move   (o, scan);
     if (c.rename ()) return cmd_config_rename (o, scan);

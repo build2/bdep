@@ -15,7 +15,11 @@
 
 #include <bdep/project-options.hxx>
 
-#pragma db model version(1, 1, closed)
+// Used by the data migration entries.
+//
+#define DB_SCHEMA_VERSION_BASE 1
+
+#pragma db model version(DB_SCHEMA_VERSION_BASE, 2, closed)
 
 // Prevent assert() macro expansion in get/set expressions. This should appear
 // after all #include directives since the assert() macro is redefined in each
@@ -85,6 +89,7 @@ namespace bdep
     //
     optional_uint64_t  id;
     optional_string    name;
+    string             type;
     dir_path           path;
     optional_dir_path  relative_path;
 
@@ -122,6 +127,7 @@ namespace bdep
     //
     configuration (optional_uint64_t i,
                    optional_string n,
+                   string t,
                    dir_path p,
                    optional_dir_path rp,
                    bool d,
@@ -130,6 +136,7 @@ namespace bdep
                    vector<package_state> ps)
       : id (i),
         name (move (n)),
+        type (move (t)),
         path (move (p)),
         relative_path (move (rp)),
         default_ (d),
@@ -166,12 +173,15 @@ namespace bdep
 
   // Given the project directory, database, and options resolve all the
   // mentioned configurations or, unless fallback_default is false, find the
-  // default configuration if none were mentioned. Unless validate is false,
+  // default configurations if none were mentioned. Unless validate is false,
   // also validate that the configuration directories still exist.
+  //
+  // Besides configurations, also return an indication if they are retrieved
+  // as a fallback to default configurations (true if that's the case).
   //
   using configurations = vector<shared_ptr<configuration>>;
 
-  configurations
+  pair<configurations, bool>
   find_configurations (const project_options&,
                        const dir_path& prj,
                        transaction&,
@@ -255,10 +265,14 @@ namespace bdep
     return find_project_packages (o, true /* ignore_packages */).project;
   }
 
-  // Verify all the packages are present in all the configurations.
+  // Verify that each package is present in at least one configuration.
+  //
+  // Note that the default configurations fallback indication (see above) is
+  // only used for diagnostics.
   //
   void
-  verify_project_packages (const project_packages&, const configurations&);
+  verify_project_packages (const project_packages&,
+                           const pair<configurations, bool>&);
 
   // Determine the version of a package in the specified package (first
   // version) or configuration (second version) directory.

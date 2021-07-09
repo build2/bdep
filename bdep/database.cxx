@@ -8,6 +8,8 @@
 
 #include <bdep/diagnostics.hxx>
 
+#include <bdep/project.hxx>
+#include <bdep/project-odb.hxx>
 #include <bdep/database-views.hxx>
 #include <bdep/database-views-odb.hxx>
 
@@ -17,6 +19,22 @@ namespace bdep
 {
   using namespace odb::sqlite;
   using odb::schema_catalog;
+
+  // Register the data migration functions.
+  //
+  template <odb::schema_version v>
+  using migration_entry = odb::data_migration_entry<v, DB_SCHEMA_VERSION_BASE>;
+
+  static const migration_entry<2>
+  migrate_v2 ([] (odb::database& db)
+  {
+    for (const shared_ptr<configuration>& c:
+           pointer_result (db.query<configuration> ()))
+    {
+      c->type = "target";
+      db.update (c);
+    }
+  });
 
   database
   open (const dir_path& d, tracer& tr, bool create)

@@ -11,6 +11,14 @@ namespace bdep
   //
   class configuration_add_options
   {
+    string --config-type = "target"
+    {
+      "<type>",
+      "The type of the configuration being created. By default, configuration
+       of type \cb{target} is created. See \l{bpkg-cfg-create(1)} for
+       background on configuration types."
+    }
+
     bool --default
     {
       "Make the added or created configuration the default."

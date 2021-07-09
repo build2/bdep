@@ -48,15 +48,17 @@ namespace bdep
       info << "use --control to specify explicitly" << endf;
   }
 
-  // If cfg is empty, then use each package's (forwarded) source directory.
+  // Distribute packages in the specified (per-package) directories.
   //
   static int
   cmd_publish (const cmd_publish_options& o,
                const dir_path& prj,
-               const dir_path& cfg,
-               package_locations&& pkg_locs)
+               package_locations&& pkg_locs,
+               dir_paths&& dist_dirs)
   {
     using bpkg::package_manifest;
+
+    assert (pkg_locs.size () == dist_dirs.size ()); // Parallel vectors.
 
     const url& repo (o.repository ());
 
@@ -125,7 +127,7 @@ namespace bdep
     struct package
     {
       package_name     name;
-      dir_path         path;
+      dir_path         dist_dir;
       standard_version version;
       package_name     project;
       string           section; // alpha|beta|stable (or --section)
@@ -158,14 +160,14 @@ namespace bdep
           info << "use --force=uncommitted to publish anyway";
     }
 
-    for (package_location& pl: pkg_locs)
+    for (size_t i (0); i != pkg_locs.size (); ++i)
     {
-      package_name n (move (pl.name));
-      package_name p (pl.project ? move (*pl.project) : n);
+      package_location& pl (pkg_locs[i]);
 
-      standard_version v (cfg.empty ()
-                          ? package_version (o, prj / pl.path)
-                          : package_version (o, cfg, n));
+      package_name     n (move (pl.name));
+      package_name     p (pl.project ? move (*pl.project) : n);
+      dir_path         d (move (dist_dirs[i]));
+      standard_version v (package_version (o, d));
 
       // Should we allow publishing snapshots and, if so, to which section?
       // For example, is it correct to consider a "between betas" snapshot a
@@ -204,7 +206,7 @@ namespace bdep
                 v.beta ()                     ? "beta"  : "stable");
 
       pkgs.push_back (package {move (n),
-                               move (pl.path),
+                               move (d),
                                move (v),
                                move (p),
                                move (s),
@@ -269,13 +271,10 @@ namespace bdep
       // build2's version module by default does not allow distribution of
       // uncommitted projects.
       //
-      dir_path d (cfg.empty ()
-                  ? prj / p.path
-                  : dir_path (cfg) /= p.name.string ());
       run_b (
         o,
         "dist:",
-        "'" + d.representation () + "'",
+        "'" + p.dist_dir.representation () + "'",
         "config.dist.root='" + dr.representation () + "'",
         "config.dist.archives=tar.gz",
         "config.dist.checksums=sha256",
@@ -858,16 +857,17 @@ namespace bdep
 
     const dir_path& prj (pp.project);
 
-    // Unless we are using the forwarded configurations, we need a single
-    // configuration to prepare package distributions.
+    // Collect directories to distribute the packages in. In the forward mode
+    // the packages are distributed in the package's (forwarded) source
+    // directories and in their configuration directories otherwise.
     //
-    dir_path cfg_dir;
+    dir_paths dist_dirs;
 
     if (o.forward ())
     {
       // Note: in this case we don't even open the database.
       //
-      dir_paths cfgs;
+      dir_paths cfgs; // Configuration directories to sync.
 
       for (const package_location& pl: pp.packages)
       {
@@ -883,6 +883,8 @@ namespace bdep
         //
         (pi.out_root /= pi.amalgamation).normalize ();
 
+        dist_dirs.push_back (move (d));
+
         if (find (cfgs.begin (), cfgs.end (), pi.out_root) == cfgs.end ())
           cfgs.push_back (move (pi.out_root));
       }
@@ -895,31 +897,66 @@ namespace bdep
     }
     else
     {
-      shared_ptr<configuration> cfg;
+      configurations cfgs;
       {
         // Don't keep the database open longer than necessary.
         //
         database db (open (prj, trace));
 
         transaction t (db.begin ());
-        configurations cfgs (find_configurations (o, prj, t));
+        cfgs = find_configurations (o, prj, t).first;
         t.commit ();
-
-        if (cfgs.size () > 1)
-          fail << "multiple configurations specified for publish";
-
-        // Verify packages are present in the configuration.
-        //
-        verify_project_packages (pp, cfgs);
-
-        cfg = move (cfgs[0]);
       }
 
-      cmd_sync (o, prj, cfg, strings () /* pkg_args */, true /* implicit */);
+      // Configurations to sync.
+      //
+      // We could probably unify syncing configuration directories with the
+      // forward mode, however configuration name-based progress indication
+      // feels preferable for the common case.
+      //
+      configurations scs;
 
-      cfg_dir = cfg->path;
+      // Besides collecting the package directories and configurations to
+      // sync, also verify that for each package being published only one
+      // configuration, it is initialized in, is specified.
+      //
+      for (const package_location& p: pp.packages)
+      {
+        shared_ptr<configuration> pc;
+
+        for (const shared_ptr<configuration>& c: cfgs)
+        {
+          if (find_if (c->packages.begin (),
+                       c->packages.end (),
+                       [&p] (const package_state& s)
+                       {
+                         return p.name == s.name;
+                       }) != c->packages.end ())
+          {
+            if (pc != nullptr)
+              fail << "package " << p.name << " is initialized in multiple "
+                   << "specified configurations" <<
+                info << *pc <<
+                info << *c;
+
+            pc = c;
+          }
+        }
+
+        if (pc == nullptr)
+          fail << "package " << p.name << " is not initialized in any "
+               << "configuration";
+
+        dist_dirs.push_back (dir_path (pc->path) /= p.name.string ());
+
+        if (find (scs.begin (), scs.end (), pc) == scs.end ())
+          scs.push_back (move (pc));
+      }
+
+      for (const shared_ptr<configuration>& c: scs)
+        cmd_sync (o, prj, c, strings () /* pkg_args */, true /* implicit */);
     }
 
-    return cmd_publish (o, prj, cfg_dir, move (pp.packages));
+    return cmd_publish (o, prj, move (pp.packages), move (dist_dirs));
   }
 }

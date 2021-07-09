@@ -12,13 +12,17 @@
 
 namespace bdep
 {
+  // If type is nullopt, then query the bpkg configuration type.
+  //
   shared_ptr<configuration>
-  cmd_config_add (const configuration_add_options&,
+  cmd_config_add (const common_options&,
+                  const configuration_add_options&,
                   const dir_path&           prj,
                   const package_locations&,
                   database&,
                   dir_path                  path,
                   optional<string>          name,
+                  optional<string>          type,
                   optional<uint64_t>        id = nullopt,
                   const char*               what = "added");
 
@@ -31,6 +35,7 @@ namespace bdep
                      dir_path                  path,
                      const strings&            args,
                      optional<string>          name,
+                     string                    type,
                      optional<uint64_t>        id = nullopt);
 
   int

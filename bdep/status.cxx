@@ -50,34 +50,6 @@ namespace bdep
               pkgs);
   }
 
-  static void
-  cmd_status (const cmd_status_options& o,
-              const dir_path& prj,
-              const shared_ptr<configuration>& c,
-              const package_locations& ps,
-              bool fetch)
-  {
-    assert (!c->packages.empty ());
-
-    // If no packages were explicitly specified, then we print the status for
-    // all that have been initialized in the configuration.
-    //
-    strings pkgs;
-
-    if (ps.empty ())
-    {
-      for (const package_state& p: c->packages)
-        pkgs.push_back (p.name.string ());
-    }
-    else
-    {
-      for (const package_location& p: ps)
-        pkgs.push_back (p.name.string ());
-    }
-
-    cmd_status (o, prj, c->path, pkgs, fetch);
-  }
-
   int
   cmd_status (const cmd_status_options& o, cli::scanner& args)
   {
@@ -103,16 +75,23 @@ namespace bdep
 
     database db (open (prj, trace));
 
-    transaction t (db.begin ());
-    configurations cfgs (find_configurations (o, prj, t));
-    t.commit ();
+    configurations cfgs;
+    {
+      transaction t (db.begin ());
+      pair<configurations, bool> cs (find_configurations (o, prj, t));
+      t.commit ();
 
-    // If specified, verify packages are present in each configuration.
-    //
-    if (!pp.packages.empty ())
-      verify_project_packages (pp, cfgs);
+      // If specified, verify packages are present in at least one
+      // configuration.
+      //
+      if (!pp.packages.empty ())
+        verify_project_packages (pp, cs);
 
-    // Print status in each configuration skipping empty ones.
+      cfgs = move (cs.first);
+    }
+
+    // Print status in each configuration, skipping those where no package
+    // statuses needs to be printed.
     //
     bool first (true);
     for (const shared_ptr<configuration>& c: cfgs)
@@ -120,9 +99,48 @@ namespace bdep
       if (c->packages.empty ())
       {
         if (verb)
-          info << "skipping empty configuration " << *c;
+          info << "skipping configuration " << *c <<
+            info << "configuration is empty";
 
         continue;
+      }
+
+      // Collect the packages to print, unless the dependency packages are
+      // specified.
+      //
+      // If no packages were explicitly specified, then we print the status
+      // for all that have been initialized in the configuration. Otherwise,
+      // only for specified packages initialized in the (specified)
+      // configurations.
+      //
+      strings pkgs;
+
+      if (dep_pkgs.empty ())
+      {
+        const package_locations& ps (pp.packages);
+        bool all (ps.empty ());
+
+        for (const package_state& s: c->packages)
+        {
+          if (all ||
+              find_if (ps.begin (),
+                       ps.end (),
+                       [&s] (const package_location& p)
+                       {
+                         return p.name == s.name;
+                       }) != ps.end ())
+            pkgs.push_back (s.name.string ());
+        }
+
+        if (pkgs.empty ())
+        {
+          if (verb)
+            info << "skipping configuration " << *c <<
+              info << "none of specified packages initialized in this "
+                   << "configuration";
+
+          continue;
+        }
       }
 
       // If we are printing multiple configurations, separate them with a
@@ -141,10 +159,12 @@ namespace bdep
       if (fetch)
         cmd_fetch (o, prj, c, o.fetch_full ());
 
-      if (dep_pkgs.empty ())
-        cmd_status (o, prj, c, pp.packages, !fetch);
-      else
-        cmd_status (o, prj, c->path, dep_pkgs, !fetch);
+      // Status for either packages or their dependencies must be printed, but
+      // not for both.
+      //
+      assert (pkgs.empty () == !dep_pkgs.empty ());
+
+      cmd_status (o, prj, c->path, !pkgs.empty () ? pkgs : dep_pkgs, !fetch);
     }
 
     return 0;

@@ -44,56 +44,72 @@ namespace bdep
 
     const dir_path& prj (pp.project);
 
-    // Load the configurations without keeping the database open longer
-    // than necessary.
+    // Load the configurations without keeping the database open longer than
+    // necessary.
     //
     configurations cfgs;
     {
       database db (open (prj, trace));
 
       transaction t (db.begin ());
-      cfgs = find_configurations (o, prj, t);
+      pair<configurations, bool> cs (find_configurations (o, prj, t));
       t.commit ();
-    }
 
-    // If specified, verify packages are present in each configuration.
-    //
-    if (!pp.packages.empty ())
-      verify_project_packages (pp, cfgs);
+      // If specified, verify packages are present in at least one
+      // configuration.
+      //
+      if (!pp.packages.empty ())
+        verify_project_packages (pp, cs);
+
+      cfgs = move (cs.first);
+    }
 
     // If no packages were explicitly specified, then we build all that have
-    // been initialized in each configuration.
+    // been initialized in each configuration. Otherwise, we build only
+    // specified packages initialized in the (specified) configurations.
     //
-    cstrings pkgs;
+    const package_locations& pkgs (pp.packages);
 
-    bool all (pp.packages.empty ());
-    if (!all)
-    {
-      for (const package_location& p: pp.packages)
-        pkgs.push_back (p.name.string ().c_str ());
-    }
+    bool all (pkgs.empty ());
 
-    // Build in each configuration skipping empty ones.
+    // Build in each configuration, skipping those where no packages needs to
+    // be built.
     //
     bool first (true);
     for (const shared_ptr<configuration>& c: cfgs)
     {
-      if (c->packages.empty ())
-      {
-        if (verb)
-          info << "skipping empty configuration " << *c;
+      // Collect packages to build.
+      //
+      cstrings ps;
 
-        continue;
+      for (const package_state& s: c->packages)
+      {
+        if (all ||
+            find_if (pkgs.begin (),
+                     pkgs.end (),
+                     [&s] (const package_location& p)
+                     {
+                       return p.name == s.name;
+                     }) != pkgs.end ())
+          ps.push_back (s.name.string ().c_str ());
       }
 
-      // Collect packages.
-      //
-      if (all)
+      if (ps.empty ())
       {
-        pkgs.clear ();
+        if (verb)
+        {
+          diag_record dr (info);
 
-        for (const package_state& p: c->packages)
-          pkgs.push_back (p.name.string ().c_str ());
+          dr << "skipping configuration " << *c;
+
+          if (c->packages.empty ())
+            dr << info << "configuration is empty";
+          else
+            dr << info << "none of specified packages initialized in this "
+                       << "configuration";
+        }
+
+        continue;
       }
 
       // If we are printing multiple configurations, separate them with a
@@ -107,12 +123,12 @@ namespace bdep
         first = false;
       }
 
-      // Pre-sync the configuration to avoid triggering the build system
-      // hook (see sync for details).
+      // Pre-sync the configuration to avoid triggering the build system hook
+      // (see sync for details).
       //
       cmd_sync (o, prj, c, strings () /* pkg_args */, true /* implicit */);
 
-      build (o, c, pkgs, cfg_vars);
+      build (o, c, ps, cfg_vars);
     }
 
     return 0;

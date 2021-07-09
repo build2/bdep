@@ -41,9 +41,9 @@ namespace bdep
 
      If no project or package directory is specified, then the current working
      directory is assumed. If no configuration is specified, then the default
-     configuration is assumed. See \l{bdep-projects-configs(1)} for details on
-     specifying projects and configurations. Optional \c{\i{cfg-var}...} are
-     the additional configuration variables to pass to the build system.
+     configurations are assumed. See \l{bdep-projects-configs(1)} for details
+     on specifying projects and configurations. Optional \c{\i{cfg-var}...}
+     are the additional configuration variables to pass to the build system.
      "
   }
 

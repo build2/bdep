@@ -23,7 +23,7 @@ namespace bdep
                    const dir_path& cfg,
                    const strings& cfg_args,
                    bool config_add_specified,
-                   bool config_create_specified);
+                   optional<string> config_create_type);
 
   // Initialize each package in each configuration skipping those that are
   // already initialized. Then synchronize each configuration unless sync

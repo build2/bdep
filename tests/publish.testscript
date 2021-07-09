@@ -33,7 +33,7 @@ g = git -C prj >! 2>!
 # duplicate submissions. We will use unique version for each test,
 # incrementing the patch version for 1.0.X.
 #
-# Next version to use: 1.0.20
+# Next version to use: 1.0.22
 #
 
 # Normally we disable the progress indication that complicates stderr output
@@ -104,7 +104,11 @@ g = git -C prj >! 2>!
       $init -C @cfg1 &prj-cfg1/***;
       $init -C @cfg2 &prj-cfg2/***;
 
-      $* --all 2>'error: multiple configurations specified for publish' != 0
+      $* --all 2>>EOE != 0
+        error: package prj is initialized in multiple specified configurations
+          info: @cfg1
+          info: @cfg2
+        EOE
     }
 
     : snapshot
@@ -148,6 +152,42 @@ g = git -C prj >! 2>!
         %package submission is queued(: \.*libprj/1.0.2)?%d
         %reference: .{12}%
         %package submission is queued(: \.*prj/1.0.2)?%d
+        %reference: .{12}%
+        EOE
+    }
+
+    : diff-configs
+    :
+    {
+      $clone_prj;
+      sed -i -e 's/^(version:) .*$/\1 1.0.20/' prj/libprj/manifest;
+      sed -i -e 's/^(version:) .*$/\1 1.0.20/' prj/prj/manifest;
+
+      $init -C @cfg1                    -d prj/libprj &prj-cfg1/***;
+      $init -C @cfg2 --config-type host -d prj/prj    &prj-cfg2/***;
+
+      $* 2>>~%EOE%
+        %package submission is queued(: \.*libprj/1.0.20)?%d
+        %reference: .{12}%
+        %package submission is queued(: \.*prj/1.0.20)?%d
+        %reference: .{12}%
+        EOE
+    }
+
+    : diff-configs-forward
+    :
+    {
+      $clone_prj;
+      sed -i -e 's/^(version:) .*$/\1 1.0.21/' prj/libprj/manifest;
+      sed -i -e 's/^(version:) .*$/\1 1.0.21/' prj/prj/manifest;
+
+      $init -C @cfg1                    --no-default --forward -d prj/libprj &prj-cfg1/***;
+      $init -C @cfg2 --config-type host --no-default --forward -d prj/prj    &prj-cfg2/***;
+
+      $* --forward 2>>~%EOE%
+        %package submission is queued(: \.*libprj/1.0.21)?%d
+        %reference: .{12}%
+        %package submission is queued(: \.*prj/1.0.21)?%d
         %reference: .{12}%
         EOE
     }

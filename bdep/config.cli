@@ -19,6 +19,7 @@ namespace bdep
 
      \c{\b{bdep config add} \ \ \ [<options>] [<prj-spec>] [\b{@}<cfg-name>] <cfg-dir>\n
         \b{bdep config create} [<options>] [<prj-spec>] [\b{@}<cfg-name>] <cfg-dir> [<cfg-args>]\n
+        \b{bdep config link} \ \ [<options>] [<prj-spec>] <cfg-spec> <cfg-spec>\n
         \b{bdep config list} \ \ [<options>] [<prj-spec>] [<cfg-spec>...]\n
         \b{bdep config move} \ \ [<options>] [<prj-spec>] <cfg-spec> <cfg-dir>\n
         \b{bdep config rename} [<options>] [<prj-spec>] <cfg-spec> <cfg-name>\n
@@ -77,23 +78,31 @@ namespace bdep
          $ bdep config create -- @gcc cc config.cxx=g++  # ../hello-gcc
          \
 
-         Unless the \cb{--no-default} option is specified, the first added or
-         created build configuration is designated as the default. Several
-         \cb{bdep} commands use such a configuration by default if no
-         configuration was specified explicitly (see
-         \l{bdep-projects-configs(1)} for details). To make a subsequently
-         added configuration the default use the \cb{--default} option.
+         A configuration also has a type that is specified with the
+         \cb{--config-type} option. If the type is not specified explicitly,
+         then \cb{target} is assumed. See \l{bpkg-cfg-create(1)} for
+         background on configuration types.
 
-         The default build configuration is also designated as forwarded
-         unless the \cb{--no-forward} option is specified or another
-         configuration is already designated as forwarded. When a project is
-         initialized in a forwarded build configuration, its source directory
-         is configured to forward to this configuration (see \l{b(1)} for
-         details on forwarded configurations). To designate a non-default
-         configuration as forwarded use the \cb{--forward} option. Note also
-         that it is possible to have multiple forwarded configurations,
-         however, any given package within a project can only be initialized
-         in one such configuration.
+         Unless the \cb{--no-default} option is specified, the first added or
+         created build configuration of each type is designated as the
+         default. Several \cb{bdep} commands use such a configuration by
+         default if no configuration was specified explicitly (see
+         \l{bdep-projects-configs(1)} for details). To make a subsequently
+         added configuration the default use the \cb{--default} option. Note
+         also that in case of multiple default configurations any given
+         package within a project can only be initialized in one such
+         configuration.
+
+         The default build configuration of each type is also designated as
+         forwarded unless the \cb{--no-forward} option is specified or another
+         configuration of this type is already designated as forwarded. When a
+         project is initialized in a forwarded build configuration, its source
+         directory is configured to forward to this configuration (see
+         \l{b(1)} for details on forwarded configurations). To designate a
+         non-default configuration as forwarded use the \cb{--forward}
+         option. Note also that it is possible to have multiple forwarded
+         configurations, however, any given package within a project can only
+         be initialized in one such configuration.
 
          Unless the \cb{--no-auto-sync} option is specified, an added or
          created build configuration will be automatically synchronized on
@@ -101,6 +110,12 @@ namespace bdep
          build configuration and if multiple projects share the same
          configuration, then they must have a consistent auto-synchronization
          setting.|
+
+     \li|\cb{link}
+
+         The \cb{link} subcommand links one build configuration with another
+         by executing the \l{bpkg-cfg-link(1)} command. See
+         \l{bpkg-cfg-create(1)} for background on linked configurations.|
 
      \li|\cb{list}
 
@@ -145,10 +160,11 @@ namespace bdep
          (\c{\b{--}[\b{no-}]\b{forward}}), and auto-synchronization
          (\c{\b{--}[\b{no-}]\b{auto-sync}}) flags. Note that changing any of
          these flags requires an explicit \l{bdep-sync(1)} command to take
-         effect. ||"
+         effect.||"
 
     bool add;
     bool create;
+    bool link;
     bool list;
     bool move;
     bool rename;
@@ -163,7 +179,6 @@ namespace bdep
   {
     "\h|CONFIG OPTIONS|"
   };
-
 
   "
    \h|DEFAULT OPTIONS FILES|

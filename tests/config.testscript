@@ -22,10 +22,10 @@ deinit += -d prj
     $clone_root_prj;
 
     $* create @cfg cfg-dir $config_cxx 2>>/"EOE" &cfg-dir/***;
-      created configuration @cfg $~/cfg-dir/ 1 default,forwarded,auto-synchronized
+      created configuration @cfg $~/cfg-dir/ 1 target default,forwarded,auto-synchronized
       EOE
 
-    $status 2>'error: package prj is not initialized in configuration @cfg' != 0;
+    $status 2>'error: package prj is not initialized in any default configuration(s)' != 0;
 
     $init @cfg 2>>/~"%EOE%";
       initializing in project $~/prj/
@@ -36,7 +36,7 @@ deinit += -d prj
     $status >'prj configured 0.1.0-a.0.19700101000000';
 
     $* list @cfg >>/"EOO";
-      @cfg $~/cfg-dir/ 1 default,forwarded,auto-synchronized
+      @cfg $~/cfg-dir/ 1 target default,forwarded,auto-synchronized
       EOO
 
     $update @cfg 2>>~%EOE%;
@@ -56,7 +56,7 @@ deinit += -d prj
     $clone_root_prj;
 
     $* create -- @cfg $config_cxx 2>>/"EOE" &prj-cfg/***;
-      created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
+      created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
       EOE
 
     $init @cfg 2>>/~"%EOE%";
@@ -68,7 +68,7 @@ deinit += -d prj
     $status >'prj configured 0.1.0-a.0.19700101000000';
 
     $* list >>/"EOO";
-      @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
+      @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
       EOO
 
     $update @cfg 2>>~%EOE%;
@@ -88,7 +88,7 @@ deinit += -d prj
     $clone_root_prj;
 
     $* create cfg $config_cxx 2>>/"EOE" &cfg/***;
-      created configuration $~/cfg/ 1 default,forwarded,auto-synchronized
+      created configuration $~/cfg/ 1 target default,forwarded,auto-synchronized
       EOE
 
     $init -c cfg 2>>/~"%EOE%";
@@ -100,7 +100,7 @@ deinit += -d prj
     $status >'prj configured 0.1.0-a.0.19700101000000';
 
     $* list >>/"EOO";
-      $~/cfg/ 1 default,forwarded,auto-synchronized
+      $~/cfg/ 1 target default,forwarded,auto-synchronized
       EOO
 
     $update -c cfg 2>>~%EOE%;
@@ -108,6 +108,38 @@ deinit += -d prj
       EOE
 
     $deinit -c cfg 2>>/"EOE"
+      deinitializing in project $~/prj/
+      synchronizing:
+        drop prj
+      EOE
+  }
+
+  : type
+  :
+  {
+    $clone_root_prj;
+
+    $* create --config-type host -- @cfg $config_cxx 2>>/"EOE" &prj-cfg/***;
+      created configuration @cfg $~/prj-cfg/ 1 host default,forwarded,auto-synchronized
+      EOE
+
+    $init @cfg 2>>/~"%EOE%";
+      initializing in project $~/prj/
+      synchronizing:
+      %  new prj.+19700101000000%
+      EOE
+
+    $status >'prj configured 0.1.0-a.0.19700101000000';
+
+    $* list @cfg >>/"EOO";
+      @cfg $~/prj-cfg/ 1 host default,forwarded,auto-synchronized
+      EOO
+
+    $update @cfg 2>>~%EOE%;
+      %(mkdir|c\+\+|ld) .+%{3}
+      EOE
+
+    $deinit @cfg 2>>/"EOE"
       deinitializing in project $~/prj/
       synchronizing:
         drop prj
@@ -128,7 +160,7 @@ deinit += -d prj
       EOE
 
     $* create --wipe cfg $config_cxx 2>>/"EOE" &cfg/***
-      created configuration $~/cfg/ 1 default,forwarded,auto-synchronized
+      created configuration $~/cfg/ 1 target default,forwarded,auto-synchronized
       EOE
   }
 }
@@ -144,11 +176,11 @@ deinit += -d prj
   $new -C prj-cfg2 tmp2 $config_cxx 2>! &prj-cfg2/*** &tmp2/***;
 
   $* add @cfg1 prj-cfg1 2>>/"EOE";
-    added configuration @cfg1 $~/prj-cfg1/ 1 default,forwarded,auto-synchronized
+    added configuration @cfg1 $~/prj-cfg1/ 1 target default,forwarded,auto-synchronized
     EOE
 
   $* add @cfg2 prj-cfg2 2>>/"EOE";
-    added configuration @cfg2 $~/prj-cfg2/ 2 auto-synchronized
+    added configuration @cfg2 $~/prj-cfg2/ 2 target auto-synchronized
     EOE
 
   $init --all 2>>/~"%EOE%";
@@ -171,8 +203,8 @@ deinit += -d prj
     EOO
 
   $* list >>/"EOO";
-    @cfg1 $~/prj-cfg1/ 1 default,forwarded,auto-synchronized
-    @cfg2 $~/prj-cfg2/ 2 auto-synchronized
+    @cfg1 $~/prj-cfg1/ 1 target default,forwarded,auto-synchronized
+    @cfg2 $~/prj-cfg2/ 2 target auto-synchronized
     EOO
 
   $update --all 2>>~%EOE%;
@@ -201,7 +233,7 @@ deinit += -d prj
   $clone_root_prj;
 
   $* create -- @cfg $config_cxx &prj-cfg/*** 2>>/"EOE";
-    created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
+    created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
     EOE
 
   $init @cfg 2>>/~"%EOE%";
@@ -213,7 +245,7 @@ deinit += -d prj
   mv prj-cfg prj-cfg2;
 
   $* move @cfg prj-cfg2 2>>/"EOE";
-    moved configuration @cfg $~/prj-cfg/ 1 to $~/prj-cfg2/
+    moved configuration @cfg $~/prj-cfg/ 1 target to $~/prj-cfg2/
     info: explicit sync command is required for changes to take effect
     EOE
 
@@ -234,7 +266,7 @@ deinit += -d prj
   $clone_root_prj;
 
   $* create -- @cfg $config_cxx 2>>/"EOE" &prj-cfg/***;
-    created configuration @cfg $~/prj-cfg/ 1 default,forwarded,auto-synchronized
+    created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
     EOE
 
   $init @cfg 2>>/~"%EOE%";
@@ -244,7 +276,7 @@ deinit += -d prj
     EOE
 
   $* rename @cfg cfg2 2>>/"EOE";
-    renamed configuration @cfg $~/prj-cfg/ 1 to @cfg2
+    renamed configuration @cfg $~/prj-cfg/ 1 target to @cfg2
     EOE
 
   $update @cfg2 2>>~%EOE%;
@@ -283,7 +315,7 @@ deinit += -d prj
     EOE
 
   $* remove @cfg1 2>>/"EOE";
-    removed configuration @cfg1 $~/prj-cfg1/ 1
+    removed configuration @cfg1 $~/prj-cfg1/ 1 target
     EOE
 
   $status --all >>EOO;
@@ -291,7 +323,7 @@ deinit += -d prj
     EOO
 
   $* list >>/"EOO";
-    @cfg2 $~/prj-cfg2/ 2 auto-synchronized
+    @cfg2 $~/prj-cfg2/ 2 target auto-synchronized
     EOO
 
   $update 2>>/"EOE" != 0;
@@ -300,12 +332,12 @@ deinit += -d prj
     EOE
 
   $* set @cfg2 --default --forward --no-auto-sync 2>>/"EOE";
-    updated configuration @cfg2 $~/prj-cfg2/ 2 default,forwarded
+    updated configuration @cfg2 $~/prj-cfg2/ 2 target default,forwarded
     info: explicit sync command is required for changes to take effect
     EOE
 
   $* list >>/"EOO";
-    @cfg2 $~/prj-cfg2/ 2 default,forwarded
+    @cfg2 $~/prj-cfg2/ 2 target default,forwarded
     EOO
 
   $update 2>>~%EOE%;
@@ -316,5 +348,18 @@ deinit += -d prj
     deinitializing in project $~/prj/
     synchronizing:
       drop prj
+    EOE
+}
+
+: link
+:
+{
+  $clone_root_prj;
+
+  $* create -- @cfg1 $config_cxx 2>! &prj-cfg1/***;
+  $* create -- @cfg2 $config_cxx 2>! &prj-cfg2/***;
+
+  $* link @cfg1 @cfg2 2>>EOE
+    linked configuration @cfg1 (target) with configuration @cfg2 (target)
     EOE
 }

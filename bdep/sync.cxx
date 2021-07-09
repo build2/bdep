@@ -188,7 +188,7 @@ namespace bdep
   // Sync with optional upgrade.
   //
   // If upgrade is not nullopt, then: If there are dep_pkgs, then we are
-  // upgrading specific dependency packages. Othewise -- project packages.
+  // upgrading specific dependency packages. Otherwise -- project packages.
   //
   static void
   cmd_sync (const common_options& co,
@@ -743,12 +743,14 @@ namespace bdep
     if (o.directory_specified () || !o.implicit ())
     {
       // We could be running from a package directory (or the user specified
-      // one with -d) that has not been init'ed in this configuration. Unless
-      // we are upgrading specific dependencies, we want to diagnose that
-      // since such a package will not be present in the bpkg configuration.
-      // But if we are running from the project, then we don't want to treat
-      // all the available packages as specified by the user (thus
-      // load_packages is false).
+      // one with -d) that has not been init'ed in this configuration. This,
+      // however, doesn't really matter since the specified packages are only
+      // used to determine which configuration package dependencies needs to
+      // be ugraded (see cmd_sync() for details).
+      //
+      // If we are running from the project, then we don't want to treat all
+      // the available packages as specified by the user (thus load_packages
+      // is false).
       //
       project_packages pp (
         find_project_packages (o,
@@ -761,21 +763,24 @@ namespace bdep
 
       // Load project configurations.
       //
+      pair<configurations, bool> cs;
       {
         database db (open (pp.project, trace));
 
         transaction t (db.begin ());
-        cfgs = find_configurations (o, pp.project, t);
+        cs = find_configurations (o, pp.project, t);
         t.commit ();
       }
 
-      // If specified, verify packages are present in each configuration.
+      // If specified, verify packages are present in at least one
+      // configuration.
       //
       if (!pp.packages.empty ())
-        verify_project_packages (pp, cfgs);
+        verify_project_packages (pp, cs);
 
       prj = move (pp.project);
       prj_pkgs = move (pp.packages);
+      cfgs = move (cs.first);
     }
     else
     {
@@ -838,7 +843,8 @@ namespace bdep
       if (c != nullptr && c->packages.empty ())
       {
         if (verb)
-          info << "skipping empty configuration " << *c;
+          info << "skipping configuration " << *c <<
+            info << "configuration is empty";
 
         continue;
       }
@@ -857,6 +863,11 @@ namespace bdep
 
       if (!dep_pkgs.empty ())
       {
+        // We ignore the project packages if the dependencies are specified
+        // explicitly (see the above find_project_packages() call).
+        //
+        assert (prj_pkgs.empty ());
+
         // The third form: upgrade of the specified dependencies.
         //
         // Only prompt if upgrading their dependencies.
@@ -873,7 +884,7 @@ namespace bdep
                   !o.patch (), // Upgrade by default unless patch requested.
                   (o.recursive () ? optional<bool> (true)  :
                    o.immediate () ? optional<bool> (false) : nullopt),
-                  prj_pkgs,
+                  package_locations () /* prj_pkgs  */,
                   dep_pkgs);
       }
       else if (o.upgrade () || o.patch ())

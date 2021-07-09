@@ -32,8 +32,8 @@ namespace bdep
 
      If no project or package directory is specified, then the current working
      directory is assumed. If no configuration is specified, then the default
-     configuration is assumed. See \l{bdep-projects-configs(1)} for details on
-     specifying projects and configurations.
+     configurations are assumed. See \l{bdep-projects-configs(1)} for details
+     on specifying projects and configurations.
 
      If no <dep-spec> arguments are specified, then \cb{status} prints the
      status of the project's packages. Otherwise, the status of the specified

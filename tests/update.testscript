@@ -88,3 +88,46 @@ deinit += -d prj
       drop pkg2
     EOE
 }
+
+: multi-default-cfg
+:
+{
+  $new -t empty prj &prj/***;
+
+  $new --package pkg1 -d prj;
+  $new --package pkg2 -d prj;
+
+  $init -C @cfg1 -d prj/pkg1                    &prj-cfg1/***;
+  $init -C @cfg2 -d prj/pkg2 --config-type host &prj-cfg2/***;
+
+  # Update.
+  #
+  $* -d prj 2>>~%EOE%;
+    in configuration @cfg1:
+    %(mkdir|c\+\+|ld) .+pkg1.+%{3}
+
+    in configuration @cfg2:
+    %(mkdir|c\+\+|ld) .+pkg2.+%{3}
+    EOE
+
+  # Clean.
+  #
+  $clean -d prj 2>>~%EOE%;
+    in configuration @cfg1:
+    %rm .+pkg1.+%{3}
+
+    in configuration @cfg2:
+    %rm .+pkg2.+%{3}
+    EOE
+
+  $deinit 2>>/"EOE"
+    deinitializing in project $~/prj/
+    in configuration @cfg1:
+    synchronizing:
+      drop pkg1
+
+    in configuration @cfg2:
+    synchronizing:
+      drop pkg2
+    EOE
+}

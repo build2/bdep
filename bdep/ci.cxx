@@ -249,10 +249,10 @@ namespace bdep
 
     // If we are submitting the entire project, then we have two choices: we
     // can list all the packages in the project or we can only do so for
-    // packages that were initialized in the (specified) configuration(s?).
+    // packages that were initialized in the specified configurations.
     //
     // Note that other than getting the list of packages, we would only need
-    // the configuration to obtain their versions. Since we can only have one
+    // the configurations to obtain their versions. Since we can only have one
     // version for each package this is not strictly necessary but is sure a
     // good sanity check against local/remote mismatches. Also, it would be
     // nice to print the versions we are submitting in the prompt.
@@ -262,10 +262,14 @@ namespace bdep
     // has configurations for subsets of packages or some such. And in the
     // future, who knows, we could have multi-project CI.
     //
-    // So, let's go with the configuration. Specifically, if packages were
+    // So, let's go with the configurations. Specifically, if packages were
     // explicitly specified, we verify they are initialized. Otherwise, we use
-    // the list of packages that are initialized in a configuration (single
-    // for now).
+    // the list of packages that are initialized in configurations. In both
+    // cases we also verify that for each package only one configuration, it
+    // is initialized in, is specified (while we currently don't need this
+    // restriction, this may change in the future if we decide to support
+    // archive-based CI or some such).
+    //
     //
     // Note also that no pre-sync is needed since we are only getting versions
     // (via the info meta-operation).
@@ -277,51 +281,87 @@ namespace bdep
 
     const dir_path& prj (pp.project);
 
-    shared_ptr<configuration> cfg;
+    configurations cfgs;
     {
       // Don't keep the database open longer than necessary.
       //
       database db (open (prj, trace));
 
       transaction t (db.begin ());
-      configurations cfgs (find_configurations (o, prj, t));
+      cfgs = find_configurations (o, prj, t).first;
       t.commit ();
-
-      if (cfgs.size () > 1)
-        fail << "multiple configurations specified for ci";
-
-      // If specified, verify packages are present in the configuration.
-      //
-      if (!pp.packages.empty ())
-        verify_project_packages (pp, cfgs);
-
-      cfg = move (cfgs[0]);
     }
 
-    // Collect package names and their versions.
+    // Collect package names, versions, and configurations used.
     //
     struct package
     {
-      package_name     name;
-      standard_version version;
+      package_name              name;
+      standard_version          version;
+      shared_ptr<configuration> config;
     };
     vector<package> pkgs;
 
-    auto add_package = [&o, &cfg, &pkgs] (package_name n)
+    // Add a package to the list, suppressing duplicates and verifying that it
+    // is initialized in only one configuration.
+    //
+    auto add_package = [&o, &pkgs] (package_name n,
+                                    shared_ptr<configuration> c)
     {
-      standard_version v (package_version (o, cfg->path, n));
-      pkgs.push_back (package {move (n), move (v)});
+      auto i (find_if (pkgs.begin (),
+                       pkgs.end (),
+                       [&n] (const package& p) {return p.name == n;}));
+
+      if (i != pkgs.end ())
+      {
+        if (i->config == c)
+          return;
+
+        fail << "package " << n << " is initialized in multiple specified "
+             << "configurations" <<
+          info << *i->config <<
+          info << *c;
+      }
+
+      standard_version v (package_version (o, c->path, n));
+      pkgs.push_back (package {move (n), move (v), move (c)});
     };
 
     if (pp.packages.empty ())
     {
-      for (const package_state& p: cfg->packages)
-        add_package (p.name);
+      for (const shared_ptr<configuration>& c: cfgs)
+      {
+        for (const package_state& p: c->packages)
+          add_package (p.name, c);
+      }
     }
     else
     {
       for (package_location& p: pp.packages)
-        add_package (p.name);
+      {
+        bool init (false);
+
+        for (const shared_ptr<configuration>& c: cfgs)
+        {
+          if (find_if (c->packages.begin (),
+                       c->packages.end (),
+                       [&p] (const package_state& s)
+                       {
+                         return p.name == s.name;
+                       }) != c->packages.end ())
+          {
+            // Add the package, but continue the loop to detect a potential
+            // configuration ambiguity.
+            //
+            add_package (p.name, c);
+            init = true;
+          }
+        }
+
+        if (!init)
+          fail << "package " << p.name << " is not initialized in any "
+               << "configuration";
+      }
     }
 
     // Extract the interactive mode configuration and breakpoint from the

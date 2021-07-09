@@ -1,4 +1,10 @@
 <changelog xmlns="http://www.codesynthesis.com/xmlns/odb/changelog" database="sqlite" version="1">
+  <changeset version="2">
+    <alter-table name="configuration">
+      <add-column name="type" type="TEXT" null="true"/>
+    </alter-table>
+  </changeset>
+
   <model version="1">
     <table name="configuration" kind="object">
       <column name="id" type="INTEGER" null="true"/>

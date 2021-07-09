@@ -102,7 +102,11 @@ windows = ($cxx.target.class == 'windows')
     $init -C @cfg1 &prj-cfg1/***;
     $init -C @cfg2 &prj-cfg2/***;
 
-    $* --all 2>'error: multiple configurations specified for ci' != 0
+    $* --all 2>>EOE != 0
+      error: package prj is initialized in multiple specified configurations
+        info: @cfg1
+        info: @cfg2
+      EOE
   }
 
   : no-commits
@@ -386,6 +390,26 @@ windows = ($cxx.target.class == 'windows')
   {
     $clone_prj;
     $init -C @cfg &prj-cfg/***;
+
+    $* 2>>~%EOE%
+      %CI request is queued.*%
+      %reference: .+%
+      EOE
+  }
+
+  : diff-configs
+  :
+  {
+    $clone_prj;
+    $init -C @cfg1 -d prj/libprj &prj-cfg1/***;
+
+    # While at it, test that we fail for uninitialized package.
+    #
+    $* -d prj/prj 2>>EOE != 0;
+      error: package prj is not initialized in any configuration
+      EOE
+
+    $init -C @cfg2 --config-type host -d prj/prj &prj-cfg2/***;
 
     $* 2>>~%EOE%
       %CI request is queued.*%

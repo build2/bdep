@@ -20,9 +20,9 @@ namespace bdep
 
      \c{\b{bdep ci} [<options>] [<cfg-spec>] [<pkg-spec>]}
 
-     \c{<pkg-spec> = (\b{--directory}|\b{-d} <pkg-dir>)... | <prj-spec>\n
-        <prj-spec> = \b{--directory}|\b{-d} <prj-dir>\n
-        <cfg-spec> = \b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>}
+     \c{<cfg-spec> = (\b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>)... | \b{--all}|\b{-a}\n
+        <pkg-spec> = (\b{--directory}|\b{-d} <pkg-dir>)... | <prj-spec>\n
+        <prj-spec> = \b{--directory}|\b{-d} <prj-dir>}
 
      \h|DESCRIPTION|
 
@@ -31,10 +31,10 @@ namespace bdep
 
      If no project or package directory is specified, then the current working
      directory is assumed. If no configuration is specified, then the default
-     configuration is used. If the specified directory is a project directory,
-     then all the packages initialized in the configuration are submitted. See
-     \l{bdep-projects-configs(1)} for details on specifying projects and
-     configurations.
+     configurations are used. If the specified directory is a project
+     directory, then all the packages initialized in the configurations are
+     submitted. See \l{bdep-projects-configs(1)} for details on specifying
+     projects and configurations.
 
      A CI request consists of the specified packages and their versions as
      well as the project's remote version control repository URL corresponding

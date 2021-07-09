@@ -40,7 +40,7 @@ namespace bdep
       database db (open (prj, trace));
 
       transaction t (db.begin ());
-      cfgs = find_configurations (o, prj, t);
+      cfgs = find_configurations (o, prj, t).first;
       t.commit ();
     }
 

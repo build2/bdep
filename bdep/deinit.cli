@@ -32,8 +32,8 @@ namespace bdep
 
      If no project directory is specified, then the current working directory
      is assumed. If no configuration is specified, then the default
-     configuration is assumed. See \l{bdep-projects-configs(1)} for details on
-     specifying projects and configurations.
+     configurations are assumed. See \l{bdep-projects-configs(1)} for details
+     on specifying projects and configurations.
      "
   }
 

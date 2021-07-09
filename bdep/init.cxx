@@ -53,7 +53,7 @@ namespace bdep
                    const dir_path& cfg,
                    const strings& args,
                    bool ca,
-                   bool cc)
+                   optional<string> cc)
   {
     const char* m (!ca ? "--config-create" :
                    !cc ? "--config-add"    : nullptr);
@@ -66,8 +66,25 @@ namespace bdep
     cmd_config_validate_add (o, m, nm, id);
 
     return ca
-      ? cmd_config_add    (   ao, prj, ps, db, cfg,       move (nm), move (id))
-      : cmd_config_create (o, ao, prj, ps, db, cfg, args, move (nm), move (id));
+      ? cmd_config_add (o,
+                        ao,
+                        prj,
+                        ps,
+                        db,
+                        cfg,
+                        move (nm),
+                        nullopt    /* type */,
+                        move (id))
+      : cmd_config_create (o,
+                           ao,
+                           prj,
+                           ps,
+                           db,
+                           cfg,
+                           args,
+                           move (nm),
+                           move (*cc),
+                           move (id));
   }
 
   void
@@ -79,6 +96,91 @@ namespace bdep
             const strings& pkg_args,
             bool sync)
   {
+    // Return true if a package is initialized in the specified configuration.
+    //
+    auto initialized = [] (const package_location& p,
+                           const shared_ptr<configuration>& c)
+    {
+      return find_if (c->packages.begin (),
+                      c->packages.end (),
+                      [&p] (const package_state& s)
+                      {
+                        return p.name == s.name;
+                      }) != c->packages.end ();
+    };
+
+    // Verify that as a result of this operation, none of the packages will be
+    // initialized in multiple default or forwarded configurations and fail if
+    // that's not the case.
+    //
+    // Note that we perform verification in a separate loop to make sure that
+    // no actual bpkg commands are executed and no database changes are
+    // committed by the time of potential failure.
+    //
+    {
+      transaction t (db.begin ());
+
+      // For the sake of simplicity, add packages to the configuration
+      // objects, updating their state in the database (so that the changes
+      // are seen by the queries) and rollback the transaction in the
+      // end. Note that by doing so, we can end up modifying passed
+      // configuration objects and then failing, which is probably ok.
+      //
+      for (const shared_ptr<configuration>& c: cfgs)
+      {
+        for (const package_location& p: pkgs)
+        {
+          // Skip the package if it is already initialized in this
+          // configuration.
+          //
+          if (initialized (p, c))
+            continue;
+
+          // Verify that there is no other default or forwarded configuration
+          // that also has this package.
+          //
+          using query = bdep::query<configuration>;
+
+          auto verify = [&c, &p, &db, &initialized] (const query& q,
+                                                     const char* what)
+          {
+            for (const shared_ptr<configuration>& o:
+                   pointer_result (db.query<configuration> (q)))
+            {
+              if (initialized (p, o))
+              {
+                // Differ, since the package is not initialized in `c` (see
+                // above).
+                //
+                assert (o->id != c->id);
+
+                fail << what << " configuration " << *o << " also has package "
+                     << p.name << " initialized" <<
+                  info << "while initializing in " << what << " configuration "
+                     << *c <<
+                  info << "specify packages and configurations explicitly";
+              }
+            }
+          };
+
+          if (c->default_)
+            verify (query::default_, "default");
+
+          if (c->forward)
+            verify (query::forward, "forwarded");
+
+          c->packages.push_back (package_state {p.name});
+        }
+
+        db.update (c);
+      }
+
+      t.rollback ();
+    }
+
+    // Now, execute the actual bpkg commands and update configurations for
+    // real.
+    //
     // We do each configuration in a separate transaction so that our state
     // reflects the bpkg configuration as closely as possible.
     //
@@ -108,14 +210,15 @@ namespace bdep
 
       transaction t (db.begin ());
 
+      // Reload the configuration object that could have been changed during
+      // verification. This is required for skipping the already initialized
+      // packages.
+      //
+      db.reload (*c);
+
       for (const package_location& p: pkgs)
       {
-        if (find_if (c->packages.begin (),
-                     c->packages.end (),
-                     [&p] (const package_state& s)
-                     {
-                       return p.name == s.name;
-                     }) != c->packages.end ())
+        if (initialized (p, c))
         {
           if (verb)
             info << "package " << p.name << " is already initialized";
@@ -123,38 +226,11 @@ namespace bdep
           continue;
         }
 
-        // If this configuration is forwarded, verify there is no other
-        // forwarded configuration that also has this package.
-        //
-        if (c->forward)
-        {
-          using query = bdep::query<configuration>;
-
-          for (const shared_ptr<configuration>& o:
-                 pointer_result (db.query<configuration> (query::forward)))
-          {
-            if (o == c)
-              continue;
-
-            if (find_if (o->packages.begin (),
-                         o->packages.end (),
-                         [&p] (const package_state& s)
-                         {
-                           return p.name == s.name;
-                         }) != o->packages.end ())
-            {
-              fail << "forwarded configuration " << *o << " also has package "
-                   << p.name << " initialized" <<
-                info << "while initializing in forwarded configuration " << *c;
-            }
-          }
-        }
-
         // If we are initializing multiple packages or there will be no sync,
         // print their names.
         //
         if (verb && (pkgs.size () > 1 || !sync))
-          text << "initializing package " << p.name;;
+          text << "initializing package " << p.name;
 
         c->packages.push_back (package_state {p.name});
       }
@@ -190,7 +266,12 @@ namespace bdep
     tracer trace ("init");
 
     bool ca (o.config_add_specified ());
-    bool cc (o.config_create_specified ());
+
+    // Type of configuration being created, if --config-create is specified.
+    //
+    optional<string> cc (o.config_create_specified ()
+                         ? o.config_type ()
+                         : optional<string> ());
 
     if (o.empty ())
     {
@@ -203,6 +284,9 @@ namespace bdep
     {
       if (!ca && !cc)
         fail << n << " specified without --config-(add|create)";
+
+      if (o.config_type_specified () && !cc)
+        fail << "--config-type specified without --config-create";
 
       if (o.existing () && !cc)
         fail << "--existing|-e specified without --config-create";
@@ -243,11 +327,6 @@ namespace bdep
 
     configurations cfgs;
     {
-      // Make sure everyone refers to the same objects across all the
-      // transactions.
-      //
-      session s;
-
       // --config-add/create
       //
       if (ca || cc)
@@ -272,7 +351,7 @@ namespace bdep
             ca ? o.config_add () : o.config_create (),
             cfg_args,
             ca,
-            cc));
+            move (cc)));
       }
       else
       {
@@ -280,7 +359,7 @@ namespace bdep
         // wants us to use.
         //
         transaction t (db.begin ());
-        cfgs = find_configurations (o, prj, t);
+        cfgs = find_configurations (o, prj, t).first;
         t.commit ();
       }
     }

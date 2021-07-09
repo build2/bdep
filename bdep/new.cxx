@@ -242,7 +242,12 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
   // Validate options.
   //
   bool ca (o.config_add_specified ());
-  bool cc (o.config_create_specified ());
+
+  // Type of configuration being created, if --config-create is specified.
+  //
+  optional<string> cc (o.config_create_specified ()
+                       ? o.config_type ()
+                       : optional<string> ());
 
   if (o.subdirectory ())
     fail << "--subdirectory was renamed to --source";
@@ -270,6 +275,9 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
   {
     if (!ca && !cc)
       fail << n << " specified without --config-(add|create)";
+
+    if (o.config_type_specified () && !cc)
+      fail << "--config-type specified without --config-create";
 
     if (o.existing () && !cc)
       fail << "--existing|-e specified without --config-create";
@@ -3159,7 +3167,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
         ca ? o.config_add () : o.config_create (),
         cfg_args,
         ca,
-        cc)};
+        move (cc))};
 
     cmd_init (o, prj, db, cfgs, pkgs, strings () /* pkg_args */);
   }

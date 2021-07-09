@@ -113,32 +113,33 @@ namespace bdep
     configurations cfgs;
     {
       transaction t (db.begin ());
-      cfgs = find_configurations (o,
-                                  prj,
-                                  t,
-                                  true   /* fallback_default */,
-                                  !force /* validate */);
+      pair<configurations, bool> cs (
+        find_configurations (o,
+                             prj,
+                             t,
+                             true   /* fallback_default */,
+                             !force /* validate */));
       t.commit ();
-    }
 
-    // If specified, verify packages are present in each configuration.
-    //
-    if (!pp.packages.empty ())
-      verify_project_packages (pp, cfgs);
+      // If specified, verify packages are present in at least one
+      // configuration.
+      //
+      if (!pp.packages.empty ())
+        verify_project_packages (pp, cs);
+
+      cfgs = move (cs.first);
+    }
 
     // If no packages were explicitly specified, then we deinitalize all that
-    // have been initialized in each configuration.
+    // have been initialized in each configuration. Otherwise, we deinitalize
+    // only specified packages initialized in the (specified) configurations.
     //
-    strings pkgs;
+    const package_locations& pkgs (pp.packages);
 
-    bool all (pp.packages.empty ());
-    if (!all)
-    {
-      for (const package_location& p: pp.packages)
-        pkgs.push_back (p.name.string ());
-    }
+    bool all (pkgs.empty ());
 
-    // Deinitialize in each configuration skipping empty ones.
+    // Deinitialize in each configuration, skipping those where no packages
+    // needs to be deinitialized.
     //
     // We do each configuration in a separate transaction so that our state
     // reflects the bpkg configuration as closely as possible.
@@ -146,10 +147,36 @@ namespace bdep
     bool first (true);
     for (const shared_ptr<configuration>& c: cfgs)
     {
-      if (c->packages.empty ())
+      // Collect packages to deinitialize.
+      //
+      strings ps;
+
+      for (const package_state& s: c->packages)
+      {
+        if (all ||
+            find_if (pkgs.begin (),
+                     pkgs.end (),
+                     [&s] (const package_location& p)
+                     {
+                       return p.name == s.name;
+                     }) != pkgs.end ())
+          ps.push_back (s.name.string ());
+      }
+
+      if (ps.empty ())
       {
         if (verb)
-          info << "skipping empty configuration " << *c;
+        {
+          diag_record dr (info);
+
+          dr << "skipping configuration " << *c;
+
+          if (c->packages.empty ())
+            dr << info << "configuration is empty";
+          else
+            dr << info << "none of specified packages initialized in this "
+                       << "configuration";
+        }
 
         continue;
       }
@@ -167,41 +194,33 @@ namespace bdep
 
       transaction t (db.begin ());
 
-      // Collect packages to drop and remove them from the configuration.
+      // Remove collected packages from the configuration.
       //
-      if (all)
-      {
-        pkgs.clear ();
-
-        for (const package_state& p: c->packages)
-          pkgs.push_back (p.name.string ());
-      }
-
       c->packages.erase (
         remove_if (c->packages.begin (),
                    c->packages.end (),
-                   [&pkgs] (const package_state& p)
+                   [&ps] (const package_state& p)
                    {
-                     return find_if (pkgs.begin (),
-                                     pkgs.end (),
+                     return find_if (ps.begin (),
+                                     ps.end (),
                                      [&p] (const string& n)
                                      {
                                        return p.name == n;
-                                     }) != pkgs.end ();
+                                     }) != ps.end ();
                    }),
         c->packages.end ());
 
       // If we are deinitializing multiple packages, print their names.
       //
-      if (verb && pkgs.size () > 1)
+      if (verb && ps.size () > 1)
       {
-        for (const string& n: pkgs)
+        for (const string& n: ps)
           text << "deinitializing package " << n;
       }
 
       // The same story as in init with regard to the state update order.
       //
-      cmd_deinit (o, prj, c, pkgs);
+      cmd_deinit (o, prj, c, ps);
 
       db.update (c);
       t.commit ();
