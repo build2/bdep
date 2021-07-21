@@ -26,6 +26,26 @@ namespace bdep
                   optional<uint64_t>        id = nullopt,
                   const char*               what = "added");
 
+  // Configuration directory should exist and its path should be absolute and
+  // normalized.
+  //
+  shared_ptr<configuration>
+  cmd_config_add (const dir_path&         prj,
+                  transaction&,
+                  const dir_path&         path,
+                  const optional<string>& name,
+                  string                  type,
+                  bool                    default_ = true,
+                  bool                    forward = true,
+                  bool                    auto_sync = true,
+                  optional<uint64_t>      id = nullopt);
+
+  void
+  cmd_config_add_print (diag_record&,
+                        const dir_path&         prj,
+                        const dir_path&,
+                        const optional<string>& name);
+
   shared_ptr<configuration>
   cmd_config_create (const common_options&,
                      const configuration_add_options&,
@@ -37,6 +57,35 @@ namespace bdep
                      optional<string>          name,
                      string                    type,
                      optional<uint64_t>        id = nullopt);
+
+  // Configuration directory path should be absolute and normalized.
+  //
+  shared_ptr<configuration>
+  cmd_config_create (const common_options&,
+                     const dir_path&         prj,
+                     transaction&,
+                     const dir_path&         path,
+                     const optional<string>& name,
+                     string                  type,
+                     bool                    default_ = true,
+                     bool                    forward = true,
+                     bool                    auto_sync = true,
+                     bool                    existing = false,
+                     bool                    wipe = false,
+                     const strings&          args = {},
+                     optional<uint64_t>      id = nullopt);
+
+  void
+  cmd_config_create_print (diag_record&,
+                           const dir_path&         prj,
+                           const dir_path&,
+                           const optional<string>& name,
+                           const string&           type);
+
+  void
+  cmd_config_link (const common_options&,
+                   const shared_ptr<configuration>&,
+                   const shared_ptr<configuration>&);
 
   int
   cmd_config (cmd_config_options&&, cli::scanner& args);

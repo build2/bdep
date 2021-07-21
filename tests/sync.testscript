@@ -6,7 +6,8 @@
 config_cxx = cc config.cxx=$quote($recall($cxx.path) $cxx.config.mode, true)
 
 new    += 2>!
-init   += $config_cxx -d prj 2>!
+init   += 2>!
+config += 2>!
 status += --all --recursive -d prj
 deinit += -d prj
 
@@ -86,8 +87,10 @@ deinit += -d prj
   $new --package pkg1 -d prj;
   $new --package pkg2 -d prj;
 
-  $init -C @cfg1 &prj-cfg1/***;
-  $init -C @cfg2 &prj-cfg2/***;
+  init += -d prj;
+
+  $init -C @cfg1 $config_cxx &prj-cfg1/***;
+  $init -C @cfg2 $config_cxx &prj-cfg2/***;
 
   $new -t lib libprj &libprj/***;
 
@@ -200,4 +203,108 @@ deinit += -d prj
       drop libprj
       drop pkg2
     EOE
+}
+
+: dependency-config
+:
+{
+  +$new -t lib libfoo &libfoo/***
+  +$new -t lib libfix &libfix/***
+  +$new        bar    &bar/***
+
+  +cat <<EOI >+libfoo/repositories.manifest
+    :
+    role: prerequisite
+    location: ../bar
+    type: dir
+    EOI
+
+  +cat <<EOI >+libfoo/manifest
+    depends: * bar
+    EOI
+
+  +cat <<EOI >+libfix/repositories.manifest
+    :
+    role: prerequisite
+    location: ../bar
+    type: dir
+    EOI
+
+  +cat <<EOI >+libfix/manifest
+    depends: * bar
+    EOI
+
+  : create
+  {
+    cp -rp ../libfoo ./;
+    cp -rp ../libfix ./;
+    cp -rp ../bar    ./;
+
+    $init -d libfoo -C            @cfg --no-sync $config_cxx &libfoo-cfg/***;
+    $init -d libfix -A libfoo-cfg @cfg --no-sync;
+
+    $* -d libfoo 2>>~%EOE% != 0;
+      %fetching dir:.+bar \(prerequisite of dir:.+libfoo\)%
+      error: unable to find configuration of host type for build-time dependency
+        info: run sync command explicitly
+      %info: while searching for configuration for build-time dependency bar of package libfoo/.+ \[.+libfoo-cfg.\]%
+      %info: while synchronizing configuration .+libfoo-cfg.%
+      EOE
+
+    $* -d libfoo --create-host-config &libfoo-host/*** &libf??/**/bootstrap/*** 2>>~%EOE%
+      synchronizing:
+      %  new bar/.+ \[.+libfoo-host.\] \(required by libfix, libfoo\)%
+      %  new libfoo/.+%
+      %  new libfix/.+%
+      EOE
+  }
+
+  : find
+  :
+  {
+    cp -rp ../libfoo ./;
+    cp -rp ../libfix ./;
+    cp -rp ../bar    ./;
+
+    $config create -d libfoo                    @cfg  libfoo-cfg &libfoo-cfg/***;
+    $config create -d libfoo --config-type host @host host       &host/***;
+
+    $config link -d libfoo @cfg @host;
+
+    $init -d libfix -A libfoo-cfg @cfg --no-sync;
+
+    # While at it, test synchronizing via the init command.
+    #
+    $init -d libfoo @cfg &libf??/**/bootstrap/*** 2>>~%EOE%
+      %initializing in project .+libfoo.%
+      %fetching dir:.+bar \(prerequisite of dir:.+libfoo\)%
+      synchronizing:
+      %  new bar/.+ \[.+host.\] \(required by libfix, libfoo\)%
+      %  new libfoo/.+%
+      %  new libfix/.+%
+      EOE
+  }
+
+  : re-associate
+  :
+  : Test that while failing, bdep-init re-associates the automatically created
+  : build-time dependency configurations.
+  :
+  {
+    cp -rp ../libfoo ./;
+    cp -rp ../libfix ./;
+    cp -rp ../bar    ./;
+
+    cat <<EOI >+bar/manifest;
+      depends: * libbuild2-baz
+      EOI
+
+    $config create -d libfoo @cfg libfoo-cfg &libfoo-cfg/***;
+
+    $init -d libfoo --create-host-config --create-build2-config @cfg &libfoo-host/*** &libfoo-build2/*** != 0;
+
+    $config list -d libfoo >>~%EOO%
+      %(@cfg|@host|@build2).+%{3}
+      EOO
+  }
 }

@@ -36,7 +36,9 @@ namespace bdep
             const configurations&,
             const package_locations&,
             const strings& pkg_args,
-            bool sync = true);
+            bool sync = true,
+            bool create_host_config = false,
+            bool create_build2_config = false);
 
   int
   cmd_init (const cmd_init_options&, cli::group_scanner& args);

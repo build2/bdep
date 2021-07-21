@@ -12,6 +12,7 @@
 #include <bdep/project-odb.hxx>
 
 #include <bdep/fetch.hxx>
+#include <bdep/config.hxx>
 
 using namespace std;
 
@@ -185,6 +186,477 @@ namespace bdep
     }
   }
 
+  // Find/create and link a configuration suitable for build-time dependency.
+  //
+  static void
+  link_dependency_config (const common_options& co,
+                          const dir_path& cfg,
+                          const projects& prjs,
+                          const dir_path& origin_prj,
+                          const shared_ptr<configuration>& origin_config,
+                          const strings& dep_chain,
+                          bool create_host_config,
+                          bool create_build2_config,
+                          transaction* tr,
+                          vector<pair<dir_path, string>>* created_cfgs,
+                          tracer& trace)
+  {
+    // If the configuration is required, then the bpkg output contains the
+    // build-time dependency line followed by the dependent lines (starting
+    // from the immediate dependent; see bpkg-pkg-build(1) for details).
+    //
+    if (dep_chain.size () < 2)
+      fail << "invalid bpkg-pkg-build output: invalid dependency chain";
+
+    // Extract the build-time dependency package name.
+    //
+    package_name dep;
+
+    try
+    {
+      const string& l (dep_chain[0]);
+      dep = package_name (string (l, 0, l.find (' ')));
+    }
+    catch (const invalid_argument& e)
+    {
+      fail << "invalid bpkg-pkg-build output line '" << dep_chain[0]
+           << "': invalid package name: " << e;
+    }
+
+    // Determine the required configuration type.
+    //
+    string dep_type (dep.string ().compare (0, 10, "libbuild2-") == 0
+                     ? "build2"
+                     : "host");
+
+    // Extract the dependent package names, versions, and configuration
+    // directories. Note that these configurations can differ from the
+    // configuration which we are syncing.
+    //
+    struct dependent
+    {
+      package_name  name;
+      bpkg::version version;
+      dir_path      config;
+
+      // Parse the bpkg's output's dependent line.
+      //
+      explicit
+      dependent (const string& line)
+      {
+        const char* ep ("invalid bpkg-pkg-build output line ");
+
+        size_t n (line.find (' '));
+
+        try
+        {
+          if (n == string::npos)
+            throw invalid_path ("");
+
+          config = dir_path (string (line, n + 1));
+        }
+        catch (const invalid_path&)
+        {
+          fail << ep << "'" << line << "': invalid dependent package "
+               << "configuration directory";
+        }
+
+        string s (line, 0, n);
+
+        try
+        {
+          name = bpkg::extract_package_name (s);
+        }
+        catch (const invalid_argument& e)
+        {
+          fail << ep << "'" << line << "': invalid dependent package "
+               << "name: " << e;
+        }
+
+        try
+        {
+          version = bpkg::extract_package_version (s);
+
+          if (version.empty ())
+            fail << ep << "'" << line << "': dependent package version is "
+                 << "not specified";
+        }
+        catch (const invalid_argument& e)
+        {
+          fail << ep << "'" << line << "': invalid dependent package "
+               << "version: " << e;
+        }
+      }
+    };
+    vector<dependent> dependents;
+
+    for (size_t i (1); i != dep_chain.size (); ++i)
+      dependents.emplace_back (dep_chain[i]);
+
+    // Check if the specified configuration is associated with the specified
+    // project returning its configuration object if found and NULL
+    // otherwise.
+    //
+    auto find_config = [&origin_config, &origin_prj] (database& db,
+                                                      const dir_path& prj,
+                                                      const dir_path& cfg)
+    {
+      // Note that this is not merely an optimization since the origin
+      // configuration can be changed but not updated in the database yet (see
+      // cmd_init() for a use case).
+      //
+      if (origin_config != nullptr   &&
+          origin_config->path == cfg &&
+          origin_prj == prj)
+        return origin_config;
+
+      using query = bdep::query<configuration>;
+      return db.query_one<configuration> (query::path == cfg.string ());
+    };
+
+    // Given that we can potentially be inside a transaction started on the
+    // origin project's database, the transaction handling is a bit
+    // complicated.
+    //
+    // If the transaction is specified, then assumed it is started on the
+    // specified project's database and so just wrap it.
+    //
+    // Otherwise, open the project database and start the transaction on it,
+    // stashing the current transaction, if present. In destructor restore the
+    // current transaction, if stashed.
+    //
+    class database_transaction
+    {
+    public:
+      database_transaction (transaction* t, const dir_path& prj, tracer& tr)
+          : ct_ (nullptr)
+      {
+        if (t == nullptr)
+        {
+          if (transaction::has_current ())
+          {
+            ct_ = &transaction::current ();
+            transaction::reset_current ();
+          }
+
+          db_.reset (new database_type (open (prj, tr)));
+          t_.reset (db_->begin ());
+        }
+        else
+          ct_ = t;
+      }
+
+      ~database_transaction ()
+      {
+        if (ct_ != nullptr && db_ != nullptr)
+          transaction::current (*ct_);
+      }
+
+      void
+      commit ()
+      {
+        if (!t_.finalized ())
+          t_.commit ();
+      }
+
+      using database_type = bdep::database;
+
+      database_type&
+      database ()
+      {
+        assert (db_ != nullptr || ct_ != nullptr);
+        return db_ != nullptr ? *db_ : ct_->database ();
+      }
+
+      static transaction&
+      current ()
+      {
+        return transaction::current ();
+      }
+
+    private:
+      transaction               t_;
+      transaction*              ct_; // Current transaction.
+      unique_ptr<database_type> db_;
+    };
+
+    // Show how we got here (used for both info and text).
+    //
+    auto add_info = [&dep, &dependents, &cfg] (const basic_mark& bm)
+    {
+      const dependent& dpt (dependents[0]);
+      bm << "while searching for configuration for build-time dependency "
+         << dep << " of package " << dpt.name << "/" << dpt.version
+         << " [" << dpt.config << "]";
+      bm << "while synchronizing configuration " << cfg;
+    };
+
+    // Show how we got here if things go wrong.
+    //
+    // To suppress printing this information clear the dependency package name
+    // before throwing an exception.
+    //
+    auto g (make_exception_guard ([&dep, &add_info] ()
+                                  {
+                                    if (!dep.empty ())
+                                      add_info (info);
+                                  }));
+
+    // The immediate dependent configuration directory (the one which needs to
+    // be linked with the build-time dependency configuration).
+    //
+    const dir_path& dpt_dir (dependents[0].config);
+
+    // Now find the "source" project along with the associated immediate
+    // dependent configuration and the associated build-time dependency
+    // configuration, if present.
+    //
+    // Note that if we end up creating the dependency configuration, then we
+    // also need to associate it with all other projects. Such an association
+    // can potentially be redundant for some of them. However, it's hard to
+    // detect if a project other than the "source" also depends on a package
+    // which will be built in this newly created configuration. Generally, it
+    // feels worse not to associate when required than create a redundant
+    // association.
+    //
+    // The "source" project comes first.
+    //
+    vector<reference_wrapper<const dir_path>> dpt_prjs;
+
+    // Immediate dependent configuration, which is associated with the
+    // "source" project and needs to be linked with the build-time dependency
+    // configuration.
+    //
+    shared_ptr<configuration> dpt_cfg;
+
+    // Configuration associated with the "source" project and suitable for
+    // building the build-time dependency. NULL if such a configuration
+    // doesn't exist and needs to be created.
+    //
+    shared_ptr<configuration> dep_cfg;
+
+    for (const dependent& dpt: dependents)
+    {
+      for (const project& prj: prjs)
+      {
+        database_transaction t (prj.path == origin_prj ? tr : nullptr,
+                                prj.path,
+                                trace);
+
+        database& db (t.database ());
+
+        // Check if the project is associated with the immediate dependent's
+        // configuration and also the source of the configured (not
+        // necessarily immediate) dependent package belongs to it. If that's
+        // the case, we will use this project as a "source" of the build-time
+        // dependency configuration.
+        //
+        if (shared_ptr<configuration> dtc =
+            find_config (db, prj.path, dpt_dir))
+        {
+          shared_ptr<configuration> dc (find_config (db,
+                                                     prj.path,
+                                                     dpt.config));
+
+          if (dc != nullptr &&
+              find_if (dc->packages.begin (),
+                       dc->packages.end (),
+                       [&dpt] (const package_state& s)
+                       {
+                         return dpt.name == s.name;
+                       }) != dc->packages.end ())
+            dpt_cfg = move (dtc);
+        }
+
+        if (dpt_cfg != nullptr)
+        {
+          // Try to find an associated configuration of the suitable type.
+          //
+          using query = bdep::query<configuration>;
+
+          dep_cfg = db.query_one<configuration> (query::default_ &&
+                                                 query::type == dep_type);
+
+          if (dep_cfg == nullptr)
+          {
+            for (shared_ptr<configuration> c:
+                   pointer_result (
+                     db.query<configuration> (query::type == dep_type)))
+            {
+              if (dep_cfg == nullptr)
+              {
+                dep_cfg = move (c);
+              }
+              else
+                fail << "multiple configurations of " << dep_type
+                     << " type associated with project " << prj.path <<
+                  info << dep_cfg->path <<
+                  info << c->path <<
+                  info << "consider making one of them the default";
+            }
+          }
+
+          // Collect the projects that need to be associated with the
+          // dependency configuration (the "source" project comes first).
+          //
+          dpt_prjs.push_back (prj.path);
+
+          if (dep_cfg == nullptr) // Need to create the config?
+          {
+            for (const project& p: prjs)
+            {
+              if (p.path != prj.path)
+              {
+                for (shared_ptr<configuration> c:
+                       pointer_result (
+                         db.query<configuration> (query::type == dep_type)))
+                  fail << "project " << p.path << " is already associated "
+                       << "with configuration of " << dep_type << " type" <<
+                    info << "configuration of " << dep_type << " type: "
+                       << c->path <<
+                    info << "consider associating it with project "
+                       << prj.path;
+
+                dpt_prjs.push_back (p.path);
+              }
+            }
+          }
+        }
+
+        t.commit ();
+
+        if (!dpt_prjs.empty ())
+          break; // Bail out from the loop over the projects.
+      }
+
+      if (!dpt_prjs.empty ())
+        break; // Bail out from the loop over the dependents.
+    }
+
+    // Fail if no "source" project is found.
+    //
+    if (dpt_prjs.empty ())
+      fail << "build-time dependency " << dep << " cannot be attributed to "
+           << "any project";
+
+    // If no configuration of the suitable type is found, then create it and
+    // associate with all the projects involved.
+    //
+    if (dep_cfg == nullptr)
+    {
+      const dir_path& src_prj (dpt_prjs[0]);
+
+      // Path to the build-time dependency configuration which needs to be
+      // created.
+      //
+      dir_path dep_dir (dpt_dir.directory () / src_prj.leaf ());
+      dep_dir += "-";
+      dep_dir += dep_type;
+
+      // Unless explicitly allowed via the respective create_*_config
+      // argument, prompt the user before performing any action. But fail if
+      // stderr is redirected.
+      //
+      if (!((dep_type == "host"   && create_host_config) ||
+            (dep_type == "build2" && create_build2_config)))
+      {
+        if (!stderr_term)
+          fail << "unable to find configuration of " << dep_type
+               << " type for build-time dependency" <<
+            info << "run sync command explicitly";
+
+        {
+          diag_record dr (text);
+
+          // Separate prompt from some potential bpkg output (repository
+          // fetch, etc).
+          //
+          dr << '\n'
+             << "creating configuration of " << dep_type << " type in "
+             << dep_dir << '\n'
+             << "and associate it with projects:" << '\n';
+
+          for (const dir_path& d: dpt_prjs)
+            dr << "  " << d << '\n';
+
+          dr << "as if by executing commands:" << '\n';
+
+          dr << "  ";
+          cmd_config_create_print (dr, src_prj, dep_dir, dep_type, dep_type);
+
+          for (size_t i (1); i != dpt_prjs.size (); ++i)
+          {
+            dr << "\n  ";
+            cmd_config_add_print (dr, dpt_prjs[i], dep_dir, dep_type);
+          }
+        }
+
+        add_info (text);
+
+        if (!yn_prompt ("continue? [Y/n]", 'y'))
+        {
+          // The dependency information have already been printed, so
+          // suppress printing it repeatedly by the above exception guard.
+          //
+          dep = package_name ();
+
+          throw failed ();
+        }
+      }
+
+      // Verify that the configuration directory doesn't exist yet (we do it
+      // after the prompt to give the user some context).
+      //
+      if (exists (dep_dir))
+        fail << "configuration directory " << dep_dir << " already exists";
+
+      bool create (true);
+      for (const dir_path& prj: dpt_prjs)
+      {
+        database_transaction t (prj == origin_prj ? tr : nullptr,
+                                prj,
+                                trace);
+
+        if (create)
+        {
+          // Before we committed the newly created dependency configuration
+          // association to the project database or linked the dependent
+          // configuration to it, we can safely remove it on error.
+          //
+          auto_rmdir rmd (dep_dir);
+
+          dep_cfg = cmd_config_create (co,
+                                       prj,
+                                       transaction::current (),
+                                       dep_dir,
+                                       dep_type /* name */,
+                                       dep_type);
+
+          cmd_config_link (co, dpt_cfg, dep_cfg);
+
+          rmd.cancel ();
+
+          if (created_cfgs != nullptr)
+            created_cfgs->emplace_back (dep_dir, dep_type);
+
+          create = false;
+        }
+        else
+        {
+          cmd_config_add (prj,
+                          transaction::current (),
+                          dep_dir,
+                          dep_type /* name */,
+                          dep_type /* type */);
+        }
+
+        t.commit ();
+      }
+    }
+    else
+      cmd_config_link (co, dpt_cfg, dep_cfg);
+  }
+
   // Sync with optional upgrade.
   //
   // If upgrade is not nullopt, then: If there are dep_pkgs, then we are
@@ -203,10 +675,27 @@ namespace bdep
             optional<bool> upgrade,   // true - upgrade,   false - patch
             optional<bool> recursive, // true - recursive, false - immediate
             const package_locations& prj_pkgs,
-            const strings&           dep_pkgs)
+            const strings&           dep_pkgs,
+            bool create_host_config,
+            bool create_build2_config,
+            transaction* tr = nullptr,
+            vector<pair<dir_path, string>>* created_cfgs = nullptr)
   {
+    tracer trace ("cmd_sync");
+
     assert (origin_config == nullptr || !origin_config->packages.empty ());
     assert (prj_pkgs.empty () || dep_pkgs.empty ()); // Can't have both.
+
+    // If a transaction is specified, then it must be started on the origin
+    // project's database (which therefore must be specified) and it must be
+    // the current.
+    //
+    if (tr != nullptr)
+      assert (!origin_prj.empty () && tr == &transaction::current ());
+
+    // Must both be either specified or not.
+    //
+    assert ((tr == nullptr) == (created_cfgs == nullptr));
 
     projects prjs;
 
@@ -375,17 +864,153 @@ namespace bdep
     }
     plan += ':';
 
-    run_bpkg (2,
-              co,
-              "build",
-              "-d", cfg,
-              "--no-fetch",
-              "--no-refinement",
-              "--configure-only",
-              "--keep-out",
-              "--plan", plan,
-              (yes ? "--yes" : nullptr),
-              args);
+    // Now configure the requested packages, preventing bpkg-pkg-build from
+    // creating private configurations for build-time dependencies and
+    // providing them ourselves on demand.
+    //
+    // Specifically, if the build-time dependency configuration needs to be
+    // provided, then the plan is as follows:
+    //
+    // 1. Select a project which we can use as a "source" of the build-time
+    //    dependency configuration: use its associated configuration of a
+    //    suitable type, if exist, or create a new one using this project's
+    //    name as a stem.
+    //
+    //    Such a project needs to have the immediate dependent configuration
+    //    associated and contain a source directory of some of the dependents,
+    //    not necessary immediate but the closer to the dependency the better.
+    //    Not being able to find such a project is an error.
+    //
+    // 2. If the "source" project already has a default configuration of the
+    //    suitable type associated, then use that. Otherwise, if the project
+    //    has a single configuration of the suitable type associated, then use
+    //    that. Otherwise, if the project has no suitable configuration
+    //    associated, then create it. Fail if multiple such configurations are
+    //    associated.
+    //
+    // 3. If the dependency configuration needs to be created then perform the
+    //    following steps:
+    //
+    //    - Confirm with the user the list of commands as-if to be executed,
+    //      unless the respective create_*_config argument is true.
+    //
+    //    - Create the configuration.
+    //
+    //    - Associate the created configuration with the "source" project and
+    //      all other projects, which should have no configurations of this
+    //      type associated (fail if that's not the case before creating
+    //      anything).
+    //
+    // 4. Link the immediate dependent configuration with the dependency
+    //    configuration (either found via the "source" project or newly
+    //    created).
+    //
+    // 5. Re-run bpkg-pkg-build and if it turns out that (another) build-time
+    //    dependency configuration is required, then go to p.1.
+    //
+    for (;;)
+    {
+      // Run bpkg with the --no-private-config option, so that it reports the
+      // need for the build-time dependency configuration via the specified
+      // exit code.
+      //
+      bool need_config (false);
+      strings dep_chain;
+      {
+        fdpipe pipe (open_pipe ()); // Text mode seems appropriate.
+
+        process pr (start_bpkg (2,
+                                co,
+                                pipe /* stdout */,
+                                2    /* stderr */,
+                                "build",
+                                "-d", cfg,
+                                "--no-fetch",
+                                "--no-refinement",
+                                "--no-private-config", 125,
+                                "--configure-only",
+                                "--keep-out",
+                                "--plan", plan,
+                                (yes ? "--yes" : nullptr),
+                                args));
+
+        // Shouldn't throw, unless something is severely damaged.
+        //
+        pipe.out.close ();
+
+        // Note that we need to try reading the dependency chain before we
+        // even know that the build-time dependency configuration will be
+        // required (not to block the process).
+        //
+        bool io (false);
+        try
+        {
+          ifdstream is (move (pipe.in),
+                        fdstream_mode::skip,
+                        ifdstream::badbit);
+
+          for (string l; !eof (getline (is, l)); )
+            dep_chain.push_back (move (l));
+
+          is.close (); // Detect errors.
+        }
+        catch (const io_error&)
+        {
+          // Presumably the child process failed and issued diagnostics.
+          //
+          io = true;
+        }
+
+        // Handle the process exit, detecting if the build-time dependency
+        // configuration is required.
+        //
+        if (!pr.wait ())
+        {
+          const process_exit& e (*pr.exit);
+
+          if (e.normal ())
+          {
+            need_config = (e.code () == 125);
+
+            if (!need_config)
+              throw failed (); // Assume the child issued diagnostics.
+          }
+          else
+            fail << "process " << name_bpkg (co) << " " << e;
+        }
+
+        if (io)
+          fail << "error reading " << name_bpkg (co) << " output";
+      }
+
+      // Bail out if no build-time dependency configuration is required, but
+      // make sure there is no unexpected bpkg output first (think some
+      // buildfile printing junk to stdout).
+      //
+      if (!need_config)
+      {
+        if (!dep_chain.empty ())
+        {
+          diag_record dr (fail);
+          dr << "unexpected " << name_bpkg (co) << " output:";
+          for (const string& s: dep_chain)
+            dr << '\n' << s ;
+        }
+
+        break;
+      }
+
+      link_dependency_config (co,
+                              cfg,
+                              prjs,
+                              origin_prj, origin_config,
+                              dep_chain,
+                              create_host_config,
+                              create_build2_config,
+                              tr,
+                              created_cfgs,
+                              trace);
+    }
 
     // Handle configuration forwarding.
     //
@@ -610,7 +1235,11 @@ namespace bdep
             bool implicit,
             bool fetch,
             bool yes,
-            bool name_cfg)
+            bool name_cfg,
+            bool create_host_config,
+            bool create_build2_config,
+            transaction* t,
+            vector<pair<dir_path, string>>* created_cfgs)
   {
     if (!synced (c->path, implicit))
       cmd_sync (co,
@@ -625,7 +1254,11 @@ namespace bdep
                 nullopt              /* upgrade   */,
                 nullopt              /* recursive */,
                 package_locations () /* prj_pkgs  */,
-                strings ()           /* dep_pkgs  */);
+                strings ()           /* dep_pkgs  */,
+                create_host_config,
+                create_build2_config,
+                t,
+                created_cfgs);
   }
 
   void
@@ -633,7 +1266,9 @@ namespace bdep
                      const dir_path& cfg,
                      bool fetch,
                      bool yes,
-                     bool name_cfg)
+                     bool name_cfg,
+                     bool create_host_config,
+                     bool create_build2_config)
   {
     if (!synced (cfg, true /* implicit */))
       cmd_sync (co,
@@ -641,14 +1276,16 @@ namespace bdep
                 dir_path (),
                 nullptr,
                 strings (),
-                true /* implicit */,
+                true                  /* implicit */,
                 fetch,
                 yes,
                 name_cfg,
-                nullopt              /* upgrade   */,
-                nullopt              /* recursive */,
-                package_locations () /* prj_pkgs  */,
-                strings ()           /* dep_pkgs  */);
+                nullopt               /* upgrade   */,
+                nullopt               /* recursive */,
+                package_locations ()  /* prj_pkgs  */,
+                strings ()            /* dep_pkgs  */,
+                create_host_config,
+                create_build2_config);
   }
 
   int
@@ -736,6 +1373,7 @@ namespace bdep
     package_locations prj_pkgs;
     configurations cfgs;
     dir_paths cfg_dirs;
+    bool default_fallback (false);
 
     // In the implicit mode we don't search the current working directory
     // for a project.
@@ -781,6 +1419,7 @@ namespace bdep
       prj = move (pp.project);
       prj_pkgs = move (pp.packages);
       cfgs = move (cs.first);
+      default_fallback = cs.second;
     }
     else
     {
@@ -830,6 +1469,7 @@ namespace bdep
 
     // Synchronize each configuration.
     //
+    bool empty (true); // All configurations are empty.
     for (size_t i (0), n (cfgs.size ()); i != n; ++i)
     {
       const shared_ptr<configuration>& c (cfgs[i]); // Can be NULL.
@@ -838,18 +1478,29 @@ namespace bdep
       // Check if this configuration is already (being) synchronized.
       //
       if (synced (cd, o.implicit ()))
+      {
+        empty = false;
         continue;
+      }
 
       // Skipping empty ones.
       //
+      // Note that we would normally be printing that for build-time
+      // dependency configurations (which normally will not have any
+      // initialized packages) and that would be annying. So we suppress it in
+      // case of the default configuration fallback (but also check and warn
+      // if all of them were empty below).
+      //
       if (c != nullptr && c->packages.empty ())
       {
-        if (verb)
+        if (verb && !default_fallback)
           info << "skipping configuration " << *c <<
             info << "configuration is empty";
 
         continue;
       }
+
+      empty = false;
 
       // If we are synchronizing multiple configurations, separate them with a
       // blank line and print the configuration name/directory.
@@ -879,15 +1530,17 @@ namespace bdep
                   prj,
                   c,
                   pkg_args,
-                  false /* implicit */,
+                  false                    /* implicit */,
                   !fetch,
                   o.recursive () || o.immediate () ? o.yes () : true,
-                  false /* name_cfg */,
+                  false                    /* name_cfg */,
                   !o.patch (), // Upgrade by default unless patch requested.
                   (o.recursive () ? optional<bool> (true)  :
                    o.immediate () ? optional<bool> (false) : nullopt),
-                  package_locations () /* prj_pkgs  */,
-                  dep_pkgs);
+                  package_locations ()     /* prj_pkgs  */,
+                  dep_pkgs,
+                  o.create_host_config (),
+                  o.create_build2_config ());
       }
       else if (o.upgrade () || o.patch ())
       {
@@ -899,14 +1552,16 @@ namespace bdep
                   prj,
                   c,
                   pkg_args,
-                  false /* implicit */,
+                  false                    /* implicit */,
                   !fetch,
                   o.yes (),
-                  false /* name_cfg */,
+                  false                    /* name_cfg */,
                   o.upgrade (),
                   o.recursive (),
                   prj_pkgs,
-                  strings () /* dep_pkgs  */);
+                  strings ()               /* dep_pkgs  */,
+                  o.create_host_config (),
+                  o.create_build2_config ());
       }
       else
       {
@@ -922,13 +1577,21 @@ namespace bdep
                   pkg_args,
                   o.implicit (),
                   !fetch,
-                  true                 /* yes       */,
-                  o.implicit ()        /* name_cfg  */,
-                  nullopt              /* upgrade   */,
-                  nullopt              /* recursive */,
-                  package_locations () /* prj_pkgs  */,
-                  strings ()           /* dep_pkgs  */);
+                  true                     /* yes       */,
+                  o.implicit ()            /* name_cfg  */,
+                  nullopt                  /* upgrade   */,
+                  nullopt                  /* recursive */,
+                  package_locations ()     /* prj_pkgs  */,
+                  strings ()               /* dep_pkgs  */,
+                  o.create_host_config (),
+                  o.create_build2_config ());
       }
+    }
+
+    if (empty && default_fallback)
+    {
+      if (verb)
+        info << "no packages initialized in default configuration(s)";
     }
 
     return 0;

@@ -93,8 +93,8 @@ namespace bdep
 
   using butl::path_cast;
 
-  using paths = std::vector<path>;
-  using dir_paths = std::vector<dir_path>;
+  using paths = vector<path>;
+  using dir_paths = vector<dir_path>;
 
   // <libbutl/process.mxx>
   //

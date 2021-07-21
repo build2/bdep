@@ -173,6 +173,18 @@ namespace bdep
        build configurations. The initialization can be finished later with
        an explicit \l{bdep-sync(1)} command."
     }
+
+    bool --create-host-config
+    {
+      "Create a configuration for build-time dependencies without prompt (see
+       \l{bdep-sync(1)} for details)."
+    }
+
+    bool --create-build2-config
+    {
+      "Create a configuration for build system module dependencies without
+       prompt (see \l{bdep-sync(1)} for details)."
+    }
   };
 
   "

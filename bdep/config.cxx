@@ -151,6 +151,88 @@ namespace bdep
   }
 
   shared_ptr<configuration>
+  cmd_config_add (const dir_path&         prj,
+                  transaction&            t,
+                  const dir_path&         path,
+                  const optional<string>& name,
+                  string                  type,
+                  bool                    default_,
+                  bool                    forward,
+                  bool                    auto_sync,
+                  optional<uint64_t>      id)
+  {
+    shared_ptr<configuration> r (
+      new configuration {
+        id,
+        name,
+        move (type),
+        path,
+        path.try_relative (prj),
+        default_,
+        forward,
+        auto_sync,
+        {} /* packages */});
+
+    database& db (t.database ());
+
+    try
+    {
+      db.persist (r);
+    }
+    catch (const odb::exception&)
+    {
+      //@@ TODO: Maybe redo by querying the conflicting configuration and then
+      //         printing its path, line in rename? Also do it before persist.
+
+      using count = configuration_count;
+      using query = bdep::query<count>;
+
+      // See if this is id, name, or path conflict.
+      //
+      if (id && db.query_value<count> (query::id == *id) != 0)
+        fail << "configuration with id " << *id << " already exists "
+             << "in project " << prj;
+
+      if (name && db.query_value<count> (query::name == *name) != 0)
+        fail << "configuration with name '" << *name << "' already exists "
+             << "in project " << prj;
+
+      if (db.query_value<count> (query::path == path.string ()) != 0)
+        fail << "configuration with directory " << path << " already exists "
+             << "in project " << prj;
+
+      // Hm, what could that be?
+      //
+      throw;
+    }
+
+    return r;
+  }
+
+  // Quote the directory if it contains spaces.
+  //
+  static string
+  quote (const dir_path& d)
+  {
+    const string& s (d.string ());
+    return s.find (' ') == string::npos ? s : '"' + s + '"';
+  }
+
+  void
+  cmd_config_add_print (diag_record& dr,
+                        const dir_path& prj,
+                        const dir_path& path,
+                        const optional<string>& name)
+  {
+    dr << "bdep config add -d " << quote (prj);
+
+    if (name)
+      dr << " @" << *name;
+
+    dr << ' ' << quote (path);
+  }
+
+  shared_ptr<configuration>
   cmd_config_add (const common_options&            co,
                   const configuration_add_options& ao,
                   const dir_path&                  prj,
@@ -264,46 +346,15 @@ namespace bdep
     }
 
     shared_ptr<configuration> r (
-      new configuration {
-        id,
-        name,
-        move (*type),
-        path,
-        path.try_relative (prj),
-        *def,
-        *fwd,
-        !ao.no_auto_sync (),
-        {} /* packages */});
-
-    try
-    {
-      db.persist (r);
-    }
-    catch (const odb::exception&)
-    {
-      //@@ TODO: Maybe redo by querying the conflicting configuration and then
-      //         printing its path, line in rename? Also do it before persist.
-
-      using query = bdep::query<count>;
-
-      // See if this is id, name, or path conflict.
-      //
-      if (id && db.query_value<count> (query::id == *id) != 0)
-        fail << "configuration with id " << *id << " already exists "
-             << "in project " << prj;
-
-      if (name && db.query_value<count> (query::name == *name) != 0)
-        fail << "configuration with name '" << *name << "' already exists "
-             << "in project " << prj;
-
-      if (db.query_value<count> (query::path == path.string ()) != 0)
-        fail << "configuration with directory " << path << " already exists "
-             << "in project " << prj;
-
-      // Hm, what could that be?
-      //
-      throw;
-    }
+      cmd_config_add (prj,
+                      t,
+                      path,
+                      name,
+                      move (*type),
+                      *def,
+                      *fwd,
+                      !ao.no_auto_sync (),
+                      id));
 
     t.commit ();
 
@@ -315,6 +366,76 @@ namespace bdep
     }
 
     return r;
+  }
+
+  // Call bpkg to create the configuration.
+  //
+  static void
+  create_config (const common_options&   co,
+                 const dir_path&         path,
+                 const optional<string>& name,
+                 const string&           type,
+                 bool                    existing,
+                 bool                    wipe,
+                 const strings&          args)
+  {
+    run_bpkg (2,
+              co,
+              "create",
+              "-d", path,
+              (name
+               ? strings ({"--name", *name})
+               : strings ()),
+              "--type", type,
+              (existing ? "--existing" : nullptr),
+              (wipe     ? "--wipe"     : nullptr),
+              "--no-host-config",
+              "--no-build2-config",
+              args);
+  }
+
+  void
+  cmd_config_create_print (diag_record& dr,
+                           const dir_path& prj,
+                           const dir_path& path,
+                           const optional<string>& name,
+                           const string& type)
+  {
+    dr << "bdep config create -d " << quote (prj)
+       << " --config-type " << type;
+
+    if (name)
+      dr << " @" << *name;
+
+    dr << ' ' << quote (path);
+  }
+
+  shared_ptr<configuration>
+  cmd_config_create (const common_options&   co,
+                     const dir_path&         prj,
+                     transaction&            t,
+                     const dir_path&         path,
+                     const optional<string>& name,
+                     string                  type,
+                     bool                    default_,
+                     bool                    forward,
+                     bool                    auto_sync,
+                     bool                    existing,
+                     bool                    wipe,
+                     const strings&          args,
+                     optional<uint64_t>      id)
+  {
+    create_config (co, path, name, type, existing, wipe, args);
+
+    return cmd_config_add (prj,
+                           t,
+                           path,
+                           name,
+                           move (type),
+                           default_,
+                           forward,
+                           auto_sync,
+                           id);
   }
 
   shared_ptr<configuration>
@@ -337,19 +458,7 @@ namespace bdep
 
     verify_configuration_path (path, prj, pkgs);
 
-    // Call bpkg to create the configuration.
-    //
-    run_bpkg (2,
-              co,
-              "create",
-              "-d", path,
-              (name
-               ? strings ({"--name", *name})
-               : strings ()),
-              "--type", type,
-              (ao.existing () ? "--existing" : nullptr),
-              (ao.wipe ()     ? "--wipe"     : nullptr),
-              args);
+    create_config (co, path, name, type, ao.existing (), ao.wipe (), args);
 
     return cmd_config_add (co,
                            ao,
@@ -361,6 +470,27 @@ namespace bdep
                            move (type),
                            id,
                            ao.existing () ? "initialized" : "created");
+  }
+
+  void
+  cmd_config_link (const common_options& o,
+                   const shared_ptr<configuration>& cc,
+                   const shared_ptr<configuration>& lc)
+  {
+    const dir_path& cd (cc->path);
+    const dir_path& ld (lc->path);
+
+    // Call bpkg to link the configurations.
+    //
+    // If possible, rebase the linked configuration directory path relative to
+    // the other configuration path.
+    //
+    run_bpkg (2,
+              o,
+              "cfg-link",
+              ld.try_relative (cd) ? "--relative" : nullptr,
+              "-d", cd,
+              ld);
   }
 
   static int
@@ -490,20 +620,7 @@ namespace bdep
     if (cfgs.size () != 2)
       fail << "two configurations must be specified for config link";
 
-    const dir_path& cd (cfgs[0]->path);
-    const dir_path& ld (cfgs[1]->path);
-
-    // Call bpkg to link the configurations.
-    //
-    // If possible, rebase the linked configuration directory path relative to
-    // the other configuration path.
-    //
-    run_bpkg (2,
-              o,
-              "cfg-link",
-              ld.try_relative (cd) ? "--relative" : nullptr,
-              "-d", cd,
-              ld);
+    cmd_config_link (o, cfgs[0], cfgs[1]);
 
     if (verb)
       text << "linked configuration " << *cfgs[0] << " (" << cfgs[0]->type

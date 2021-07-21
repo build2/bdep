@@ -67,6 +67,13 @@ namespace bdep
      Note also that \c{\b{--immediate}|\b{-i}} or \c{\b{--recursive}|\b{-r}}
      can only be specified with an explicit \cb{--upgrade} or \cb{--patch}.
 
+     If during synchronization a build-time dependency is encountered and
+     there is no build configuration of a suitable type associated with the
+     project, then the user is prompted (unless the respective
+     \cb{--create-*-config} option is specified) to automatically create such
+     a configuration and associate it with the project. See
+     \l{bpkg-cfg-create(1)} for background on configuration types.
+
      \h|EXAMPLES|
 
      As an example, consider project \cb{prj} with two packages, \cb{foo}
@@ -203,6 +210,17 @@ namespace bdep
     bool --yes|-y
     {
       "Don't prompt for confirmation when up/down-grading dependencies."
+    }
+
+    bool --create-host-config
+    {
+      "Create a configuration for build-time dependencies without prompt."
+    }
+
+    bool --create-build2-config
+    {
+      "Create a configuration for build system module dependencies without
+       prompt."
     }
 
     bool --implicit

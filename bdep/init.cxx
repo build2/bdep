@@ -94,7 +94,9 @@ namespace bdep
             const configurations& cfgs,
             const package_locations& pkgs,
             const strings& pkg_args,
-            bool sync)
+            bool sync,
+            bool create_host_config,
+            bool create_build2_config)
   {
     // Return true if a package is initialized in the specified configuration.
     //
@@ -208,55 +210,90 @@ namespace bdep
                 "--type", "dir",
                 prj);
 
-      transaction t (db.begin ());
+      vector<pair<dir_path, string>> created_cfgs;
 
-      // Reload the configuration object that could have been changed during
-      // verification. This is required for skipping the already initialized
-      // packages.
-      //
-      db.reload (*c);
-
-      for (const package_location& p: pkgs)
+      try
       {
-        if (initialized (p, c))
-        {
-          if (verb)
-            info << "package " << p.name << " is already initialized";
+        transaction t (db.begin ());
 
-          continue;
+        // Reload the configuration object that could have been changed during
+        // verification. This is required for skipping the already initialized
+        // packages.
+        //
+        db.reload (*c);
+
+        for (const package_location& p: pkgs)
+        {
+          if (initialized (p, c))
+          {
+            if (verb)
+              info << "package " << p.name << " is already initialized";
+
+            continue;
+          }
+
+          // If we are initializing multiple packages or there will be no sync,
+          // print their names.
+          //
+          if (verb && (pkgs.size () > 1 || !sync))
+            text << "initializing package " << p.name;
+
+          c->packages.push_back (package_state {p.name});
         }
 
-        // If we are initializing multiple packages or there will be no sync,
-        // print their names.
+        // Should we sync then commit the database or commit and then sync?
+        // Either way we can end up with an inconsistent state. Note, however,
+        // that the state in the build configuration can in most cases be
+        // corrected with a retry (e.g., "upgrade" the package to the fixed
+        // version, etc) while if we think (from the database state) that the
+        // package has already been initialized, then there will be no way to
+        // retry anything (though it could probably be corrected with a sync
+        // or, failed that, deinit/init).
         //
-        if (verb && (pkgs.size () > 1 || !sync))
-          text << "initializing package " << p.name;
+        // However, there is a drawback to doing it this way: if we trigger an
+        // implicit sync (e.g., via a hook) of something that uses the same
+        // database, we will get the "database is used by another process"
+        // error. This can be worked around by disabling the implicit sync
+        // (BDEP_SYNC=0).
+        //
+        // Note: semantically equivalent to the first form of the sync
+        // command.
+        //
+        if (sync)
+          cmd_sync (o,
+                    prj,
+                    c,
+                    pkg_args,
+                    false     /* implicit */,
+                    true      /* fetch */,
+                    true      /* yes */,
+                    false     /* name_cfg */,
+                    create_host_config,
+                    create_build2_config,
+                    &t,
+                    &created_cfgs);
 
-        c->packages.push_back (package_state {p.name});
+        db.update (c);
+        t.commit ();
       }
+      catch (const failed&)
+      {
+        if (!created_cfgs.empty ())
+        {
+          transaction t (db.begin ());
 
-      // Should we sync then commit the database or commit and then sync?
-      // Either way we can end up with an inconsistent state. Note, however,
-      // that the state in the build configuration can in most cases be
-      // corrected with a retry (e.g., "upgrade" the package to the fixed
-      // version, etc) while if we think (from the database state) that the
-      // package has already been initialized, then there will be no way to
-      // retry anything (though it could probably be corrected with a sync or,
-      // failed that, deinit/init).
-      //
-      // However, there is a drawback to doing it this way: if we trigger an
-      // implicit sync (e.g., via a hook) of something that uses the same
-      // database, we will get the "database is used by another process"
-      // error. This can be worked around by disabling the implicit sync
-      // (BDEP_SYNC=0).
-      //
-      // Note: semantically equivalent to the first form of the sync command.
-      //
-      if (sync)
-        cmd_sync (o, prj, c, pkg_args, false /* implicit */);
+          for (const auto& c: created_cfgs)
+            cmd_config_add (prj,
+                            t,
+                            c.first  /* path */,
+                            c.second /* name */,
+                            c.second /* type */);
 
-      db.update (c);
-      t.commit ();
+          t.commit ();
+        }
+
+        throw;
+      }
     }
   }
 
@@ -372,7 +409,9 @@ namespace bdep
               cfgs,
               pp.packages,
               scan_arguments (args) /* pkg_args */,
-              !o.no_sync ());
+              !o.no_sync (),
+              o.create_host_config (),
+              o.create_build2_config ());
 
     return 0;
   }

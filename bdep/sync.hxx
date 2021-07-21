@@ -20,6 +20,21 @@ namespace bdep
   // name_cfg is true then include the configuration name/directory into
   // progress.
   //
+  // Before automatically creating a configuration for a build-time dependency
+  // and associating it with the project(s), the user is prompted unless the
+  // respective create_*_config argument is true.
+  //
+  // If the transaction is already started on the project's database, then it
+  // must also be passed to the function along with a pointer to the
+  // configuration paths/types list. If the function will be associating
+  // build-time dependency configurations with the project, it will do it as
+  // part of this transaction and will also save the created dependency
+  // configurations into this list. If this transaction is rolled back for any
+  // reason (for example, because the failed exception is thrown by cmd_sync()
+  // call), then the caller must start the new transaction and re-associate
+  // the created configurations with the project using the configuration types
+  // also as their names.
+  //
   void
   cmd_sync (const common_options&,
             const dir_path& prj,
@@ -28,7 +43,11 @@ namespace bdep
             bool implicit,
             bool fetch = true,
             bool yes = true,
-            bool name_cfg = false);
+            bool name_cfg = false,
+            bool create_host_config = false,
+            bool create_build2_config = false,
+            transaction* = nullptr,
+            vector<pair<dir_path, string>>* created_cfgs = nullptr);
 
   // As above but perform an implicit sync without a configuration object
   // (i.e., as if from the hook).
@@ -38,11 +57,12 @@ namespace bdep
                      const dir_path& cfg,
                      bool fetch = true,
                      bool yes = true,
-                     bool name_cfg = true);
+                     bool name_cfg = true,
+                     bool create_host_config = false,
+                     bool create_build2_config = false);
 
   int
   cmd_sync (cmd_sync_options&&, cli::group_scanner& args);
-
 
   // Return the list of additional (to prj, if not empty) projects that are
   // using this configuration.
