@@ -125,7 +125,19 @@ namespace bdep
         {
           // Migrate the database if necessary.
           //
-          schema_catalog::migrate (db);
+          odb::schema_version sv  (db.schema_version ());
+          odb::schema_version scv (schema_catalog::current_version (db));
+
+          if (sv != scv)
+          {
+            if (sv < schema_catalog::base_version (db))
+              fail << "project " << d << " is too old";
+
+            if (sv > scv)
+              fail << "project " << d << " is too new";
+
+            schema_catalog::migrate (db);
+          }
         }
 
         t.commit ();
