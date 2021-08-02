@@ -257,7 +257,7 @@ g = git -C prj >! 2>!
     +$g config user.name  'Test Script'
     +$g config user.email 'testscript@example.com'
     +$g add '*'
-    +$g commit -m 'Create'
+    +$g commit -m 'Create' --no-verify
 
     : final
     :
@@ -595,7 +595,7 @@ g = git -C prj >! 2>!
     # the build2-control branch, so the subsequent publishing fails.
     #
     $g add '*';
-    $g commit -m 'Create';
+    $g commit -m 'Create' --no-verify;
     $g push --set-upstream origin master;
 
     $* 2>>~%EOE% != 0;

@@ -32,7 +32,7 @@ g = git -C prj 2>! >&2
 +$g config user.email 'testscript@example.com'
 +$g remote add origin $~/prj.git
 +$g add '*'
-+$g commit -m 'Create'
++$g commit -m 'Create' --no-verify
 +$g push --set-upstream origin master
 
 # Repository the CI-ed packages come from.

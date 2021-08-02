@@ -33,7 +33,7 @@ log = $gp log '--pretty=format:"%d %s"'
 +$gp config user.email 'testscript@example.com'
 +$gp remote add origin ../prj.git
 +$gp add '*'
-+$gp commit -m 'Create'
++$gp commit -m 'Create' --no-verify
 +$gp push --set-upstream origin master
 
 clone_prj      = cp --no-cleanup -pr ../prj ./ &prj/***
