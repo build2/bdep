@@ -147,7 +147,7 @@ template <typename O>
 static O
 init (const common_options& co,
       cli::group_scanner& scan,
-      strings& args,
+      strings& args, cli::vector_scanner& args_scan,
       const char* cmd,
       bool keep_sep,
       bool tmp)
@@ -201,6 +201,11 @@ init (const common_options& co,
     //
     scan_argument (args, scan);
   }
+
+  // Carry over the positions of the arguments. In particular, this can be
+  // used to get the max position for the options.
+  //
+  args_scan.reset (0, scan.position ());
 
   // Note that the diagnostics verbosity level can only be calculated after
   // default options are loaded and merged (see below). Thus, to trace the
@@ -342,7 +347,14 @@ try
          << system_error (errno, generic_category ()); // Sanitize.
 #endif
 
-  argv_file_scanner argv_scan (argc, argv, "--options-file");
+  // We want the positions of the command line arguments to be after the
+  // default options files (parsed in init()). Normally that would be achieved
+  // by passing the last position of the previous scanner to the next. The
+  // problem is that we parse the command line arguments first (for good
+  // reasons). So as a somewhat hackish work around, we are going to "reserve"
+  // 256 positions for the default options files.
+  //
+  argv_file_scanner argv_scan (argc, argv, "--options-file", false, 256);
   group_scanner scan (argv_scan);
 
   // First parse common options and --version/--help.
@@ -361,15 +373,15 @@ try
   }
 
   strings argsv; // To be filled by parse() above.
-  vector_scanner vect_args (argsv);
-  group_scanner args (vect_args);
+  vector_scanner scanv (argsv);
+  group_scanner args (scanv);
 
   const common_options& co (o);
 
   if (o.help ())
     return help (init<help_options> (co,
                                      scan,
-                                     argsv,
+                                     argsv, scanv,
                                      "help",
                                      false /* keep_sep */,
                                      false /* tmp */),
@@ -391,7 +403,7 @@ try
   {
     ho = init<help_options> (co,
                              scan,
-                             argsv,
+                             argsv, scanv,
                              "help",
                              false /* keep_sep */,
                              false /* tmp */);
@@ -436,6 +448,7 @@ try
     //    r = cmd_new (init<cmd_new_options> (co,
     //                                        scan,
     //                                        argsv,
+    //                                        scanv,
     //                                        false /* keep_sep */,
     //                                        true  /* tmp */),
     //                 args);
@@ -452,6 +465,7 @@ try
         r = cmd_##FN (init<cmd_##FN##_options> (co,    \
                                                 scan,  \
                                                 argsv, \
+                                                scanv, \
                                                 SN,    \
                                                 SEP,   \
                                                 TMP),  \
