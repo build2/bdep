@@ -804,8 +804,10 @@ namespace bdep
       //
       optional<string> open (getenv ("BPKG_OPEN_CONFIGS"));
 
-      for (dir_path d: o.config ())
+      for (const pair<dir_path, size_t>& c: o.config ())
       {
+        dir_path d (c.first);
+
         normalize (d, "configuration");
 
         if (open && contains (*open, d))
@@ -955,7 +957,11 @@ namespace bdep
     {
       add ("sync-implicit");
 
-      r.start = default_options_start (home_directory (), o.config ());
+      const vector<pair<dir_path, size_t>>& cs (o.config ());
+      r.start = default_options_start (home_directory (),
+                                       cs.begin (),
+                                       cs.end (),
+                                       [] (auto i) {return i->first;});
     }
     else
     {

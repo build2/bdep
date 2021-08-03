@@ -42,48 +42,83 @@ namespace bdep
     database& db (t.database ());
     using query = bdep::query<configuration>;
 
-    // @<cfg-name>
-    //
-    if (po.config_name_specified ())
     {
-      for (const string& n: po.config_name ())
-      {
-        if (auto c = db.query_one<configuration> (query::name == n))
-          add (move (c));
-        else
-          fail << "no configuration name '" << n << "' in project " << prj;
-      }
-    }
+      // @<cfg-name>
+      //
+      const vector<pair<string, size_t>>& ns (po.config_name ());
+      auto ni (ns.begin ());
+      auto ne (ns.end ());
 
-    // --config <cfg-dir>
-    //
-    if (po.config_specified ())
-    {
-      for (dir_path d: po.config ())
-      {
-        normalize (d, "configuration");
+      // --config <cfg-dir>
+      //
+      const vector<pair<dir_path, size_t>>& ds (po.config ());
+      auto di (ds.begin ());
+      auto de (ds.end ());
 
-        if (auto c = db.query_one<configuration> (query::path == d.string ()))
-          add (move (c));
-        else
-          fail << "no configuration directory " << d << " in project " << prj;
-      }
-    }
+      // --config-id <cfg-num>
+      //
+      const vector<pair<uint64_t, size_t>>& is (po.config_id ());
+      auto ii (is.begin ());
+      auto ie (is.end ());
 
-    // --config-id <cfg-num>
-    //
-    if (po.config_id_specified ())
-    {
-      for (uint64_t id: po.config_id ())
+      // Return true if the first options range is not empty and position of
+      // its leftmost option is less than positions in two other option
+      // ranges.
+      //
+      auto lt = [] (auto oi1, auto oe1, auto oi2, auto oe2, auto oi3, auto oe3)
       {
-        if (auto c = db.find<configuration> (id))
-          add (move (c));
+        return oi1 != oe1 &&
+               (oi2 == oe2 || oi2->second > oi1->second) &&
+               (oi3 == oe3 || oi3->second > oi1->second);
+      };
+
+      while (ni != ne || di != de || ii != ie)
+      {
+        if (lt (ni, ne, di, de, ii, ie))
+        {
+          const string& n (ni->first);
+
+          if (auto c = db.query_one<configuration> (query::name == n))
+            add (move (c));
+          else
+            fail << "no configuration name '" << n << "' in project " << prj;
+
+          ++ni;
+        }
+        else if (lt (di, de, ii, ie, ni, ne))
+        {
+          dir_path d (di->first);
+
+          normalize (d, "configuration");
+
+          if (auto c = db.query_one<configuration> (query::path ==
+                                                    d.string ()))
+            add (move (c));
+          else
+            fail << "no configuration directory " << d << " in project "
+                 << prj;
+
+          ++di;
+        }
+        else if (lt (ii, ie, ni, ne, di, de))
+        {
+          uint64_t id (ii->first);
+
+          if (auto c = db.find<configuration> (id))
+            add (move (c));
+          else
+            fail << "no configuration id " << id << " in project " << prj;
+
+          ++ii;
+        }
         else
-          fail << "no configuration id " << id << " in project " << prj;
+          assert (false);
       }
     }
 
     // --all
+    //
+    // Add configurations unordered.
     //
     if (po.all ())
     {
@@ -95,6 +130,8 @@ namespace bdep
     }
 
     // default
+    //
+    // Add configurations unordered.
     //
     if (r.empty ())
     {

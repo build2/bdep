@@ -75,13 +75,13 @@ namespace bdep
     // Note that this is also used as storage for configuration names
     // specified as @<name>.
     //
-    strings --config-name|-n
+    vector<pair<string, size_t>> --config-name|-n
     {
       "<name>",
       "Specify the build configuration as a name."
     };
 
-    vector<uint64_t> --config-id
+    vector<pair<uint64_t, size_t>> --config-id
     {
       "<num>",
       "Specify the build configuration as an id."
@@ -98,7 +98,7 @@ namespace bdep
       "Use all build configurations."
     }
 
-    dir_paths --config|-c
+    vector<pair<dir_path, size_t>> --config|-c
     {
       "<dir>",
       "Specify the build configuration as a directory."

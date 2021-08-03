@@ -79,7 +79,7 @@ namespace bdep
       if (n > 1)
         fail << "multiple configuration names specified for " << what;
 
-      name = o.config_name ()[0];
+      name = o.config_name ()[0].first;
     }
 
     if (size_t n = o.config_id ().size ())
@@ -87,7 +87,7 @@ namespace bdep
       if (n > 1)
         fail << "multiple configuration ids specified for " << what;
 
-      id = o.config_id ()[0];
+      id = o.config_id ()[0].first;
     }
   }
 
@@ -673,13 +673,13 @@ namespace bdep
     }
     else
     {
-      strings& ns (o.config_name ());
+      vector<pair<string, size_t>>& ns (o.config_name ());
       size_t n (ns.size ());
 
       if (n > 1 || (n == 1 && (o.config_specified () ||
                                o.config_id_specified ())))
       {
-        name = move (ns.back ());
+        name = move (ns.back ().first);
         ns.pop_back ();
       }
       else

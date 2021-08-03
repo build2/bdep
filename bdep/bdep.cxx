@@ -112,14 +112,14 @@ namespace bdep
 // arguments and place them into configuration_name_options::config_name.
 //
 static inline bool
-cfg_name (configuration_name_options* o, const char* a)
+cfg_name (configuration_name_options* o, const char* a, size_t p)
 {
   string n (a);
 
   if (n.empty ())
     fail << "empty configuration name";
 
-  o->config_name ().push_back (move (n));
+  o->config_name ().emplace_back (move (n), p);
   o->config_name_specified (true);
   return true;
 }
@@ -182,8 +182,9 @@ init (const common_options& co,
 
       // @<cfg-name> & -@<cfg-name>
       //
-      if ((*a == '@' &&                cfg_name (&o, a + 1)) ||
-          (*a == '-' && a[1] == '@' && cfg_name (&o, a + 2)))
+      size_t p (scan.position ());
+      if ((*a == '@' &&                cfg_name (&o, a + 1, p)) ||
+          (*a == '-' && a[1] == '@' && cfg_name (&o, a + 2, p)))
       {
         scan.next ();
         continue;
