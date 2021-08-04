@@ -120,7 +120,8 @@ namespace bdep
     name = move (s);
   }
 
-  // Verify the configuration directory is not inside one of the packages.
+  // Verify the configuration directory is not inside one of the packages or
+  // the project itself if it has a glue buildfile.
   //
   static void
   verify_configuration_path (const dir_path& cfg,
@@ -134,6 +135,18 @@ namespace bdep
       if (cfg.sub (d))
         fail << "configuration directory " << cfg << " is inside package "
              << p.name << " (" << d << ")";
+    }
+
+    if (cfg.sub (prj))
+    {
+      path bf;
+      if (exists (bf = prj / "buildfile") || exists (bf = prj / "build2file"))
+      {
+        fail << "configuration directory " << cfg << " is inside project "
+             << "directory " << prj <<
+          info << "remove glue " << bf << " if you would like to keep "
+             << "configurations inside your project";
+      }
     }
   }
 
