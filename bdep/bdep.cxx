@@ -5,6 +5,7 @@
 #  include <signal.h> // signal()
 #endif
 
+#include <limits>
 #include <cstring>     // strcmp()
 #include <iostream>
 #include <exception>   // set_terminate(), terminate_handler
@@ -102,6 +103,20 @@ namespace bdep
   int
   main (int argc, char* argv[]);
 }
+
+// Command line arguments starting position.
+//
+// We want the positions of the command line arguments to be after the default
+// options files (parsed in init()). Normally that would be achieved by
+// passing the last position of the previous scanner to the next. The problem
+// is that we parse the command line arguments first (for good reasons). Also
+// the default options files parsing machinery needs the maximum number of
+// arguments to be specified and assigns the positions below this value (see
+// load_default_options() for details). So we are going to "reserve" the first
+// half of the size_t value range for the default options positions and the
+// second half for the command line arguments positions.
+//
+static const size_t args_pos (numeric_limits<size_t>::max () / 2);
 
 // Initialize the command option class O with the common options and then
 // parse the rest of the command line placing non-option arguments to args.
@@ -256,8 +271,14 @@ init (const common_options& co,
               trace << "loading " << (r ? "remote " : "local ") << f;
           }
         },
-        "--options-file"),
+        "--options-file",
+        args_pos,
+        1024),
       o);
+  }
+  catch (const invalid_argument& e)
+  {
+    fail << "unable to load default options files: " << e;
   }
   catch (const pair<path, system_error>& e)
   {
@@ -348,14 +369,7 @@ try
          << system_error (errno, generic_category ()); // Sanitize.
 #endif
 
-  // We want the positions of the command line arguments to be after the
-  // default options files (parsed in init()). Normally that would be achieved
-  // by passing the last position of the previous scanner to the next. The
-  // problem is that we parse the command line arguments first (for good
-  // reasons). So as a somewhat hackish work around, we are going to "reserve"
-  // 256 positions for the default options files.
-  //
-  argv_file_scanner argv_scan (argc, argv, "--options-file", false, 256);
+  argv_file_scanner argv_scan (argc, argv, "--options-file", false, args_pos);
   group_scanner scan (argv_scan);
 
   // First parse common options and --version/--help.
