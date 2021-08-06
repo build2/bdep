@@ -227,6 +227,38 @@ deinit += -d prj
     EOE
 }
 
+: add-host-linked
+:
+: Test that the warning is issued when we add configuration that has a host
+: configuration linked to it, unless it is already associated with the
+: project.
+:
+{
+  $clone_root_prj;
+
+  $* create                    @cfg      &prj-cfg/***      2>!;
+  $* create --config-type host @host-cfg &prj-host-cfg/*** 2>!;
+
+  $* link @cfg @host-cfg 2>!;
+
+  $* remove --all 2>!;
+
+  $* add @cfg 2>>/"EOE";
+    added configuration @cfg $~/prj-cfg/ 3 target default,forwarded,auto-synchronized
+    warning: added configuration @cfg already linked with host configurations
+      info: configuration of host type: $~/prj-host-cfg/
+      info: consider adding them to this project
+    EOE
+
+  $* remove --all 2>!;
+
+  $* add @host-cfg 2>!;
+
+  $* add @cfg 2>>/"EOE"
+    added configuration @cfg $~/prj-cfg/ 5 target default,forwarded,auto-synchronized
+    EOE
+}
+
 : move
 :
 {

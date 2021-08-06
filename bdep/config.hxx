@@ -12,7 +12,10 @@
 
 namespace bdep
 {
-  // If type is nullopt, then query the bpkg configuration type.
+  // If type is nullopt, then assume that an existing configuration is being
+  // added. If that's the case, query the bpkg configuration type and links
+  // and warn the user if any host or build2 configurations are linked, unless
+  // they are already associated with the project.
   //
   shared_ptr<configuration>
   cmd_config_add (const common_options&,

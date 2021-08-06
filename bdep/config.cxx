@@ -259,9 +259,12 @@ namespace bdep
 
     verify_configuration_path (path, prj, pkgs);
 
-    // Use bpkg-cfg-info to query the configuration type, unless specified
-    // explicitly.
+    // If an existing configuration is being added, then use bpkg-cfg-info to
+    // query the configuration type and links, collecting the linked host
+    // configuration paths/types.
     //
+    vector<pair<dir_path, string>> host_configs;
+
     if (!type)
     {
       fdpipe pipe (open_pipe ()); // Text mode seems appropriate.
@@ -271,6 +274,7 @@ namespace bdep
                               pipe /* stdout */,
                               2    /* stderr */,
                               "cfg-info",
+                              "--link",
                               "-d", path));
 
       // Shouldn't throw, unless something is severely damaged.
@@ -282,19 +286,72 @@ namespace bdep
       {
         ifdstream is (move (pipe.in), fdstream_mode::skip, ifdstream::badbit);
 
+        // Retrieve the configuration type.
+        //
         for (string l; !eof (getline (is, l)); )
         {
-          if (l.compare (0, 6, "type: ") == 0)
-          {
-            type = string (l, 6);
+          if (l.empty ())
             break;
-          }
-        }
 
-        is.close (); // Detect errors.
+          // After configuration type is retrieved, continue reading till the
+          // end of the configuration information.
+          //
+          if (l.compare (0, 6, "type: ") == 0)
+            type = string (l, 6);
+        }
 
         if (!type || type->empty ())
           fail << "invalid bpkg-cfg-info output: no configuration type";
+
+        // Collect the linked host configurations.
+        //
+        if (!is.eof ())
+        {
+          dir_path d;
+          string   t;
+
+          auto add_conf = [&d, &t, &host_configs] ()
+          {
+            if (d.empty ())
+              fail << "invalid bpkg-cfg-info output: no linked configuration "
+                   << "path";
+
+            if (t.empty ())
+              fail << "invalid bpkg-cfg-info output: no linked configuration "
+                   << "type";
+
+            if (t == "host" || t == "build2")
+              host_configs.emplace_back (move (d), move (t));
+
+            d.clear ();
+            t.clear ();
+          };
+
+          for (string l; !eof (getline (is, l)); )
+          {
+            if (l.empty ())
+              add_conf ();
+
+            if (l.compare (0, 6, "path: ") == 0)
+            {
+              try
+              {
+                d = dir_path (string (l, 6));
+              }
+              catch (const invalid_path&)
+              {
+                fail << "invalid bpkg-cfg-info output line '" << l
+                     << "': invalid configuration path";
+              }
+            }
+            else if (l.compare (0, 6, "type: ") == 0)
+              t = string (l, 6);
+          }
+
+          add_conf (); // Add the remaining config.
+        }
+
+        is.close (); // Detect errors.
       }
       catch (const io_error&)
       {
@@ -356,6 +413,24 @@ namespace bdep
                       !ao.no_auto_sync (),
                       id));
 
+    // Let's issue a single warning about non-associated host configurations
+    // (rather than for each of them) and do it after the configuration is
+    // reported as added. So just filter out the associated configurations at
+    // this stage.
+    //
+    for (auto i (host_configs.begin ()); i != host_configs.end (); )
+    {
+      using query = bdep::query<configuration>;
+
+      shared_ptr<configuration> c (
+        db.query_one<configuration> (query::path == i->first.string ()));
+
+      if (c != nullptr)
+        i = host_configs.erase (i);
+      else
+        ++i;
+    }
+
     t.commit ();
 
     if (verb)
@@ -363,6 +438,19 @@ namespace bdep
       diag_record dr (text);
       dr << what << " configuration ";
       print_configuration (dr, r);
+    }
+
+    if (!host_configs.empty ())
+    {
+      diag_record dr (warn);
+      dr << what << " configuration " << *r << " already linked with host "
+         << "configurations";
+
+      for (const pair<dir_path, string>& lc: host_configs)
+        dr << info << "configuration of " << lc.second << " type: "
+           << lc.first;
+
+      dr << info << "consider adding them to this project";
     }
 
     return r;
