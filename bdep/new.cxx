@@ -3081,6 +3081,14 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
     // Only create the glue buildfile if we've also created packages.manifest.
     //
+    // Note that the first version of our glue buildfile pulled all the
+    // subdirectories with a wildcard (*/). This proved to have several
+    // drawbacks: adding a non-package subdirectory (e.g., upstream/) is
+    // error-prone since we need to remember to manually exclude it. Also,
+    // some users seem to prefer to create configurations as subdirectories of
+    // the project root. Forgetting to exclude them leads to all kinds of
+    // bizarre errors (see GitHub issue #159 for one example).
+    //
     if (!e)
     {
       path f (prj / buildfile_file);
@@ -3092,7 +3100,8 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                           fdopen_mode::exclusive));
         os << "# Glue buildfile that \"pulls\" all the packages in the project." << '\n'
            << "#"                                                      << '\n'
-           << "import pkgs = */"                                       << '\n'
+           << "import pkgs = [dir_paths] $process.run_regex(\\"        << '\n'
+           << "  cat $src_root/packages.manifest, '\\s*location\\s*:\\s*(\\S+)\\s*', '\\1')" << '\n'
            <<                                                             '\n'
            << "./: $pkgs"                                              << '\n';
         os.close ();
