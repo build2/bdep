@@ -856,6 +856,117 @@ namespace bdep
                              true  /* load_packages   */));
 
     const dir_path& prj (pp.project);
+    package_locations& pkgs (pp.packages);
+
+    // If we are submitting multiple packages, verify they are from the same
+    // project (or different projects are specified explicitly). While
+    // bdep-new automatically adds the project manifest value to each package
+    // it creates, people often cobble stuff up using copy and paste and
+    // naturally don't bother marking all the packages as belonging to the
+    // same project.
+    //
+    // If we have the project specified explicitly, we assume the user knows
+    // what they are doing (this is a way to suppress this check).
+    //
+    if (pkgs.size () > 1)
+    {
+      // First see how many packages don't have explicit project. Also, while
+      // at it, get the name of the first such packages.
+      //
+      size_t n (0);
+      const package_name* pn (nullptr);
+
+      for (const package_location& pl: pkgs)
+      {
+        if (!pl.project)
+        {
+          if (n++ == 0)
+            pn = &pl.name;
+        }
+      }
+
+      diag_record dr;
+      if (n == 0)
+        ;
+      else if (n == 1)
+      {
+        // We have one package without explicit project.
+        //
+        // Verify all other packages use its name as a project.
+        //
+        for (const package_location& pl: pkgs)
+        {
+          if (pl.project && *pl.project != *pn)
+          {
+            if (dr.empty ())
+              dr << fail << "packages belong to different projects" <<
+                info << "package " << *pn << " implicitly belongs to project "
+                 << *pn;
+
+            dr << info << "package " << pl.name << " belongs to project "
+               << *pl.project;
+          }
+        }
+
+        if (!dr.empty ())
+          dr << info << "consider explicitly specifying project for package "
+             << *pn << " in its manifest or"
+             << info << "consider changing project in other packages to "
+             << *pn;
+      }
+      else
+      {
+        // We have multiple packages without explicit project.
+        //
+        // The typical setup is the main package and the project with the same
+        // name (see bdep-new). Let's see if that's what we got so that we can
+        // suggest the project name. We only do that if there are no packages
+        // with explicit project.
+        //
+        pn = nullptr;
+        if (n == pkgs.size ())
+        {
+          string p (prj.leaf ().string ());
+
+          for (const package_location& pl: pkgs)
+          {
+            if (pl.name == p && (!pl.project || *pl.project == pl.name))
+            {
+              pn = &pl.name;
+              break;
+            }
+          }
+        }
+
+        for (const package_location& pl: pkgs)
+        {
+          if (!pl.project && (pn == nullptr || pl.name != *pn))
+          {
+            if (dr.empty ())
+            {
+              dr << fail << "packages belong to different projects";
+
+              if (pn != nullptr)
+                dr << info << "package " << *pn << " belongs to project "
+                   << *pn;
+            }
+
+            dr << info << "package " << pl.name << " implicitly belongs to "
+               << "project " << pl.name;
+          }
+        }
+
+        if (!dr.empty ())
+        {
+          dr << info << "consider explicitly specifying project ";
+          if (pn != nullptr) dr << *pn << " ";
+          dr << "for these packages in their manifests";
+        }
+      }
+
+      if (!dr.empty ())
+        dr << info << "consider resolving this issue by releasing a revision";
+    }
 
     // Collect directories to distribute the packages in. In the forward mode
     // the packages are distributed in the package's (forwarded) source
@@ -869,7 +980,7 @@ namespace bdep
       //
       dir_paths cfgs; // Configuration directories to sync.
 
-      for (const package_location& pl: pp.packages)
+      for (const package_location& pl: pkgs)
       {
         dir_path d (prj / pl.path);
 
@@ -920,7 +1031,7 @@ namespace bdep
       // sync, also verify that for each package being published only one
       // configuration, it is initialized in, is specified.
       //
-      for (const package_location& p: pp.packages)
+      for (const package_location& p: pkgs)
       {
         shared_ptr<configuration> pc;
 
@@ -957,6 +1068,6 @@ namespace bdep
         cmd_sync (o, prj, c, strings () /* pkg_args */, true /* implicit */);
     }
 
-    return cmd_publish (o, prj, move (pp.packages), move (dist_dirs));
+    return cmd_publish (o, prj, move (pkgs), move (dist_dirs));
   }
 }
