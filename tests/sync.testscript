@@ -271,7 +271,11 @@ deinit += -d prj
 
     $config link -d libfoo @cfg @host;
 
-    $init -d libfix -A libfoo-cfg @cfg --no-sync;
+    # Convert specific warnings to infos as we expect them to appear. This, in
+    # particular, prevents bbot workers to set task result status to warning.
+    #
+    $init -d libfix -A libfoo-cfg @cfg --no-sync 2>&1 | \
+    sed -e 's/warning: (added configuration @cfg already linked .*)/info: \1/' >&2 2>!;
 
     # While at it, test synchronizing via the init command.
     #
@@ -301,7 +305,11 @@ deinit += -d prj
 
     $config create -d libfoo @cfg libfoo-cfg &libfoo-cfg/***;
 
-    $init -d libfoo --create-host-config --create-build2-config @cfg &libfoo-host/*** &libfoo-build2/*** != 0;
+    # Convert specific errors to infos as we expect them to appear. Not doing
+    # so, makes bbot logs quite confusing.
+    #
+    $init -d libfoo --create-host-config --create-build2-config @cfg &libfoo-host/*** &libfoo-build2/*** 2>&1 != 0 | \
+    sed -e 's/error: (unknown dependency libbuild2-baz .*)/info: \1/' >&2 2>!;
 
     $config list -d libfoo >>~%EOO%
       %(@cfg|@host|@build2).+%{3}
