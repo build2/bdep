@@ -391,7 +391,21 @@ deinit += -d prj
   $* create -- @cfg1 $config_cxx 2>! &prj-cfg1/***;
   $* create -- @cfg2 $config_cxx 2>! &prj-cfg2/***;
 
-  $* link @cfg1 @cfg2 2>>EOE
+  $* link @cfg1 @cfg2 2>>EOE;
     linked configuration @cfg1 (target) with configuration @cfg2 (target)
+    EOE
+
+  $* link @cfg1 @cfg2 2>>/~%EOE% != 0;
+    %error: configuration with uuid .{36} is already linked as \.\./prj-cfg2/%
+    EOE
+
+  # While at it test the config-unlink subcommand.
+  #
+  $* unlink @cfg1 @cfg2 2>>EOE;
+    unlinked configuration @cfg1 from configuration @cfg2
+    EOE
+
+  $* unlink @cfg1 @cfg2 2>>/"EOE" != 0
+    error: no configuration with path $~/prj-cfg2/ is linked with $~/prj-cfg1/
     EOE
 }

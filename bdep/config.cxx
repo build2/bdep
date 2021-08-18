@@ -320,9 +320,10 @@ namespace bdep
           for (string l; !eof (getline (is, l)); )
           {
             if (l.empty ())
+            {
               add_conf ();
-
-            if (l.compare (0, 6, "path: ") == 0)
+            }
+            else if (l.compare (0, 6, "path: ") == 0)
             {
               try
               {
@@ -704,6 +705,47 @@ namespace bdep
       text << "linked configuration " << *cfgs[0] << " (" << cfgs[0]->type
            << ") with configuration " << *cfgs[1] << " (" << cfgs[1]->type
            << ")";
+
+    return 0;
+  }
+
+  static int
+  cmd_config_unlink (const cmd_config_options& o, cli::scanner&)
+  {
+    tracer trace ("config_unlink");
+
+    // Load project configurations.
+    //
+    configurations cfgs;
+    {
+      dir_path prj (find_project (o));
+      database db (open (prj, trace));
+
+      transaction t (db.begin ());
+
+      cfgs = find_configurations (o,
+                                  prj,
+                                  t,
+                                  false /* fallback_default */,
+                                  true  /* validate         */).first;
+
+      t.commit ();
+    }
+
+    if (cfgs.size () != 2)
+      fail << "two configurations must be specified for config unlink";
+
+    // Call bpkg to unlink the configuration.
+    //
+    run_bpkg (2,
+              o,
+              "cfg-unlink",
+              "-d", cfgs[0]->path,
+              cfgs[1]->path);
+
+    if (verb)
+      text << "unlinked configuration " << *cfgs[0] << " from configuration "
+           << *cfgs[1];
 
     return 0;
   }
@@ -1123,6 +1165,7 @@ namespace bdep
     if (c.add    ()) return cmd_config_add    (o, scan);
     if (c.create ()) return cmd_config_create (o, scan);
     if (c.link   ()) return cmd_config_link   (o, scan);
+    if (c.unlink ()) return cmd_config_unlink (o, scan);
     if (c.list   ()) return cmd_config_list   (o, scan);
     if (c.move   ()) return cmd_config_move   (o, scan);
     if (c.rename ()) return cmd_config_rename (o, scan);
