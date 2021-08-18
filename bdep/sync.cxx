@@ -908,6 +908,7 @@ namespace bdep
     // 5. Re-run bpkg-pkg-build and if it turns out that (another) build-time
     //    dependency configuration is required, then go to p.1.
     //
+    bool noop (false);
     for (;;)
     {
       // Run bpkg with the --no-private-config option, so that it reports the
@@ -928,6 +929,7 @@ namespace bdep
                                 "--no-fetch",
                                 "--no-refinement",
                                 "--no-private-config", 125,
+                                "--noop-exit", 124,
                                 "--configure-only",
                                 "--keep-out",
                                 "--plan", plan,
@@ -970,10 +972,12 @@ namespace bdep
 
           if (e.normal ())
           {
-            need_config = (e.code () == 125);
-
-            if (!need_config)
-              throw failed (); // Assume the child issued diagnostics.
+            switch (e.code ())
+            {
+            case 124: noop = true; break;
+            case 125: need_config = true; break;
+            default: throw failed (); // Assume the child issued diagnostics.
+            }
           }
           else
             fail << "process " << name_bpkg (co) << " " << e;
@@ -1015,86 +1019,86 @@ namespace bdep
     // Handle configuration forwarding.
     //
     // We do it here (instead of, say init) because a change in a package may
-    // introduce new subprojects. Though it would be nice to only do this if
-    // the package was upgraded.
-    //
-    // @@ TODO: changed flag below: Probably by comparing before/after
-    //          versions. Or, even simpler, if pkg-build signalled that
-    //          nothing has changed (the --exit-result idea) -- then we
-    //          can skip the whole thing.
+    // introduce new subprojects. For an implicit sync we can skip all of this
+    // if no packages were upgraded (since our version revision tracking takes
+    // into account changes to the subproject set).
     //
     // Also, the current thinking is that config set --[no-]forward is best
     // implemented by just changing the flag on the configuration and then
     // requiring an explicit sync to configure/disfigure forwards.
     //
-    for (const project& prj: prjs)
+    if (!implicit || !noop)
     {
-      package_locations pls (load_packages (prj.path));
-
-      for (const package_state& pkg: prj.config->packages)
+      for (const project& prj: prjs)
       {
-        // If this is a forwarded configuration, make sure forwarding is
-        // configured and is up-to-date. Otherwise, make sure it is disfigured
-        // (the config set --no-forward case).
-        //
-        dir_path src (prj.path);
+        package_locations pls (load_packages (prj.path));
+
+        for (const package_state& pkg: prj.config->packages)
         {
-          auto i (find_if (pls.begin (),
-                           pls.end (),
-                           [&pkg] (const package_location& pl)
-                           {
-                             return pkg.name == pl.name;
-                           }));
-
-          if (i == pls.end ())
-            fail << "package " << pkg.name << " is not listed in " << prj.path;
-
-          src /= i->path;
-        }
-
-        // We could run 'b info' and used the 'forwarded' value but this is
-        // both faster and simpler. Or at least it was until we got the
-        // alternative naming scheme.
-        //
-        auto check = [&src] ()
-        {
-          path f (src / "build2" / "bootstrap" / "out-root.build2");
-          bool e (exists (f));
-
-          if (!e)
+          // If this is a forwarded configuration, make sure forwarding is
+          // configured and is up-to-date. Otherwise, make sure it is
+          // disfigured (the config set --no-forward case).
+          //
+          dir_path src (prj.path);
           {
-            f = src / "build" / "bootstrap" / "out-root.build";
-            e = exists (f);
+            auto i (find_if (pls.begin (),
+                             pls.end (),
+                             [&pkg] (const package_location& pl)
+                             {
+                               return pkg.name == pl.name;
+                             }));
+
+            if (i == pls.end ())
+              fail << "package " << pkg.name << " is not listed in "
+                   << prj.path;
+
+            src /= i->path;
           }
 
-          return e;
-        };
+#if 0
+          // We could run 'b info' and used the 'forwarded' value but this is
+          // both faster and simpler. Or at least it was until we got the
+          // alternative naming scheme.
+          //
+          auto check = [&src] ()
+          {
+            path f (src / "build" / "bootstrap" / "out-root.build");
+            bool e (exists (f));
 
-        const char* o (nullptr);
-        if (prj.config->forward)
-        {
-          bool changed (true);
+            if (!e)
+            {
+              f = src / "build2" / "bootstrap" / "out-root.build2";
+              e = exists (f);
+            }
 
-          if (changed || !check ())
+            return e;
+          };
+#endif
+
+          const char* o (nullptr);
+          if (prj.config->forward)
+          {
             o = "configure:";
-        }
-        else if (!prj.implicit) // Requires explicit sync.
-        {
-          //@@ This is broken: we will disfigure forwards to other configs.
-          //   Looks like we will need to test that the forward is to this
-          //   config. 'b info' here we come?
+          }
+          else if (!prj.implicit) // Requires explicit sync.
+          {
+            //@@ This is broken: we will disfigure forwards to other configs.
+            //   Looks like we will need to test that the forward is to this
+            //   config. 'b info' here we come?
+#if 0
+            if (check ())
+              o = "disfigure:";
+#endif
+          }
 
-          //if (check ())
-          //  o = "disfigure:";
-        }
-
-        if (o != nullptr)
-        {
-          dir_path out (dir_path (cfg) /= pkg.name.string ());
-          run_b (co,
-                 o,
-                 "'" + src.representation () + "'@'" + out.representation () +
-                 "',forward");
+          if (o != nullptr)
+          {
+            dir_path out (dir_path (cfg) /= pkg.name.string ());
+            run_b (co,
+                   o,
+                   "'" + src.representation () + "'@'" + out.representation () +
+                   "',forward");
+          }
         }
       }
     }
