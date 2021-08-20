@@ -307,7 +307,7 @@ namespace bdep
     // Type of configuration being created, if --config-create is specified.
     //
     optional<string> cc (o.config_create_specified ()
-                         ? o.config_type ()
+                         ? o.type ()
                          : optional<string> ());
 
     if (o.empty ())
@@ -322,8 +322,8 @@ namespace bdep
       if (!ca && !cc)
         fail << n << " specified without --config-(add|create)";
 
-      if (o.config_type_specified () && !cc)
-        fail << "--config-type specified without --config-create";
+      if (o.type_specified () && !cc)
+        fail << "--type|--config-type specified without --config-create";
 
       if (o.existing () && !cc)
         fail << "--existing|-e specified without --config-create";

@@ -80,9 +80,10 @@ namespace bdep
          \
 
          A configuration also has a type that is specified with the
-         \cb{--config-type} option. If the type is not specified explicitly,
-         then \cb{target} is assumed. See \l{bpkg-cfg-create(1)} for
-         background on configuration types.
+         \cb{--type} option (or \cb{--config-type} from \l{bdep-new(1)}).
+         If the type is not specified explicitly, then \cb{target} is
+         assumed. See \l{bpkg-cfg-create(1)} for background on configuration
+         types.
 
          Unless the \cb{--no-default} option is specified, the first added or
          created build configuration of each type is designated as the

@@ -54,15 +54,15 @@ namespace bdep
     if (o.existing () && o.wipe ())
       fail << "both --existing|-e and --wipe specified";
 
-    return (o.config_type_specified () ? "--config-type"  :
-            o.default_ ()              ? "--default"      :
-            o.no_default ()            ? "--no-default"   :
-            o.forward ()               ? "--forward"      :
-            o.no_forward ()            ? "--no-forward"   :
-            o.auto_sync ()             ? "--auto-sync"    :
-            o.no_auto_sync ()          ? "--no-auto-sync" :
-            o.existing ()              ? "--existing|-e"  :
-            o.wipe ()                  ? "--wipe"         : nullptr);
+    return (o.type_specified () ? "--type|--config-type"  :
+            o.default_ ()       ? "--default"             :
+            o.no_default ()     ? "--no-default"          :
+            o.forward ()        ? "--forward"             :
+            o.no_forward ()     ? "--no-forward"          :
+            o.auto_sync ()      ? "--auto-sync"           :
+            o.no_auto_sync ()   ? "--no-auto-sync"        :
+            o.existing ()       ? "--existing|-e"         :
+            o.wipe ()           ? "--wipe"                : nullptr);
   }
 
   void
@@ -668,7 +668,7 @@ namespace bdep
                        move (path),
                        cfg_args,
                        move (name),
-                       o.config_type (),
+                       o.type (),
                        move (id));
     return 0;
   }
@@ -1142,8 +1142,8 @@ namespace bdep
       if (!c.add () && !c.create () && !c.set ())
         fail << n << " not valid for this subcommand";
 
-      if (o.config_type_specified () && !c.create ())
-        fail << "--config-type is not valid for this subcommand";
+      if (o.type_specified () && !c.create ())
+        fail << "--type|--config-type is not valid for this subcommand";
 
       if (o.existing () && !c.create ())
         fail << "--existing|-e is not valid for this subcommand";

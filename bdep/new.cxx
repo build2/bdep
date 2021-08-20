@@ -245,8 +245,12 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
   // Type of configuration being created, if --config-create is specified.
   //
+  // Note that our --type|-t overrides --type|--config-type from
+  // configuration_add_options.
+  //
+  configuration_add_options& cao (o);
   optional<string> cc (o.config_create_specified ()
-                       ? o.config_type ()
+                       ? cao.type ()
                        : optional<string> ());
 
   if (o.subdirectory ())
@@ -276,7 +280,9 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
     if (!ca && !cc)
       fail << n << " specified without --config-(add|create)";
 
-    if (o.config_type_specified () && !cc)
+    // Note: no --type|... (see above).
+    //
+    if (cao.type_specified () && !cc)
       fail << "--config-type specified without --config-create";
 
     if (o.existing () && !cc)

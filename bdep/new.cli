@@ -677,6 +677,9 @@ namespace bdep
        \cb{--source}."
     }
 
+    // Note that --type overrides --type|--config-type from
+    // configuration_add_options.
+    //
     cmd_new_type --type|-t
     {
       "<type>[,<opt>...]",
