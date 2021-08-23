@@ -212,12 +212,19 @@ namespace bdep
   cmd_config_add_print (diag_record& dr,
                         const dir_path& prj,
                         const dir_path& path,
-                        const optional<string>& name)
+                        const optional<string>& name,
+                        bool def,
+                        bool fwd,
+                        bool asy)
   {
     dr << "bdep config add -d " << quote (prj);
 
     if (name)
       dr << " @" << *name;
+
+    dr << (def ? " --default" : " --no-default");
+    dr << (fwd ? " --forward" : " --no-forward");
+    dr << (asy ? "" : " --no-auto-sync");
 
     dr << ' ' << quote (path);
   }
@@ -478,13 +485,22 @@ namespace bdep
                            const dir_path& prj,
                            const dir_path& path,
                            const optional<string>& name,
-                           const string& type)
+                           const string& type,
+                           bool def,
+                           bool fwd,
+                           bool asy)
   {
-    dr << "bdep config create -d " << quote (prj)
-       << " --config-type " << type;
+    dr << "bdep config create -d " << quote (prj);
 
     if (name)
       dr << " @" << *name;
+
+    if (type != "target")
+      dr << " --config-type " << type;
+
+    dr << (def ? " --default" : " --no-default");
+    dr << (fwd ? " --forward" : " --no-forward");
+    dr << (asy ? "" : " --no-auto-sync");
 
     dr << ' ' << quote (path);
   }

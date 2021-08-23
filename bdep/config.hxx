@@ -47,7 +47,10 @@ namespace bdep
   cmd_config_add_print (diag_record&,
                         const dir_path&         prj,
                         const dir_path&,
-                        const optional<string>& name);
+                        const optional<string>& name,
+                        bool                    default_ = true,
+                        bool                    forward = true,
+                        bool                    auto_sync = true);
 
   shared_ptr<configuration>
   cmd_config_create (const common_options&,
@@ -83,7 +86,10 @@ namespace bdep
                            const dir_path&         prj,
                            const dir_path&,
                            const optional<string>& name,
-                           const string&           type);
+                           const string&           type,
+                           bool                    default_ = true,
+                           bool                    forward = true,
+                           bool                    auto_sync = true);
 
   void
   cmd_config_link (const common_options&,

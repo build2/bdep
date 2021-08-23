@@ -582,12 +582,21 @@ namespace bdep
           dr << "as if by executing commands:" << '\n';
 
           dr << "  ";
-          cmd_config_create_print (dr, src_prj, dep_dir, dep_type, dep_type);
+          cmd_config_create_print (dr,
+                                   src_prj,
+                                   dep_dir,
+                                   dep_type,
+                                   dep_type,
+                                   false, true, true); // See below.
 
           for (size_t i (1); i != dpt_prjs.size (); ++i)
           {
             dr << "\n  ";
-            cmd_config_add_print (dr, dpt_prjs[i], dep_dir, dep_type);
+            cmd_config_add_print (dr,
+                                  dpt_prjs[i],
+                                  dep_dir,
+                                  dep_type,
+                                  false, true, true); // See below.
           }
         }
 
@@ -625,12 +634,23 @@ namespace bdep
           //
           auto_rmdir rmd (dep_dir);
 
+          // Before we used to create the default configuration but that lead
+          // to counter-intuitive behavior (like trying to run tests in a host
+          // configuration that doesn't have any bdep-init'ed packages). After
+          // meditation it became clear that we want the default configuration
+          // if we are developing the package and non-default if we just use
+          // it. And automatic creation is probably a good proxy for the "just
+          // use" case.
+          //
           dep_cfg = cmd_config_create (co,
                                        prj,
                                        transaction::current (),
                                        dep_dir,
                                        dep_type /* name */,
-                                       dep_type);
+                                       dep_type,
+                                       false /* default */,
+                                       true  /* forward */,
+                                       true  /* auto_sync */);
 
           cmd_config_link (co, dpt_cfg, dep_cfg);
 
@@ -647,7 +667,10 @@ namespace bdep
                           transaction::current (),
                           dep_dir,
                           dep_type /* name */,
-                          dep_type /* type */);
+                          dep_type,
+                          false /* default */,
+                          true  /* forward */,
+                          true  /* auto_sync */);
         }
 
         t.commit ();
