@@ -67,7 +67,10 @@ namespace bdep
           src /= i->path;
         }
 
+        // See sync for details on --no-external-modules.
+        //
         run_b (o,
+               "--no-external-modules",
                "disfigure:",
                "'" + src.representation () + "'@'" + out.representation () +
                "',forward");

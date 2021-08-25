@@ -1117,7 +1117,13 @@ namespace bdep
           if (o != nullptr)
           {
             dir_path out (dir_path (cfg) /= pkg.name.string ());
+
+            // Note that --no-external-modules makes a difference for
+            // developing build system modules that require bootstrapping
+            // (which without that option would trigger a recursive sync).
+            //
             run_b (co,
+                   "--no-external-modules",
                    o,
                    "'" + src.representation () + "'@'" + out.representation () +
                    "',forward");
