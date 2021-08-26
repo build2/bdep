@@ -94,24 +94,6 @@ namespace bdep
           ps.push_back (s.name.string ().c_str ());
       }
 
-      if (ps.empty ())
-      {
-        if (verb)
-        {
-          diag_record dr (info);
-
-          dr << "skipping configuration " << *c;
-
-          if (c->packages.empty ())
-            dr << info << "configuration is empty";
-          else
-            dr << info << "none of specified packages initialized in this "
-                       << "configuration";
-        }
-
-        continue;
-      }
-
       // If we are printing multiple configurations, separate them with a
       // blank line and print the configuration name/directory.
       //
@@ -121,6 +103,23 @@ namespace bdep
              << "in configuration " << *c << ':';
 
         first = false;
+      }
+
+      if (ps.empty ())
+      {
+        if (verb)
+        {
+          diag_record dr (info);
+
+          if (c->packages.empty ())
+            dr << "no packages ";
+          else
+            dr << "none of specified packages ";
+
+          dr << "initialized in configuration " << *c << ", skipping";
+        }
+
+        continue;
       }
 
       // Pre-sync the configuration to avoid triggering the build system hook

@@ -1516,24 +1516,16 @@ namespace bdep
         continue;
       }
 
-      // Skipping empty ones.
+      // Skipping empty ones (part one).
       //
       // Note that we would normally be printing that for build-time
       // dependency configurations (which normally will not have any
-      // initialized packages) and that would be annying. So we suppress it in
-      // case of the default configuration fallback (but also check and warn
-      // if all of them were empty below).
+      // initialized packages) and that would be annoying. So we suppress it
+      // in case of the default configuration fallback (but also check and
+      // warn if all of them were empty below).
       //
-      if (c != nullptr && c->packages.empty ())
-      {
-        if (verb && !default_fallback)
-          info << "skipping configuration " << *c <<
-            info << "configuration is empty";
-
+      if (c != nullptr && c->packages.empty () && default_fallback)
         continue;
-      }
-
-      empty = false;
 
       // If we are synchronizing multiple configurations, separate them with a
       // blank line and print the configuration name/directory.
@@ -1541,6 +1533,19 @@ namespace bdep
       if (verb && n > 1)
         text << (i == 0 ? "" : "\n")
              << "in configuration " << *c << ':';
+
+      // Skipping empty ones (part two).
+      //
+      if (c != nullptr && c->packages.empty ())
+      {
+        if (verb)
+          info << "no packages initialized in configuration " << *c
+               << ", skipping";
+
+        continue;
+      }
+
+      empty = false;
 
       bool fetch (o.fetch () || o.fetch_full ());
 

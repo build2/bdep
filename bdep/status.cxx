@@ -96,15 +96,6 @@ namespace bdep
     bool first (true);
     for (const shared_ptr<configuration>& c: cfgs)
     {
-      if (c->packages.empty ())
-      {
-        if (verb)
-          info << "skipping configuration " << *c <<
-            info << "configuration is empty";
-
-        continue;
-      }
-
       // Collect the packages to print, unless the dependency packages are
       // specified.
       //
@@ -131,16 +122,6 @@ namespace bdep
                        }) != ps.end ())
             pkgs.push_back (s.name.string ());
         }
-
-        if (pkgs.empty ())
-        {
-          if (verb)
-            info << "skipping configuration " << *c <<
-              info << "none of specified packages initialized in this "
-                   << "configuration";
-
-          continue;
-        }
       }
 
       // If we are printing multiple configurations, separate them with a
@@ -152,6 +133,23 @@ namespace bdep
              << "in configuration " << *c << ':' << endl;
 
         first = false;
+      }
+
+      if (c->packages.empty () || (pkgs.empty () && dep_pkgs.empty ()))
+      {
+        if (verb)
+        {
+          diag_record dr (info);
+
+          if (c->packages.empty ())
+            dr << "no packages ";
+          else
+            dr << "none of specified packages ";
+
+          dr << "initialized in configuration " << *c << ", skipping";
+        }
+
+        continue;
       }
 
       bool fetch (o.fetch () || o.fetch_full ());
