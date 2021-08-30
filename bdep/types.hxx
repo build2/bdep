@@ -23,6 +23,8 @@
 
 #include <libbutl/url.mxx>
 #include <libbutl/path.mxx>
+#include <libbutl/uuid.hxx>
+#include <libbutl/uuid-io.hxx>
 #include <libbutl/process.mxx>
 #include <libbutl/optional.mxx>
 #include <libbutl/fdstream.mxx>
@@ -95,6 +97,10 @@ namespace bdep
 
   using paths = vector<path>;
   using dir_paths = vector<dir_path>;
+
+  // <libbutl/uuid.mxx>
+  //
+  using butl::uuid;
 
   // <libbutl/process.mxx>
   //

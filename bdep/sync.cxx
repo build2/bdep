@@ -3,6 +3,7 @@
 
 #include <bdep/sync.hxx>
 
+#include <list>
 #include <cstring>  // strchr()
 
 #include <libbpkg/manifest.hxx>
@@ -115,59 +116,149 @@ namespace bdep
     return r;
   }
 
-  // Project to be synchronized.
+  // Configurations linked into a cluster.
   //
-  namespace
+  struct linked_config
   {
-    struct project
-    {
-      dir_path path;
-      shared_ptr<configuration> config;
+    dir_path   path;
+    bdep::uuid uuid;
+  };
 
+  class linked_configs: public small_vector<linked_config, 16>
+  {
+  public:
+    const linked_config*
+    find (const dir_path& p)
+    {
+      auto i (find_if (begin (), end (),
+                       [&p] (const linked_config& c)
+                       {
+                         return c.path == p;
+                       }));
+      return i != end () ? &*i : nullptr;
+    }
+  };
+
+  // Configurations to be synced are passed either as configuration objects
+  // (if syncing from a project) or as directories (if syncing from a
+  // configuration, normally implicit/hook).
+  //
+  struct sync_config: shared_ptr<configuration>
+  {
+    dir_path path_; // Empty if not NULL.
+
+    const dir_path&
+    path () const {return *this != nullptr ? (*this)->path : path_;}
+
+    sync_config (shared_ptr<configuration> c)
+        : shared_ptr<configuration> (move (c)) {}
+    sync_config (dir_path p): path_ (move (p)) {}
+  };
+
+  using sync_configs = small_vector<sync_config, 16>;
+
+  // Projects and their configurations to be synchronized.
+  //
+  struct sync_project
+  {
+    struct config: shared_ptr<configuration>
+    {
+      bool origin;
       bool implicit;
       bool fetch;
+
+      config (shared_ptr<configuration> p, bool o, bool i, bool f)
+        : shared_ptr<configuration> (move (p)),
+          origin (o), implicit (i), fetch (f) {}
     };
 
-    using projects = small_vector<project, 1>;
+    dir_path path;
+    small_vector<config, 16> configs;
+
+    explicit
+    sync_project (dir_path p) : path (move (p)) {}
+  };
+
+  using sync_projects = small_vector<sync_project, 1>;
+
+  static inline ostream&
+  operator<< (ostream& o, const sync_config& sc)
+  {
+    if (const shared_ptr<configuration>& c = sc)
+      o << *c; // Prints as @name if available.
+    else
+      o << sc.path_;
+    return o;
   }
 
-  // Append the list of additional (to origin, if not empty) projects that are
-  // using this configuration.
+  // Append the list of projects that are using this configuration. Note that
+  // if the project is already on the list, then add the configuration to the
+  // existing entry unless it's already there.
   //
   static void
   load_implicit (const common_options& co,
                  const dir_path& cfg,
+                 sync_projects& r,
                  const dir_path& origin_prj,
-                 projects& r)
+                 transaction* origin_tr)
   {
     tracer trace ("load_implicit");
 
-    for (dir_path& d: configuration_projects (co, cfg, origin_prj))
+    for (dir_path& d: configuration_projects (co, cfg))
     {
+      // Do duplicate suppression before any heavy lifting.
+      //
+      auto i (find_if (r.begin (), r.end (),
+                       [&d] (const sync_project& p)
+                       {
+                         return p.path == d;
+                       }));
+
+      if (i != r.end ())
+      {
+        if (find_if (i->configs.begin (), i->configs.end (),
+                     [&cfg] (const sync_project::config& c)
+                     {
+                       return c->path == cfg;
+                     }) != i->configs.end ())
+          continue;
+      }
+
       shared_ptr<configuration> c;
       {
         using query = bdep::query<configuration>;
 
-        // Save and restore the current transaction, if any.
+        query q (query::path == cfg.string ());
+
+        // Reuse the transaction (if any) if this is origin project.
         //
-        transaction* ct (nullptr);
-        if (transaction::has_current ())
+        if (origin_tr != nullptr && origin_prj == d)
         {
-          ct = &transaction::current ();
-          transaction::reset_current ();
+          c = origin_tr->database ().query_one<configuration> (q);
         }
-
-        auto tg (make_guard ([ct] ()
-                             {
-                               if (ct != nullptr)
-                                 transaction::current (*ct);
-                             }));
-
+        else
         {
-          database db (open (d, trace));
-          transaction t (db.begin ());
-          c = db.query_one<configuration> (query::path == cfg.string ());
-          t.commit ();
+          // Save and restore the current transaction, if any.
+          //
+          transaction* ct (nullptr);
+          if (transaction::has_current ())
+          {
+            ct = &transaction::current ();
+            transaction::reset_current ();
+          }
+
+          auto tg (make_guard ([ct] ()
+                               {
+                                 if (ct != nullptr)
+                                   transaction::current (*ct);
+                               }));
+
+          {
+            database db (open (d, trace));
+            transaction t (db.begin ());
+            c = db.query_one<configuration> (q);
+            t.commit ();
+          }
         }
       }
 
@@ -179,10 +270,17 @@ namespace bdep
       if (c == nullptr)
         continue;
 
-      r.push_back (project {move (d),
-                            move (c),
-                            true /* implicit */,
-                            true /* fetch */});
+      if (i == r.end ())
+      {
+        r.push_back (sync_project (d));
+        i = r.end () - 1;
+      }
+
+      i->configs.push_back (
+        sync_project::config {move (c),
+                              false /* origin */,
+                              true  /* implicit */,
+                              true  /* fetch */});
     }
   }
 
@@ -190,14 +288,13 @@ namespace bdep
   //
   static void
   link_dependency_config (const common_options& co,
-                          const dir_path& cfg,
-                          const projects& prjs,
-                          const dir_path& origin_prj,
-                          const shared_ptr<configuration>& origin_config,
+                          const dir_path& origin_prj, // Can be empty.
+                          const sync_configs& origin_cfgs,
+                          const sync_projects& prjs,
                           const strings& dep_chain,
                           bool create_host_config,
                           bool create_build2_config,
-                          transaction* tr,
+                          transaction* origin_tr,
                           vector<pair<dir_path, string>>* created_cfgs,
                           tracer& trace)
   {
@@ -297,18 +394,21 @@ namespace bdep
     // project returning its configuration object if found and NULL
     // otherwise.
     //
-    auto find_config = [&origin_config, &origin_prj] (database& db,
-                                                      const dir_path& prj,
-                                                      const dir_path& cfg)
+    auto find_config = [&origin_prj, &origin_cfgs] (
+      database& db,
+      const dir_path& prj,
+      const dir_path& cfg) -> shared_ptr<configuration>
     {
       // Note that this is not merely an optimization since the origin
       // configuration can be changed but not updated in the database yet (see
       // cmd_init() for a use case).
       //
-      if (origin_config != nullptr   &&
-          origin_config->path == cfg &&
-          origin_prj == prj)
-        return origin_config;
+      if (origin_prj == prj)
+      {
+        for (const sync_config& ocfg: origin_cfgs)
+          if (ocfg.path () == cfg)
+            return ocfg;
+      }
 
       using query = bdep::query<configuration>;
       return db.query_one<configuration> (query::path == cfg.string ());
@@ -382,13 +482,16 @@ namespace bdep
 
     // Show how we got here (used for both info and text).
     //
-    auto add_info = [&dep, &dependents, &cfg] (const basic_mark& bm)
+    auto add_info = [&dep, &dependents, &origin_cfgs] (const basic_mark& bm)
     {
       const dependent& dpt (dependents[0]);
+
       bm << "while searching for configuration for build-time dependency "
          << dep << " of package " << dpt.name << "/" << dpt.version
          << " [" << dpt.config << "]";
-      bm << "while synchronizing configuration " << cfg;
+
+      for (const sync_config& cfg: origin_cfgs)
+        bm << "while synchronizing configuration " << cfg.path ();
     };
 
     // Show how we got here if things go wrong.
@@ -437,9 +540,9 @@ namespace bdep
 
     for (const dependent& dpt: dependents)
     {
-      for (const project& prj: prjs)
+      for (const sync_project& prj: prjs)
       {
-        database_transaction t (prj.path == origin_prj ? tr : nullptr,
+        database_transaction t (prj.path == origin_prj ? origin_tr : nullptr,
                                 prj.path,
                                 trace);
 
@@ -459,8 +562,7 @@ namespace bdep
                                                      dpt.config));
 
           if (dc != nullptr &&
-              find_if (dc->packages.begin (),
-                       dc->packages.end (),
+              find_if (dc->packages.begin (), dc->packages.end (),
                        [&dpt] (const package_state& s)
                        {
                          return dpt.name == s.name;
@@ -503,7 +605,7 @@ namespace bdep
 
           if (dep_cfg == nullptr) // Need to create the config?
           {
-            for (const project& p: prjs)
+            for (const sync_project& p: prjs)
             {
               if (p.path != prj.path)
               {
@@ -622,7 +724,7 @@ namespace bdep
       bool create (true);
       for (const dir_path& prj: dpt_prjs)
       {
-        database_transaction t (prj == origin_prj ? tr : nullptr,
+        database_transaction t (prj == origin_prj ? origin_tr : nullptr,
                                 prj,
                                 trace);
 
@@ -685,11 +787,15 @@ namespace bdep
   // If upgrade is not nullopt, then: If there are dep_pkgs, then we are
   // upgrading specific dependency packages. Otherwise -- project packages.
   //
+  // Note that if origin_prj is not empty, then origin_cfgs are specified as
+  // configurations (as opposed to paths). Also upgrade can only be specified
+  // with origin_prj.
+  //
   static void
   cmd_sync (const common_options& co,
-            const dir_path& cfg,
             const dir_path& origin_prj,
-            const shared_ptr<configuration>& origin_config,
+            sync_configs&& origin_cfgs,
+            linked_configs&& linked_cfgs,
             const strings& pkg_args,
             bool implicit,
             bool fetch,
@@ -701,86 +807,229 @@ namespace bdep
             const strings&           dep_pkgs,
             bool create_host_config,
             bool create_build2_config,
-            transaction* tr = nullptr,
+            transaction* origin_tr = nullptr,
             vector<pair<dir_path, string>>* created_cfgs = nullptr)
   {
     tracer trace ("cmd_sync");
 
-    assert (origin_config == nullptr || !origin_config->packages.empty ());
+    // True if we have originating project.
+    //
+    bool origin (!origin_prj.empty ());
+
     assert (prj_pkgs.empty () || dep_pkgs.empty ()); // Can't have both.
 
     // If a transaction is specified, then it must be started on the origin
     // project's database (which therefore must be specified) and it must be
     // the current.
     //
-    if (tr != nullptr)
-      assert (!origin_prj.empty () && tr == &transaction::current ());
+    if (origin_tr != nullptr)
+      assert (origin && origin_tr == &transaction::current ());
 
     // Must both be either specified or not.
     //
-    assert ((tr == nullptr) == (created_cfgs == nullptr));
+    assert ((origin_tr == nullptr) == (created_cfgs == nullptr));
 
-    projects prjs;
-
-    if (origin_config != nullptr)
-      prjs.push_back (project {origin_prj, origin_config, implicit, fetch});
-
-    // Load other projects that might be using the same configuration -- we
-    // have to synchronize everything at once.
+    // Collect all the projects that will be involved in this synchronization
+    // (we synchronize everything at once).
     //
-    load_implicit (co, cfg, origin_prj, prjs);
+    sync_projects prjs;
+
+    if (origin)
+    {
+      prjs.push_back (sync_project (origin_prj));
+
+      for (sync_config& c: origin_cfgs)
+      {
+        // If we have origin project then we should have origin config.
+        //
+        assert (c != nullptr);
+        prjs.back ().configs.push_back (
+          sync_project::config {c, true /* origin */, implicit, fetch});
+      }
+    }
+
+    // Load other projects that might be using the same configuration cluster.
+    //
+    // Note that this may add more (implicit) configurations to origin_prj's
+    // entry.
+    //
+    for (const linked_config& cfg: linked_cfgs)
+      load_implicit (co, cfg.path, prjs, origin_prj, origin_tr);
 
     // Verify that no initialized package in any of the projects sharing this
     // configuration is specified as a dependency.
     //
-    for (const string& n: dep_pkgs)
+    if (!dep_pkgs.empty ())
     {
-      for (const project& prj: prjs)
+      for (const sync_project& prj: prjs)
       {
-        auto& pkgs (prj.config->packages);
+        for (const sync_project::config& cfg: prj.configs)
+        {
+          auto& pkgs (cfg->packages);
 
-        if (find_if (pkgs.begin (),
-                     pkgs.end (),
-                     [&n] (const package_state& ps)
-                     {
-                       return n == ps.name;
-                     }) != pkgs.end ())
-          fail << "initialized package " << n << " specified as a dependency";
+          for (const string& n: dep_pkgs)
+          {
+            if (find_if (pkgs.begin (), pkgs.end (),
+                         [&n] (const package_state& ps)
+                         {
+                           return n == ps.name;
+                         }) != pkgs.end ())
+              fail << "initialized package " << n << " specified as dependency" <<
+                info << "package initialized in project " << prj.path;
+          }
+        }
       }
     }
 
-    // Prepare the list of packages to build and repositories to fetch.
+    // Prepare the list of packages to build, configurations involved, and
+    // repositories to fetch in each such configuration.
     //
     strings args;
-    strings reps;
 
-    // First add configuration variables from pkg_args, if any.
-    //
+    struct config
     {
+      reference_wrapper<const dir_path> path; // Reference to prjs.
+      strings                           reps;
+    };
+    small_vector<config, 16> cfgs;
+
+    // First collect configurations and their repositories. We do it as a
+    // separate (from the one below) pass in order to determine how many
+    // projects/configurations will be involved. If it's just one, then we
+    // often can have a simpler command line.
+    //
+    bool origin_only (dep_pkgs.empty ()); // Only origin packages on cmd line.
+    for (const sync_project& prj: prjs)
+    {
+      for (const sync_project::config& cfg: prj.configs)
+      {
+        bool empty (cfg->packages.empty ());
+
+        if (empty)
+        {
+          // Note that we keep empty origin configurations if we have any
+          // dependencies to upgrade (see below for details).
+          //
+          if (dep_pkgs.empty ())
+            continue;
+          else
+          {
+            if (find_if (origin_cfgs.begin (), origin_cfgs.end (),
+                         [&cfg] (const sync_config& ocfg)
+                         {
+                           return ocfg.path () == cfg->path;
+                         }) == origin_cfgs.end ())
+              continue;
+          }
+        }
+        else if (!cfg.origin)
+          origin_only = false;
+
+        auto i (find_if (cfgs.begin (), cfgs.end (),
+                         [&cfg] (const config& c)
+                         {
+                           return cfg->path == c.path.get ();
+                         }));
+
+        if (i == cfgs.end ())
+        {
+          cfgs.push_back (config {cfg->path, {}});
+          i = cfgs.end () - 1;
+        }
+
+        if (cfg.fetch && !empty)
+          i->reps.push_back (repository_name (prj.path));
+      }
+    }
+
+    bool multi_cfg (cfgs.size () != 1);
+
+    // Start by adding configuration variables from pkg_args, if any.
+    //
+    // If we have dep_pkgs (third form), then non-global configuration
+    // variables should only apply to them. Otherwise, if we have origin
+    // (first form), then they should only apply to packages from the origin
+    // project in origin configurations. They don't seem to make sense
+    // otherwise (second form, implicit).
+    //
+    bool dep_vars (false);
+    bool origin_vars (false);
+
+    if (!pkg_args.empty ())
+    {
+      if (origin_only)
+      {
+        for (const string& a: pkg_args)
+        {
+          if (a.find ('=') == string::npos)
+          {
+            origin_only = false;
+            break;
+          }
+        }
+      }
+
       for (const string& a: pkg_args)
-        if (a.find ('=') != string::npos)
-          args.push_back (a);
+      {
+        size_t p (a.find ('='));
+        if (p == string::npos)
+          continue;
+
+        if (a.front () != '!')
+        {
+          if (!dep_pkgs.empty ())
+            dep_vars = true;
+          else if (origin)
+          {
+            // Simplify the command line if we only have origin on the command
+            // line.
+            //
+            if (!origin_only)
+              origin_vars = true;
+          }
+          else
+            fail << "non-global configuration variable " <<
+              string (a, 0, p) << " without packages or dependencies";
+
+          if (dep_vars || origin_vars)
+            continue;
+        }
+
+        args.push_back (a);
+      }
 
       if (!args.empty ())
         args.push_back ("--");
     }
 
-    for (const project& prj: prjs)
+    // Next collect init'ed packages.
+    //
+    for (const sync_project& prj: prjs)
     {
-      if (prj.fetch)
-        reps.push_back (repository_name (prj.path));
-
-      for (const package_state& pkg: prj.config->packages)
+      for (const sync_project::config& cfg: prj.configs)
       {
-        if (upgrade && !prj.implicit)
+        if (cfg->packages.empty ())
+          continue;
+
+        for (const package_state& pkg: cfg->packages)
         {
-          // We synchronize all the init'ed packages, including those from
-          // other projects. But if the dependencies are not specified, we
-          // only upgrade dependencies of the packages specified explicitly or
-          // init'ed in the origin project.
-          //
-          if (dep_pkgs.empty ())
+          bool vars (origin_vars && cfg.origin);
+
+          bool g (multi_cfg || vars);
+          if (g)
+            args.push_back ("{");
+
+          if (multi_cfg)
+            args.push_back ("--config-uuid=" +
+                            linked_cfgs.find (cfg->path)->uuid.string ());
+
+          if (upgrade && dep_pkgs.empty () && !cfg.implicit)
           {
+            // We synchronize all the init'ed packages, including those from
+            // other projects. But if the dependencies are not specified, we
+            // only upgrade dependencies of the packages specified explicitly
+            // or init'ed in the origin project.
+            //
             auto contains = [] (const auto& pkgs, const package_state& pkg)
             {
               return find_if (pkgs.begin (), pkgs.end (),
@@ -790,9 +1039,17 @@ namespace bdep
                               }) != pkgs.end ();
             };
 
-            if (prj_pkgs.empty () && origin_config != nullptr
-                ? contains (origin_config->packages, pkg)
-                : contains (prj_pkgs, pkg))
+            bool c (false);
+            if (prj_pkgs.empty () && origin)
+            {
+              for (const sync_config& cfg: origin_cfgs)
+                if ((c = contains (cfg->packages, pkg)))
+                  break;
+            }
+            else
+              c = contains (prj_pkgs, pkg);
+
+            if (c)
             {
               // The project package itself must always be upgraded to the
               // latest version/iteration. So we have to translate to
@@ -800,43 +1057,108 @@ namespace bdep
               //
               assert (recursive);
 
-              args.push_back ("{");
+              if (!g)
+              {
+                args.push_back ("{");
+                g = true;
+              }
+
               args.push_back (
                 *upgrade
                 ? *recursive ? "--upgrade-recursive" : "--upgrade-immediate"
                 : *recursive ? "--patch-recursive"   : "--patch-immediate");
-              args.push_back ("}+");
             }
           }
-        }
 
-        // We need to add the explicit location qualification (@<rep-loc>)
-        // since there is no guarantee a higher version isn't available from
-        // another repository.
-        //
-        args.push_back (pkg.name.string () + '@' + prj.path.string ());
+          // Note: must come after options, if any.
+          //
+          if (vars)
+          {
+            for (const string& a: pkg_args)
+              if (a.find ('=') != string::npos && a.front () != '!')
+                args.push_back (a);
+          }
+
+          if (g)
+            args.push_back ("}+");
+
+          // We need to add the explicit location qualification (@<rep-loc>)
+          // since there is no guarantee a better version isn't available from
+          // another repository.
+          //
+          args.push_back (pkg.name.string () + '@' + prj.path.string ());
+        }
       }
     }
 
     // Add dependencies to upgrade (if any).
     //
+    // This gets quite fuzzy when we are dealing with multiple configurations.
+    // To start, we only want to upgrade dependencies in the configurations
+    // specified by the user (origin_cfgs). This part is pretty clear. But if
+    // we just qualify the dependencies with configurations, then that will be
+    // interpreted by bpkg as a request to move if any other configurations
+    // (of the same type) happened to also have this package as a dependency.
+    // So we pass --no-move below to prevent this (which basically means
+    // "upgrade there if present, build there if necessary, and otherwise
+    // ignore").
+    //
+    // The (admittedly still fuzzy) conceptual model behind this is that if
+    // the user wishes to partition dependencies into multiple configurations
+    // (of the same type; say base/target) then they do it manually with bpkg
+    // and bdep does not alter this partitioning of dependencies in any way.
+    //
+    // Note that in this model, while the user may use bpkg directly to
+    // upgrade/downgrate such dependencies, that feels a bit awkward (imagine
+    // host and base having the same dependency with one upgraded via bdep
+    // while the other -- via bpkg). Instead, we support associating such a
+    // base configuration with a bdep-managed project and using that to manage
+    // upgrades by not skipping empty origin configurations in this mode (see
+    // above). Note also that in this case we don't need to worry about
+    // fetching empty configuration's repository information since it won't be
+    // used for the upgrade anyway (instead, information from ultimate
+    // dependent's configuration will be used).
+    //
     if (upgrade)
     {
       for (const string& n: dep_pkgs)
       {
+        bool g (multi_cfg || dep_vars);
+        if (g)
+          args.push_back ("{");
+
+        if (multi_cfg)
+          for (const sync_config& cfg: origin_cfgs)
+            args.push_back ("--config-uuid=" +
+                            linked_cfgs.find (cfg.path ())->uuid.string ());
+
         // Unless this is the default "non-recursive upgrade" we need to add a
         // group.
         //
         if (recursive || !*upgrade)
         {
-          args.push_back ("{");
+          if (!g)
+          {
+            args.push_back ("{");
+            g = true;
+          }
 
           string o (*upgrade ? "-u" : "-p");
           if (recursive) o += *recursive ? 'r' : 'i';
           args.push_back (move (o));
-
-          args.push_back ("}+");
         }
+
+        // Note: must come after options, if any.
+        //
+        if (dep_vars)
+        {
+          for (const string& a: pkg_args)
+            if (a.find ('=') != string::npos && a.front () != '!')
+              args.push_back (a);
+        }
+
+        if (g)
+          args.push_back ("}+");
 
         // Make sure it is treated as a dependency.
         //
@@ -844,11 +1166,41 @@ namespace bdep
       }
     }
 
-    // Finally, add packages from pkg_args, if any.
+    // Finally, add packages (?<pkg>) from pkg_args, if any.
+    //
+    // Similar to the dep_pkgs case above, we restrict this to the origin
+    // configurations.
     //
     for (const string& a: pkg_args)
-      if (a.find ('=') == string::npos)
-        args.push_back (a);
+    {
+      if (a.find ('=') != string::npos)
+        continue;
+
+      if (multi_cfg)
+      {
+        args.push_back ("{");
+
+        // Note that here (unlike the dep_pkgs case above), we have to make
+        // sure the configuration is actually involved.
+        //
+        for (const sync_config& ocfg: origin_cfgs)
+        {
+          if (find_if (cfgs.begin (), cfgs.end (),
+                       [&ocfg] (const config& cfg)
+                       {
+                         return ocfg.path () == cfg.path.get ();
+                       }) == cfgs.end ())
+            continue;
+
+          args.push_back ("--config-uuid=" +
+                          linked_cfgs.find (ocfg.path ())->uuid.string ());
+        }
+
+        args.push_back ("}+");
+      }
+
+      args.push_back (a);
+    }
 
     // We do a separate fetch instead of letting pkg-build do it. This way we
     // get better control of the diagnostics (no "fetching ..." for the
@@ -867,25 +1219,39 @@ namespace bdep
     //    "synchronizing <cfg-dir>:". Maybe rep-fetch also needs something
     //    like --plan but for progress? Plus there might be no sync at all.
     //
-    if (!reps.empty ())
-      run_bpkg (3, co, "fetch", "-d", cfg, "--shallow", reps);
+    for (const config& cfg: cfgs)
+    {
+      if (cfg.reps.empty ())
+        continue;
 
-    string plan ("synchronizing");
+      run_bpkg (3, co, "fetch", "-d", cfg.path.get (), "--shallow", cfg.reps);
+    }
+
+    string plan;
     if (name_cfg)
     {
-      plan += ' ';
-
-      // Use name if available, directory otherwise.
-      //
-      if (origin_config != nullptr && origin_config->name)
+      for (const sync_config& cfg: origin_cfgs)
       {
-        plan += '@';
-        plan += *origin_config->name;
+        if (!plan.empty ())
+          plan += ",\n";
+
+        plan += "synchronizing ";
+
+        // Use name if available, directory otherwise.
+        //
+        if (cfg != nullptr && cfg->name)
+        {
+          plan += '@';
+          plan += *cfg->name;
+        }
+        else
+          plan += cfg.path ().representation ();
       }
-      else
-        plan += cfg.representation ();
+
+      plan += ':';
     }
-    plan += ':';
+    else
+      plan = "synchronizing:";
 
     // Now configure the requested packages, preventing bpkg-pkg-build from
     // creating private configurations for build-time dependencies and
@@ -941,23 +1307,34 @@ namespace bdep
       bool need_config (false);
       strings dep_chain;
       {
+        // -d options
+        //
+        small_vector<const char*, 32> d;
+        for (const config& cfg: cfgs)
+        {
+          d.push_back ("-d");
+          d.push_back (cfg.path.get ().string ().c_str ());
+        }
+
         fdpipe pipe (open_pipe ()); // Text mode seems appropriate.
 
-        process pr (start_bpkg (2,
-                                co,
-                                pipe /* stdout */,
-                                2    /* stderr */,
-                                "build",
-                                "-d", cfg,
-                                "--no-fetch",
-                                "--no-refinement",
-                                "--no-private-config", 125,
-                                "--noop-exit", 124,
-                                "--configure-only",
-                                "--keep-out",
-                                "--plan", plan,
-                                (yes ? "--yes" : nullptr),
-                                args));
+        process pr (
+          start_bpkg (2,
+                      co,
+                      pipe /* stdout */,
+                      2    /* stderr */,
+                      "build",
+                      d,
+                      (linked_cfgs.size () != 1 ? "--no-move" : nullptr),
+                      "--no-fetch",
+                      "--no-refinement",
+                      "--no-private-config", 125,
+                      "--noop-exit", 124,
+                      "--configure-only",
+                      "--keep-out",
+                      "--plan", plan,
+                      (yes ? "--yes" : nullptr),
+                      args));
 
         // Shouldn't throw, unless something is severely damaged.
         //
@@ -1028,13 +1405,12 @@ namespace bdep
       }
 
       link_dependency_config (co,
-                              cfg,
+                              origin_prj, origin_cfgs,
                               prjs,
-                              origin_prj, origin_config,
                               dep_chain,
                               create_host_config,
                               create_build2_config,
-                              tr,
+                              origin_tr,
                               created_cfgs,
                               trace);
     }
@@ -1052,81 +1428,84 @@ namespace bdep
     //
     if (!implicit || !noop)
     {
-      for (const project& prj: prjs)
+      for (const sync_project& prj: prjs)
       {
         package_locations pls (load_packages (prj.path));
 
-        for (const package_state& pkg: prj.config->packages)
+        for (const sync_project::config& cfg: prj.configs)
         {
-          // If this is a forwarded configuration, make sure forwarding is
-          // configured and is up-to-date. Otherwise, make sure it is
-          // disfigured (the config set --no-forward case).
-          //
-          dir_path src (prj.path);
+          for (const package_state& pkg: cfg->packages)
           {
-            auto i (find_if (pls.begin (),
-                             pls.end (),
-                             [&pkg] (const package_location& pl)
-                             {
-                               return pkg.name == pl.name;
-                             }));
-
-            if (i == pls.end ())
-              fail << "package " << pkg.name << " is not listed in "
-                   << prj.path;
-
-            src /= i->path;
-          }
-
-#if 0
-          // We could run 'b info' and used the 'forwarded' value but this is
-          // both faster and simpler. Or at least it was until we got the
-          // alternative naming scheme.
-          //
-          auto check = [&src] ()
-          {
-            path f (src / "build" / "bootstrap" / "out-root.build");
-            bool e (exists (f));
-
-            if (!e)
+            // If this is a forwarded configuration, make sure forwarding is
+            // configured and is up-to-date. Otherwise, make sure it is
+            // disfigured (the config set --no-forward case).
+            //
+            dir_path src (prj.path);
             {
-              f = src / "build2" / "bootstrap" / "out-root.build2";
-              e = exists (f);
+              auto i (find_if (pls.begin (), pls.end (),
+                               [&pkg] (const package_location& pl)
+                               {
+                                 return pkg.name == pl.name;
+                               }));
+
+              if (i == pls.end ())
+                fail << "package " << pkg.name << " is not listed in "
+                     << prj.path;
+
+              src /= i->path;
             }
 
-            return e;
-          };
-#endif
-
-          const char* o (nullptr);
-          if (prj.config->forward)
-          {
-            o = "configure:";
-          }
-          else if (!prj.implicit) // Requires explicit sync.
-          {
-            //@@ This is broken: we will disfigure forwards to other configs.
-            //   Looks like we will need to test that the forward is to this
-            //   config. 'b info' here we come?
 #if 0
-            if (check ())
-              o = "disfigure:";
-#endif
-          }
-
-          if (o != nullptr)
-          {
-            dir_path out (dir_path (cfg) /= pkg.name.string ());
-
-            // Note that --no-external-modules makes a difference for
-            // developing build system modules that require bootstrapping
-            // (which without that option would trigger a recursive sync).
+            // We could run 'b info' and used the 'forwarded' value but this
+            // is both faster and simpler. Or at least it was until we got the
+            // alternative naming scheme.
             //
-            run_b (co,
-                   "--no-external-modules",
-                   o,
-                   "'" + src.representation () + "'@'" + out.representation () +
-                   "',forward");
+            auto check = [&src] ()
+            {
+              path f (src / "build" / "bootstrap" / "out-root.build");
+              bool e (exists (f));
+
+              if (!e)
+              {
+                f = src / "build2" / "bootstrap" / "out-root.build2";
+                e = exists (f);
+              }
+
+              return e;
+            };
+#endif
+
+            const char* o (nullptr);
+            if (cfg->forward)
+            {
+              o = "configure:";
+            }
+            else if (!cfg.implicit) // Requires explicit sync.
+            {
+              //@@ This is broken: we will disfigure forwards to other
+              //   configs. Looks like we will need to test that the forward
+              //   is to this config. 'b info' here we come?
+#if 0
+              if (check ())
+                o = "disfigure:";
+#endif
+            }
+
+            if (o != nullptr)
+            {
+              dir_path out (dir_path (cfg->path) /= pkg.name.string ());
+
+              // Note that --no-external-modules makes a difference for
+              // developing build system modules that require bootstrapping
+              // (which without that option would trigger a recursive sync).
+              //
+              run_b (
+                co,
+                "--no-external-modules",
+                o,
+                "'" + src.representation () + "'@'" + out.representation () +
+                "',forward");
+            }
           }
         }
       }
@@ -1134,60 +1513,66 @@ namespace bdep
 
     // Add/remove auto-synchronization build system hook.
     //
-    if (origin_config != nullptr && !implicit)
+    // It feels right to only do this for origin_cfgs (remember, we require
+    // explicit sync after changing the auto-sync flag).
+    //
+    if (origin && !implicit)
     {
-      path f (cfg / hook_file);
-      bool e (exists (f));
-
-      if (origin_config->auto_sync)
+      for (const sync_config& cfg: origin_cfgs)
       {
-        if (!e)
+        path f (cfg->path / hook_file);
+        bool e (exists (f));
+
+        if (cfg->auto_sync)
         {
-          mk (f.directory ());
-
-          try
+          if (!e)
           {
-            ofdstream os (f);
+            mk (f.directory ());
 
-            // Should we analyze BDEP_SYNCED_CONFIGS ourselves or should we
-            // let bdep-sync do it for us? Doing it here instead of spawning a
-            // process (which will load the database, etc) will be faster.
-            // But, on the other hand, this is only an issue for commands like
-            // update and test that do their own implicit sync.
-            //
-            // cfgs = $getenv(BDEP_SYNCED_CONFIGS)
-            // if! $null($cfgs)
-            //   cfgs = [dir_paths] $regex.split($cfgs, ' *"([^"]*)" *', '\1')
-            //
-            // Also note that we try to avoid setting any variables in order
-            // not to pollute the configuration's root scope.
-            //
-            os << "# Created automatically by bdep."                   << endl
-               << "#"                                                  << endl
-               << "if ($build.meta_operation != 'info'      && \\"     << endl
-               << "    $build.meta_operation != 'configure' && \\"     << endl
-               << "    $build.meta_operation != 'disfigure')"          << endl
-               << "{"                                                  << endl
-               << "  if ($getenv('BDEP_SYNC') == [null] || \\"         << endl
-               << "      $getenv('BDEP_SYNC') == true   || \\"         << endl
-               << "      $getenv('BDEP_SYNC') == 1)"                   << endl
-               << "    run '" << argv0 << "' sync --hook=1 "           <<
-              "--verbose $build.verbosity "                            <<
-              "--config \"$out_root\""                                 << endl
-               << "}"                                                  << endl;
+            try
+            {
+              ofdstream os (f);
 
-            os.close ();
-          }
-          catch (const io_error& e)
-          {
-            fail << "unable to write to " << f << ": " << e;
+              // Should we analyze BDEP_SYNCED_CONFIGS ourselves or should we
+              // let bdep-sync do it for us? Doing it here instead of spawning
+              // a process (which will load the database, etc) will be faster.
+              // But, on the other hand, this is only an issue for commands
+              // like update and test that do their own implicit sync.
+              //
+              // cfgs = $getenv(BDEP_SYNCED_CONFIGS)
+              // if! $null($cfgs)
+              //   cfgs = [dir_paths] $regex.split($cfgs, ' *"([^"]*)" *', '\1')
+              //
+              // Also note that we try to avoid setting any variables in order
+              // not to pollute the configuration's root scope.
+              //
+              os << "# Created automatically by bdep."                 << endl
+                 << "#"                                                << endl
+                 << "if ($build.meta_operation != 'info'      && \\"   << endl
+                 << "    $build.meta_operation != 'configure' && \\"   << endl
+                 << "    $build.meta_operation != 'disfigure')"        << endl
+                 << "{"                                                << endl
+                 << "  if ($getenv('BDEP_SYNC') == [null] || \\"       << endl
+                 << "      $getenv('BDEP_SYNC') == true   || \\"       << endl
+                 << "      $getenv('BDEP_SYNC') == 1)"                 << endl
+                 << "    run '" << argv0 << "' sync --hook=1 "         <<
+                "--verbose $build.verbosity "                          <<
+                "--config \"$out_root\""                               << endl
+                 << "}"                                                << endl;
+
+              os.close ();
+            }
+            catch (const io_error& e)
+            {
+              fail << "unable to write to " << f << ": " << e;
+            }
           }
         }
-      }
-      else
-      {
-        if (e)
-          rm (f);
+        else
+        {
+          if (e)
+            rm (f);
+        }
       }
     }
   }
@@ -1260,6 +1645,108 @@ namespace bdep
     return false;
   }
 
+  // Given the configuration directory, return absolute and normalized
+  // directories and UUIDs of the entire linked configuration cluster.
+  //
+  static linked_configs
+  find_config_cluster (const common_options& co, const dir_path& d)
+  {
+    linked_configs r;
+
+    // Run bpkg-cfg-info to get the list of linked configurations.
+    //
+    fdpipe pipe (open_pipe ()); // Text mode seems appropriate.
+
+    process pr (start_bpkg (3,
+                            co,
+                            pipe /* stdout */,
+                            2    /* stderr */,
+                            "cfg-info",
+                            "-d", d,
+                            "--link",
+                            "--backlink",
+                            "--recursive"));
+
+    pipe.out.close (); // Shouldn't throw unless very broken.
+
+    bool io (false);
+    try
+    {
+      ifdstream is (move (pipe.in), fdstream_mode::skip, ifdstream::badbit);
+
+      string l; // Reuse the buffer.
+      do
+      {
+        linked_config c;
+
+        optional<pair<bool /* path */, bool /* uuid */>> s;
+        while (!eof (getline (is, l)))
+        {
+          if (!s)
+            s = make_pair (false, false);
+
+          if (l.empty ())
+            break;
+
+          if (l.compare (0, 6, "path: ") == 0)
+          {
+            try
+            {
+              c.path = dir_path (string (l, 6));
+              s->first = true;
+            }
+            catch (const invalid_path&)
+            {
+              fail << "invalid bpkg-cfg-info output line '" << l
+                   << "': invalid configuration path";
+            }
+          }
+          else if (l.compare (0, 6, "uuid: ") == 0)
+          {
+            try
+            {
+              c.uuid = uuid (string (l, 6));
+              s->second = true;
+            }
+            catch (const invalid_argument&)
+            {
+              fail << "invalid bpkg-cfg-info output line '" << l
+                   << "': invalid configuration uuid";
+            }
+          }
+        }
+
+        if (s)
+        {
+          if (!s->first)
+            fail << "invalid bpkg-cfg-info output: missing configuration path";
+
+          if (!s->second)
+            fail << "invalid bpkg-cfg-info output: missing configuration uuid";
+
+          r.push_back (move (c));
+        }
+      }
+      while (!is.eof ());
+
+      is.close (); // Detect errors.
+    }
+    catch (const io_error&)
+    {
+      // Presumably the child process failed and issued diagnostics so let
+      // finish_bpkg() try to deal with that first.
+      //
+      io = true;
+    }
+
+    finish_bpkg (co, pr, io);
+
+    if (r.empty ()) // We should have at leas the main configuration.
+      fail << "invalid bpkg-cfg-info output: missing configuration information";
+
+    return r;
+  }
+
   void
   cmd_sync (const common_options& co,
             const dir_path& prj,
@@ -1274,24 +1761,28 @@ namespace bdep
             transaction* t,
             vector<pair<dir_path, string>>* created_cfgs)
   {
-    if (!synced (c->path, implicit))
-      cmd_sync (co,
-                c->path,
-                prj,
-                c,
-                pkg_args,
-                implicit,
-                fetch,
-                yes,
-                name_cfg,
-                nullopt              /* upgrade   */,
-                nullopt              /* recursive */,
-                package_locations () /* prj_pkgs  */,
-                strings ()           /* dep_pkgs  */,
-                create_host_config,
-                create_build2_config,
-                t,
-                created_cfgs);
+    assert (!c->packages.empty ());
+
+    if (synced (c->path, implicit))
+      return;
+
+    cmd_sync (co,
+              prj,
+              {sync_config (c)},
+              find_config_cluster (co, c->path),
+              pkg_args,
+              implicit,
+              fetch,
+              yes,
+              name_cfg,
+              nullopt              /* upgrade   */,
+              nullopt              /* recursive */,
+              package_locations () /* prj_pkgs  */,
+              strings ()           /* dep_pkgs  */,
+              create_host_config,
+              create_build2_config,
+              t,
+              created_cfgs);
   }
 
   void
@@ -1303,22 +1794,24 @@ namespace bdep
                      bool create_host_config,
                      bool create_build2_config)
   {
-    if (!synced (cfg, true /* implicit */))
-      cmd_sync (co,
-                cfg,
-                dir_path (),
-                nullptr,
-                strings (),
-                true                  /* implicit */,
-                fetch,
-                yes,
-                name_cfg,
-                nullopt               /* upgrade   */,
-                nullopt               /* recursive */,
-                package_locations ()  /* prj_pkgs  */,
-                strings ()            /* dep_pkgs  */,
-                create_host_config,
-                create_build2_config);
+    if (synced (cfg, true /* implicit */))
+      return;
+
+    cmd_sync (co,
+              dir_path () /* prj */,
+              {sync_config (cfg)},
+              find_config_cluster (co, cfg),
+              strings ()            /* pkg_args */,
+              true                  /* implicit */,
+              fetch,
+              yes,
+              name_cfg,
+              nullopt               /* upgrade   */,
+              nullopt               /* recursive */,
+              package_locations ()  /* prj_pkgs  */,
+              strings ()            /* dep_pkgs  */,
+              create_host_config,
+              create_build2_config);
   }
 
   int
@@ -1404,8 +1897,12 @@ namespace bdep
 
     dir_path prj; // Empty if we have no originating project.
     package_locations prj_pkgs;
-    configurations cfgs;
-    dir_paths cfg_dirs;
+
+    // Note that all elements are either NULL/path or not (see initialization
+    // below for details).
+    //
+    list<sync_config> cfgs;
+
     bool default_fallback (false);
 
     // In the implicit mode we don't search the current working directory
@@ -1451,7 +1948,8 @@ namespace bdep
 
       prj = move (pp.project);
       prj_pkgs = move (pp.packages);
-      cfgs = move (cs.first);
+      cfgs.assign (make_move_iterator (cs.first.begin ()),
+                   make_move_iterator (cs.first.end ()));
       default_fallback = cs.second;
     }
     else
@@ -1488,8 +1986,7 @@ namespace bdep
         if (synced (d, o.implicit (), false /* add */))
           continue;
 
-        cfgs.push_back (nullptr);
-        cfg_dirs.push_back (move (d));
+        cfgs.push_back (move (d));
       }
 
       if (cfgs.empty ())
@@ -1502,18 +1999,69 @@ namespace bdep
 
     // Synchronize each configuration.
     //
+    // A configuration can be part of a linked cluster which we sync all at
+    // once. And some configurations in cfgs can be part of earlier clusters
+    // that we have already sync'ed. Re-synchronizing them (actually the whole
+    // clusters) again would be strange. Plus, we want to treat them as
+    // "originating configurations" for dependency upgrade purposes.
+    //
+    // So what we are going to do is remove configurations from cfgs/cfg_dirs
+    // as we go along.
+    //
     bool empty (true); // All configurations are empty.
-    for (size_t i (0), n (cfgs.size ()); i != n; ++i)
+    for (size_t i (0), n (cfgs.size ()); !cfgs.empty (); )
     {
-      const shared_ptr<configuration>& c (cfgs[i]); // Can be NULL.
-      const dir_path& cd (c != nullptr ? c->path : cfg_dirs[i]);
+      sync_configs ocfgs; // Originating configurations for this sync.
+      optional<size_t> m; // Number of packages in ocfgs.
+
+      ocfgs.push_back (move (cfgs.front ()));
+      cfgs.pop_front ();
+
+      if (const shared_ptr<configuration>& c = ocfgs.back ())
+        m = c->packages.size ();
+
+      const dir_path& cd (ocfgs.back ().path ());
 
       // Check if this configuration is already (being) synchronized.
+      //
+      // Note that we should ignore the whole cluster but we can't run bpkg
+      // here. So we will just ignore the configurations one by one (we expect
+      // them all to be on the list, see below).
       //
       if (synced (cd, o.implicit ()))
       {
         empty = false;
         continue;
+      }
+
+      // Get the linked configuration cluster and "pull out" of cfgs
+      // configurations that belong to this cluster. While at it also mark the
+      // entire cluster as being synced.
+      //
+      // Note: we have already deatl with the first configuration in lcfgs.
+      //
+      linked_configs lcfgs (find_config_cluster (o, cd));
+
+      for (auto j (lcfgs.begin () + 1); j != lcfgs.end (); ++j)
+      {
+        const linked_config& cfg (*j);
+
+        bool r (synced (cfg.path, true /* implicit */));
+        assert (!r); // Should have been skipped via the first above.
+
+        for (auto i (cfgs.begin ()); i != cfgs.end (); )
+        {
+          if (cfg.path == i->path ())
+          {
+            ocfgs.push_back (move (*i));
+            i = cfgs.erase (i);
+
+            if (const shared_ptr<configuration>& c = ocfgs.back ())
+              *m += c->packages.size ();
+          }
+          else
+            ++i;
+        }
       }
 
       // Skipping empty ones (part one).
@@ -1524,23 +2072,48 @@ namespace bdep
       // in case of the default configuration fallback (but also check and
       // warn if all of them were empty below).
       //
-      if (c != nullptr && c->packages.empty () && default_fallback)
+      if (m && *m == 0 && default_fallback)
         continue;
 
       // If we are synchronizing multiple configurations, separate them with a
       // blank line and print the configuration name/directory.
       //
       if (verb && n > 1)
-        text << (i == 0 ? "" : "\n")
-             << "in configuration " << *c << ':';
+      {
+        diag_record dr (text);
+
+        if (i++ != 0)
+          dr << '\n';
+
+        for (auto b (ocfgs.begin ()), j (b); j != ocfgs.end (); ++j)
+        {
+          if (j != b)
+            dr << ",\n";
+
+          dr << "in configuration " << *j;
+        }
+
+        dr << ':';
+      }
 
       // Skipping empty ones (part two).
       //
-      if (c != nullptr && c->packages.empty ())
+      if (m && *m == 0)
       {
         if (verb)
-          info << "no packages initialized in configuration " << *c
-               << ", skipping";
+        {
+          diag_record dr (info);
+          dr << "no packages initialized in ";
+
+          // Note that in case of a cluster, we know we have printed the
+          // configurations (see above) and thus can omit mentioning them
+          // here.
+          //
+          if (ocfgs.size () == 0)
+            dr << "configuration " << *ocfgs.back () << ", skipping";
+          else
+            dr << "configuration cluster, skipping";
+        }
 
         continue;
       }
@@ -1550,7 +2123,10 @@ namespace bdep
       bool fetch (o.fetch () || o.fetch_full ());
 
       if (fetch)
-        cmd_fetch (o, prj, c, o.fetch_full ());
+      {
+        for (const sync_config& c: ocfgs)
+          cmd_fetch (o, prj, c, o.fetch_full ());
+      }
 
       if (!dep_pkgs.empty ())
       {
@@ -1564,9 +2140,9 @@ namespace bdep
         // Only prompt if upgrading their dependencies.
         //
         cmd_sync (o,
-                  cd,
                   prj,
-                  c,
+                  move (ocfgs),
+                  move (lcfgs),
                   pkg_args,
                   false                    /* implicit */,
                   !fetch,
@@ -1586,9 +2162,9 @@ namespace bdep
         // (immediate by default, recursive if requested).
         //
         cmd_sync (o,
-                  cd,
                   prj,
-                  c,
+                  move (ocfgs),
+                  move (lcfgs),
                   pkg_args,
                   false                    /* implicit */,
                   !fetch,
@@ -1609,9 +2185,9 @@ namespace bdep
         // time) add the configuration name/directory to the plan header.
         //
         cmd_sync (o,
-                  cd,
                   prj,
-                  c,
+                  move (ocfgs),
+                  move (lcfgs),
                   pkg_args,
                   o.implicit (),
                   !fetch,
