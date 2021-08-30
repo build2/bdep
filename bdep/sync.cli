@@ -29,7 +29,7 @@ namespace bdep
         <cfg-spec> = (\b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>)... | \b{--all}|\b{-a}\n
         <pkg-spec> = (\b{--directory}|\b{-d} <pkg-dir>)... | <prj-spec>\n
         <prj-spec> = \b{--directory}|\b{-d} <prj-dir>\n
-        <pkg-args> = (<pkg> | <cfg-var>)...}
+        <pkg-args> = (\b{?}<pkg> | <cfg-var>)...}
 
      \h|DESCRIPTION|
 
