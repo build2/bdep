@@ -1952,6 +1952,8 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
               //
               open (out_src / s + ".test.c");
               os << "#include <stdio.h>"                               << '\n'
+                 <<                                                       '\n'
+                 << "#undef NDEBUG"                                    << '\n'
                  << "#include <assert.h>"                              << '\n'
                  <<                                                       '\n'
                  << "int main ()"                                      << '\n'
@@ -1967,8 +1969,10 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
               // <src>/<stem>.test.<cxx-ext>
               //
               open (out_src / s + ".test" + xe);
-              os << "#include <cassert>"                               << '\n'
-                 << "#include <iostream>"                              << '\n'
+              os << "#include <iostream>"                              << '\n'
+                 <<                                                       '\n'
+                 << "#undef NDEBUG"                                    << '\n'
+                 << "#include <cassert>"                               << '\n'
                  <<                                                       '\n'
                  << "int main ()"                                      << '\n'
                  << "{"                                                << '\n'
@@ -2748,9 +2752,11 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
               //
               open (out_src / s + ".test.c");
               os << "#include <stdio.h>"                               << '\n'
-                 << "#include <assert.h>"                              << '\n'
                  <<                                                       '\n'
                  << "#include <" << ip << apih << ">"                  << '\n'
+                 <<                                                       '\n'
+                 << "#undef NDEBUG"                                    << '\n'
+                 << "#include <assert.h>"                              << '\n'
                  <<                                                       '\n'
                  << "int main ()"                                      << '\n'
                  << "{"                                                << '\n'
@@ -2765,10 +2771,12 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
               // <src>/<stem>.test.<cxx-ext>
               //
               open (out_src / s + ".test" + xe);
-              os << "#include <cassert>"                               << '\n'
-                 << "#include <iostream>"                              << '\n'
+              os << "#include <iostream>"                              << '\n'
                  <<                                                       '\n'
                  << "#include <" << ip << apih << ">"                  << '\n'
+                 <<                                                       '\n'
+                 << "#undef NDEBUG"                                    << '\n'
+                 << "#include <cassert>"                               << '\n'
                  <<                                                       '\n'
                  << "int main ()"                                      << '\n'
                  << "{"                                                << '\n'
@@ -2915,11 +2923,13 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
             os << "#include <stdio.h>"                                 << '\n'
                << "#include <errno.h>"                                 << '\n'
                << "#include <string.h>"                                << '\n'
-               << "#include <assert.h>"                                << '\n'
                <<                                                         '\n';
             if (ver)
               os << "#include <" << ip << verh << ">"                  << '\n';
             os << "#include <" << ip << apih << ">"                    << '\n'
+               <<                                                         '\n'
+               << "#undef NDEBUG"                                      << '\n'
+               << "#include <assert.h>"                                << '\n'
                <<                                                         '\n'
                << "#ifdef _WIN32"                                      << '\n'
                << "#define tmpfile mytmpfile"                          << '\n'
@@ -2994,13 +3004,15 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
             // tests/basics/driver.<cxx-ext>
             //
             open (td / "driver" + xe);
-            os << "#include <cassert>"                                 << '\n'
-               << "#include <sstream>"                                 << '\n'
+            os << "#include <sstream>"                                 << '\n'
                << "#include <stdexcept>"                               << '\n'
                <<                                                         '\n';
             if (ver)
               os << "#include <" << ip << verh << ">"                  << '\n';
             os << "#include <" << ip << apih << ">"                    << '\n'
+               <<                                                         '\n'
+               << "#undef NDEBUG"                                      << '\n'
+               << "#include <cassert>"                                 << '\n'
                <<                                                         '\n'
                << "int main ()"                                        << '\n'
                << "{"                                                  << '\n'
