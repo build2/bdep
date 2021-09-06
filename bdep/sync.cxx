@@ -861,6 +861,9 @@ namespace bdep
     // Note that this may add more (implicit) configurations to origin_prj's
     // entry.
     //
+    // @@ We may end up openning the database (in load_implicit()) for each
+    //    project multiple times.
+    //
     for (const linked_config& cfg: linked_cfgs)
       load_implicit (co, cfg.path, prjs, origin_prj, origin_tr);
 
@@ -875,8 +878,10 @@ namespace bdep
         {
           auto& pkgs (cfg->packages);
 
-          for (const string& n: dep_pkgs)
+          for (cli::vector_group_scanner s (dep_pkgs); s.more (); )
           {
+            const char* n (s.next ());
+
             if (find_if (pkgs.begin (), pkgs.end (),
                          [&n] (const package_state& ps)
                          {
@@ -884,6 +889,8 @@ namespace bdep
                          }) != pkgs.end ())
               fail << "initialized package " << n << " specified as dependency" <<
                 info << "package initialized in project " << prj.path;
+
+            s.skip_group ();
           }
         }
       }
@@ -961,23 +968,30 @@ namespace bdep
     {
       if (origin_only)
       {
-        for (const string& a: pkg_args)
+        for (cli::vector_group_scanner s (pkg_args); s.more (); )
         {
-          if (a.find ('=') == string::npos)
+          if (strchr (s.next (), '=') == nullptr)
           {
             origin_only = false;
             break;
           }
+
+          s.skip_group ();
         }
       }
 
-      for (const string& a: pkg_args)
+      for (cli::vector_group_scanner s (pkg_args); s.more (); )
       {
-        size_t p (a.find ('='));
-        if (p == string::npos)
-          continue;
+        const char* a (s.next ());
+        const char* p (strchr (a, '='));
 
-        if (a.front () != '!')
+        if (p == nullptr)
+        {
+          s.skip_group ();
+          continue;
+        }
+
+        if (*a != '!')
         {
           if (!dep_pkgs.empty ())
             dep_vars = true;
@@ -991,13 +1005,16 @@ namespace bdep
           }
           else
             fail << "non-global configuration variable " <<
-              string (a, 0, p) << " without packages or dependencies";
+              string (a, 0, p - a) << " without packages or dependencies";
 
           if (dep_vars || origin_vars)
             continue;
         }
 
         args.push_back (a);
+
+        // Note: we let diagnostics for unhandled groups cover groups for
+        //       configuration variables.
       }
 
       if (!args.empty ())
@@ -1076,9 +1093,17 @@ namespace bdep
           //
           if (vars)
           {
-            for (const string& a: pkg_args)
-              if (a.find ('=') != string::npos && a.front () != '!')
-                args.push_back (a);
+            for (cli::vector_group_scanner s (pkg_args); s.more (); )
+            {
+              const char* a (s.next ());
+              if (strchr (a, '=') != nullptr)
+              {
+                if (*a != '!')
+                  args.push_back (a);
+              }
+              else
+                s.skip_group ();
+            }
           }
 
           if (g)
@@ -1123,8 +1148,13 @@ namespace bdep
     //
     if (upgrade)
     {
-      for (const string& n: dep_pkgs)
+      for (cli::vector_group_scanner s (dep_pkgs); s.more (); )
       {
+        const char* n (s.next ());
+
+        // Note that we are using the leading group for our options since
+        // we pass the user's group as trailing below.
+        //
         bool g (multi_cfg || dep_vars);
         if (g)
           args.push_back ("{");
@@ -1154,9 +1184,17 @@ namespace bdep
         //
         if (dep_vars)
         {
-          for (const string& a: pkg_args)
-            if (a.find ('=') != string::npos && a.front () != '!')
-              args.push_back (a);
+          for (cli::vector_group_scanner s (pkg_args); s.more (); )
+          {
+            const char* a (s.next ());
+            if (strchr (a, '=') != nullptr)
+            {
+              if (*a != '!')
+                args.push_back (a);
+            }
+            else
+              s.skip_group ();
+          }
         }
 
         if (g)
@@ -1164,44 +1202,192 @@ namespace bdep
 
         // Make sure it is treated as a dependency.
         //
-        args.push_back ('?' + n);
+        args.push_back (string ("?") + n);
+
+        // Note that bpkg expects options first and configuration variables
+        // last. Which mean that if we have dep_vars above and an option
+        // below, then things will blow up. Though it's unclear what option
+        // someone may want to pass here.
+        //
+        cli::scanner& gs (s.group ());
+        if (gs.more ())
+        {
+          args.push_back ("+{");
+          for (; gs.more (); args.push_back (gs.next ())) ;
+          args.push_back ("}");
+        }
       }
     }
 
     // Finally, add packages (?<pkg>) from pkg_args, if any.
     //
     // Similar to the dep_pkgs case above, we restrict this to the origin
-    // configurations.
+    // configurations unless configuration(s) were explicitly specified by the
+    // user.
     //
-    for (const string& a: pkg_args)
+    for (cli::vector_group_scanner s (pkg_args); s.more (); )
     {
-      if (a.find ('=') != string::npos)
+      const char* ca (s.next ());
+
+      if (strchr (ca, '=') != nullptr)
         continue;
 
-      if (multi_cfg)
+      string a (ca); // Not guaranteed to be valid after group processing.
+
+      cli::scanner& gs (s.group ());
+
+      if (gs.more () || multi_cfg)
       {
         args.push_back ("{");
 
-        // Note that here (unlike the dep_pkgs case above), we have to make
-        // sure the configuration is actually involved.
-        //
-        for (const sync_config& ocfg: origin_cfgs)
+        cmd_sync_pkg_options po;
+        try
         {
-          if (find_if (cfgs.begin (), cfgs.end (),
-                       [&ocfg] (const config& cfg)
-                       {
-                         return ocfg.path () == cfg.path.get ();
-                       }) == cfgs.end ())
-            continue;
+          while (gs.more ())
+          {
+            const char* a (gs.peek ());
 
-          args.push_back ("--config-uuid=" +
-                          linked_cfgs.find (ocfg.path ())->uuid.string ());
+            // Handle @<cfg-name> & -@<cfg-name>.
+            //
+            if (*a == '@' || (*a == '-' && a[1] == '@'))
+            {
+              string n (a + (*a == '@' ? 1 : 2));
+
+              if (n.empty ())
+                fail << "missing configuration name in '" << a << "'";
+
+              po.config_name ().emplace_back (move (n), gs.position ());
+              po.config_name_specified (true);
+
+              gs.next ();
+              continue;
+            }
+
+            if (!po.parse (gs))
+              break;
+          }
         }
+        catch (const cli::exception& e)
+        {
+          fail << e << " grouped for package " << a;
+        }
+
+        if (po.config_specified ()    ||
+            po.config_id_specified () ||
+            po.config_name_specified ())
+        {
+          auto append = [&linked_cfgs, &args, &a] (const dir_path& d)
+          {
+            if (const linked_config* cfg = linked_cfgs.find (d))
+            {
+              args.push_back ("--config-uuid=" + cfg->uuid.string ());
+            }
+            else
+              fail << "configuration " << d << " is not part of linked "
+                   << "configuration cluster being synchronized" <<
+                info << "specified for package " << a;
+          };
+
+          // We will be a bit lax and allow specifying with --config any
+          // configuration in the cluster, not necessarily associated with the
+          // origin project (which we may not have).
+          //
+          for (dir_path d: po.config ())
+            append (normalize (d, "configuration"));
+
+          if (const char* o = (po.config_id_specified ()  ? "--config-id" :
+                               po.config_name_specified () ? "--config-name|-n" :
+                               nullptr))
+          {
+            if (!origin)
+              fail << o << "specified without project" <<
+                info << "specified for package " << a;
+
+            // Origin project is first.
+            //
+            const dir_path& pd (prjs.front ().path);
+
+            auto lookup = [&append, &po, &pd] (database& db)
+            {
+              // Similar code to find_configurations().
+              //
+              using query = bdep::query<configuration>;
+
+              for (uint64_t id: po.config_id ())
+              {
+                if (auto cfg = db.find<configuration> (id))
+                  append (cfg->path);
+                else
+                  fail << "no configuration id " << id << " in project " << pd;
+              }
+
+              for (const string& n: po.config_name ())
+              {
+                if (auto cfg = db.query_one<configuration> (query::name == n))
+                  append (cfg->path);
+                else
+                  fail << "no configuration name '" << n << "' in project "
+                       << pd;
+              }
+            };
+
+            // Reuse the transaction, if any (similar to load_implicit()).
+            //
+            if (origin_tr != nullptr)
+            {
+              lookup (origin_tr->database ());
+            }
+            else
+            {
+              // Save and restore the current transaction, if any.
+              //
+              transaction* ct (nullptr);
+              if (transaction::has_current ())
+              {
+                ct = &transaction::current ();
+                transaction::reset_current ();
+              }
+
+              auto tg (make_guard ([ct] ()
+                                   {
+                                     if (ct != nullptr)
+                                       transaction::current (*ct);
+                                   }));
+
+              database db (open (pd, trace));
+              transaction t (db.begin ());
+              lookup (db);
+              t.commit ();
+            }
+          }
+        }
+        else
+        {
+          // Note that here (unlike the dep_pkgs case above), we have to make
+          // sure the configuration is actually involved.
+          //
+          for (const sync_config& ocfg: origin_cfgs)
+          {
+            if (find_if (cfgs.begin (), cfgs.end (),
+                         [&ocfg] (const config& cfg)
+                         {
+                           return ocfg.path () == cfg.path.get ();
+                         }) == cfgs.end ())
+              continue;
+
+            args.push_back ("--config-uuid=" +
+                            linked_cfgs.find (ocfg.path ())->uuid.string ());
+          }
+        }
+
+        // Add the rest of group arguments (e.g., configuration variables).
+        //
+        for (; gs.more (); args.push_back (gs.next ())) ;
 
         args.push_back ("}+");
       }
 
-      args.push_back (a);
+      args.push_back (move (a));
     }
 
     // We do a separate fetch instead of letting pkg-build do it. This way we
@@ -1753,8 +1939,8 @@ namespace bdep
   cmd_sync (const common_options& co,
             const dir_path& prj,
             const shared_ptr<configuration>& c,
-            const strings& pkg_args,
             bool implicit,
+            const strings& pkg_args,
             bool fetch,
             bool yes,
             bool name_cfg,
@@ -1843,6 +2029,8 @@ namespace bdep
     // Sort arguments (if any) into pkg-args and dep-spec: if the argument
     // starts with '?' (dependency flag) or contains '=' (config variable),
     // then we assume it is pkg-args.
+    //
+    // Note: scan_argument() passes through groups.
     //
     strings pkg_args;
     strings dep_pkgs;

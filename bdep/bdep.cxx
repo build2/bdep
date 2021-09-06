@@ -123,20 +123,19 @@ static const size_t args_pos (numeric_limits<size_t>::max () / 2);
 // Once this is done, use the "final" values of the common options to do
 // global initializations (verbosity level, etc).
 //
-// If O is-a configuration_name_options, then also handle the @<cfg-name>
+// If O is-a configuration_name_options, then also handle the [-]@<cfg-name>
 // arguments and place them into configuration_name_options::config_name.
 //
-static inline bool
+static inline void
 cfg_name (configuration_name_options* o, const char* a, size_t p)
 {
-  string n (a);
+  string n (a + (*a == '@' ? 1 : 2));
 
   if (n.empty ())
-    fail << "empty configuration name";
+    fail << "missing configuration name in '" << a << "'";
 
   o->config_name ().emplace_back (move (n), p);
   o->config_name_specified (true);
-  return true;
 }
 
 static inline bool
@@ -197,10 +196,9 @@ init (const common_options& co,
 
       // @<cfg-name> & -@<cfg-name>
       //
-      size_t p (scan.position ());
-      if ((*a == '@' &&                cfg_name (&o, a + 1, p)) ||
-          (*a == '-' && a[1] == '@' && cfg_name (&o, a + 2, p)))
+      if (*a == '@' || (*a == '-' && a[1] == '@'))
       {
+        cfg_name (&o, a, scan.position ());
         scan.next ();
         continue;
       }
@@ -537,6 +535,8 @@ catch (const failed&)
 {
   return 1; // Diagnostics has already been issued.
 }
+// Note that there commands that rely on this handler.
+//
 catch (const cli::exception& e)
 {
   error << e;

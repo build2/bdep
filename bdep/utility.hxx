@@ -303,6 +303,26 @@ namespace bdep
     return r;
   }
 
+  namespace cli
+  {
+    class vector_group_scanner: public group_scanner
+    {
+    public:
+      explicit
+      vector_group_scanner (const std::vector<std::string>& args)
+          : group_scanner (scan_), scan_ (args) {}
+
+      void
+      skip_group ()
+      {
+        for (scanner& g (group ()); g.more (); g.skip ()) ;
+      }
+
+    private:
+      vector_scanner scan_;
+    };
+  }
+
   // Verify that a string is a valid UTF-8 byte sequence encoding only the
   // graphic Unicode codepoints. Issue diagnostics (including a suggestion to
   // use option opt, if specified) and fail if that's not the case.

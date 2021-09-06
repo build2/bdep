@@ -1065,7 +1065,7 @@ namespace bdep
       }
 
       for (const shared_ptr<configuration>& c: scs)
-        cmd_sync (o, prj, c, strings () /* pkg_args */, true /* implicit */);
+        cmd_sync (o, prj, c, true /* implicit */);
     }
 
     return cmd_publish (o, prj, move (pkgs), move (dist_dirs));

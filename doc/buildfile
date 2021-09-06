@@ -24,9 +24,9 @@ css{*}: extension = css
 define xhtml: doc
 xhtml{*}: extension = xhtml
 
-./: {man1 xhtml}{bdep bdep-common-options bdep-projects-configs \
-                 bdep-default-options-files $cmds}              \
-    css{common pre-box man}                                     \
+./: {man1 xhtml}{bdep bdep-common-options bdep-projects-configs           \
+                 bdep-argument-grouping bdep-default-options-files $cmds} \
+    css{common pre-box man}                                               \
     file{man-*}
 
 ./: file{cli.sh}

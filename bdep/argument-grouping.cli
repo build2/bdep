@@ -1,0 +1,67 @@
+// file      : bdep/argument-grouping.cli
+// license   : MIT; see accompanying LICENSE file
+
+include <bdep/common-options.hxx>;
+
+"\section=1"
+"\name=bdep-argument-grouping"
+"\summary=argument grouping facility"
+
+// NOTE: the grouping documentation was copied from CLI.
+//
+"
+\h|SYNOPSIS|
+
+\c{\b{bdep} \b{{} \i{options} \b{\}+} \i{argument} \b{+{} \i{options} \b{\}}}
+
+\h|DESCRIPTION|
+
+For certain commands certain options and command line variables can be grouped
+to only apply to specific arguments. This help topic describes the argument
+grouping facility used for this purpose.
+
+Groups can be specified before (leading) and/or after (trailing) the argument
+they apply to. A leading group starts with '\cb{{}' and ends with '\cb{\}+}'
+while a trailing group starts with '\cb{+{}' and ends with '\cb{\}}'. For
+example:
+
+\
+{ --foo --bar }+ arg   # 'arg' with '--foo' '--bar'
+arg +{ fox=1 baz=2 }   # 'arg' with 'fox=1' 'baz=2'
+\
+
+Multiple leading and/or trailing groups can be specified for the same
+argument. For example:
+
+\
+{ -f }+ { -b }+ arg +{ f=1 } +{ b=2 } # 'arg' with '-f' 'b' 'f=1' 'b=2'
+\
+
+Note that the group applies to a single argument only. For example:
+
+\
+{ --foo }+ arg1  arg2 +{ --bar }  # 'arg1' with '--foo' and
+                                  # 'arg2' with '--bar'
+\
+
+The group separators ('\cb{{}', '\cb{\}+'}, etc) must be separate command line
+arguments. In particular, they must not be adjacent either to the arguments
+inside the group nor to the argument they apply to. All such cases will be
+treated as ordinary arguments. For example:
+
+\
+{--foo}+ arg   # '{--foo}+' ...
+arg+{ --foo }  # 'arg+{' ...
+\
+
+If one of the group separators needs to be specified as an argument verbatim,
+then it must be escaped with '\cb{\\}'. For example:
+
+\
+}             # error: unexpected group separator
+}x            # '}x'
+\}            # '}'
+{ \}+ }+ arg  # 'arg' with '}+'
+\
+
+"

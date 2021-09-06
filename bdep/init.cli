@@ -29,7 +29,7 @@ namespace bdep
      \c{<cfg-spec> = (\b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>)... | \b{--all}|\b{-a}\n
         <pkg-spec> = (\b{--directory}|\b{-d} <pkg-dir>)... | <prj-spec>\n
         <prj-spec> = \b{--directory}|\b{-d} <prj-dir>\n
-        <pkg-args> = (<pkg> | <cfg-var>)...\n
+        <pkg-args> = (\b{?}<pkg> | <cfg-var>)...\n
         <cfg-args> = [\b{--} <bpkg-options>] [\b{--existing}|\b{-e} | (<module> | <cfg-var>)...]}
 
      \h|DESCRIPTION|
@@ -66,6 +66,18 @@ namespace bdep
 
      \
      $ bdep init -C ../prj-gcc @gcc -- -- ?sys:libsqlite3/*
+     \
+
+     Configuration variables can be specified to only apply to specific
+     packages in <pkg-args> using the argument grouping mechanism
+     (\l{bdep-argument-grouping(1)}). Additionally, such packages can be
+     placed into specific linked configurations by specifying the
+     configuration with one of the \cb{--config*} options (or \cb{@} notation)
+     using the same grouping mechanism. For example (assuming \cb{gcc} is
+     linked to \cb{common}):
+
+     \
+     $ bdep init @gcc { @common config.liblarge.extra=true }+ ?liblarge
      \
 
      \h|EXAMPLES|

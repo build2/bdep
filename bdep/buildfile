@@ -35,7 +35,7 @@ test-options      \
 update-options    \
 clean-options
 
-help_topics = projects-configs default-options-files
+help_topics = projects-configs argument-grouping default-options-files
 
 ./: exe{bdep}: {hxx ixx txx cxx}{+bdep} libue{bdep}
 
@@ -139,6 +139,7 @@ if $cli.configured
   # Help topics.
   #
   cli.cxx{projects-configs}:      cli{projects-configs}
+  cli.cxx{argument-grouping}:     cli{argument-grouping}
   cli.cxx{default-options-files}: cli{default-options-files}
 
   # Option length must be the same to get commands/topics/options aligned.
@@ -168,6 +169,7 @@ if $cli.configured
   # Avoid generating CLI runtime and empty inline file for help topics.
   #
   cli.cxx{projects-configs}:      cli.options += --suppress-cli --suppress-inline
+  cli.cxx{argument-grouping}:     cli.options += --suppress-cli --suppress-inline
   cli.cxx{default-options-files}: cli.options += --suppress-cli --suppress-inline
 
   # Include the generated cli files into the distribution and don't remove

@@ -83,7 +83,7 @@ compile "bdep" $o --output-prefix "" --class-doc bdep::commands=short --class-do
 # the help topics sections in bdep/buildfile and help.cxx.
 #
 pages="new help init sync fetch status ci release publish deinit config test \
-update clean projects-configs default-options-files"
+update clean projects-configs argument-grouping default-options-files"
 
 for p in $pages; do
   compile $p $o

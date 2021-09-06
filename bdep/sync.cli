@@ -67,6 +67,13 @@ namespace bdep
      Note also that \c{\b{--immediate}|\b{-i}} or \c{\b{--recursive}|\b{-r}}
      can only be specified with an explicit \cb{--upgrade} or \cb{--patch}.
 
+     Configuration variables can be specified to only apply to specific
+     packages in <pkg-args> and <dep-spec> using the argument grouping
+     mechanism (\l{bdep-argument-grouping(1)}). Additionally, packages in
+     <pkg-args> can be placed into specific linked configurations by
+     specifying the configuration with one of the \cb{--config*} options
+     (or \cb{@} notation) using the same grouping mechanism.
+
      If during synchronization a build-time dependency is encountered and
      there is no build configuration of a suitable type associated with the
      project, then the user is prompted (unless the respective
@@ -239,6 +246,18 @@ namespace bdep
     // implies --implicit.
     //
     uint16_t --hook = 0;
+  };
+
+  // Options that can be specified in a group for ?<pkg> in pkg-args.
+  //
+  class cmd_sync_pkg_options
+  {
+    // Note that this is also used as storage for configuration names
+    // specified as @<name>.
+    //
+    vector<string> --config-name|-n;
+    vector<uint64_t> --config-id;
+    vector<dir_path> --config|-c;
   };
 
   "
