@@ -494,14 +494,19 @@ namespace bdep
       "\l{bdep-common-options(1)} \- details on common options"
     }
 
+    bool projects-configs
+    {
+      "\l{bdep-projects-configs(1)} \- specifying projects and configurations"
+    }
+
     bool default-options-files
     {
       "\l{bdep-default-options-files(1)} \- specifying default options"
     }
 
-    bool projects-configs
+    bool argument-grouping
     {
-      "\l{bdep-projects-configs(1)} \- specifying projects and configurations"
+      "\l{bdep-argument-grouping(1)} \- argument grouping facility"
     }
   };
 

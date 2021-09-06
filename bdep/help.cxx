@@ -11,6 +11,7 @@
 // Help topics.
 //
 #include <bdep/projects-configs.hxx>
+#include <bdep/argument-grouping.hxx>
 #include <bdep/default-options-files.hxx>
 
 using namespace std;
@@ -32,6 +33,8 @@ namespace bdep
         usage = &print_bdep_common_options_long_usage;
       else if (t == "projects-configs")
         usage = &print_bdep_projects_configs_usage;
+      else if (t == "argument-grouping")
+        usage = &print_bdep_argument_grouping_usage;
       else if (t == "default-options-files")
         usage = &print_bdep_default_options_files_usage;
       else
