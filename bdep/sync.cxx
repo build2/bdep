@@ -1954,10 +1954,17 @@ namespace bdep
     if (synced (c->path, implicit))
       return;
 
+    linked_configs lcfgs (find_config_cluster (co, c->path));
+    for (auto j (lcfgs.begin () + 1); j != lcfgs.end (); ++j)
+    {
+      bool r (synced (j->path, true /* implicit */));
+      assert (!r); // Should have been skipped via the first above.
+    }
+
     cmd_sync (co,
               prj,
               {sync_config (c)},
-              find_config_cluster (co, c->path),
+              move (lcfgs),
               pkg_args,
               implicit,
               fetch,
@@ -1985,10 +1992,17 @@ namespace bdep
     if (synced (cfg, true /* implicit */))
       return;
 
+    linked_configs lcfgs (find_config_cluster (co, cfg));
+    for (auto j (lcfgs.begin () + 1); j != lcfgs.end (); ++j)
+    {
+      bool r (synced (j->path, true /* implicit */));
+      assert (!r); // Should have been skipped via the first above.
+    }
+
     cmd_sync (co,
               dir_path () /* prj */,
               {sync_config (cfg)},
-              find_config_cluster (co, cfg),
+              move (lcfgs),
               strings ()            /* pkg_args */,
               true                  /* implicit */,
               fetch,
