@@ -578,13 +578,17 @@ namespace bdep
     // Call bpkg to link the configurations.
     //
     // If possible, rebase the linked configuration directory path relative to
-    // the other configuration path.
+    // the other configuration path. Also use our associated name as the
+    // linked configuration name.
     //
+    const optional<string>& cn (lc->name);
+
     run_bpkg (2,
               o,
               "cfg-link",
               ld.try_relative (cd) ? "--relative" : nullptr,
               "-d", cd,
+              (cn ? "--name" : nullptr), (cn ? cn->c_str () : nullptr),
               ld);
   }
 
