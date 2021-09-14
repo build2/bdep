@@ -131,6 +131,17 @@ namespace bdep
         verify_project_packages (pp, cs);
 
       cfgs = move (cs.first);
+
+      // If this is fallback to default configurations, then reverse them:
+      // this adds a bit of magic to typical tool/module development setups
+      // where we normally create/initialize the host/build2 configuration
+      // first and which needs to be deinitialized last.
+      //
+      // @@ TODO: maybe we should deinitialize/sync them all at once if they
+      //    belong to the same configuration cluster?
+      //
+      if (cs.second)
+        reverse (cfgs.begin (), cfgs.end ());
     }
 
     // If no packages were explicitly specified, then we deinitalize all that
