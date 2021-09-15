@@ -1003,8 +1003,7 @@ namespace bdep
       // Pre-sync the configurations to avoid triggering the build system hook
       // (see sync for details).
       //
-      for (const dir_path& cfg: cfgs)
-        cmd_sync_implicit (o, cfg);
+      cmd_sync_implicit (o, cfgs);
     }
     else
     {
@@ -1064,8 +1063,7 @@ namespace bdep
           scs.push_back (move (pc));
       }
 
-      for (const shared_ptr<configuration>& c: scs)
-        cmd_sync (o, prj, c, true /* implicit */);
+      cmd_sync (o, prj, scs, true /* implicit */);
     }
 
     return cmd_publish (o, prj, move (pkgs), move (dist_dirs));

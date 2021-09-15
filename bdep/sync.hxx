@@ -12,6 +12,30 @@
 
 namespace bdep
 {
+  // A RAII class that restores the original value of the BDEP_SYNCED_CONFIGS
+  // environment variable on destruction.
+  //
+  class synced_configs_guard
+  {
+  public:
+    optional<optional<string>> original; // Set to absent to disarm.
+
+    synced_configs_guard () = default;
+    synced_configs_guard (optional<string> o): original (move (o)) {}
+    ~synced_configs_guard ();
+
+    synced_configs_guard (synced_configs_guard&& r)
+        : original (move (r.original))
+    {
+      r.original = nullopt;
+    }
+
+    synced_configs_guard (const synced_configs_guard&) = delete;
+
+    synced_configs_guard& operator= (synced_configs_guard&&) = delete;
+    synced_configs_guard& operator= (const synced_configs_guard&) = delete;
+  };
+
   // The optional pkg_args are the additional dependency packages and/or
   // configuration variables to pass to bpkg-pkg-build (see bdep-init).
   //
@@ -35,7 +59,7 @@ namespace bdep
   // the created configurations with the project using the configuration types
   // also as their names.
   //
-  void
+  synced_configs_guard
   cmd_sync (const common_options&,
             const dir_path& prj,
             const shared_ptr<configuration>&,
@@ -49,12 +73,39 @@ namespace bdep
             transaction* = nullptr,
             vector<pair<dir_path, string>>* created_cfgs = nullptr);
 
+  // As above but sync multiple configurations. If some configurations belong
+  // to the same cluster, then they are synced at once.
+  //
+  void
+  cmd_sync (const common_options&,
+            const dir_path& prj,
+            const configurations&,
+            bool implicit,
+            const strings& pkg_args = strings (),
+            bool fetch = true,
+            bool yes = true,
+            bool name_cfg = false,
+            bool create_host_config = false,
+            bool create_build2_config = false);
+
   // As above but perform an implicit sync without a configuration object
   // (i.e., as if from the hook).
   //
-  void
+  synced_configs_guard
   cmd_sync_implicit (const common_options&,
                      const dir_path& cfg,
+                     bool fetch = true,
+                     bool yes = true,
+                     bool name_cfg = true,
+                     bool create_host_config = false,
+                     bool create_build2_config = false);
+
+  // As above but sync multiple configurations. If some configurations belong
+  // to the same cluster, then they are synced at once.
+  //
+  void
+  cmd_sync_implicit (const common_options&,
+                     const dir_paths& cfgs,
                      bool fetch = true,
                      bool yes = true,
                      bool name_cfg = true,

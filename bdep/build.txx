@@ -125,7 +125,7 @@ namespace bdep
       // Pre-sync the configuration to avoid triggering the build system hook
       // (see sync for details).
       //
-      cmd_sync (o, prj, c, true /* implicit */);
+      synced_configs_guard g (cmd_sync (o, prj, c, true /* implicit */));
 
       build (o, c, ps, cfg_vars);
     }

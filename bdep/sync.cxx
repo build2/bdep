@@ -1792,18 +1792,31 @@ namespace bdep
   // The BDEP_SYNCED_CONFIGS environment variable.
   //
   // Note that it covers both depth and breadth (i.e., we don't restore the
-  // previous value before returning). The idea here is for commands like
-  // update or test would perform an implicit sync which will then be
-  // "noticed" by the build system hook. This should be both faster (no need
-  // to spawn multiple bdep processes) and simpler (no need to worry about
-  // who has the database open, etc).
+  // previous value before returning, instead returning the "restorer"
+  // guard). The idea here is for commands like update or test would perform
+  // an implicit sync which will then be "noticed" by the build system
+  // hook. This should be both faster (no need to spawn multiple bdep
+  // processes) and simpler (no need to worry about who has the database open,
+  // etc).
   //
   // We also used to do this only in the first form of sync but it turns out
   // we may end up invoking a hook during upgrade (e.g., to prepare a
   // distribution of a package as part of pkg-checkout which happens in the
   // configuration we have "hooked" -- yeah, this rabbit hole is deep).
   //
-  static const char synced_name[] = "BDEP_SYNCED_CONFIGS";
+  static const char synced_configs[] = "BDEP_SYNCED_CONFIGS";
+
+  synced_configs_guard::
+  ~synced_configs_guard ()
+  {
+    if (original)
+    {
+      if (*original)
+        setenv (synced_configs, **original);
+      else
+        unsetenv (synced_configs);
+    }
+  }
 
   // Check if the specified configuration directory is already (being)
   // synchronized. If it is not and add is true, then add it to the
@@ -1813,7 +1826,7 @@ namespace bdep
   synced (const dir_path& d, bool implicit, bool add = true)
   {
     string v;
-    if (optional<string> e = getenv (synced_name))
+    if (optional<string> e = getenv (synced_configs))
       v = move (*e);
 
     if (contains (v, d))
@@ -1827,7 +1840,7 @@ namespace bdep
     if (add)
     {
       v += (v.empty () ? "\"" : " \"") + d.string () + '"';
-      setenv (synced_name, v);
+      setenv (synced_configs, v);
     }
 
     return false;
@@ -1935,7 +1948,7 @@ namespace bdep
     return r;
   }
 
-  void
+  synced_configs_guard
   cmd_sync (const common_options& co,
             const dir_path& prj,
             const shared_ptr<configuration>& c,
@@ -1951,8 +1964,13 @@ namespace bdep
   {
     assert (!c->packages.empty ());
 
+    synced_configs_guard r (getenv (synced_configs));
+
     if (synced (c->path, implicit))
-      return;
+    {
+      r.original = nullopt; // Nothing changed.
+      return r;
+    }
 
     linked_configs lcfgs (find_config_cluster (co, c->path));
     for (auto j (lcfgs.begin () + 1); j != lcfgs.end (); ++j)
@@ -1978,9 +1996,84 @@ namespace bdep
               create_build2_config,
               t,
               created_cfgs);
+
+    return r;
   }
 
   void
+  cmd_sync (const common_options& co,
+            const dir_path& prj,
+            const configurations& xcfgs,
+            bool implicit,
+            const strings& pkg_args,
+            bool fetch,
+            bool yes,
+            bool name_cfg,
+            bool create_host_config,
+            bool create_build2_config)
+  {
+    // Similar approach to the args overload below.
+    //
+    list<sync_config> cfgs (xcfgs.begin (), xcfgs.end ());
+
+    while (!cfgs.empty ())
+    {
+      sync_configs ocfgs; // Originating configurations for this sync.
+
+      ocfgs.push_back (move (cfgs.front ()));
+      cfgs.pop_front ();
+
+      assert (!ocfgs.back ()->packages.empty ());
+
+      const dir_path& cd (ocfgs.back ().path ());
+
+      if (synced (cd, implicit))
+        continue;
+
+      linked_configs lcfgs (find_config_cluster (co, cd));
+
+      for (auto j (lcfgs.begin () + 1); j != lcfgs.end (); ++j)
+      {
+        const linked_config& cfg (*j);
+
+        bool r (synced (cfg.path, true /* implicit */));
+        assert (!r);
+
+        for (auto i (cfgs.begin ()); i != cfgs.end (); )
+        {
+          if (cfg.path == i->path ())
+          {
+            ocfgs.push_back (move (*i));
+            i = cfgs.erase (i);
+
+            assert (!ocfgs.back ()->packages.empty ());
+          }
+          else
+            ++i;
+        }
+      }
+
+      cmd_sync (co,
+                prj,
+                move (ocfgs),
+                move (lcfgs),
+                pkg_args,
+                implicit,
+                fetch,
+                yes,
+                name_cfg,
+                nullopt              /* upgrade   */,
+                nullopt              /* recursive */,
+                package_locations () /* prj_pkgs  */,
+                strings ()           /* dep_pkgs  */,
+                create_host_config,
+                create_build2_config,
+                nullptr,
+                nullptr);
+    }
+  }
+
+  synced_configs_guard
   cmd_sync_implicit (const common_options& co,
                      const dir_path& cfg,
                      bool fetch,
@@ -1989,8 +2082,13 @@ namespace bdep
                      bool create_host_config,
                      bool create_build2_config)
   {
+    synced_configs_guard r (getenv (synced_configs));
+
     if (synced (cfg, true /* implicit */))
-      return;
+    {
+      r.original = nullopt; // Nothing changed.
+      return r;
+    }
 
     linked_configs lcfgs (find_config_cluster (co, cfg));
     for (auto j (lcfgs.begin () + 1); j != lcfgs.end (); ++j)
@@ -2014,6 +2112,72 @@ namespace bdep
               strings ()            /* dep_pkgs  */,
               create_host_config,
               create_build2_config);
+
+    return r;
+  }
+
+  void
+  cmd_sync_implicit (const common_options& co,
+                     const dir_paths& xcfgs,
+                     bool fetch,
+                     bool yes,
+                     bool name_cfg,
+                     bool create_host_config,
+                     bool create_build2_config)
+  {
+    // Similar approach to the args overload below.
+    //
+    list<sync_config> cfgs (xcfgs.begin (), xcfgs.end ());
+
+    while (!cfgs.empty ())
+    {
+      sync_configs ocfgs; // Originating configurations for this sync.
+
+      ocfgs.push_back (move (cfgs.front ()));
+      cfgs.pop_front ();
+
+      const dir_path& cd (ocfgs.back ().path ());
+
+      if (synced (cd, true /* implicit */))
+        continue;
+
+      linked_configs lcfgs (find_config_cluster (co, cd));
+
+      for (auto j (lcfgs.begin () + 1); j != lcfgs.end (); ++j)
+      {
+        const linked_config& cfg (*j);
+
+        bool r (synced (cfg.path, true /* implicit */));
+        assert (!r);
+
+        for (auto i (cfgs.begin ()); i != cfgs.end (); )
+        {
+          if (cfg.path == i->path ())
+          {
+            ocfgs.push_back (move (*i));
+            i = cfgs.erase (i);
+          }
+          else
+            ++i;
+        }
+      }
+
+      cmd_sync (co,
+                dir_path () /* prj */,
+                move (ocfgs),
+                move (lcfgs),
+                strings ()            /* pkg_args */,
+                true                  /* implicit */,
+                fetch,
+                yes,
+                name_cfg,
+                nullopt               /* upgrade   */,
+                nullopt               /* recursive */,
+                package_locations ()  /* prj_pkgs  */,
+                strings ()            /* dep_pkgs  */,
+                create_host_config,
+                create_build2_config);
+    }
   }
 
   int
