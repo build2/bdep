@@ -3,6 +3,7 @@ bdep
 *-odb.?xx
 *-options.?xx
 projects-configs.?xx
+argument-grouping.?xx
 default-options-files.?xx
 version.hxx
 
