@@ -4,7 +4,7 @@
 #include <bdep/sync.hxx>
 
 #include <list>
-#include <cstring>  // strchr()
+#include <cstring>  // strchr(), strcmp()
 
 #include <libbpkg/manifest.hxx>
 
@@ -1305,6 +1305,12 @@ namespace bdep
         {
           while (gs.more ())
           {
+            // Stop (rather than fail) on unknown option to handle
+            // -@<cfg-name>.
+            //
+            if (po.parse (gs, cli::unknown_mode::stop) && !gs.more ())
+              break;
+
             const char* a (gs.peek ());
 
             // Handle @<cfg-name> & -@<cfg-name>.
@@ -1316,15 +1322,24 @@ namespace bdep
               if (n.empty ())
                 fail << "missing configuration name in '" << a << "'";
 
-              po.config_name ().emplace_back (move (n), gs.position ());
+              po.config_name ().emplace_back (move (n));
               po.config_name_specified (true);
 
               gs.next ();
-              continue;
             }
+            //
+            // Handle unknown option and argument.
+            //
+            else
+            {
+              // Don't report '-' and '--' as unknown options and let bpkg
+              // deal with arguments other than configuration variables.
+              //
+              if (a[0] == '-' && a[1] != '\0' && strcmp (a, "--") != 0)
+                throw cli::unknown_option (a);
 
-            if (!po.parse (gs))
-              break;
+              args.push_back (gs.next ());
+            }
           }
         }
         catch (const cli::exception& e)
@@ -1439,10 +1454,6 @@ namespace bdep
                             linked_cfgs.find (ocfg.path ())->uuid.string ());
           }
         }
-
-        // Add the rest of group arguments (e.g., configuration variables).
-        //
-        for (; gs.more (); args.push_back (gs.next ())) ;
 
         args.push_back ("}+");
       }

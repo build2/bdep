@@ -181,6 +181,12 @@ init (const common_options& co,
   {
     if (opt)
     {
+      // Parse the next chunk of options until we reach an argument (or eos).
+      // Stop (rather than fail) on unknown option to handle -@<cfg-name>.
+      //
+      if (o.parse (scan, cli::unknown_mode::stop) && !scan.more ())
+        break;
+
       const char* a (scan.peek ());
 
       // If we see first "--", then we are done parsing options.
@@ -194,7 +200,7 @@ init (const common_options& co,
         continue;
       }
 
-      // @<cfg-name> & -@<cfg-name>
+      // Handle @<cfg-name> & -@<cfg-name>
       //
       if (*a == '@' || (*a == '-' && a[1] == '@'))
       {
@@ -203,10 +209,10 @@ init (const common_options& co,
         continue;
       }
 
-      // Parse the next chunk of options until we reach an argument (or eos).
+      // Handle unknown option.
       //
-      if (o.parse (scan))
-        continue;
+      if (a[0] == '-' && a[1] != '\0')
+        throw cli::unknown_option (a);
 
       // Fall through.
     }
