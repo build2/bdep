@@ -782,6 +782,25 @@ namespace bdep
       cmd_config_link (co, dpt_cfg, dep_cfg);
   }
 
+  // Check whether the specified .build (or .build2) file exists in the build/
+  // (or build2/) subdirectory of the specified root directory. Note: the file
+  // is expected to be specified with the .build extension.
+  //
+  static inline bool
+  exists (const dir_path& root, const path& file)
+  {
+    // Check the build2 naming first as more specific.
+    //
+    path p = root; p /= "build2"; p /= file; p += '2';
+
+    if (exists (p))
+      return true;
+
+    p = root; p /= "build"; p /= file;
+
+    return exists (p);
+  }
+
   // Sync with optional upgrade.
   //
   // If upgrade is not nullopt, then: If there are dep_pkgs, then we are
@@ -1004,8 +1023,9 @@ namespace bdep
               origin_vars = true;
           }
           else
-            fail << "non-global configuration variable " <<
-              string (a, 0, p - a) << " without packages or dependencies";
+            fail << "non-global configuration variable "
+                 << trim (string (a, 0, p - a))
+                 << " without packages or dependencies";
 
           if (dep_vars || origin_vars)
             continue;
@@ -1032,9 +1052,46 @@ namespace bdep
 
         for (const package_state& pkg: cfg->packages)
         {
+          // See if we need to pass config.<package>.develop=true. We only do
+          // this if:
+          //
+          // 1. It's an explicit sync (init is explicit).
+          //
+          // 2. This is a from-scratch configuration of this package.
+          //
+          // 3. The user did not specify custom develop value in pkg_args.
+          //
+          optional<string> dev;
+          if (!cfg.implicit &&
+              !exists (dir_path (cfg->path) /= pkg.name.string (),
+                       path ("config.build")))
+          {
+            dev = "config." + pkg.name.variable () + ".develop";
+
+            for (cli::vector_group_scanner s (pkg_args); s.more (); )
+            {
+              const char* a (s.next ());
+              const char* p (strchr (a, '='));
+              if (p == nullptr)
+              {
+                s.skip_group ();
+                continue;
+              }
+
+              if (*a == '!')
+                ++a;
+
+              if (trim (string (a, 0, p - a)) == *dev)
+              {
+                dev = nullopt;
+                break;
+              }
+            }
+          }
+
           bool vars (origin_vars && cfg.origin);
 
-          bool g (multi_cfg || vars);
+          bool g (multi_cfg || vars || dev);
           if (g)
             args.push_back ("{");
 
@@ -1105,6 +1162,9 @@ namespace bdep
                 s.skip_group ();
             }
           }
+
+          if (dev)
+            args.push_back (*dev += "=true");
 
           if (g)
             args.push_back ("}+");
@@ -1643,26 +1703,6 @@ namespace bdep
               src /= i->path;
             }
 
-#if 0
-            // We could run 'b info' and used the 'forwarded' value but this
-            // is both faster and simpler. Or at least it was until we got the
-            // alternative naming scheme.
-            //
-            auto check = [&src] ()
-            {
-              path f (src / "build" / "bootstrap" / "out-root.build");
-              bool e (exists (f));
-
-              if (!e)
-              {
-                f = src / "build2" / "bootstrap" / "out-root.build2";
-                e = exists (f);
-              }
-
-              return e;
-            };
-#endif
-
             const char* o (nullptr);
             if (cfg->forward)
             {
@@ -1674,7 +1714,7 @@ namespace bdep
               //   configs. Looks like we will need to test that the forward
               //   is to this config. 'b info' here we come?
 #if 0
-              if (check ())
+              if (exists (src, path ("bootstrap") /= "out-root.build"))
                 o = "disfigure:";
 #endif
             }
