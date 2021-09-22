@@ -264,7 +264,7 @@ deinit += -d prj
   $build prj-cfg/prj/ 2>>/~"%EOE%";
     synchronizing $~/prj-cfg/:
     %  upgrade prj.+19700101000000#2%
-    %\(mkdir|version\\.in|c\\+\\+|ld) .+%{7}
+    %\(mkdir|version\\.in|c\\+\\+|ld) .+%{6}
     EOE
 
   $deinit 2>>/"EOE"
