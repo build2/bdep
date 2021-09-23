@@ -204,6 +204,17 @@ namespace bdep
       "Also upgrade or patch all dependencies, recursively."
     }
 
+    bool --yes|-y
+    {
+      "Don't prompt for confirmation when up/down-grading dependencies."
+    }
+
+    bool --disfigure
+    {
+      "Disfigure project packages during synchronization effectively causing
+       their from-scratch reconfiguration."
+    }
+
     bool --fetch|-f
     {
       "Perform the \cb{fetch} command prior to synchronization."
@@ -212,11 +223,6 @@ namespace bdep
     bool --fetch-full|-F
     {
       "Perform the \cb{fetch --full} command prior to synchronization."
-    }
-
-    bool --yes|-y
-    {
-      "Don't prompt for confirmation when up/down-grading dependencies."
     }
 
     bool --create-host-config

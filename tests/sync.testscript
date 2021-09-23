@@ -205,6 +205,62 @@ deinit += -d prj
     EOE
 }
 
+: config-vars
+:
+{
+  $new prj &prj/***;
+
+  cat <<EOI >+prj/build/root.build;
+    config [bool] config.prj.develop ?= false
+    config [bool] config.prj.extra ?= true
+
+    text "develop=$config.prj.develop"
+    text "extra=$config.prj.extra"
+    EOI
+
+  $init -d prj -C @cfg $config_cxx &prj-cfg/*** 2>>~/EOE/;
+    /.*/+
+    /.*: develop=true/
+    /.*: extra=true/
+    EOE
+
+  # Reconfigure.
+  #
+  $* -d prj config.prj.develop=false config.prj.extra=false 2>>~/EOE/;
+    /.*/+
+    /.*: develop=false/
+    /.*: extra=false/
+    EOE
+
+  # Make sure the configuration is by default preserved on reconfiguration.
+  #
+  cat <<EOI >+prj/manifest;
+    tags: c++
+    EOI
+
+  $* -d prj config.prj.develop=false config.prj.extra=false 2>>~/EOE/;
+    /.*/+
+    /.*: develop=false/
+    /.*: extra=false/
+    EOE
+
+  # Make sure --disfigure causes a from-scratch reconfiguration.
+  #
+  $* -d prj --disfigure config.prj.extra=false 2>>~/EOE/;
+    /.*/+
+    /.*: develop=true/
+    /.*: extra=false/
+    EOE
+
+  # Make sure --disfigure alone triggers reconfiguration.
+  #
+  $* -d prj --disfigure 2>>~/EOE/
+    /.*/+
+    /.*: develop=true/
+    /.*: extra=true/
+    EOE
+}
+
 : dependency-config
 :
 {

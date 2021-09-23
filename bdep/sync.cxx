@@ -830,6 +830,7 @@ namespace bdep
             bool name_cfg,
             optional<bool> upgrade,   // true - upgrade,   false - patch
             optional<bool> recursive, // true - recursive, false - immediate
+            bool disfigure,
             const package_locations& prj_pkgs,
             const strings&           dep_pkgs,
             bool create_host_config,
@@ -1052,19 +1053,65 @@ namespace bdep
 
         for (const package_state& pkg: cfg->packages)
         {
+          // Return true if this package is part of the list specified
+          // explicitly or, if none are specified, init'ed in the origin
+          // project.
+          //
+          // @@ Feels like cfg.origin should be enough for the latter case?
+          //
+          auto origin_pkg = [origin,
+                             &origin_cfgs,
+                             &prj_pkgs,
+                             &pkg,
+                             r = optional<bool> ()] () mutable
+          {
+            if (!r)
+            {
+              auto contains = [] (const auto& pkgs, const package_state& pkg)
+              {
+                return find_if (pkgs.begin (), pkgs.end (),
+                                [&pkg] (const auto& p)
+                                {
+                                  return p.name == pkg.name;
+                                }) != pkgs.end ();
+              };
+
+              if (prj_pkgs.empty ())
+              {
+                r = false;
+                if (origin)
+                {
+                  for (const sync_config& cfg: origin_cfgs)
+                    if ((r = contains (cfg->packages, pkg)))
+                      break;
+                }
+              }
+              else
+                r = contains (prj_pkgs, pkg);
+            }
+
+            return *r;
+          };
+
+          // See if we need to pass --disfigure. We only do this for the
+          // origin packages.
+          //
+          bool disf (disfigure && origin_pkg ());
+
           // See if we need to pass config.<package>.develop=true. We only do
           // this if:
           //
           // 1. It's an explicit sync (init is explicit).
           //
-          // 2. This is a from-scratch configuration of this package.
+          // 2. This is a from-scratch (re)configuration of this package.
           //
           // 3. The user did not specify custom develop value in pkg_args.
           //
           optional<string> dev;
           if (!cfg.implicit &&
-              !exists (dir_path (cfg->path) /= pkg.name.string (),
-                       path ("config.build")))
+              (disf ||
+               !exists (dir_path (cfg->path) /= pkg.name.string (),
+                        path ("config.build"))))
           {
             dev = "config." + pkg.name.variable () + ".develop";
 
@@ -1091,7 +1138,7 @@ namespace bdep
 
           bool vars (origin_vars && cfg.origin);
 
-          bool g (multi_cfg || vars || dev);
+          bool g (multi_cfg || vars || dev || disf);
           if (g)
             args.push_back ("{");
 
@@ -1099,33 +1146,16 @@ namespace bdep
             args.push_back ("--config-uuid=" +
                             linked_cfgs.find (cfg->path)->uuid.string ());
 
+          if (disf)
+            args.push_back ("--disfigure");
+
           if (upgrade && dep_pkgs.empty () && !cfg.implicit)
           {
             // We synchronize all the init'ed packages, including those from
             // other projects. But if the dependencies are not specified, we
-            // only upgrade dependencies of the packages specified explicitly
-            // or init'ed in the origin project.
+            // only upgrade dependencies of the origin packages.
             //
-            auto contains = [] (const auto& pkgs, const package_state& pkg)
-            {
-              return find_if (pkgs.begin (), pkgs.end (),
-                              [&pkg] (const auto& p)
-                              {
-                                return p.name == pkg.name;
-                              }) != pkgs.end ();
-            };
-
-            bool c (false);
-            if (prj_pkgs.empty () && origin)
-            {
-              for (const sync_config& cfg: origin_cfgs)
-                if ((c = contains (cfg->packages, pkg)))
-                  break;
-            }
-            else
-              c = contains (prj_pkgs, pkg);
-
-            if (c)
+            if (origin_pkg ())
             {
               // The project package itself must always be upgraded to the
               // latest version/iteration. So we have to translate to
@@ -2041,6 +2071,7 @@ namespace bdep
               name_cfg,
               nullopt              /* upgrade   */,
               nullopt              /* recursive */,
+              false                /* disfigure */,
               package_locations () /* prj_pkgs  */,
               strings ()           /* dep_pkgs  */,
               create_host_config,
@@ -2115,6 +2146,7 @@ namespace bdep
                 name_cfg,
                 nullopt              /* upgrade   */,
                 nullopt              /* recursive */,
+                false                /* disfigure */,
                 package_locations () /* prj_pkgs  */,
                 strings ()           /* dep_pkgs  */,
                 create_host_config,
@@ -2159,6 +2191,7 @@ namespace bdep
               name_cfg,
               nullopt               /* upgrade   */,
               nullopt               /* recursive */,
+              false                 /* disfigure */,
               package_locations ()  /* prj_pkgs  */,
               strings ()            /* dep_pkgs  */,
               create_host_config,
@@ -2224,6 +2257,7 @@ namespace bdep
                 name_cfg,
                 nullopt               /* upgrade   */,
                 nullopt               /* recursive */,
+                false                 /* disfigure */,
                 package_locations ()  /* prj_pkgs  */,
                 strings ()            /* dep_pkgs  */,
                 create_host_config,
@@ -2570,6 +2604,7 @@ namespace bdep
                   !o.patch (), // Upgrade by default unless patch requested.
                   (o.recursive () ? optional<bool> (true)  :
                    o.immediate () ? optional<bool> (false) : nullopt),
+                  o.disfigure (),
                   package_locations ()     /* prj_pkgs  */,
                   dep_pkgs,
                   o.create_host_config (),
@@ -2591,6 +2626,7 @@ namespace bdep
                   false                    /* name_cfg */,
                   o.upgrade (),
                   o.recursive (),
+                  o.disfigure (),
                   prj_pkgs,
                   strings ()               /* dep_pkgs  */,
                   o.create_host_config (),
@@ -2614,6 +2650,7 @@ namespace bdep
                   o.implicit ()            /* name_cfg  */,
                   nullopt                  /* upgrade   */,
                   nullopt                  /* recursive */,
+                  o.disfigure (),
                   package_locations ()     /* prj_pkgs  */,
                   strings ()               /* dep_pkgs  */,
                   o.create_host_config (),
