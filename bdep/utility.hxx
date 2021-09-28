@@ -13,14 +13,14 @@
 
 #include <libbutl/ft/lang.hxx>
 
-#include <libbutl/utility.mxx>         // icasecmp(), reverse_iterate(), etc
-#include <libbutl/prompt.mxx>
-#include <libbutl/fdstream.mxx>
-#include <libbutl/filesystem.mxx>
-#include <libbutl/default-options.mxx>
+#include <libbutl/utility.hxx>         // icasecmp(), reverse_iterate(), etc
+#include <libbutl/prompt.hxx>
+#include <libbutl/fdstream.hxx>
+#include <libbutl/filesystem.hxx>
+#include <libbutl/default-options.hxx>
 
-#include <libbutl/manifest-parser.mxx>     // manifest_parser::filter_function
-#include <libbutl/manifest-serializer.mxx> // manifest_serializer::filter_function
+#include <libbutl/manifest-parser.hxx>     // manifest_parser::filter_function
+#include <libbutl/manifest-serializer.hxx> // manifest_serializer::filter_function
 
 #include <bdep/types.hxx>
 #include <bdep/version.hxx>
@@ -40,7 +40,7 @@ namespace bdep
   using std::find;
   using std::find_if;
 
-  // <libbutl/utility.mxx>
+  // <libbutl/utility.hxx>
   //
   using butl::ucase;
   using butl::lcase;
@@ -59,16 +59,16 @@ namespace bdep
   using butl::setenv;
   using butl::unsetenv;
 
-  // <libbutl/prompt.mxx>
+  // <libbutl/prompt.hxx>
   //
   using butl::yn_prompt;
 
-  // <libbutl/filesystem.mxx>
+  // <libbutl/filesystem.hxx>
   //
   using butl::auto_rmfile;
   using butl::auto_rmdir;
 
-  // <libbutl/default-options.mxx>
+  // <libbutl/default-options.hxx>
   //
   using butl::load_default_options;
   using butl::merge_default_options;

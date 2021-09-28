@@ -3,7 +3,7 @@
 
 #include <bdep/git.hxx>
 
-#include <libbutl/git.mxx>
+#include <libbutl/git.hxx>
 
 #include <bdep/diagnostics.hxx>
 

@@ -3,7 +3,7 @@
 
 #include <bdep/help.hxx>
 
-#include <libbutl/pager.mxx>
+#include <libbutl/pager.hxx>
 
 #include <bdep/diagnostics.hxx>
 #include <bdep/bdep-options.hxx>

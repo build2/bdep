@@ -5,8 +5,8 @@
 
 #include <sstream>
 
-#include <libbutl/path-pattern.mxx>
-#include <libbutl/manifest-types.mxx>
+#include <libbutl/path-pattern.hxx>
+#include <libbutl/manifest-types.hxx>
 
 #include <libbpkg/manifest.hxx>
 

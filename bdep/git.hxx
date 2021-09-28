@@ -4,7 +4,7 @@
 #ifndef BDEP_GIT_HXX
 #define BDEP_GIT_HXX
 
-#include <libbutl/git.mxx>
+#include <libbutl/git.hxx>
 
 #include <bdep/types.hxx>
 #include <bdep/utility.hxx>

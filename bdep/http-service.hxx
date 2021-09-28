@@ -4,7 +4,7 @@
 #ifndef BDEP_HTTP_SERVICE_HXX
 #define BDEP_HTTP_SERVICE_HXX
 
-#include <libbutl/manifest-types.mxx>
+#include <libbutl/manifest-types.hxx>
 
 #include <bdep/types.hxx>
 #include <bdep/utility.hxx>

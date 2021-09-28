@@ -4,7 +4,7 @@
 #include <bdep/project.hxx>
 #include <bdep/project-odb.hxx>
 
-#include <libbutl/manifest-parser.mxx>
+#include <libbutl/manifest-parser.hxx>
 
 #include <libbpkg/manifest.hxx>
 

@@ -6,7 +6,7 @@
 
 #include <odb/core.hxx>
 
-#include <libbutl/b.mxx>
+#include <libbutl/b.hxx>
 
 #include <libbpkg/package-name.hxx>
 

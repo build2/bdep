@@ -21,17 +21,17 @@
 
 #include <odb/sqlite/forward.hxx>
 
-#include <libbutl/url.mxx>
-#include <libbutl/path.mxx>
+#include <libbutl/url.hxx>
+#include <libbutl/path.hxx>
 #include <libbutl/uuid.hxx>
 #include <libbutl/uuid-io.hxx>
-#include <libbutl/process.mxx>
-#include <libbutl/optional.mxx>
-#include <libbutl/fdstream.mxx>
-#include <libbutl/small-vector.mxx>
-#include <libbutl/default-options.mxx>
-#include <libbutl/semantic-version.mxx>
-#include <libbutl/standard-version.mxx>
+#include <libbutl/process.hxx>
+#include <libbutl/optional.hxx>
+#include <libbutl/fdstream.hxx>
+#include <libbutl/small-vector.hxx>
+#include <libbutl/default-options.hxx>
+#include <libbutl/semantic-version.hxx>
+#include <libbutl/standard-version.hxx>
 
 namespace bdep
 {
@@ -55,7 +55,7 @@ namespace bdep
   using std::weak_ptr;
 
   using std::vector;
-  using butl::small_vector; // <libbutl/small-vector.mxx>
+  using butl::small_vector; // <libbutl/small-vector.hxx>
 
   using strings = vector<string>;
   using cstrings = vector<const char*>;
@@ -77,16 +77,16 @@ namespace bdep
   using odb::sqlite::database;
   using odb::sqlite::transaction;
 
-  // <libbutl/optional.mxx>
+  // <libbutl/optional.hxx>
   //
   using butl::optional;
   using butl::nullopt;
 
-  // <libbutl/url.mxx>
+  // <libbutl/url.hxx>
   //
   using butl::url;
 
-  // <libbutl/path.mxx>
+  // <libbutl/path.hxx>
   //
   using butl::path;
   using butl::dir_path;
@@ -98,11 +98,11 @@ namespace bdep
   using paths = vector<path>;
   using dir_paths = vector<dir_path>;
 
-  // <libbutl/uuid.mxx>
+  // <libbutl/uuid.hxx>
   //
   using butl::uuid;
 
-  // <libbutl/process.mxx>
+  // <libbutl/process.hxx>
   //
   using butl::process;
   using butl::process_env;
@@ -110,7 +110,7 @@ namespace bdep
   using butl::process_exit;
   using butl::process_error;
 
-  // <libbutl/fdstream.mxx>
+  // <libbutl/fdstream.hxx>
   //
   using butl::auto_fd;
   using butl::fdpipe;
@@ -119,14 +119,14 @@ namespace bdep
   using butl::fdopen_mode;
   using butl::fdstream_mode;
 
-  // <libbutl/default-options.mxx>
+  // <libbutl/default-options.hxx>
   //
   using butl::default_options_files;
   using butl::default_options_entry;
   using butl::default_options;
 
-  // <libbutl/semantic-version.mxx>
-  // <libbutl/standard-version.mxx>
+  // <libbutl/semantic-version.hxx>
+  // <libbutl/standard-version.hxx>
   //
   using butl::semantic_version;
   using butl::standard_version;

@@ -6,9 +6,9 @@
 #include <map>
 #include <algorithm> // replace()
 
-#include <libbutl/regex.mxx>
-#include <libbutl/command.mxx>
-#include <libbutl/project-name.mxx>
+#include <libbutl/regex.hxx>
+#include <libbutl/command.hxx>
+#include <libbutl/project-name.hxx>
 
 #include <bdep/git.hxx>
 #include <bdep/project.hxx>

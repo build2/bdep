@@ -5,8 +5,8 @@
 
 #include <iostream> // cout
 
-#include <libbutl/manifest-parser.mxx>
-#include <libbutl/manifest-rewriter.mxx>
+#include <libbutl/manifest-parser.hxx>
+#include <libbutl/manifest-rewriter.hxx>
 
 #include <libbpkg/manifest.hxx>
 

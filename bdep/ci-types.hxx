@@ -6,7 +6,7 @@
 
 #include <bdep/types.hxx>
 
-#include <libbutl/manifest-types.mxx>
+#include <libbutl/manifest-types.hxx>
 
 namespace bdep
 {

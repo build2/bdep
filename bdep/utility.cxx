@@ -3,8 +3,8 @@
 
 #include <bdep/utility.hxx>
 
-#include <libbutl/process.mxx>
-#include <libbutl/fdstream.mxx>
+#include <libbutl/process.hxx>
+#include <libbutl/fdstream.hxx>
 
 #include <bdep/diagnostics.hxx>
 

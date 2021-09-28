@@ -5,7 +5,7 @@
 
 #include <cstdlib> // strtoul()
 
-#include <libbutl/fdstream.mxx> // fdterm()
+#include <libbutl/fdstream.hxx> // fdterm()
 
 #include <bdep/diagnostics.hxx>
 
