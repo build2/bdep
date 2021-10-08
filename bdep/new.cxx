@@ -1653,6 +1653,11 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
       //
       open (bd / "root." + build_ext);
 
+      os << "# Uncomment to suppress warnings coming from external libraries." << '\n'
+         << "#"                                                        << '\n'
+         << "#" << mc << ".internal.scope = current"                   << '\n'
+         <<                                                               '\n';
+
       switch (l)
       {
       case lang::c:
@@ -1675,7 +1680,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
         }
       }
 
-      if ((itest || utest) && !mp.empty ())
+      if (itest || utest)
         os <<                                                             '\n'
            << "# The test target for cross-testing (running tests under Wine, etc)."   << '\n'
            << "#"                                                      << '\n'
