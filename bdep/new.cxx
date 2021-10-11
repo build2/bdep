@@ -2645,9 +2645,9 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                << "# for details on the version.* variable values."    << '\n'
                << "#"                                                  << '\n'
                << "if $version.pre_release"                            << '\n'
-               << "  lib{" << s << "}: bin.lib.version = @\"-$version.project_id\"" << '\n'
+               << "  lib{" << s << "}: bin.lib.version = \"-$version.project_id\"" << '\n'
                << "else"                                               << '\n'
-               << "  lib{" << s << "}: bin.lib.version = @\"-$version.major.$version.minor\"" << '\n';
+               << "  lib{" << s << "}: bin.lib.version = \"-$version.major.$version.minor\"" << '\n';
 
           // Installation.
           //
