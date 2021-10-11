@@ -4,31 +4,32 @@ Version 0.14.0
     dependencies.
 
     Configurations can now be linked with each other to allow a package to be
-    built in one configuration while its dependencies in one or more linked
+    built in one configuration while its dependencies -- in one or more linked
     configurations. This can be used to create a "base" configuration with
     common dependencies that are shared between multiple configurations.
 
     Configurations now also have types with the three predefined types being
     `target` (the default) `host` (used for build-time project packages and/or
     dependencies), and `build2` (used for build system modules). We can now
-    also have multiple default configurations provided they are of different
-    types. This mechanism together with configuration linking is used to
-    provide separate configurations for build-time dependencies, for example,
-    tools that need to be executed or build system modules that need to be
-    loaded during the build.
+    also have multiple default configurations if they are of different types.
+    This mechanism together with configuration linking is used to provide
+    separate configurations for build-time dependencies, for example, tools
+    that need to be executed or build system modules that need to be loaded
+    during the build.
 
     If during initialization or synchronization a build-time dependency is
     encountered and there is no build configuration of a suitable type
     associated with the project, then the user is prompted to automatically
-    create such a configuration and associate it with the project.
+    create and associate such a configuration.
 
     New relevant commands: bdep-config-{link,unlink}.
 
     Command with relevant changes (new options, etc): bdep-config-create,
     bdep-init, bdep-sync.
 
-    See bdep-config(1) and bdep-sync(1) for details of this functionality.
-    See also the corresponding functionality in bpkg on which this is built.
+    See bdep-config(1) and bdep-sync(1) for details on this functionality.
+    See also the corresponding functionality in bpkg on which this support
+    is based.
 
   * Project packages are now by default initialized for development.
 
@@ -42,28 +43,29 @@ Version 0.14.0
 
     $ bdep sync @install config.hello.develop=false
 
-    See the build system manual for details on the config.*.develop variables.
+    See the build system manual for details on the config.*.develop variable
+    semantics.
 
   * Configuration of project packages is now preserved during synchronization.
 
     To reconfigure a package from scratch, use the new --disfigure bdep-sync
     option. For example:
 
-    $ bdep sync config.hello.develop=false
-    $ bdep sync                             # develop=false
-    $ bdep sync --disfigure                 # develop=true
+    $ bdep sync config.hello.develop=false  # develop=false (new)
+    $ bdep sync                             # develop=false (preserved)
+    $ bdep sync --disfigure                 # develop=true  (default)
 
   * The bdep-new command can now create multi-language C/C++ projects.
 
   * The bdep-new command can now create binless (header-only) C libraries.
 
-  * The bdep-new command now generates smarter glue buildfile that reads
+  * The bdep-new command now generates smarter glue buildfiles that read
     packages.manifest instead of using a directory wildcard.
 
   * New --immediate|-i and --recursive|-r bdep-{update,clean} options.
 
-    These options can be used to additionally updating or cleaning immediate
-    or all dependencies of the project packages, respectively.
+    These options can be used to additionally update or clean immediate or all
+    dependencies of the project packages, respectively.
 
   * New --build-config bdep-ci option.
 
@@ -74,7 +76,7 @@ Version 0.14.0
 
     This option can be used to request an interactive CI session. In this mode
     the CI service pauses the testing at the specified breakpoint and provides
-    the login information for the execution environment.
+    the login information to the execution environment.
 
   * Support for argument grouping in bdep-{sync,init}.
 
