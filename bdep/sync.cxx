@@ -372,7 +372,10 @@ namespace bdep
 
         try
         {
-          version = bpkg::extract_package_version (s);
+          version =
+            bpkg::extract_package_version (s,
+                                           bpkg::version::fold_zero_revision |
+                                           bpkg::version::allow_iteration);
 
           if (version.empty ())
             fail << ep << "'" << line << "': dependent package version is "
