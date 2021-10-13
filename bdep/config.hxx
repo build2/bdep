@@ -89,7 +89,8 @@ namespace bdep
                            const string&           type,
                            bool                    default_ = true,
                            bool                    forward = true,
-                           bool                    auto_sync = true);
+                           bool                    auto_sync = true,
+                           const strings&          args = {});
 
   void
   cmd_config_link (const common_options&,

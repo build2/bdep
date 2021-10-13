@@ -199,13 +199,18 @@ namespace bdep
     return r;
   }
 
-  // Quote the directory if it contains spaces.
+  // Quote the string/directory if it contains spaces.
   //
-  static string
+  static inline string
+  quote (const string& s)
+  {
+    return s.find (' ') == string::npos ? s : '"' + s + '"';
+  }
+
+  static inline string
   quote (const dir_path& d)
   {
-    const string& s (d.string ());
-    return s.find (' ') == string::npos ? s : '"' + s + '"';
+    return quote (d.string ());
   }
 
   void
@@ -488,7 +493,8 @@ namespace bdep
                            const string& type,
                            bool def,
                            bool fwd,
-                           bool asy)
+                           bool asy,
+                           const strings& args)
   {
     dr << "bdep config create -d " << quote (prj);
 
@@ -503,6 +509,9 @@ namespace bdep
     dr << (asy ? "" : " --no-auto-sync");
 
     dr << ' ' << quote (path);
+
+    for (const string& a: args)
+      dr << ' ' << quote (a);
   }
 
   shared_ptr<configuration>

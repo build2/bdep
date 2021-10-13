@@ -658,6 +658,8 @@ namespace bdep
       dep_dir += "-";
       dep_dir += dep_type;
 
+      strings cfg_args {"cc", "config.config.load=~" + dep_type};
+
       // Unless explicitly allowed via the respective create_*_config
       // argument, prompt the user before performing any action. But fail if
       // stderr is redirected.
@@ -691,7 +693,8 @@ namespace bdep
                                    dep_dir,
                                    dep_type,
                                    dep_type,
-                                   false, true, true); // See below.
+                                   false, true, true, // See below.
+                                   cfg_args);
 
           for (size_t i (1); i != dpt_prjs.size (); ++i)
           {
@@ -738,6 +741,12 @@ namespace bdep
           //
           auto_rmdir rmd (dep_dir);
 
+          // Add to the command line the configuration variable which we omit
+          // from printing to make the prompt less hairy.
+          //
+          cfg_args.push_back (
+            "config.config.persist+='config.*'@unused=drop");
+
           // Before we used to create the default configuration but that lead
           // to counter-intuitive behavior (like trying to run tests in a host
           // configuration that doesn't have any bdep-init'ed packages). After
@@ -754,7 +763,10 @@ namespace bdep
                                        dep_type,
                                        false /* default */,
                                        true  /* forward */,
-                                       true  /* auto_sync */);
+                                       true  /* auto_sync */,
+                                       false /* existing */,
+                                       false /* wipe */,
+                                       cfg_args);
 
           cmd_config_link (co, dpt_cfg, dep_cfg);
 
