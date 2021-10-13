@@ -678,13 +678,12 @@ namespace bdep
           //
           dr << '\n'
              << "creating configuration of " << dep_type << " type in "
-             << dep_dir << '\n'
-             << "and associate it with projects:" << '\n';
+             << dep_dir << " and associating it with project(s):" << '\n';
 
           for (const dir_path& d: dpt_prjs)
             dr << "  " << d << '\n';
 
-          dr << "as if by executing commands:" << '\n';
+          dr << "as if by executing command(s):" << '\n';
 
           dr << "  ";
           cmd_config_create_print (dr,

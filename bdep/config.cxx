@@ -496,7 +496,7 @@ namespace bdep
       dr << " @" << *name;
 
     if (type != "target")
-      dr << " --config-type " << type;
+      dr << " --type " << type;
 
     dr << (def ? " --default" : " --no-default");
     dr << (fwd ? " --forward" : " --no-forward");
