@@ -2019,11 +2019,11 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
         // Language-specific source code comment markers.
         //
-        string O; // Open multi-line comment.
-        string X; // Middle of multi-line comment.
+        string O; // Open multi-line comment (no trailing space).
+        string X; // Middle of multi-line comment (no trailing space).
         string Q; // Close multi-line comment.
 
-        string B; // Begin of a single-line comment.
+        string B; // Begin of a single-line comment (no trailing space).
         string E; // End of a single-line comment.
 
         bool binless (t.lib_opt.binless ());
@@ -2032,10 +2032,10 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
         {
         case lang::c:
           {
-            O = "/* ";
-            X = " * ";
+            O = "/*";
+            X = " *";
             Q = " */";
-            B = "/* ";
+            B = "/*";
             E = " */";
 
             if (binless)
@@ -2115,10 +2115,10 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           }
         case lang::cxx:
           {
-            O = "// ";
-            X = "// ";
-            Q = "// ";
-            B = "// ";
+            O = "//";
+            X = "//";
+            Q = "//";
+            B = "//";
             E = "";
 
             if (binless)
@@ -2224,33 +2224,33 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                << "// the end it's all trial and error."               << '\n'
                <<                                                         '\n';
           }
-          os << "#if defined(" << mx << "_STATIC)         " << B << "Using static." << E    << '\n'
-             << "#  define " << mx << "_SYMEXPORT"                                          << '\n'
-             << "#elif defined(" << mx << "_STATIC_BUILD) " << B << "Building static." << E << '\n'
-             << "#  define " << mx << "_SYMEXPORT"                                          << '\n'
-             << "#elif defined(" << mx << "_SHARED)       " << B << "Using shared." << E    << '\n'
-             << "#  ifdef _WIN32"                                                           << '\n'
-             << "#    define " << mx << "_SYMEXPORT __declspec(dllimport)"                  << '\n'
-             << "#  else"                                                                   << '\n'
-             << "#    define " << mx << "_SYMEXPORT"                                        << '\n'
-             << "#  endif"                                                                  << '\n'
-             << "#elif defined(" << mx << "_SHARED_BUILD) " << B << "Building shared." << E << '\n'
+          os << "#if defined(" << mx << "_STATIC)         " << B << " Using static." << E    << '\n'
+             << "#  define " << mx << "_SYMEXPORT"                                           << '\n'
+             << "#elif defined(" << mx << "_STATIC_BUILD) " << B << " Building static." << E << '\n'
+             << "#  define " << mx << "_SYMEXPORT"                                           << '\n'
+             << "#elif defined(" << mx << "_SHARED)       " << B << " Using shared." << E    << '\n'
+             << "#  ifdef _WIN32"                                                            << '\n'
+             << "#    define " << mx << "_SYMEXPORT __declspec(dllimport)"                   << '\n'
+             << "#  else"                                                                    << '\n'
+             << "#    define " << mx << "_SYMEXPORT"                                         << '\n'
+             << "#  endif"                                                                   << '\n'
+             << "#elif defined(" << mx << "_SHARED_BUILD) " << B << " Building shared." << E << '\n'
              << "#  ifdef _WIN32"                                                           << '\n'
              << "#    define " << mx << "_SYMEXPORT __declspec(dllexport)"                  << '\n'
              << "#  else"                                                                   << '\n'
              << "#    define " << mx << "_SYMEXPORT"                                        << '\n'
              << "#  endif"                                                                  << '\n'
              << "#else"                                                                     << '\n'
-             << O << "If none of the above macros are defined, then we assume we are being used" << '\n'
-             << X << "by some third-party build system that cannot/doesn't signal the library"   << '\n'
-             << X << "type. Note that this fallback works for both static and shared libraries"  << '\n'
-             << X << "provided the library only exports functions (in other words, no global"    << '\n'
-             << X << "exported data) and for the shared case the result will be sub-optimal"     << '\n'
-             << X << "compared to having dllimport. If, however, your library does export data," << '\n'
-             << X << "then you will probably want to replace the fallback with the (commented"   << '\n'
-             << X << "out) error since it won't work for the shared case."                       << '\n'
-             << Q                                                                                << '\n'
-             << "#  define " << mx << "_SYMEXPORT         " << B << "Using static or shared." << E << '\n'
+             << O << " If none of the above macros are defined, then we assume we are being used" << '\n'
+             << X << " by some third-party build system that cannot/doesn't signal the library"   << '\n'
+             << X << " type. Note that this fallback works for both static and shared libraries"  << '\n'
+             << X << " provided the library only exports functions (in other words, no global"    << '\n'
+             << X << " exported data) and for the shared case the result will be sub-optimal"     << '\n'
+             << X << " compared to having dllimport. If, however, your library does export data," << '\n'
+             << X << " then you will probably want to replace the fallback with the (commented"   << '\n'
+             << X << " out) error since it won't work for the shared case."                       << '\n'
+             << Q                                                                                 << '\n'
+             << "#  define " << mx << "_SYMEXPORT         " << B << " Using static or shared." << E << '\n'
              << B << "#  error define " << mx << "_STATIC or " << mx << "_SHARED preprocessor macro to signal " << n << " library type being linked" << E << '\n'
              << "#endif"                                               << '\n';
           os.close ();
@@ -2264,25 +2264,25 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
           os << "#pragma once"                                         << '\n'
              <<                                                           '\n'
-             << O << "The numeric version format is AAAAABBBBBCCCCCDDDE where:" << '\n'
-             << X                                                      << '\n'
-             << X << "AAAAA - major version number"                    << '\n'
-             << X << "BBBBB - minor version number"                    << '\n'
-             << X << "CCCCC - bugfix version number"                   << '\n'
-             << X << "DDD   - alpha / beta (DDD + 500) version number" << '\n'
-             << X << "E     - final (0) / snapshot (1)"                << '\n'
-             << X                                                      << '\n'
-             << X << "When DDDE is not 0, 1 is subtracted from AAAAABBBBBCCCCC. For example:" << '\n'
-             << X                                                      << '\n'
-             << X << "Version      AAAAABBBBBCCCCCDDDE"                << '\n'
-             << X                                                      << '\n'
-             << X << "0.1.0        0000000001000000000"                << '\n'
-             << X << "0.1.2        0000000001000020000"                << '\n'
-             << X << "1.2.3        0000100002000030000"                << '\n'
-             << X << "2.2.0-a.1    0000200001999990010"                << '\n'
-             << X << "3.0.0-b.2    0000299999999995020"                << '\n'
-             << X << "2.2.0-a.1.z  0000200001999990011"                << '\n'
-             << Q                                                      << '\n'
+             << O << " The numeric version format is AAAAABBBBBCCCCCDDDE where:" << '\n'
+             << X                                                       << '\n'
+             << X << " AAAAA - major version number"                    << '\n'
+             << X << " BBBBB - minor version number"                    << '\n'
+             << X << " CCCCC - bugfix version number"                   << '\n'
+             << X << " DDD   - alpha / beta (DDD + 500) version number" << '\n'
+             << X << " E     - final (0) / snapshot (1)"                << '\n'
+             << X                                                       << '\n'
+             << X << " When DDDE is not 0, 1 is subtracted from AAAAABBBBBCCCCC. For example:" << '\n'
+             << X                                                       << '\n'
+             << X << " Version      AAAAABBBBBCCCCCDDDE"                << '\n'
+             << X                                                       << '\n'
+             << X << " 0.1.0        0000000001000000000"                << '\n'
+             << X << " 0.1.2        0000000001000020000"                << '\n'
+             << X << " 1.2.3        0000100002000030000"                << '\n'
+             << X << " 2.2.0-a.1    0000200001999990010"                << '\n'
+             << X << " 3.0.0-b.2    0000299999999995020"                << '\n'
+             << X << " 2.2.0-a.1.z  0000200001999990011"                << '\n'
+             << Q                                                       << '\n'
              << "#define " << mx << "_VERSION       $" << v << ".version.project_number$ULL" << '\n'
              << "#define " << mx << "_VERSION_STR   \"$" << v << ".version.project$\""       << '\n'
              << "#define " << mx << "_VERSION_ID    \"$" << v << ".version.project_id$\""    << '\n'
