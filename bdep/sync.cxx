@@ -1840,6 +1840,7 @@ namespace bdep
                  << "      $getenv('BDEP_SYNC') == 1)"                 << endl
                  << "    run '" << argv0 << "' sync --hook=1 "         <<
                 "--verbose $build.verbosity "                          <<
+                "($build.progress == [null] ? : $build.progress ? --progress : --no-progress) " <<
                 "--config \"$out_root\""                               << endl
                  << "}"                                                << endl;
 
