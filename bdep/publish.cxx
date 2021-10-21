@@ -773,7 +773,7 @@ namespace bdep
               }
             }));
 
-        if (verb && !o.no_progress ())
+        if ((verb && !o.no_progress ()) || o.progress ())
           text << "pushing branch build2-control";
 
         git_push (o,
@@ -793,7 +793,7 @@ namespace bdep
       // The path points into the temporary directory so let's omit the
       // directory part.
       //
-      if (verb && !o.no_progress ())
+      if ((verb && !o.no_progress ()) || o.progress ())
         text << "submitting " << p.archive.leaf ();
 
       url u (o.repository ());

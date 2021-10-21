@@ -1286,7 +1286,7 @@ namespace bdep
 
       if (*push)
       {
-        if (verb && !o.no_progress ())
+        if ((verb && !o.no_progress ()) || o.progress ())
         {
           diag_record dr (text);
           dr << "pushing";

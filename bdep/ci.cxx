@@ -457,7 +457,7 @@ namespace bdep
     {
       // Print progress unless we had a prompt.
       //
-      if (verb && o.yes () && !o.no_progress ())
+      if (o.yes () && ((verb && !o.no_progress ()) || o.progress ()))
         text << "submitting to " << srv;
 
       url u (srv);

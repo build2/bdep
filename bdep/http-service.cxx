@@ -55,22 +55,25 @@ namespace bdep
       // Map the verbosity level.
       //
       cstrings v;
-      bool progress (!o.no_progress ());
 
       auto suppress_progress = [&v] ()
       {
         v.push_back ("-s");
         v.push_back ("-S"); // But show errors.
       };
+      bool sp (o.no_progress ());
 
       if (verb < 1)
       {
-        suppress_progress ();
-        progress = true;      // No need to suppress (already done).
+        if (!o.progress ())
+        {
+          suppress_progress ();
+          sp = false;  // No need to suppress (already done).
+        }
       }
-      else if (verb == 1 && fdterm (2))
+      else if (verb == 1)
       {
-        if (progress)
+        if (fdterm (2) && !sp)
           v.push_back ("--progress-bar");
       }
       else if (verb > 3)
@@ -81,7 +84,7 @@ namespace bdep
       // Note: the `-v -s` options combination is valid and results in a
       // verbose output without progress.
       //
-      if (!progress)
+      if (sp)
         suppress_progress ();
 
       // Convert the submit arguments to curl's --form* options and cache the

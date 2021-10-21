@@ -259,7 +259,7 @@ init (const common_options& co,
     if (o.default_options_specified ())
       extra = o.default_options ();
 
-    o = merge_options (
+    default_options<O> dos (
       load_default_options<O, cli::argv_file_scanner, cli::unknown_mode> (
         nullopt /* sys_dir */,
         home_directory (),
@@ -277,8 +277,43 @@ init (const common_options& co,
         },
         "--options-file",
         args_pos,
-        1024),
-      o);
+        1024));
+
+    // Verify common options.
+    //
+    // Also merge the --progress/--no-progress options, overriding a less
+    // specific flag with a more specific.
+    //
+    optional<bool> progress;
+    auto merge_progress = [&progress]
+                          (const O& o,
+                           const default_options_entry<O>* e = nullptr)
+    {
+      if (o.progress () && o.no_progress ())
+      {
+        diag_record dr;
+        (e != nullptr ? dr << fail (e->file) : dr << fail)
+          << "both --progress and --no-progress specified";
+      }
+
+      if (o.progress ())
+        progress = true;
+      else if (o.no_progress ())
+        progress = false;
+    };
+
+    for (const default_options_entry<O>& e: dos)
+      merge_progress (e.options, &e);
+
+    merge_progress (o);
+
+    o = merge_options (dos, o);
+
+    if (progress)
+    {
+      o.progress (*progress);
+      o.no_progress (!*progress);
+    }
   }
   catch (const invalid_argument& e)
   {

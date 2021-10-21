@@ -190,7 +190,7 @@ namespace bdep
 
       if (progress)
       {
-        if (verb == 1 && stderr_term)
+        if ((verb == 1 && stderr_term) || o.progress ())
           v.push_back ("--progress");
       }
       else

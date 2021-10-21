@@ -91,7 +91,7 @@ namespace bdep
       string vl;
       {
         const char* o (nullptr);
-        bool progress (!co.no_progress ());
+        bool no_progress (co.no_progress ());
 
         switch (verb)
         {
@@ -111,10 +111,13 @@ namespace bdep
           ops.push_back (o);
 
           if (strcmp (o, "-q") == 0)
-            progress = true; // No need to suppress (already done with -q).
+            no_progress = false; // No need to suppress (already done with -q).
         }
 
-        if (!progress)
+        if (co.progress ())
+          ops.push_back ("--progress");
+
+        if (no_progress)
           ops.push_back ("--no-progress");
       }
 
@@ -189,7 +192,7 @@ namespace bdep
       string vl;
       {
         const char* o (nullptr);
-        bool progress (!co.no_progress ());
+        bool no_progress (co.no_progress ());
 
         switch (verb)
         {
@@ -209,10 +212,13 @@ namespace bdep
           ops.push_back (o);
 
           if (strcmp (o, "-q") == 0)
-            progress = true; // No need to suppress (already done with -q).
+            no_progress = false; // No need to suppress (already done with -q).
         }
 
-        if (!progress)
+        if (co.progress ())
+          ops.push_back ("--progress");
+
+        if (no_progress)
           ops.push_back ("--no-progress");
       }
 
