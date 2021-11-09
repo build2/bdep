@@ -159,8 +159,8 @@ if $cli.configured
 --generate-vector-scanner --generate-file-scanner --generate-group-scanner \
 --keep-separator --generate-specifier --generate-modifier \
 --generate-description --generate-parse --generate-merge \
---page-usage 'bdep::print_$name$_' --ansi-color --include-base-last \
---suppress-undocumented --option-length 24
+--page-usage 'bdep::print_$name$_' --ansi-color --ascii-tree \
+--include-base-last --suppress-undocumented --option-length 24
 
   cli.cxx{common-options}: cli.options += --short-usage --long-usage # Both.
   cli.cxx{bdep-options}: cli.options += --short-usage
