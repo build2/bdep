@@ -568,10 +568,11 @@ g = git -C prj >! 2>!
     # Reproduce the situation when the local build2-control branch exists but
     # the remote-tracking one doesn't (see brep/publish.cxx for details).
     #
-    # @@ git 2.32.0 seems to no longer print "Branch set up to track ...".
-    #
     $g branch -Dr origin/build2-control;
 
+    # Note that the push operation is fixed in git 2.32.0 not to print "Branch
+    # set up to track ..."  in the quiet mode.
+    #
     $* >&2 2>>~%EOE%;
       synchronizing:
         upgrade prj/1.0.13
