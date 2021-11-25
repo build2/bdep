@@ -80,6 +80,14 @@ namespace bdep
 
      See \l{brep#submit Package Submission} for details on the submission
      request handling by archive repositories.
+
+     If the \cb{--forward} option is specified then the forwarded
+     configurations are used to prepare the package distributions. In
+     particular, this means that in this mode the project doesn't need to be
+     initialized and all that's required is for package's source directories
+     to be configured to forward to an out of source build configuration (see
+     \l{b(1)} for details on forwarded configurations). This, for example, can
+     be used to publish packages that don't use the standard version.
      "
   }
 

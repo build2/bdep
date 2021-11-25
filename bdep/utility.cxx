@@ -19,6 +19,7 @@ namespace bdep
 
   const dir_path bdep_dir  (".bdep");
   const path     bdep_file (bdep_dir / "bdep.sqlite3");
+  const dir_path bpkg_dir  (".bpkg");
 
   const path manifest_file       ("manifest");
   const path packages_file       ("packages.manifest");

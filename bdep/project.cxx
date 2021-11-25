@@ -398,7 +398,7 @@ namespace bdep
         // Name/project is to be extracted later.
         //
         r.packages.push_back (
-          package_location {package_name (), nullopt, *p.package});
+          package_location {package_name (), nullopt, move (*p.package)});
       }
     }
 

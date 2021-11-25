@@ -128,7 +128,7 @@ namespace bdep
     {
       package_name     name;
       dir_path         dist_dir;
-      standard_version version;
+      string           version;
       package_name     project;
       string           section; // alpha|beta|stable (or --section)
 
@@ -167,47 +167,80 @@ namespace bdep
       package_name     n (move (pl.name));
       package_name     p (pl.project ? move (*pl.project) : n);
       dir_path         d (move (dist_dirs[i]));
-      standard_version v (package_version (o, d));
 
-      // Should we allow publishing snapshots and, if so, to which section?
-      // For example, is it correct to consider a "between betas" snapshot a
-      // beta version?
+      // If the package has the standard version, then use it to deduce the
+      // section, unless it is specified explicitly. Otherwise, there is no
+      // way to deduce it and thus it needs to be specified explicitly.
       //
-      // Seems nothing wrong with submitting snapshots generally. We do this
-      // for staging most of the time. The below logic of choosing a default
-      // section requires no changes. Also, the submission service can
-      // probably have some policy of version acceptance, rejecting some
-      // version types for some sections. For example, rejecting pre-release
-      // for stable section and snapshots for any section.
-      //
-      // Note, however, that if the project is under an unrecognized VCS or
-      // the snapshot is uncommitted, then we make it non-forcible. Failed
-      // that, we might end up publishing distinct snapshots under the same
-      // temporary version. (To be more precise, we should have checked for
-      // the latest snapshot but that would require getting the original
-      // version from the package manifest, which feels too hairy for now).
-      //
-      bool non_forcible;
-      if (v.snapshot () &&
-          ((non_forcible = (!uncommitted || *uncommitted)) ||
-           o.force ().find ("snapshot") == o.force ().end ()))
+      string s; // Section.
+      package_info pi (package_b_info (o, d, false /* ext_mods */));
+
+      if (!pi.version.empty ()) // Does the package use the standard version?
       {
-        diag_record dr (fail);
-        dr << "package " << n << " version " << v << " is a snapshot";
+        const standard_version& v (pi.version);
 
-        if (!non_forcible)
-          dr << info << "use --force=snapshot to publish anyway";
+        // Should we allow publishing snapshots and, if so, to which section?
+        // For example, is it correct to consider a "between betas" snapshot a
+        // beta version?
+        //
+        // Seems nothing wrong with submitting snapshots generally. We do this
+        // for staging most of the time. The below logic of choosing a default
+        // section requires no changes. Also, the submission service can
+        // probably have some policy of version acceptance, rejecting some
+        // version types for some sections. For example, rejecting pre-release
+        // for stable section and snapshots for any section.
+        //
+        // Note, however, that if the project is under an unrecognized VCS or
+        // the snapshot is uncommitted, then we make it non-forcible. Failed
+        // that, we might end up publishing distinct snapshots under the same
+        // temporary version. (To be more precise, we should have checked for
+        // the latest snapshot but that would require getting the original
+        // version from the package manifest, which feels too hairy for now).
+        //
+        bool non_forcible;
+        if (v.snapshot () &&
+            ((non_forcible = (!uncommitted || *uncommitted)) ||
+             o.force ().find ("snapshot") == o.force ().end ()))
+        {
+          diag_record dr (fail);
+          dr << "package " << n << " version " << v << " is a snapshot";
+
+          if (!non_forcible)
+            dr << info << "use --force=snapshot to publish anyway";
+        }
+
+        // Per semver we treat zero major versions as alpha.
+        //
+        s = o.section_specified ()        ? o.section ()   :
+            v.alpha () || v.major () == 0 ? "alpha"        :
+            v.beta ()                     ? "beta"         :
+                                            "stable"       ;
       }
+      else
+      {
+        // Verify the package version.
+        //
+        try
+        {
+          bpkg::version (pi.version_string);
+        }
+        catch (const invalid_argument& e)
+        {
+          fail << "invalid package " << n << " version '" << pi.version_string
+               << "': " << e;
+        }
 
-      // Per semver we treat zero major versions as alpha.
-      //
-      string s (o.section_specified () ? o.section ()   :
-                v.alpha () || v.major () == 0 ? "alpha" :
-                v.beta ()                     ? "beta"  : "stable");
+        if (!o.section_specified ())
+          fail << "unable to deduce section for package " << n << " version "
+               << pi.version_string <<
+            info << "use --section to specify it explicitly";
+
+        s = o.section ();
+      }
 
       pkgs.push_back (package {move (n),
                                move (d),
-                               move (v),
+                               move (pi.version_string),
                                move (p),
                                move (s),
                                path ()   /* archive */,
@@ -285,7 +318,7 @@ namespace bdep
       // This is the canonical package archive name that we expect dist to
       // produce.
       //
-      path a (dr / p.name.string () + '-' + p.version.string () + ".tar.gz");
+      path a (dr / p.name.string () + '-' + p.version + ".tar.gz");
       path c (a + ".sha256");
 
       if (!exists (a))
@@ -697,7 +730,7 @@ namespace bdep
 
           auto pkg_str = [] (const package& p)
           {
-            return p.name.string () + '/' + p.version.string ();
+            return p.name.string () + '/' + p.version;
           };
 
           if (pkgs.size () == 1)
@@ -990,14 +1023,27 @@ namespace bdep
           fail << "package " << pl.name << " source directory is not forwarded" <<
             info << "package source directory is " << d;
 
-        // Get the configuration root.
-        //
-        (pi.out_root /= pi.amalgamation).normalize ();
-
         dist_dirs.push_back (move (d));
 
-        if (find (cfgs.begin (), cfgs.end (), pi.out_root) == cfgs.end ())
-          cfgs.push_back (move (pi.out_root));
+        // If the forwarded configuration is amalgamated and this amalgamation
+        // is a bpkg configuration where some packages are bdep-initialized,
+        // then collect it for pre-sync.
+        //
+        if (!pi.amalgamation.empty ())
+        {
+          // Get the configuration root.
+          //
+          (pi.out_root /= pi.amalgamation).normalize ();
+
+          if (exists (dir_path (pi.out_root) /= bpkg_dir) &&
+              !configuration_projects (o,
+                                       pi.out_root,
+                                       dir_path () /* prj */).empty ())
+          {
+            if (find (cfgs.begin (), cfgs.end (), pi.out_root) == cfgs.end ())
+              cfgs.push_back (move (pi.out_root));
+          }
+        }
       }
 
       // Pre-sync the configurations to avoid triggering the build system hook

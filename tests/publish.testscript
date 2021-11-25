@@ -128,6 +128,28 @@ g = git -C prj >! 2>!
         error: package prj version 1.0.15-a.0.19700101000000 is a snapshot
         EOE
     }
+
+    : non-standard-version
+    :
+    : Test publishing a package with the non-standard version from a
+    : non-bdep-initialized project, using the forwarded build2 configuration.
+    :
+    {
+      $new --no-init --no-amalgamation prj 2>- &prj/***;
+      sed -i -e 's/^(version:) .*$/\1 12345/' prj/manifest;
+
+      sed -i \
+          -e 's/^(amalgamation =.*)$/\1\nversion = 12345\ndist.package = $project-$version/' \
+          -e 's/^using version$//' \
+          prj/build/bootstrap.build;
+
+      $build 'configure:' prj/@prj-cfg/,forward &prj/build/bootstrap/*** 2>!;
+
+      $* --no-progress --forward --section alpha 2>>~%EOE%
+        %package submission is queued(: .*prj/12345)?%
+        %reference: .{12}%
+        EOE
+    }
   }
 
   : multi-pkg
