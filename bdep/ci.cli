@@ -20,7 +20,7 @@ namespace bdep
 
      \c{\b{bdep ci} [<options>] [<cfg-spec>] [<pkg-spec>]}
 
-     \c{<cfg-spec> = (\b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>)... | \b{--all}|\b{-a}\n
+     \c{<cfg-spec> = (\b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>)... | \b{--all}|\b{-a} | \b{--forward}\n
         <pkg-spec> = (\b{--directory}|\b{-d} <pkg-dir>)... | <prj-spec>\n
         <prj-spec> = \b{--directory}|\b{-d} <prj-dir>}
 
@@ -33,8 +33,9 @@ namespace bdep
      directory is assumed. If no configuration is specified, then the default
      configurations are used. If the specified directory is a project
      directory, then all the packages initialized in the configurations are
-     submitted. See \l{bdep-projects-configs(1)} for details on specifying
-     projects and configurations.
+     submitted, unless the \cb{--forward} option is specified (see below). See
+     \l{bdep-projects-configs(1)} for details on specifying projects and
+     configurations.
 
      A CI request consists of the specified packages and their versions as
      well as the project's remote version control repository URL corresponding
@@ -90,6 +91,14 @@ namespace bdep
      service, normally, the CI server will respond with a reference that can
      be used to query the results. See \l{brep#ci Package CI} for details on
      the CI request handling.
+
+     If the \cb{--forward} option is specified then the forwarded
+     configurations are used instead of the default configurations. In
+     particular, this means that in this mode the project doesn't need to be
+     initialized and all that's required is for package's source directories
+     to be configured to forward to an out of source build configuration (see
+     \l{b(1)} for details on forwarded configurations). This, for example, can
+     be used to submit packages that don't use the standard version.
      "
   }
 
@@ -189,6 +198,12 @@ namespace bdep
        or publishing the result). The commonly used outcome value is
        \cb{success}. For other recognized outcomes refer to the CI service
        documentation."
+    }
+
+    bool --forward
+    {
+      "Use the forwarded configuration for each package instead of the
+       default configuration."
     }
   };
 

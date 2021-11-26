@@ -40,7 +40,7 @@ g = git -C prj 2>! >&2
 repository='http://example.com/prj.git'
 
 test.arguments += --yes --repository "$repository" --server "$server" \
---simulate 'success'
+                  --simulate 'success'
 
 config_cxx = cc config.cxx=$quote($recall($cxx.path) $cxx.config.mode, true)
 
@@ -357,6 +357,35 @@ windows = ($cxx.target.class == 'windows')
         error: 'builds' override specified together with --interactive|-i
         EOE
     }
+  }
+
+  : non-standard-version
+  :
+  : Test submitting a package with the non-standard version from a
+  : non-bdep-initialized project, using the forwarded build2 configuration.
+  :
+  {
+    cp --no-cleanup -pr ../../prj ./ &prj/***;
+    rm -r prj/.bdep/;
+
+    sed -i -e 's/^(version:) .*$/\1 12345/' prj/manifest;
+
+    sed -i \
+        -e 's/^(project =.*)$/\1\nversion = 12345/' \
+        -e 's/^using version$//' \
+        prj/build/bootstrap.build;
+
+    $g branch non-standard-version;
+    $g checkout non-standard-version;
+    $g -c core.safecrlf=false commit -a -m 'Change version';
+    $g push --set-upstream origin non-standard-version;
+
+    $build 'configure:' prj/@prj-cfg/,forward &prj/build/bootstrap/*** 2>!;
+
+    $* --no-progress --forward 2>>~%EOE%
+      %CI request is queued.*%
+      %reference: .+%
+      EOE
   }
 }
 

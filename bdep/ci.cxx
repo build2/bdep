@@ -178,6 +178,15 @@ namespace bdep
   {
     tracer trace ("ci");
 
+    if (o.forward ())
+    {
+      if (const char* n = (o.config_name_specified () ? "@<cfg-name>" :
+                           o.config_id_specified ()   ? "--config-id" :
+                           o.config_specified ()      ? "--config|-c" :
+                           o.all ()                   ? "--all|-a"    : nullptr))
+        fail << n << " specified together with --forward";
+    }
+
     vector<manifest_name_value> overrides;
 
     auto override = [&overrides] (string n, string v)
@@ -265,102 +274,154 @@ namespace bdep
     // So, let's go with the configurations. Specifically, if packages were
     // explicitly specified, we verify they are initialized. Otherwise, we use
     // the list of packages that are initialized in configurations. In both
-    // cases we also verify that for each package only one configuration, it
-    // is initialized in, is specified (while we currently don't need this
-    // restriction, this may change in the future if we decide to support
+    // cases we also verify that for each package only one configuration in
+    // which it is initialized is specified (while we currently don't need
+    // this restriction, this may change in the future if we decide to support
     // archive-based CI or some such).
     //
+    // In the forward mode we use package's forwarded source directories to
+    // obtain their versions. Also we load the project packages if the
+    // specified directory is a project directory.
     //
     // Note also that no pre-sync is needed since we are only getting versions
     // (via the info meta-operation).
     //
     project_packages pp (
       find_project_packages (o,
-                             false /* ignore_packages */,
-                             false /* load_packages   */));
+                             false        /* ignore_packages */,
+                             o.forward () /* load_packages */));
 
     const dir_path& prj (pp.project);
 
-    configurations cfgs;
-    {
-      // Don't keep the database open longer than necessary.
-      //
-      database db (open (prj, trace));
-
-      transaction t (db.begin ());
-      cfgs = find_configurations (o, prj, t).first;
-      t.commit ();
-    }
-
-    // Collect package names, versions, and configurations used.
+    // Collect package names, versions, and configurations used (except for
+    // the forward mode).
     //
     struct package
     {
       package_name              name;
-      standard_version          version;
-      shared_ptr<configuration> config;
+      string                    version;
+      shared_ptr<configuration> config;  // NULL in the forward mode.
     };
     vector<package> pkgs;
 
-    // Add a package to the list, suppressing duplicates and verifying that it
-    // is initialized in only one configuration.
-    //
-    auto add_package = [&o, &pkgs] (package_name n,
-                                    shared_ptr<configuration> c)
+    if (o.forward ())
     {
-      auto i (find_if (pkgs.begin (),
-                       pkgs.end (),
-                       [&n] (const package& p) {return p.name == n;}));
-
-      if (i != pkgs.end ())
+      // Add a package to the list and suppressing duplicates.
+      //
+      auto add_package = [&o, &pkgs] (package_name n, const dir_path& d)
       {
-        if (i->config == c)
+        auto i (find_if (pkgs.begin (),
+                         pkgs.end (),
+                         [&n] (const package& p) {return p.name == n;}));
+
+        if (i != pkgs.end ())
           return;
 
-        fail << "package " << n << " is initialized in multiple specified "
-             << "configurations" <<
-          info << *i->config <<
-          info << *c;
-      }
+        package_info pi (package_b_info (o, d, false /* ext_mods */));
 
-      standard_version v (package_version (o, c->path, n));
-      pkgs.push_back (package {move (n), move (v), move (c)});
-    };
+        // Verify the package version, unless it is standard and thus is
+        // already verified.
+        //
+        if (pi.version.empty ())
+        try
+        {
+          bpkg::version (pi.version_string);
+        }
+        catch (const invalid_argument& e)
+        {
+          fail << "invalid package " << n << " version '" << pi.version_string
+               << "': " << e <<
+            info << "package source directory is " << d;
+        }
 
-    if (pp.packages.empty ())
-    {
-      for (const shared_ptr<configuration>& c: cfgs)
+        pkgs.push_back (package {move (n), move (pi.version_string), nullptr});
+      };
+
+      for (package_location& p: pp.packages)
       {
-        for (const package_state& p: c->packages)
-          add_package (p.name, c);
+        dir_path d (pp.project / p.path);
+        package_info pi (package_b_info (o, d, false /* ext_mods */));
+
+        if (pi.src_root == pi.out_root)
+          fail << "package " << p.name << " source directory is not forwarded" <<
+            info << "package source directory is " << d;
+
+        add_package (p.name, d);
       }
     }
     else
     {
-      for (package_location& p: pp.packages)
+      configurations cfgs;
       {
-        bool init (false);
+        // Don't keep the database open longer than necessary.
+        //
+        database db (open (prj, trace));
 
-        for (const shared_ptr<configuration>& c: cfgs)
+        transaction t (db.begin ());
+        cfgs = find_configurations (o, prj, t).first;
+        t.commit ();
+      }
+
+      // Add a package to the list, suppressing duplicates and verifying that
+      // it is initialized in only one configuration.
+      //
+      auto add_package = [&o, &pkgs] (package_name n,
+                                      shared_ptr<configuration> c)
+      {
+        auto i (find_if (pkgs.begin (),
+                         pkgs.end (),
+                         [&n] (const package& p) {return p.name == n;}));
+
+        if (i != pkgs.end ())
         {
-          if (find_if (c->packages.begin (),
-                       c->packages.end (),
-                       [&p] (const package_state& s)
-                       {
-                         return p.name == s.name;
-                       }) != c->packages.end ())
-          {
-            // Add the package, but continue the loop to detect a potential
-            // configuration ambiguity.
-            //
-            add_package (p.name, c);
-            init = true;
-          }
+          if (i->config == c)
+            return;
+
+          fail << "package " << n << " is initialized in multiple specified "
+               << "configurations" <<
+            info << *i->config <<
+            info << *c;
         }
 
-        if (!init)
-          fail << "package " << p.name << " is not initialized in any "
-               << "configuration";
+        standard_version v (package_version (o, c->path, n));
+        pkgs.push_back (package {move (n), v.string (), move (c)});
+      };
+
+      if (pp.packages.empty ())
+      {
+        for (const shared_ptr<configuration>& c: cfgs)
+        {
+          for (const package_state& p: c->packages)
+            add_package (p.name, c);
+        }
+      }
+      else
+      {
+        for (package_location& p: pp.packages)
+        {
+          bool init (false);
+
+          for (const shared_ptr<configuration>& c: cfgs)
+          {
+            if (find_if (c->packages.begin (),
+                         c->packages.end (),
+                         [&p] (const package_state& s)
+                         {
+                           return p.name == s.name;
+                         }) != c->packages.end ())
+            {
+              // Add the package, but continue the loop to detect a potential
+              // configuration ambiguity.
+              //
+              add_package (p.name, c);
+              init = true;
+            }
+          }
+
+          if (!init)
+            fail << "package " << p.name << " is not initialized in any "
+                 << "configuration";
+        }
       }
     }
 
@@ -470,7 +531,7 @@ namespace bdep
       for (const package& p: pkgs)
         params.push_back ({parameter::text,
                            "package",
-                           p.name.string () + '/' + p.version.string ()});
+                           p.name.string () + '/' + p.version});
 
       if (ibpk)
         params.push_back ({parameter::text, "interactive", move (*ibpk)});
