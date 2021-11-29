@@ -511,7 +511,7 @@ namespace bdep
     package_info pi (package_b_info (o, d, false /* ext_mods */));
 
     if (pi.version.empty ())
-      fail << "empty version for package directory " << d;
+      fail << "package in directory " << d << " does not use standard version";
 
     return move (pi.version);
   }
@@ -532,7 +532,7 @@ namespace bdep
                                      false /* ext_mods */));
 
     if (pi.version.empty ())
-      fail << "empty version for package " << p;
+      fail << "package " << p << " does not use standard version";
 
     // Verify the name for good measure.
     //
