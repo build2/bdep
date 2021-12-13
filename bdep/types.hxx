@@ -89,6 +89,7 @@ namespace bdep
   // <libbutl/path.hxx>
   //
   using butl::path;
+  using path_traits = path::traits_type;
   using butl::dir_path;
   using butl::basic_path;
   using butl::invalid_path;

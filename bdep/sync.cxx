@@ -1877,8 +1877,8 @@ namespace bdep
 
       // Both paths are normilized so we can just compare them as strings.
       //
-      if (path::traits_type::compare (l.c_str () + b, n,
-                                      s.c_str (),     s.size ()) == 0)
+      if (path_traits::compare (l.c_str () + b, n,
+                                s.c_str (),     s.size ()) == 0)
         return true;
     }
 

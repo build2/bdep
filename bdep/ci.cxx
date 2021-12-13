@@ -101,7 +101,7 @@ namespace bdep
         //
         size_t n (rem->size ());
         if (s.upstream.compare (0, n, *rem) != 0 ||
-            !path::traits_type::is_separator (s.upstream[n]))
+            !path_traits::is_separator (s.upstream[n]))
           fail << "remote '" << *rem << "' is not a prefix for upstream "
                << "branch '" << s.upstream << "'";
 

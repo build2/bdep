@@ -530,7 +530,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
     // Reduce name with a directory component to the simple name with
     // --output-dir case.
     //
-    if (path::traits_type::find_separator (a) != string::npos)
+    if (path_traits::find_separator (a) != string::npos)
     {
       try
       {

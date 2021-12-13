@@ -287,7 +287,7 @@ namespace bdep
       {
         // Absolute path or the SSH thing.
         //
-        if (path::traits_type::absolute (s))
+        if (path_traits::absolute (s))
         {
           // This is what we want to end up with:
           //
