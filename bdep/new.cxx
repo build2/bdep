@@ -524,7 +524,37 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
   //
   string a;
   if (args.more ())
+  {
     a = args.next ();
+
+    // Reduce name with a directory component to the simple name with
+    // --output-dir case.
+    //
+    if (path::traits_type::find_separator (a) != string::npos)
+    {
+      try
+      {
+        dir_path p (move (a));
+        a = p.leaf ().string ();
+
+        if (!p.simple ())
+        {
+          if (o.output_dir_specified ())
+          {
+            fail << "both --output-dir|-o and directory component in name "
+                 << "specified";
+          }
+
+          o.output_dir (move (p));
+          o.output_dir_specified (true);
+        }
+      }
+      catch (const invalid_path& e)
+      {
+        fail << "invalid path '" << e.path << "'";
+      }
+    }
+  }
   else
   {
     if (!o.output_dir_specified ())

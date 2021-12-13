@@ -44,6 +44,9 @@ namespace bdep
      \cb{--source} first create according to <spec> a new \cb{build2}
      project/package called <name> in the <name> subdirectory of the current
      working directory (unless overridden with \c{\b{--output-dir}|\b{-o}}).
+     If <name> contains a directory component, then the project/package is
+     created in this directory, as if it was specified with
+     \c{\b{--output-dir}|\b{-o}}.
 
      The first form then, unless the \cb{--no-init} option is specified,
      initializes an empty project database as if by executing the
