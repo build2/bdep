@@ -247,7 +247,7 @@ deinit += -d prj
     added configuration @cfg $~/prj-cfg/ 3 target default,forwarded,auto-synchronized
     warning: added configuration @cfg already linked with host configurations
       info: configuration of host type: $~/prj-host-cfg/
-      info: consider adding them to this project
+      info: consider adding them to this project if it has any build-time dependencies
     EOE
 
   $* remove --all 2>!;

@@ -453,7 +453,8 @@ namespace bdep
         dr << info << "configuration of " << lc.second << " type: "
            << lc.first;
 
-      dr << info << "consider adding them to this project";
+      dr << info << "consider adding them to this project if it has "
+         << "any build-time dependencies";
     }
 
     return r;
