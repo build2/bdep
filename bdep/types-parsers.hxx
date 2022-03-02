@@ -48,6 +48,19 @@ namespace bdep
       static void
       merge (dir_path& b, const dir_path& a) {b = a;}
     };
+
+    template <>
+    struct parser<stdout_format>
+    {
+      static void
+      parse (stdout_format&, bool&, scanner&);
+
+      static void
+      merge (stdout_format& b, const stdout_format& a)
+      {
+        b = a;
+      }
+    };
   }
 }
 

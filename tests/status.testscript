@@ -30,6 +30,23 @@ deinit += -d prj
 
   $* >'prj configured 0.1.0-a.0.19700101000000';
 
+  $* --stdout-format 'json' >>/~"%EOO%";
+    [
+      {
+        "configuration": {
+          "id": 1,
+          "path": "$~/prj-cfg",
+          "name": "cfg"
+        },
+        "packages": [
+      {
+    %.+
+      }
+    ]
+      }
+    ]
+    EOO
+
   $deinit 2>>/"EOE"
     deinitializing in project $~/prj/
     synchronizing:
@@ -53,6 +70,35 @@ deinit += -d prj
 
     in configuration @cfg2:
     prj configured 0.1.0-a.0.19700101000000
+    EOO
+
+  $* --all --stdout-format 'json' >>/~"%EOO%";
+    [
+      {
+        "configuration": {
+          "id": 1,
+          "path": "$~/prj-cfg1",
+          "name": "cfg1"
+        },
+        "packages": [
+      {
+    %.+
+      }
+    ]
+      },
+      {
+        "configuration": {
+          "id": 2,
+          "path": "$~/prj-cfg2",
+          "name": "cfg2"
+        },
+        "packages": [
+      {
+    %.+
+      }
+    ]
+      }
+    ]
     EOO
 
   $deinit 2>>/"EOE"

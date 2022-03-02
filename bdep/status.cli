@@ -42,10 +42,76 @@ namespace bdep
      \c{\b{--immediate}|\b{-i}} or \c{\b{--recursive}|\b{-r}} options,
      respectively.
 
-     The status of each package is printed on a separate line. Note that the
-     status is written to \cb{STDOUT}, not \cb{STDERR}. The semantics of
-     <dep-spec> and the format of the status line are described in
+     In the default output format (see the \cb{--stdout-format} common
+     option), the status of each package is printed on a separate line. Note
+     that the status is written to \cb{stdout}, not \cb{stderr}. The semantics
+     of <dep-spec> and the format of the status line are described in
      \l{bpkg-pkg-status(1)}.
+
+     If the output format is \cb{json}, then the output is a JSON array of
+     objects which are the serialized representation of the following C++
+     \cb{struct} \cb{configuration_package_status}:
+
+     \
+     struct configuration
+     {
+       uint64_t         id;
+       string           path;
+       optional<string> name;
+     };
+
+     struct configuration_package_status
+     {
+       configuration configuration;
+       vector<package_status> packages;
+     };
+     \
+
+     For example:
+
+     \
+     [
+       {
+         \"configuration\": {
+           \"id\": 1,
+           \"path\": \"/tmp/hello-gcc\",
+           \"name\": \"gcc\"
+         },
+         \"packages\": [
+           {
+             \"name\": \"hello\",
+             \"status\": \"configured\",
+             \"version\": \"1.0.0\",
+             \"hold_package\": true,
+             \"available_versions\": [
+               {
+                 \"version\": \"1.0.1\"
+               },
+               {
+                 \"version\": \"2.0.0\"
+               }
+             ],
+             \"dependencies\": [
+               {
+                 \"name\": \"libhello\",
+                 \"status\": \"configured\",
+                 \"version\": \"1.0.2\"
+               }
+             ]
+           }
+         ]
+       }
+     ]
+     \
+
+     See the JSON OUTPUT section in \l{bdep-common-options(1)} for details on
+     the overall properties of this format and the semantics of the
+     \cb{struct} serialization.
+
+     Refer to the \cb{list} subcommand of \l{bdep-config(1)} for details on
+     the \cb{struct} \cb{configuration} members. Refer to
+     \l{bpkg-pkg-status(1)} for the definition of \cb{struct}
+     \cb{package_status}.
      "
   }
 

@@ -132,8 +132,8 @@ namespace bdep
          The \cb{list} subcommand prints the list of build configurations
          associated with the project. Unless one or more configurations are
          specified explicitly, \cb{list} prints all the associate
-         configurations. Note that the output is written to \cb{STDOUT}, not
-         \cb{STDERR}.|
+         configurations. Note that the output is written to \cb{stdout}, not
+         \cb{stderr}.|
 
      \li|\cb{move}
 

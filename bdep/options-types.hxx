@@ -6,6 +6,11 @@
 
 namespace bdep
 {
+  enum class stdout_format
+  {
+    lines,
+    json
+  };
 }
 
 #endif // BDEP_OPTIONS_TYPES_HXX

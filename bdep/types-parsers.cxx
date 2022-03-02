@@ -68,5 +68,22 @@ namespace bdep
       xs = true;
       parse_path (x, s);
     }
+
+    void parser<stdout_format>::
+    parse (stdout_format& r, bool& xs, scanner& s)
+    {
+      const char* o (s.next ());
+
+      if (!s.more ())
+        throw missing_value (o);
+
+      string v (s.next ());
+
+      if      (v == "lines") r = stdout_format::lines;
+      else if (v == "json")  r = stdout_format::json;
+      else throw invalid_value (o, v);
+
+      xs = true;
+    }
   }
 }
