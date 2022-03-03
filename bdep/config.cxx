@@ -5,6 +5,8 @@
 
 #include <iostream> // cout
 
+#include <libbutl/json/serializer.hxx>
+
 #include <bdep/database.hxx>
 #include <bdep/project-odb.hxx>
 #include <bdep/diagnostics.hxx>
@@ -780,6 +782,70 @@ namespace bdep
     return 0;
   }
 
+  static void
+  cmd_config_list_lines (const configurations& cfgs)
+  {
+    for (const shared_ptr<configuration>& c: cfgs)
+    {
+      //@@ TODO: use tabular layout facility when ready.
+
+      print_configuration (cout, c);
+      cout << endl;
+    }
+  }
+
+  static void
+  cmd_config_list_json (const configurations& cfgs)
+  {
+    butl::json::stream_serializer ss (cout);
+
+    ss.begin_array ();
+
+    for (const shared_ptr<configuration>& c: cfgs)
+    {
+      ss.begin_object ();
+
+      ss.member ("id", *c->id);
+      ss.member ("path", c->path.string ());
+
+      if (c->name)
+        ss.member ("name", *c->name);
+
+      ss.member ("type", c->type);
+
+      if (c->default_)
+        ss.member ("default", c->default_);
+
+      if (c->forward)
+        ss.member ("forward", c->forward);
+
+      if (c->auto_sync)
+        ss.member ("auto-sync", c->auto_sync);
+
+      if (!c->packages.empty ())
+      {
+        ss.member_name ("packages");
+
+        ss.begin_array ();
+
+        for (const package_state& s: c->packages)
+        {
+          ss.begin_object ();
+          ss.member ("name", s.name.string (), false /* check */);
+          ss.end_object ();
+        }
+
+        ss.end_array ();
+      }
+
+      ss.end_object ();
+    }
+
+    ss.end_array ();
+
+    cout << endl;
+  }
+
   static int
   cmd_config_list (const cmd_config_options& o, cli::scanner&)
   {
@@ -819,12 +885,18 @@ namespace bdep
 
     t.commit ();
 
-    for (const shared_ptr<configuration>& c: cfgs)
+    switch (o.stdout_format ())
     {
-      //@@ TODO: use tabular layout facility when ready.
-
-      print_configuration (cout, c);
-      cout << endl;
+    case stdout_format::lines:
+      {
+        cmd_config_list_lines (cfgs);
+        break;
+      }
+    case stdout_format::json:
+      {
+        cmd_config_list_json (cfgs);
+        break;
+      }
     }
 
     return 0;

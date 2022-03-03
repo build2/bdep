@@ -133,7 +133,65 @@ namespace bdep
          associated with the project. Unless one or more configurations are
          specified explicitly, \cb{list} prints all the associate
          configurations. Note that the output is written to \cb{stdout}, not
-         \cb{stderr}.|
+         \cb{stderr}.
+
+         If the output format is \cb{json} (see the \cb{--stdout-format}
+         common option), then the output is a JSON array of objects which are
+         the serialized representation of the following C++ \cb{struct}
+         \cb{configuration}:
+
+         \
+         struct package
+         {
+           string name;
+         };
+
+         struct configuration
+         {
+           uint64_t         id;
+           string           path;
+           optional<string> name;
+           string           type;
+           bool             default;
+           bool             forward;
+           bool             auto_sync;
+           vector<package>  packages;
+         };
+         \
+
+         For example:
+
+         \
+         [
+           {
+             \"id\": 1,
+             \"path\": \"/tmp/hello-gcc\",
+             \"name\": \"gcc\",
+             \"type\": \"target\",
+             \"default\": true,
+             \"forward\": true,
+             \"auto_sync\": true,
+             \"packages\": [
+               {
+                 \"name\": \"hello\"
+               }
+             ]
+           }
+         ]
+         \
+
+         See the JSON OUTPUT section in \l{bdep-common-options(1)} for details
+         on the overall properties of this format and the semantics of the
+         \cb{struct} serialization.
+
+         The \cb{id} member is a numeric configuration id that can be used to
+         identify the configuration instead of the name or path (see the
+         \cb{--config-id} option). The \cb{path} member is an absolute path to
+         the configuration directory. The \cb{packages} member contains the
+         array of packages belonging to this project that have been
+         initialized in this configuration. See the \cb{create} subcommand for
+         the meaning of other members (\cb{name}, \cb{type}, \cb{default},
+         etc).|
 
      \li|\cb{move}
 
