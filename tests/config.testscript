@@ -41,11 +41,11 @@ deinit += -d prj
 
     # While at it, test printing the configurations list in the JSON format.
     #
-    $* list @cfg --stdout-format 'json' >>/~"%EOO%";
+    $* list @cfg --stdout-format 'json' >>~%EOO%;
       [
         {
           "id": 1,
-          "path": "$~/cfg-dir",
+      %    "path": ".+cfg-dir",%
           "name": "cfg",
           "type": "target",
           "default": true,
@@ -281,11 +281,11 @@ deinit += -d prj
 
   # While at it, test printing the configurations list in the JSON format.
   #
-  $* list --stdout-format 'json' >>/~"%EOO%"
+  $* list --stdout-format 'json' >>~%EOO%
     [
       {
         "id": 5,
-        "path": "$~/prj-cfg",
+    %    "path": ".+prj-cfg",%
         "name": "cfg",
         "type": "target",
         "default": true,
@@ -294,7 +294,7 @@ deinit += -d prj
       },
       {
         "id": 4,
-        "path": "$~/prj-host-cfg",
+    %    "path": ".+prj-host-cfg",%
         "name": "host-cfg",
         "type": "host",
         "default": true,
