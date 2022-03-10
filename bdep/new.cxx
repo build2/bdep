@@ -2369,7 +2369,14 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                << "./: $pub_hdrs"                                      << '\n';
           }
 
+          // @@ TMP: enable before 0.15.0 release (also update toolchain
+          //         requirements in manifest). Also below.
+          //
           if (ver)
+#if 0
+            os <<                                                         '\n'
+               << hg << "{version}: in{version} $src_root/manifest"    << '\n';
+#else
             os <<                                                         '\n'
                << "# Include the generated version header into the distribution (so that we don't" << '\n'
                << "# pick up an installed one) and don't remove it when cleaning in src (so that"  << '\n'
@@ -2380,6 +2387,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                << "  dist  = true"                                     << '\n'
                << "  clean = ($src_root != $out_root)"                 << '\n'
                << "}"                                                  << '\n';
+#endif
 
           if (!exph.empty ())
             os <<                                                         '\n'
@@ -2576,7 +2584,14 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
             os << "}"                                                  << '\n';
           }
 
+          // @@ TMP: enable before 0.15.0 release (also update toolchain
+          //         requirements in manifest). Also above.
+          //
           if (ver && !split)
+#if 0
+            os <<                                                         '\n'
+               << hg << "{version}: in{version} $src_root/manifest"    << '\n';
+#else
             os <<                                                         '\n'
                << "# Include the generated version header into the distribution (so that we don't" << '\n'
                << "# pick up an installed one) and don't remove it when cleaning in src (so that"  << '\n'
@@ -2587,6 +2602,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                << "  dist  = true"                                     << '\n'
                << "  clean = ($src_root != $out_root)"                 << '\n'
                << "}"                                                  << '\n';
+#endif
 
           if (!exph.empty () && !split)
             os <<                                                         '\n'
