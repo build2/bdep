@@ -62,7 +62,7 @@ namespace bdep
 
      struct configuration_package_status
      {
-       configuration configuration;
+       configuration          configuration;
        vector<package_status> packages;
      };
      \
