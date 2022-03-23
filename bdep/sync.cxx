@@ -4,7 +4,7 @@
 #include <bdep/sync.hxx>
 
 #include <list>
-#include <cstring>  // strchr(), strcmp()
+#include <cstring>  // strchr(), strcmp(), strspn()
 
 #include <libbpkg/manifest.hxx>
 
@@ -987,6 +987,13 @@ namespace bdep
 
     bool multi_cfg (cfgs.size () != 1);
 
+    // Position the pointer to the first non-whitespace character.
+    //
+    auto ltrim = [] (const char*& s)
+    {
+      s += strspn (s, " \t");
+    };
+
     // Start by adding configuration variables from pkg_args, if any.
     //
     // If we have dep_pkgs (third form), then non-global configuration
@@ -1025,6 +1032,8 @@ namespace bdep
           continue;
         }
 
+        ltrim (a);
+
         if (*a != '!')
         {
           if (!dep_pkgs.empty ())
@@ -1046,7 +1055,7 @@ namespace bdep
             continue;
         }
 
-        args.push_back (a);
+        args.push_back (trim (a));
 
         // Note: we let diagnostics for unhandled groups cover groups for
         //       configuration variables.
@@ -1139,6 +1148,8 @@ namespace bdep
                 continue;
               }
 
+              ltrim (a);
+
               if (*a == '!')
                 ++a;
 
@@ -1199,8 +1210,10 @@ namespace bdep
               const char* a (s.next ());
               if (strchr (a, '=') != nullptr)
               {
+                ltrim (a);
+
                 if (*a != '!')
-                  args.push_back (a);
+                  args.push_back (trim (a));
               }
               else
                 s.skip_group ();
@@ -1293,8 +1306,10 @@ namespace bdep
             const char* a (s.next ());
             if (strchr (a, '=') != nullptr)
             {
+              ltrim (a);
+
               if (*a != '!')
-                args.push_back (a);
+                args.push_back (trim (a));
             }
             else
               s.skip_group ();

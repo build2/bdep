@@ -32,7 +32,7 @@ namespace bdep
       if (strchr (a , '=') == nullptr)
         fail << "'" << a << "' does not look like a variable assignment";
 
-      cfg_vars.push_back (a);
+      cfg_vars.push_back (trim (a));
     }
 
     // The same ignore/load story as in sync.
