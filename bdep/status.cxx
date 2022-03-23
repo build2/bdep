@@ -182,7 +182,7 @@ namespace bdep
         pkgs = config_packages (*c, prj_pkgs.packages);
 
       ss.begin_object ();
-      ss.member_name ("configuration");
+      ss.member_name ("configuration", false /* check */);
       ss.begin_object ();
       ss.member ("id", *c->id);
       ss.member ("path", c->path.string ());
@@ -249,7 +249,7 @@ namespace bdep
         if (!ps.empty () && ps.back () == '\n')
           ps.pop_back ();
 
-        ss.member_name ("packages");
+        ss.member_name ("packages", false /* check */);
         ss.value_json_text (ps);
       }
       else

@@ -820,11 +820,11 @@ namespace bdep
         ss.member ("forward", c->forward);
 
       if (c->auto_sync)
-        ss.member ("auto-sync", c->auto_sync);
+        ss.member ("auto_sync", c->auto_sync);
 
       if (!c->packages.empty ())
       {
-        ss.member_name ("packages");
+        ss.member_name ("packages", false /* check */);
 
         ss.begin_array ();
 

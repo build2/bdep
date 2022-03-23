@@ -50,7 +50,7 @@ deinit += -d prj
           "type": "target",
           "default": true,
           "forward": true,
-          "auto-sync": true,
+          "auto_sync": true,
           "packages": [
             {
               "name": "prj"
@@ -290,7 +290,7 @@ deinit += -d prj
         "type": "target",
         "default": true,
         "forward": true,
-        "auto-sync": true
+        "auto_sync": true
       },
       {
         "id": 4,
@@ -299,7 +299,7 @@ deinit += -d prj
         "type": "host",
         "default": true,
         "forward": true,
-        "auto-sync": true
+        "auto_sync": true
       }
     ]
     EOO
