@@ -1716,7 +1716,7 @@ namespace bdep
           diag_record dr (fail);
           dr << "unexpected " << name_bpkg (co) << " output:";
           for (const string& s: dep_chain)
-            dr << '\n' << s ;
+            dr << '\n' << s;
         }
 
         break;

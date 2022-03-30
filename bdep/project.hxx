@@ -176,6 +176,10 @@ namespace bdep
   // default configurations if none were mentioned. Unless validate is false,
   // also validate that the configuration directories still exist.
   //
+  // Fail if --all|-a is specified and the project has no associated
+  // configurations, unless allow_none is true in which case return an empty
+  // list of configurations.
+  //
   // Besides configurations, also return an indication if they are retrieved
   // as a fallback to default configurations (true if that's the case).
   //
@@ -186,7 +190,8 @@ namespace bdep
                        const dir_path& prj,
                        transaction&,
                        bool fallback_default = true,
-                       bool validate = true);
+                       bool validate = true,
+                       bool allow_none = false);
 
   // Given a directory which can be a project root, a package root, or, if
   // requested, one of their subdirectories, return the absolute project
@@ -245,12 +250,16 @@ namespace bdep
   project_packages
   find_project_packages (const dir_paths&,
                          bool ignore_packages,
-                         bool load_packages = true);
+                         bool load_packages = true,
+                         bool allow_empty = false);
 
   inline project_packages
-  find_project_packages (const project_options& po, bool ip, bool lp = true)
+  find_project_packages (const project_options& po,
+                         bool ip,
+                         bool lp = true,
+                         bool ae = false)
   {
-    return find_project_packages (po.directory (), ip, lp);
+    return find_project_packages (po.directory (), ip, lp, ae);
   }
 
   inline dir_path

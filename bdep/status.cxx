@@ -173,14 +173,6 @@ namespace bdep
     //
     for (const shared_ptr<configuration>& c: cfgs)
     {
-      // Collect the packages to print, unless the dependency packages are
-      // specified.
-      //
-      strings pkgs;
-
-      if (dep_pkgs.empty ())
-        pkgs = config_packages (*c, prj_pkgs.packages);
-
       ss.begin_object ();
       ss.member_name ("configuration", false /* check */);
       ss.begin_object ();
@@ -192,7 +184,27 @@ namespace bdep
 
       ss.end_object ();
 
-      if (!c->packages.empty () && (!pkgs.empty () || !dep_pkgs.empty ()))
+      // Collect the initialized packages to print, unless the dependency
+      // packages are specified.
+      //
+      strings pkgs;
+
+      if (dep_pkgs.empty ())
+        pkgs = config_packages (*c, prj_pkgs.packages);
+
+      // Statuses of the project packages or their dependencies represented as
+      // a JSON array. Will be used as a pre-serialized value for the packages
+      // member of the configuration packages status object.
+      //
+      string ps;
+
+      // If we print statuses of the dependency packages, then retrieve them
+      // all as bpkg-status' stdout. Otherwise, retrieve the initialized
+      // packages statuses, if any, as bpkg-status' stdout and append statuses
+      // of uninitialized packages, if any.
+      //
+      const vector<package_state>& cpkgs (c->packages);
+      if (!cpkgs.empty () && (!pkgs.empty () || !dep_pkgs.empty ()))
       {
         const dir_path& prj (prj_pkgs.project);
 
@@ -205,12 +217,6 @@ namespace bdep
         // but not for both.
         //
         assert (pkgs.empty () == !dep_pkgs.empty ());
-
-        // Save the JSON representation of package statuses into a string from
-        // bpkg-status' stdout and use it as a pre-serialized value for the
-        // packages member of the configuration packages status object.
-        //
-        string ps;
 
         fdpipe pipe (open_pipe ()); // Text mode seems appropriate.
 
@@ -249,13 +255,82 @@ namespace bdep
         if (!ps.empty () && ps.back () == '\n')
           ps.pop_back ();
 
+        // While at it, let's verify that the output looks like a JSON array,
+        // since we will rely on the presence of the framing brackets below.
+        //
+        if (ps.empty () || ps.front () != '[' || ps.back () != ']')
+          fail << "invalid bpkg-status output:\n" << ps;
+      }
+
+      // Append the uninitialized packages statuses to the JSON array, unless
+      // we are printing the dependency packages.
+      //
+      if (dep_pkgs.empty ())
+      {
+        // If the initialized packages are present and so the array
+        // representation is not empty, then unwrap the statuses removing the
+        // framing brackets before appending the uninitialized packages
+        // statuses and wrap them all back afterwards. Let's do it lazily.
+        //
+        bool first (true);
+
+        for (const package_location& l: prj_pkgs.packages)
+        {
+          if (find_if (cpkgs.begin (),
+                       cpkgs.end (),
+                       [&l] (const package_state& p)
+                       {
+                         return p.name == l.name;
+                       }) == cpkgs.end ()) // Unintialized?
+          {
+            // Unwrap the array representation, if present, on the first
+            // uninitialized package.
+            //
+            if (first)
+            {
+              first = false;
+
+              if (!ps.empty ())
+              {
+                size_t b (ps.find_first_not_of ("[\n"));
+                size_t e (ps.find_last_not_of ("\n]"));
+
+                // We would fail earlier otherwise.
+                //
+                assert (b != string::npos && e != string::npos);
+
+                ps = string (ps, b, e + 1 - b);
+              }
+            }
+
+            if (!ps.empty ())
+              ps += ",\n";
+
+            // Note: here we rely on the fact that the package name doesn't
+            // need escaping.
+            //
+            ps += "  {\n"
+                  "    \"name\": \"" + l.name.string () + "\",\n"
+                  "    \"status\": \"uninitialized\"\n"
+                  "  }";
+          }
+        }
+
+        // Wrap the array if any uninitialized packages statuses have been
+        // added.
+        //
+        if (!first)
+          ps = "[\n" + ps + "\n]";
+      }
+
+      // Note that we can end up with an empty statuses representation (for
+      // example, when query the status of a dependency package in the empty
+      // configuration).
+      //
+      if (!ps.empty ())
+      {
         ss.member_name ("packages", false /* check */);
         ss.value_json_text (ps);
-      }
-      else
-      {
-        // Not that unlike in the lines output we don't tell the user that
-        // there are no packages.
       }
 
       ss.end_object ();
@@ -279,12 +354,20 @@ namespace bdep
     strings dep_pkgs;
     for (; args.more (); dep_pkgs.push_back (args.next ())) ;
 
-    // The same ignore/load story as in sync.
+    bool json (o.stdout_format () == stdout_format::json);
+
+    // The same ignore/load story as in sync for the lines format.
+    //
+    // For the JSON format we load all the project packages, unless they are
+    // specified explicitly, and allow the empty projects. Note that in
+    // contrast to the lines format we print statuses of uninitialized
+    // packages and empty configurations.
     //
     project_packages pp (
       find_project_packages (o,
                              !dep_pkgs.empty () /* ignore_packages */,
-                             false              /* load_packages   */));
+                             json               /* load_packages */,
+                             json               /* allow_empty */));
 
     const dir_path& prj (pp.project);
 
@@ -293,13 +376,26 @@ namespace bdep
     configurations cfgs;
     {
       transaction t (db.begin ());
-      pair<configurations, bool> cs (find_configurations (o, prj, t));
+
+      // If --all|-a is specified and the project has no associated
+      // configurations let's print an empty array of configurations for the
+      // JSON format instead of failing (as we do for the lines format).
+      //
+      pair<configurations, bool> cs (
+        find_configurations (o,
+                             prj,
+                             t,
+                             true /* fallback_default */,
+                             true /* validate */,
+                             json /* allow_none */));
+
       t.commit ();
 
       // If specified, verify packages are present in at least one
-      // configuration.
+      // configuration. But not for the JSON format where we also print
+      // statuses of uninitialized packages.
       //
-      if (!pp.packages.empty ())
+      if (!pp.packages.empty () && !json)
         verify_project_packages (pp, cs);
 
       cfgs = move (cs.first);

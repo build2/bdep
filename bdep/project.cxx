@@ -21,7 +21,8 @@ namespace bdep
                        const dir_path& prj,
                        transaction& t,
                        bool fallback_default,
-                       bool validate)
+                       bool validate,
+                       bool allow_none)
   {
     configurations r;
     bool fallback (false);
@@ -126,7 +127,12 @@ namespace bdep
         add (move (c));
 
       if (r.empty ())
+      {
+        if (allow_none)
+          return make_pair (move (r), false /* fallback */);
+
         fail << "no existing configurations";
+      }
     }
 
     // default
@@ -340,7 +346,8 @@ namespace bdep
   project_packages
   find_project_packages (const dir_paths& dirs,
                          bool ignore_packages,
-                         bool load_packages)
+                         bool load_packages,
+                         bool allow_empty)
   {
     project_packages r;
 
@@ -408,7 +415,7 @@ namespace bdep
       // packages are in it or, if nothing was discovered, use it as the
       // source for the package list.
       //
-      package_locations pls (load_package_locations (r.project));
+      package_locations pls (load_package_locations (r.project, allow_empty));
 
       if (!r.packages.empty ())
       {

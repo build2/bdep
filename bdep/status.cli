@@ -111,8 +111,11 @@ namespace bdep
      Refer to the \cb{list} subcommand of \l{bdep-config(1)} for details on
      the \cb{struct} \cb{configuration} members. Refer to
      \l{bpkg-pkg-status(1)} for the definition of \cb{struct}
-     \cb{package_status}.
-     "
+     \cb{package_status}. Note also that in the \cb{json} output format
+     certain conditions (no associated configurations, no initialized
+     packages, etc) are not treated as errors but instead result in valid
+     output. The uninitialized packages have the special \cb{uninitialized}
+     \cb{status} value."
   }
 
   class cmd_status_options: project_options

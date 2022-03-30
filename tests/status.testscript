@@ -9,51 +9,115 @@ new    += 2>!
 init   += $config_cxx -d prj 2>!
 sync   += -d prj 2>!
 deinit += -d prj
+config += -d prj 2>!
 
 : no-cfg
 :
 {
-  $clone_prj;
+  : default
+  :
+  {
+    $clone_root_prj;
 
-  $* 2>>/"EOE" != 0
-    error: no default configuration in project $~/prj/
-      info: use \(@<cfg-name> | --config|-c <cfg-dir> | --all|-a\) to specify configuration explicitly
-    EOE
+    $* 2>>/"EOE" != 0;
+      error: no default configuration in project $~/prj/
+        info: use \(@<cfg-name> | --config|-c <cfg-dir> | --all|-a\) to specify configuration explicitly
+      EOE
+
+    $* --stdout-format 'json' 2>>/"EOE" != 0
+      error: no default configuration in project $~/prj/
+        info: use \(@<cfg-name> | --config|-c <cfg-dir> | --all|-a\) to specify configuration explicitly
+      EOE
+  }
+
+  : all
+  :
+  {
+    $clone_root_prj;
+
+    $* -a 2>>EOE != 0;
+      error: no existing configurations
+      EOE
+
+    $* -a --stdout-format 'json' >'[]'
+  }
 }
 
 : single-cfg
 :
 {
-  $clone_prj;
+  : single-project
+  :
+  {
+    $clone_root_prj;
 
-  $init -C @cfg &prj-cfg/***;
+    $init -C @cfg &prj-cfg/***;
 
-  $* >'prj configured 0.1.0-a.0.19700101000000';
+    $* >'prj configured 0.1.0-a.0.19700101000000';
 
-  # While at it, test printing the status in the JSON format.
-  #
-  $* --stdout-format 'json' >>~%EOO%;
+    $* --stdout-format 'json' >>~%EOO%;
+      [
+        {
+          "configuration": {
+            "id": 1,
+      %      "path": ".+prj-cfg",%
+            "name": "cfg"
+          },
+          "packages": [
+        {
+      %.+
+        }
+      ]
+        }
+      ]
+      EOO
+
+    $deinit 2>>/"EOE"
+      deinitializing in project $~/prj/
+      synchronizing:
+        drop prj
+      EOE
+  }
+
+  : no-projects
+  :
+  {
+    $new -t empty prj &prj/***;
+
+    $config create @cfg &prj-cfg/***;
+
+    $* 2>>~%EOE% != 0;
+      %error: no packages in project .+%
+      EOE
+
+    $* --stdout-format 'json' >>~%EOO%;
     [
       {
         "configuration": {
           "id": 1,
     %      "path": ".+prj-cfg",%
           "name": "cfg"
-        },
-        "packages": [
-      {
-    %.+
-      }
-    ]
+        }
       }
     ]
     EOO
 
-  $deinit 2>>/"EOE"
-    deinitializing in project $~/prj/
-    synchronizing:
-      drop prj
-    EOE
+    $* libbar 2>>EOE;
+      info: no packages initialized in configuration @cfg, skipping
+      EOE
+
+    $* --stdout-format 'json' libbar >>~%EOO%
+    [
+      {
+        "configuration": {
+          "id": 1,
+    %      "path": ".+prj-cfg",%
+          "name": "cfg"
+        }
+      }
+    ]
+    EOO
+  }
 }
 
 : multi-cfg
@@ -74,8 +138,6 @@ deinit += -d prj
     prj configured 0.1.0-a.0.19700101000000
     EOO
 
-  # While at it, test printing the status in the JSON format.
-  #
   $* --all --stdout-format 'json' >>~%EOO%;
     [
       {
@@ -112,6 +174,98 @@ deinit += -d prj
     EOE
 }
 
+: multi-prj
+:
+{
+  $new -t empty prj &prj/***;
+  $new -d prj --package pkg1;
+  $new -d prj --package pkg2;
+
+  $init -d prj/pkg1 -C @cfg &prj-cfg/***;
+
+  # Initialized package is specified.
+  #
+  $* -d prj/pkg1 >>EOE;
+    pkg1 configured 0.1.0-a.0.19700101000000
+    EOE
+
+  $* -d prj/pkg1 --stdout-format 'json' >>~%EOO%;
+    [
+      {
+        "configuration": {
+          "id": 1,
+    %      "path": ".+prj-cfg",%
+          "name": "cfg"
+        },
+        "packages": [
+      {
+        "name": "pkg1",
+        "status": "configured",
+        "version": "0.1.0-a.0.19700101000000",
+        "hold_package": true,
+        "hold_version": true
+      }
+    ]
+      }
+    ]
+    EOO
+
+  # Uninitialized package is specified.
+  #
+  $* -d prj/pkg2 2>>EOE != 0;
+    error: package pkg2 is not initialized in any default configuration(s)
+    EOE
+
+  $* -d prj/pkg2 --stdout-format 'json' >>~%EOO%;
+    [
+      {
+        "configuration": {
+          "id": 1,
+    %      "path": ".+prj-cfg",%
+          "name": "cfg"
+        },
+        "packages": [
+      {
+        "name": "pkg2",
+        "status": "uninitialized"
+      }
+    ]
+      }
+    ]
+    EOO
+
+  # No package is specified.
+  #
+  $* >>EOE;
+    pkg1 configured 0.1.0-a.0.19700101000000
+    EOE
+
+  $* --stdout-format 'json' >>~%EOO%
+    [
+      {
+        "configuration": {
+          "id": 1,
+    %      "path": ".+prj-cfg",%
+          "name": "cfg"
+        },
+        "packages": [
+      {
+        "name": "pkg1",
+        "status": "configured",
+        "version": "0.1.0-a.0.19700101000000",
+        "hold_package": true,
+        "hold_version": true
+      },
+      {
+        "name": "pkg2",
+        "status": "uninitialized"
+      }
+    ]
+      }
+    ]
+    EOO
+}
+
 : dependency
 :
 {
@@ -143,6 +297,23 @@ deinit += -d prj
   $* --recursive >>~%EOO%;
     prj configured 0.1.0-a.0.19700101000000#1
     %  libprj configured 0.+%
+    EOO
+
+  $* --recursive --stdout-format 'json' >>~%EOO%;
+    [
+      {
+        "configuration": {
+          "id": 1,
+    %      "path": ".+prj-cfg",%
+          "name": "cfg"
+        },
+        "packages": [
+      {
+    %.+
+      }
+    ]
+      }
+    ]
     EOO
 
   $deinit 2>>/"EOE"
