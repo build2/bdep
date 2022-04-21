@@ -117,7 +117,7 @@ namespace bdep
 
     auto vtag = [] (const standard_version& v, bool inc_rev)
     {
-      return "v" + v.string_project (inc_rev);
+      return 'v' + v.string_project (inc_rev);
     };
 
     if (cv.revision == 0) // Tagging a release.

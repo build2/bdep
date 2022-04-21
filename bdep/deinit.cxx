@@ -72,7 +72,7 @@ namespace bdep
         run_b (o,
                "--no-external-modules",
                "disfigure:",
-               "'" + src.representation () + "'@'" + out.representation () +
+               '\'' + src.representation () + "'@'" + out.representation () +
                "',forward");
       }
     }
