@@ -1130,6 +1130,11 @@ namespace bdep
           //
           // 3. The user did not specify custom develop value in pkg_args.
           //
+          // One "hole" we have with this approach is if the user adds the
+          // config directive after init. In this case the only way to
+          // reconfigure the package for development would be for the user
+          // to do an explicit sync and pass config.*.develop=true.
+          //
           optional<string> dev;
           if (!cfg.implicit &&
               (disf ||
