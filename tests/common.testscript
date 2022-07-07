@@ -31,7 +31,7 @@ test.options += --default-options $options_guard \
 --bpkg-option "--default-options=$options_guard" \
 --bpkg-option "--build-option=--default-options=$options_guard"
 
-build = $build --default-options $options_guard
+build = [cmdline] $build --default-options $options_guard
 
 +cat <<"EOI" >=$options_guard/bdep-sync-implicit.options
 --build-option "--default-options=$options_guard"
@@ -67,17 +67,17 @@ end
 # (for example, to make sure that configuration post-test state is valid and is
 # as expected).
 #
-clean   = $* clean
-deinit  = $* deinit
-init    = $* init
-fetch   = $* fetch
-new     = $* new --no-checks
-status  = $* status
-sync    = $* sync
-update  = $* update
-config  = $* config
-publish = $* publish
-release = $* release
+clean   = [cmdline] $* clean
+deinit  = [cmdline] $* deinit
+init    = [cmdline] $* init
+fetch   = [cmdline] $* fetch
+new     = [cmdline] $* new --no-checks
+status  = [cmdline] $* status
+sync    = [cmdline] $* sync
+update  = [cmdline] $* update
+config  = [cmdline] $* config
+publish = [cmdline] $* publish
+release = [cmdline] $* release
 
 # All testscripts are named after bdep commands, for example sync.testscript.
 # So the testscript scope id is a name of the command being tested.

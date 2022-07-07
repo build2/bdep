@@ -11,23 +11,23 @@
   exit
 end
 
-g = git 2>! >&2
+g = [cmdline] git 2>! >&2
 
 # Create the remote repository.
 #
 +mkdir --no-cleanup prj.git
 +$g -C prj.git init --bare &prj.git/***
 
-clone_rep      = cp --no-cleanup -pr ../prj.git ./ &prj.git/***
-clone_root_rep = cp --no-cleanup -pr $~/prj.git ./ &prj.git/***
+clone_rep      = [cmdline] cp --no-cleanup -pr ../prj.git ./ &prj.git/***
+clone_root_rep = [cmdline] cp --no-cleanup -pr $~/prj.git ./ &prj.git/***
 
 # Prepare the local repository.
 #
 # Set the origin repository location as a relative path, so we can copy the
 # local/remote repository pair into the testscript scopes.
 #
-gp  = $g -C prj
-log = $gp log '--pretty=format:"%d %s"'
+gp  = [cmdline] $g -C prj
+log = [cmdline] $gp log '--pretty=format:"%d %s"'
 
 +$gp config user.name 'Test Script'
 +$gp config user.email 'testscript@example.com'
@@ -36,11 +36,11 @@ log = $gp log '--pretty=format:"%d %s"'
 +$gp commit -m 'Create' --no-verify
 +$gp push --set-upstream origin master
 
-clone_prj      = cp --no-cleanup -pr ../prj ./ &prj/***
-clone_root_prj = cp --no-cleanup -pr $~/prj ./ &prj/***
+clone_prj      = [cmdline] cp --no-cleanup -pr ../prj ./ &prj/***
+clone_root_prj = [cmdline] cp --no-cleanup -pr $~/prj ./ &prj/***
 
-clone_repos      = $clone_prj && $clone_rep
-clone_root_repos = $clone_root_prj && $clone_root_rep
+clone_repos      = [cmdline] $clone_prj && $clone_rep
+clone_root_repos = [cmdline] $clone_root_prj && $clone_root_rep
 
 release += 2>!
 
@@ -48,11 +48,11 @@ release += 2>!
 # the result of the release operation(s), that is normally pushed to the
 # remote repository.
 #
-gp2    = $g -C prj2
-clone2 = $g clone prj.git prj2 &prj2/***
-pull2  = $gp2 pull --ff-only
-fetch2 = $gp2 fetch
-log2   = $gp2 log '--pretty=format:"%d %s"'
+gp2    = [cmdline] $g -C prj2
+clone2 = [cmdline] $g clone prj.git prj2 &prj2/***
+pull2  = [cmdline] $gp2 pull --ff-only
+fetch2 = [cmdline] $gp2 fetch
+log2   = [cmdline] $gp2 log '--pretty=format:"%d %s"'
 
 : single-pkg
 :
@@ -705,7 +705,7 @@ log2   = $gp2 log '--pretty=format:"%d %s"'
          Create
         EOO
 
-      tag = $release --tag --push -q --yes -d prj
+      tag = [cmdline] $release --tag --push -q --yes -d prj
 
       : update
       :

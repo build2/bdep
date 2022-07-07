@@ -1580,7 +1580,7 @@ status += -d prj
   : Here we smoke test the common source code layouts listed in bdep-new(1).
   :
   {
-    t = $build test:
+    t = [cmdline] $build test:
 
     : subdir
     :

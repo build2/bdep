@@ -27,7 +27,7 @@ init += $config_cxx -d prj 2>! &prj/**/bootstrap/***
 
 windows = ($cxx.target.class == 'windows')
 
-g = git -C prj >! 2>!
+g = [cmdline] git -C prj >! 2>!
 
 # Note that using the same package name and version for tests may result in
 # duplicate submissions. We will use unique version for each test,
@@ -272,7 +272,7 @@ g = git -C prj >! 2>!
     test.options += --no-progress
     test.arguments += --simulate 'success'
 
-    clone_prj = cp --no-cleanup -pr ../prj ./ &prj/***
+    clone_prj = [cmdline] cp --no-cleanup -pr ../prj ./ &prj/***
 
     +$clone_prj
 
@@ -350,7 +350,7 @@ g = git -C prj >! 2>!
     test.options += --no-progress
     test.arguments += --simulate 'success'
 
-    clone_prj = cp --no-cleanup -pr ../prj ./ &prj/***;
+    clone_prj = [cmdline] cp --no-cleanup -pr ../prj ./ &prj/***;
 
     $clone_prj;
     rm -rf prj/.git;
@@ -445,8 +445,8 @@ g = git -C prj >! 2>!
   +$g config user.name  'Test Script'
   +$g config user.email 'testscript@example.com'
 
-  clone_rep = cp --no-cleanup -r ../prj.git ./ &prj.git/***
-  clone_prj = cp --no-cleanup -r ../prj     ./ &prj/***
+  clone_rep = [cmdline] cp --no-cleanup -r ../prj.git ./ &prj.git/***
+  clone_prj = [cmdline] cp --no-cleanup -r ../prj     ./ &prj/***
 
   : success
   :
@@ -526,7 +526,7 @@ g = git -C prj >! 2>!
   : failure
   :
   {
-    g2 = git -C prj2 >! 2>!
+    g2 = [cmdline] git -C prj2 >! 2>!
 
     # Setup the remote repository.
     #
