@@ -692,7 +692,7 @@ namespace bdep
                           ifdstream is (vf);
                           string s (is.read_text ());
 
-                          if (s.empty ())
+                          if (s.empty () && n != "build-file")
                             fail << n << " manifest value in " << f
                                  << " references empty file " << vf;
 
