@@ -322,8 +322,8 @@ deinit += -d prj
     cp -rp ../libfix ./;
     cp -rp ../bar    ./;
 
-    $config create -d libfoo                    @cfg  libfoo-cfg &libfoo-cfg/***;
-    $config create -d libfoo --config-type host @host host       &host/***;
+    $config create -d libfoo                    @cfg  libfoo-cfg -- &libfoo-cfg/***;
+    $config create -d libfoo --config-type host @host host       -- &host/***;
 
     $config link -d libfoo @cfg @host;
 
@@ -359,7 +359,7 @@ deinit += -d prj
       depends: * libbuild2-baz
       EOI
 
-    $config create -d libfoo @cfg libfoo-cfg &libfoo-cfg/***;
+    $config create -d libfoo @cfg libfoo-cfg -- &libfoo-cfg/***;
 
     # Convert specific errors to infos as we expect them to appear. Not doing
     # so, makes bbot logs quite confusing.

@@ -660,12 +660,36 @@ namespace bdep
     optional<uint64_t> id;
     cmd_config_validate_add (o, "config create", name, id);
 
+    // Skip `--` which separates the directory argument, if any, as for
+    // example in:
+    //
+    // $ bdep config create -- @gcc cc config.cxx=g++
+    //
+    bool sep (false);
+    if (args.more () && args.peek () == string ("--"))
+    {
+      sep = true;
+      args.next ();
+    }
+
     // Note that the shortcut will only work if there are no cfg-args which
     // is not very likely. Oh, well.
     //
     string arg;
     if (args.more ())
+    {
       arg = args.next ();
+
+      // Skip `--` which separates the bpkg options, if any, as for example in:
+      //
+      // $ bdep config create ../foo-gcc -- -v cc config.cxx=g++
+      //
+      if (args.more () && args.peek () == string ("--"))
+      {
+        sep = true;
+        args.next ();
+      }
+    }
     else if (name)
     {
       // Reverse into the shortcut form expected by translate_path_name().
@@ -689,8 +713,38 @@ namespace bdep
     dir_path prj (find_project (o));
     database db (open (prj, trace));
 
+    // Read the configuration arguments.
+    //
+    // Also make sure that at least one module is specified, unless the `--`
+    // separator is specified (in which case we assume that the user knows
+    // what they are doing).
+    //
     strings cfg_args;
-    for (; args.more (); cfg_args.push_back (args.next ())) ;
+    bool module (false);
+
+    while (args.more ())
+    {
+      string a (args.next ());
+
+      // Assume the argument is a module unless it is a variable (note that it
+      // can't be --existing|-e since no --).
+      //
+      // Note: the arguments can't be bpkg options if unseparated.
+      //
+      if (!sep)
+      {
+        if (a.find ('=') == string::npos)
+          module = true;
+      }
+
+      cfg_args.push_back (move (a));
+    }
+
+    if (!sep && !module)
+      fail << "no module(s) specified for configuration to be created" <<
+        info << "for example, for C/C++ configuration specify 'cc'" <<
+        info << "use '--' to create configuration without modules" <<
+        info << "for example: bdep config create ... --";
 
     cmd_config_create (o,
                        o,

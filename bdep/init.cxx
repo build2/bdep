@@ -359,8 +359,12 @@ namespace bdep
 
     // Skip the first `--` separator, if any.
     //
+    bool sep (false);
     if (args.more () && args.peek () == string ("--"))
+    {
+      sep = true;
       args.next ();
+    }
 
     configurations cfgs;
     {
@@ -374,8 +378,36 @@ namespace bdep
           // Read the configuration arguments until we reach the second `--`
           // separator or eos.
           //
-          for (string a; args.more () && (a = args.next ()) != "--"; )
-            cfg_args.push_back (move (a));
+          // Also make sure that there is at least one module unless the `--`
+          // separator is specified (see cmd_config_create() for details).
+          //
+          bool module (false);
+          while (args.more ())
+          {
+            string a (args.next ());
+
+            if (a == "--")
+            {
+              sep = true;
+              break;
+            }
+            else
+            {
+              if (!sep)
+              {
+                if (a.find ('=') == string::npos)
+                  module = true;
+              }
+
+              cfg_args.push_back (move (a));
+            }
+          }
+
+          if (!sep && !module)
+            fail << "no module(s) specified for configuration to be created" <<
+              info << "for example, for C/C++ configuration specify 'cc'" <<
+              info << "use '--' to create configuration without modules" <<
+              info << "for example: bdep init -C ... --";
         }
 
         cfgs.push_back (

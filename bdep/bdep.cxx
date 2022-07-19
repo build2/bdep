@@ -530,7 +530,7 @@ try
 
     // Temp dir is initialized manually for these commands.
     //
-    COMMAND_IMPL (new_,    new,     "new",     false, false);
+    COMMAND_IMPL (new_,    new,     "new",     true, false);
     COMMAND_IMPL (sync,    sync,    "sync",    false, false);
 
     COMMAND_IMPL (init,    init,    "init",    true,  true);
@@ -540,7 +540,7 @@ try
     COMMAND_IMPL (release, release, "release", false, true);
     COMMAND_IMPL (publish, publish, "publish", false, true);
     COMMAND_IMPL (deinit,  deinit,  "deinit",  false, true);
-    COMMAND_IMPL (config,  config,  "config",  false, true);
+    COMMAND_IMPL (config,  config,  "config",  true,  true);
     COMMAND_IMPL (test,    test,    "test",    false, true);
     COMMAND_IMPL (update,  update,  "update",  false, true);
     COMMAND_IMPL (clean,   clean,   "clean",   false, true);

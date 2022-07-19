@@ -519,6 +519,17 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
   vcs  vc   (o.vcs ());
   bool vc_o (o.vcs_specified ());
 
+  // Skip `--` which separates the name argument, if any, as for example in:
+  //
+  // $ bdep new -- hello
+  //
+  bool sep (false);
+  if (args.more () && args.peek () == string ("--"))
+  {
+    sep = true;
+    args.next ();
+  }
+
   // Check if we have the argument (name). If not, then we use the specified
   // output or current working directory name.
   //
@@ -526,6 +537,16 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
   if (args.more ())
   {
     a = args.next ();
+
+    // Skip `--` which separates the bpkg options, if any, as for example in:
+    //
+    // $ bdep new -C @cfg hello -- -v cc config.cxx=g++
+    //
+    if (args.more () && args.peek () == string ("--"))
+    {
+      sep = true;
+      args.next ();
+    }
 
     // Reduce name with a directory component to the simple name with
     // --output-dir case.
@@ -591,6 +612,36 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
   {
     fail << "invalid " << (t == type::empty ? "project" : "package")
          << " name: " << e;
+  }
+
+  strings cfg_args;
+  if (cc)
+  {
+    // Read the configuration arguments.
+    //
+    // Also make sure that there is at least one module unless the `--`
+    // separator is specified (see cmd_config_create() for details).
+    //
+    bool module (false);
+
+    while (args.more ())
+    {
+      string a (args.next ());
+
+      if (!sep)
+      {
+        if (a.find ('=') == string::npos)
+          module = true;
+      }
+
+      cfg_args.push_back (move (a));
+    }
+
+    if (!sep && !module)
+      fail << "no module(s) specified for configuration to be created" <<
+        info << "for example, for C/C++ configuration specify 'cc'" <<
+        info << "use '--' to create configuration without modules" <<
+        info << "for example: bdep new -C ... --";
   }
 
   // Full package name vs base name (e.g., libhello in libhello.bash) vs the
@@ -3230,10 +3281,6 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
     if (t != type::empty) // prj == pkg
       pkgs.push_back (package_location {move (pkgn), nullopt, dir_path ()});
-
-    strings cfg_args;
-    if (cc)
-      for (; args.more (); cfg_args.push_back (args.next ())) ;
 
     configurations cfgs {
       cmd_init_config (

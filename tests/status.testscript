@@ -84,7 +84,7 @@ config += -d prj 2>!
   {
     $new -t empty prj &prj/***;
 
-    $config create @cfg &prj-cfg/***;
+    $config create @cfg -- &prj-cfg/***;
 
     $* 2>>~%EOE% != 0;
       %error: no packages in project .+%

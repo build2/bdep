@@ -16,92 +16,126 @@ deinit += -d prj
 {
   +$clone_prj
 
-  +cat <<EOI >+prj/manifest
-    depends: libprj
-    EOI
-
-  : cfg-pkg-args
+  : with-dependency
   :
   {
-    $clone_prj;
+    +$clone_prj
 
-    $* -C @cfg $config_cxx 'config.cc.poptions=-DTEST' -- '?sys:libprj/*' 2>>/~"%EOE%" &prj-cfg/***;
-      initializing in project $~/prj/
-      created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
-      synchronizing:
-      %  configure sys:libprj.*%
-      %  new prj.+19700101000000%
-      EOE
+    +cat <<EOI >+prj/manifest
+      depends: libprj
+      EOI
 
-    sed -n -e 's/^config.cc.poptions = (.+)$/\1/p' prj-cfg/build/config.build \
-      >'-DTEST';
+    : cfg-pkg-args
+    :
+    {
+      $clone_prj;
 
-    $status >'prj configured 0.1.0-a.0.19700101000000';
+      $* -C @cfg $config_cxx 'config.cc.poptions=-DTEST' -- '?sys:libprj/*' 2>>/~"%EOE%" &prj-cfg/***;
+        initializing in project $~/prj/
+        created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
+        synchronizing:
+        %  configure sys:libprj.*%
+        %  new prj.+19700101000000%
+        EOE
 
-    $build prj/ 2>>~%EOE%;
-      %(mkdir|c\+\+|ld|ln) .+%{4}
-      EOE
+      sed -n -e 's/^config.cc.poptions = (.+)$/\1/p' prj-cfg/build/config.build \
+        >'-DTEST';
 
-    prj/prj/prj 'testscript' >'Hello, testscript!'; # Make sure is forwarded.
+      $status >'prj configured 0.1.0-a.0.19700101000000';
 
-    $build prj-cfg/prj/ 2>>/EOE;
-      info: prj-cfg/dir{prj/} is up to date
-      EOE
+      $build prj/ 2>>~%EOE%;
+        %(mkdir|c\+\+|ld|ln) .+%{4}
+        EOE
 
-    $build 'clean:' prj/ 2>>~%EOE%;
-      %rm .+%{3}
-      EOE
+      prj/prj/prj 'testscript' >'Hello, testscript!'; # Make sure is forwarded.
 
-    $deinit 2>>/"EOE"
-      deinitializing in project $~/prj/
-      synchronizing:
-        drop prj
-        drop libprj
-      EOE
+      $build prj-cfg/prj/ 2>>/EOE;
+        info: prj-cfg/dir{prj/} is up to date
+        EOE
+
+      $build 'clean:' prj/ 2>>~%EOE%;
+        %rm .+%{3}
+        EOE
+
+      $deinit 2>>/"EOE"
+        deinitializing in project $~/prj/
+        synchronizing:
+          drop prj
+          drop libprj
+        EOE
+    }
+
+    : cfg-pkg-args-sep
+    :
+    {
+      $clone_prj;
+
+      $* -C @cfg -- $config_cxx 'config.cc.poptions=-DTEST' -- '?sys:libprj/*' 2>>/~"%EOE%" &prj-cfg/***;
+        initializing in project $~/prj/
+        created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
+        synchronizing:
+        %  configure sys:libprj.*%
+        %  new prj.+19700101000000%
+        EOE
+
+      sed -n -e 's/^config.cc.poptions = (.+)$/\1/p' prj-cfg/build/config.build \
+        >'-DTEST';
+
+      $deinit 2>>/"EOE"
+        deinitializing in project $~/prj/
+        synchronizing:
+          drop prj
+          drop libprj
+        EOE
+    }
+
+    : pkg-args
+    :
+    {
+      $clone_prj;
+
+      # Note that not passing the C++ configuration arguments (see above) for
+      # the sake of testing, we may end up with the 'not built with default C++
+      # compiler' error. To avoid this, we just make sure this is not a C++
+      # project.
+      #
+      echo ''            >=prj/build/root.build;
+      echo './: prj.cxx' >=prj/prj/buildfile;
+
+      $* -C @cfg -- -- '?sys:libprj/*' 2>>/~"%EOE%" &prj-cfg/***;
+        initializing in project $~/prj/
+        created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
+        synchronizing:
+        %  configure sys:libprj.*%
+        %  new prj.+19700101000000%
+        EOE
+
+      $deinit 2>>/"EOE"
+        deinitializing in project $~/prj/
+        synchronizing:
+          drop prj
+          drop libprj
+        EOE
+    }
   }
 
-  : cfg-pkg-args-sep
+  : no-module
   :
   {
     $clone_prj;
 
-    $* -C @cfg -- $config_cxx 'config.cc.poptions=-DTEST' -- '?sys:libprj/*' 2>>/~"%EOE%" &prj-cfg/***;
+    $* -C @cfg 2>>~%EOE% != 0;
+      %initializing in project .+%
+      error: no module(s) specified for configuration to be created
+        info: for example, for C/C++ configuration specify 'cc'
+        info: use '--' to create configuration without modules
+        info: for example: bdep init -C ... --
+      EOE
+
+    $* -C @cfg -- 2>>/~"%EOE%" &prj-cfg/***;
       initializing in project $~/prj/
       created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
       synchronizing:
-      %  configure sys:libprj.*%
-      %  new prj.+19700101000000%
-      EOE
-
-    sed -n -e 's/^config.cc.poptions = (.+)$/\1/p' prj-cfg/build/config.build \
-      >'-DTEST';
-
-    $deinit 2>>/"EOE"
-      deinitializing in project $~/prj/
-      synchronizing:
-        drop prj
-        drop libprj
-      EOE
-  }
-
-  : pkg-args
-  :
-  {
-    $clone_prj;
-
-    # Note that not passing the C++ configuration arguments (see above) for
-    # the sake of testing, we may end up with the 'not built with default C++
-    # compiler' error. To avoid this, we just make sure this is not a C++
-    # project.
-    #
-    echo ''            >=prj/build/root.build;
-    echo './: prj.cxx' >=prj/prj/buildfile;
-
-    $* -C @cfg -- -- '?sys:libprj/*' 2>>/~"%EOE%" &prj-cfg/***;
-      initializing in project $~/prj/
-      created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
-      synchronizing:
-      %  configure sys:libprj.*%
       %  new prj.+19700101000000%
       EOE
 
@@ -109,7 +143,6 @@ deinit += -d prj
       deinitializing in project $~/prj/
       synchronizing:
         drop prj
-        drop libprj
       EOE
   }
 }
