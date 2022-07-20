@@ -741,8 +741,9 @@ namespace bdep
     }
 
     if (!sep && !module)
-      fail << "no module(s) specified for configuration to be created" <<
-        info << "for example, for C/C++ configuration specify 'cc'" <<
+      fail << "no build system module(s) specified for configuration "
+           << "to be created" <<
+        info << "for example, for C/C++ configuration, specify 'cc'" <<
         info << "use '--' to create configuration without modules" <<
         info << "for example: bdep config create ... --";
 

@@ -1874,8 +1874,8 @@ subdir=hello,no-subdir-source                                        \
   :
   {
     $* -C -@cfg prj 2>>EOE != 0;
-      error: no module(s) specified for configuration to be created
-        info: for example, for C/C++ configuration specify 'cc'
+      error: no build system module(s) specified for configuration to be created
+        info: for example, for C/C++ configuration, specify 'cc'
         info: use '--' to create configuration without modules
         info: for example: bdep new -C ... --
       EOE
