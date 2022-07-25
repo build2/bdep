@@ -5,7 +5,8 @@ Version 0.15.0
     See the --stdout-format option in bdep-status(1) and bdep-config(1)
     for details.
 
-  * Support for submitting for CI packages with a non-standard version.
+  * Support for submitting to a CI server packages with a non-standard
+    version.
 
     See bdep-ci(1) for details.
 
