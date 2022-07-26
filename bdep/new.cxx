@@ -1492,8 +1492,8 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
       os << "url: https://example.org/" << (pn ? pn->string () : n)    << '\n'
          << "email: " << pe                                            << '\n'
          << "#build-error-email: " << pe                               << '\n'
-         << "depends: * build2 >= 0.14.0"                              << '\n'
-         << "depends: * bpkg >= 0.14.0"                                << '\n'
+         << "depends: * build2 >= 0.15.0-"                             << '\n'
+         << "depends: * bpkg >= 0.15.0-"                               << '\n'
          << "#depends: libhello ^1.0.0"                                << '\n';
       os.close ();
     }
@@ -2421,25 +2421,9 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                << "./: $pub_hdrs"                                      << '\n';
           }
 
-          // @@ TMP: enable before 0.15.0 release (also update toolchain
-          //         requirements in manifest). Also below.
-          //
           if (ver)
-#if 0
             os <<                                                         '\n'
                << hg << "{version}: in{version} $src_root/manifest"    << '\n';
-#else
-            os <<                                                         '\n'
-               << "# Include the generated version header into the distribution (so that we don't" << '\n'
-               << "# pick up an installed one) and don't remove it when cleaning in src (so that"  << '\n'
-               << "# clean results in a state identical to distributed)." << '\n'
-               << "#"                                                  << '\n'
-               << hg << "{version}: in{version} $src_root/manifest"    << '\n'
-               << "{"                                                  << '\n'
-               << "  dist  = true"                                     << '\n'
-               << "  clean = ($src_root != $out_root)"                 << '\n'
-               << "}"                                                  << '\n';
-#endif
 
           if (!exph.empty ())
             os <<                                                         '\n'
@@ -2636,25 +2620,9 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
             os << "}"                                                  << '\n';
           }
 
-          // @@ TMP: enable before 0.15.0 release (also update toolchain
-          //         requirements in manifest). Also above.
-          //
           if (ver && !split)
-#if 0
             os <<                                                         '\n'
                << hg << "{version}: in{version} $src_root/manifest"    << '\n';
-#else
-            os <<                                                         '\n'
-               << "# Include the generated version header into the distribution (so that we don't" << '\n'
-               << "# pick up an installed one) and don't remove it when cleaning in src (so that"  << '\n'
-               << "# clean results in a state identical to distributed)." << '\n'
-               << "#"                                                  << '\n'
-               << hg << "{version}: in{version} $src_root/manifest"    << '\n'
-               << "{"                                                  << '\n'
-               << "  dist  = true"                                     << '\n'
-               << "  clean = ($src_root != $out_root)"                 << '\n'
-               << "}"                                                  << '\n';
-#endif
 
           if (!exph.empty () && !split)
             os <<                                                         '\n'
