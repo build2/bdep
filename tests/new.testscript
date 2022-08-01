@@ -210,10 +210,6 @@ status += -d prj
       EOE
   }
 
-  # @@ TMP Disable until the 'multiple rules matching updating' error is fixed
-  #    in build2.
-  #
-  #\
   : exe-unit-tests-c
   :
   {
@@ -230,13 +226,17 @@ status += -d prj
 
     cat <<EOI >=foo/foo/bar.test.c;
       #include <foo/bar.h>
+
+      int main ()
+      {
+        return 0;
+      }
       EOI
 
     $build foo/ $config_cxx $config_c 2>>~%EOE%
-      %(c\+\+|c|ld|ar) .+%{4}
+      %(c\+\+|c|ld|ar) .+%{8}
       EOE
   }
-  #\
 
   : lib-unit-tests
   :
@@ -250,10 +250,6 @@ status += -d prj
       EOE
   }
 
-  # @@ TMP Disable until the 'multiple rules matching updating' error is fixed
-  #    in build2.
-  #
-  #\
   : lib-unit-tests-c
   :
   {
@@ -270,13 +266,17 @@ status += -d prj
 
     cat <<EOI >=libfoo/libfoo/bar.test.c;
       #include <libfoo/bar.h>
+
+      int main ()
+      {
+        return 0;
+      }
       EOI
 
     $build libfoo/ $config_cxx $config_c 2>>~%EOE%
-      %(version\.in|c\+\+|c|ar|ld) .+%{11}
+      %(version\.in|c\+\+|c|ar|ld) .+%{15}
       EOE
   }
-  #\
 
   : exe-alt-naming
   :
@@ -451,10 +451,6 @@ status += -d prj
       EOE
   }
 
-  # @@ TMP Disable until the 'multiple rules matching updating' error is fixed
-  #    in build2.
-  #
-  #\
   : exe-c-unit-tests-c++
   :
   {
@@ -471,13 +467,16 @@ status += -d prj
 
     cat <<EOI >=foo/foo/bar.test.cxx;
       #include <foo/bar.hxx>
+
+      int main ()
+      {
+      }
       EOI
 
     $build foo/ $config_c $config_cxx 2>>~%EOE%
-      %(c|c\+\+|ld|ar) .+%{4}
+      %(c|c\+\+|ld|ar) .+%{8}
       EOE
   }
-  #\
 
   : lib-c
   :
@@ -639,10 +638,6 @@ status += -d prj
       EOE
   }
 
-  # @@ TMP Disable until the 'multiple rules matching updating' error is fixed
-  #    in build2.
-  #
-  #\
   : lib-c-unit-tests-c++
   :
   {
@@ -659,13 +654,16 @@ status += -d prj
 
     cat <<EOI >=libfoo/libfoo/bar.test.cxx;
       #include <libfoo/bar.hxx>
+
+      int main ()
+      {
+      }
       EOI
 
     $build libfoo/ $config_c $config_cxx 2>>~%EOE%
-      %(version\.in|c|c\+\+|ar|ld) .+%{11}
+      %(version\.in|c|c\+\+|ar|ld) .+%{15}
       EOE
   }
-  #\
 
   : lib-c-binless-unit-tests
   :
