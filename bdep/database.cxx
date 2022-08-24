@@ -22,19 +22,15 @@ namespace bdep
 
   // Register the data migration functions.
   //
+#if 0
   template <odb::schema_version v>
   using migration_entry = odb::data_migration_entry<v, DB_SCHEMA_VERSION_BASE>;
 
-  static const migration_entry<2>
-  migrate_v2 ([] (odb::database& db)
+  static const migration_entry<3>
+  migrate_v3 ([] (odb::database& db)
   {
-    for (const shared_ptr<configuration>& c:
-           pointer_result (db.query<configuration> ()))
-    {
-      c->type = "target";
-      db.update (c);
-    }
   });
+#endif
 
   database
   open (const dir_path& d, tracer& tr, bool create)

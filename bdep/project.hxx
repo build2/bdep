@@ -17,7 +17,7 @@
 
 // Used by the data migration entries.
 //
-#define DB_SCHEMA_VERSION_BASE 1
+#define DB_SCHEMA_VERSION_BASE 2
 
 #pragma db model version(DB_SCHEMA_VERSION_BASE, 2, closed)
 
