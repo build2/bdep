@@ -116,11 +116,11 @@ namespace bdep
       "<cf>[/<bp>]",
       "Test the package interactively in the specified build configuration,
        pausing the execution at the specified breakpoint. Valid breakpoint
-       values are \cb{error} (stop after first error), \cb{warning} (stop
-       after first warning), as well as the CI service-specific step ids
-       in which case the execution stops before performing the specified
-       step (see \l{bbot#arch-worker \cb{bbot} worker step ids}). If no
-       breakpoint is specified, then \cb{error} is assumed."
+       values are \cb{none} (don't stop), \cb{error} (stop after first error),
+       \cb{warning} (stop after first warning), as well as the CI
+       service-specific step ids in which case the execution stops before
+       performing the specified step (see \l{bbot#arch-worker \cb{bbot} worker
+       step ids}). If no breakpoint is specified, then \cb{error} is assumed."
     }
 
     url --server
