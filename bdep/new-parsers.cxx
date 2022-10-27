@@ -62,7 +62,7 @@ namespace bdep
             throw invalid_value (o,
                                  po,
                                  string (flag ? "missing" : "unexpected") +
-                                 " value for '" + po + "'");
+                                 " value for '" + po + '\'');
         }
 
         os.push_back (move (po));

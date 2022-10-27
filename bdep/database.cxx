@@ -110,7 +110,7 @@ namespace bdep
           set_nocase ("relative_path");
 
           db.execute ("UPDATE sqlite_master"
-                      " SET sql = '" + t.sql + "'"
+                      " SET sql = '" + t.sql + '\''
                       " WHERE " + where);
 
           db.execute ("PRAGMA writable_schema = OFF");

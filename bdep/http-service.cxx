@@ -110,7 +110,7 @@ namespace bdep
         fos.emplace_back (
           p.type == parameter::file      ? p.name + "=@" + p.value :
           p.type == parameter::file_text ? p.name + "=@-"          :
-          p.name + "="  + p.value);
+          p.name + '='  + p.value);
       }
 
       // Note that it's a bad idea to issue the diagnostics while curl is
@@ -266,7 +266,7 @@ namespace bdep
             return http_status {c, move (r)};
           }
 
-          bad_response ("invalid HTTP response status line '" + l + "'");
+          bad_response ("invalid HTTP response status line '" + l + '\'');
 
           assert (false); // Can't be here.
           return http_status {};
@@ -394,7 +394,7 @@ namespace bdep
 
             uint16_t c (status_code (v));
             if (c == 0)
-              bad_value ("invalid HTTP status '" + v + "'");
+              bad_value ("invalid HTTP status '" + v + '\'');
 
             if (c != rs.code)
               bad_value ("status " + v + " doesn't match HTTP response "
@@ -450,7 +450,7 @@ namespace bdep
             message = "HTTP status code " + to_string (rs.code);
 
             if (!rs.reason.empty ())
-              message += " (" + lcase (rs.reason) + ")";
+              message += " (" + lcase (rs.reason) + ')';
           }
 
           if (!location)

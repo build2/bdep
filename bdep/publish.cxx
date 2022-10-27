@@ -307,8 +307,8 @@ namespace bdep
       run_b (
         o,
         "dist:",
-        "'" + p.dist_dir.representation () + "'",
-        "config.dist.root='" + dr.representation () + "'",
+        '\'' + p.dist_dir.representation () + '\'',
+        "config.dist.root='" + dr.representation () + '\'',
         "config.dist.archives=tar.gz",
         "config.dist.checksums=sha256",
         (uncommitted && *uncommitted

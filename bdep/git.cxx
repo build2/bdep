@@ -135,7 +135,7 @@ namespace bdep
         ep = "--exec-path=" + d.string ();
 
       l4 ([&]{trace << (system ? "system: '" : "bundled: '") << pp.effect
-                    << "'" << (ep ? " " + *ep : "");});
+                    << "'" << (ep ? ' ' + *ep : "");});
 #endif
 
       git = make_pair (move (pp), move (ep));

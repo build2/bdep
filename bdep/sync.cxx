@@ -1806,7 +1806,7 @@ namespace bdep
                 co,
                 "--no-external-modules",
                 o,
-                "'" + src.representation () + "'@'" + out.representation () +
+                '\'' + src.representation () + "'@'" + out.representation () +
                 "',forward");
             }
           }
