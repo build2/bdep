@@ -241,9 +241,9 @@ namespace bdep
         : basic_mark_base (type,
                            nullptr,
                            data,
-                           [](const diag_record& r)
+                           [](const diag_record& r, butl::diag_writer* w)
                            {
-                             r.flush ();
+                             r.flush (w);
                              throw failed ();
                            }) {}
   };
