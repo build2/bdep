@@ -97,9 +97,9 @@ deinit += -d prj
 
   $* -a --recursive -d prj/pkg1 2>>~%EOE%   # All configs recursive.
     in configuration @cfg1:
-    %(mkdir|version\.in|c\+\+|ld|test) .+%{12}
+    %(mkdir|version|c\+\+|ld|test) .+%{12}
 
     in configuration @cfg2:
-    %(mkdir|version\.in|c\+\+|ld|test) .+%{12}
+    %(mkdir|version|c\+\+|ld|test) .+%{12}
     EOE
 }

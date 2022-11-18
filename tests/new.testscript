@@ -60,7 +60,7 @@ status += -d prj
       EOE
 
     $build libprj-foo/ $config_cxx 2>>~%EOE%
-      %(version\.in|c\+\+|ar|ld) .+%{7}
+      %(version|c\+\+|ar|ld) .+%{7}
       EOE
   }
 
@@ -86,7 +86,7 @@ status += -d prj
       EOI
 
     $build libfoo/ $config_cxx $config_c 2>>~%EOE%
-      %(version\.in|c\+\+|c|ld|ar) .+%{10}
+      %(version|c\+\+|c|ld|ar) .+%{10}
       EOE
   }
 
@@ -110,7 +110,7 @@ status += -d prj
       EOE
 
     $build libprj-foo/ $config_cxx 2>>~%EOE%
-      %(version\.in|c\+\+|ar|ld) .+%{7}
+      %(version|c\+\+|ar|ld) .+%{7}
       EOE
   }
 
@@ -122,7 +122,7 @@ status += -d prj
       EOE
 
     $build libprj-foo/ $config_cxx 2>>~%EOE%
-      %(version\.in|c\+\+|ar|ld) .+%{7}
+      %(version|c\+\+|ar|ld) .+%{7}
       EOE
   }
 
@@ -150,7 +150,7 @@ status += -d prj
       EOI
 
     $build libfoo/ $config_cxx $config_c 2>>~%EOE%
-      %(version\.in|c\+\+|c|ar|ld) .+%{10}
+      %(version|c\+\+|c|ar|ld) .+%{10}
       EOE
   }
 
@@ -162,7 +162,7 @@ status += -d prj
       EOE
 
     $build libprj-foo/ $config_cxx 2>>~%EOE%
-      %(version\.in|c\+\+|ld) .+%{3}
+      %(version|c\+\+|ld) .+%{3}
       EOE
   }
 
@@ -182,7 +182,7 @@ status += -d prj
       EOI
 
     $build libfoo/ $config_cxx $config_c 2>>~%EOE%
-      %(version\.in|c\+\+|c|ld) .+%{4}
+      %(version|c\+\+|c|ld) .+%{4}
       EOE
   }
 
@@ -194,7 +194,7 @@ status += -d prj
       EOE
 
     $build libprj-foo/ $config_cxx 2>>~%EOE%
-      %(version\.in|c\+\+|ld) .+%{5}
+      %(version|c\+\+|ld) .+%{5}
       EOE
   }
 
@@ -246,7 +246,7 @@ status += -d prj
       EOE
 
     $build libfoo/ $config_cxx 2>>~%EOE%
-      %(version\.in|c\+\+|ar|ld) .+%{11}
+      %(version|c\+\+|ar|ld) .+%{11}
       EOE
   }
 
@@ -274,7 +274,7 @@ status += -d prj
       EOI
 
     $build libfoo/ $config_cxx $config_c 2>>~%EOE%
-      %(version\.in|c\+\+|c|ar|ld) .+%{15}
+      %(version|c\+\+|c|ar|ld) .+%{15}
       EOE
   }
 
@@ -298,7 +298,7 @@ status += -d prj
       EOE
 
     $build libfoo/ $config_cxx 2>>~%EOE%
-      %(version\.in|c\+\+|ar|ld) .+%{11}
+      %(version|c\+\+|ar|ld) .+%{11}
       EOE
   }
 
@@ -366,7 +366,7 @@ status += -d prj
       EOE
 
     $build libfoo/ $config_cxx 2>>~%EOE%
-      %(version\.in|c\+\+|ld) .+%{3}
+      %(version|c\+\+|ld) .+%{3}
       EOE
   }
 
@@ -378,7 +378,7 @@ status += -d prj
       EOE
 
     $build libfoo/ $config_cxx 2>>~%EOE%
-      %(version\.in|c\+\+|ld) .+%{5}
+      %(version|c\+\+|ld) .+%{5}
       EOE
   }
 
@@ -390,7 +390,7 @@ status += -d prj
       EOE
 
     $build libprj-foo/ $config_cxx 2>>~%EOE%
-      %(version\.in|c\+\+|ar|ld) .+%{7}
+      %(version|c\+\+|ar|ld) .+%{7}
       EOE
   }
 
@@ -486,7 +486,7 @@ status += -d prj
       EOE
 
     $build libprj-foo/ $config_c 2>>~%EOE%
-      %(version\.in|c|ar|ld) .+%{7}
+      %(version|c|ar|ld) .+%{7}
       EOE
   }
 
@@ -514,7 +514,7 @@ status += -d prj
       EOI
 
     $build libfoo/ $config_c $config_cxx 2>>~%EOE%
-      %(version\.in|c|c\+\+|ld|ar) .+%{10}
+      %(version|c|c\+\+|ld|ar) .+%{10}
       EOE
   }
 
@@ -526,7 +526,7 @@ status += -d prj
       EOE
 
     $build libprj-foo/ $config_c 2>>~%EOE%
-      %(version\.in|c|ar|ld) .+%{3}
+      %(version|c|ar|ld) .+%{3}
       EOE
   }
 
@@ -538,7 +538,7 @@ status += -d prj
       EOE
 
     $build libprj-foo/ $config_c 2>>~%EOE%
-      %(version\.in|c|ar|ld) .+%{7}
+      %(version|c|ar|ld) .+%{7}
       EOE
   }
 
@@ -550,7 +550,7 @@ status += -d prj
       EOE
 
     $build libprj-foo/ $config_c 2>>~%EOE%
-      %(version\.in|c|ar|ld) .+%{7}
+      %(version|c|ar|ld) .+%{7}
       EOE
   }
 
@@ -578,7 +578,7 @@ status += -d prj
       EOI
 
     $build libfoo/ $config_c $config_cxx 2>>~%EOE%
-      %(version\.in|c|c\+\+|ar|ld) .+%{10}
+      %(version|c|c\+\+|ar|ld) .+%{10}
       EOE
   }
 
@@ -590,7 +590,7 @@ status += -d prj
       EOE
 
     $build libprj-foo/ $config_c 2>>~%EOE%
-      %(version\.in|c|ld) .+%{3}
+      %(version|c|ld) .+%{3}
       EOE
   }
 
@@ -610,7 +610,7 @@ status += -d prj
       EOI
 
     $build libfoo/ $config_c $config_cxx 2>>~%EOE%
-      %(version\.in|c|c\+\+|ld) .+%{4}
+      %(version|c|c\+\+|ld) .+%{4}
       EOE
   }
 
@@ -622,7 +622,7 @@ status += -d prj
       EOE
 
     $build libfoo/ $config_c 2>>~%EOE%
-      %(version\.in|c|ar|ld) .+%{5}
+      %(version|c|ar|ld) .+%{5}
       EOE
   }
 
@@ -634,7 +634,7 @@ status += -d prj
       EOE
 
     $build libfoo/ $config_c 2>>~%EOE%
-      %(version\.in|c|ar|ld) .+%{11}
+      %(version|c|ar|ld) .+%{11}
       EOE
   }
 
@@ -661,7 +661,7 @@ status += -d prj
       EOI
 
     $build libfoo/ $config_c $config_cxx 2>>~%EOE%
-      %(version\.in|c|c\+\+|ar|ld) .+%{15}
+      %(version|c|c\+\+|ar|ld) .+%{15}
       EOE
   }
 
@@ -673,7 +673,7 @@ status += -d prj
       EOE
 
     $build libfoo/ $config_c 2>>~%EOE%
-      %(version\.in|c|ld) .+%{5}
+      %(version|c|ld) .+%{5}
       EOE
   }
 
@@ -730,7 +730,7 @@ status += -d prj
         EOE
 
       $build prj/libprj/ $config_cxx 2>>~%EOE%
-        %(version\.in|c\+\+|ar|ld) .+%{7}
+        %(version|c\+\+|ar|ld) .+%{7}
         EOE
     }
 
@@ -748,7 +748,7 @@ status += -d prj
         EOE
 
       $build prj/libprj/ $config_cxx 2>>~%EOE%
-        %(version\.in|c\+\+|ar|ld) .+%{7}
+        %(version|c\+\+|ar|ld) .+%{7}
         EOE
     }
 
@@ -766,7 +766,7 @@ status += -d prj
         EOE
 
       $build prj/libprj/ $config_cxx 2>>~%EOE%
-        %(version\.in|c\+\+|ar|ld) .+%{7}
+        %(version|c\+\+|ar|ld) .+%{7}
         EOE
     }
 
@@ -784,7 +784,7 @@ status += -d prj
         EOE
 
       $build prj/libprj/ $config_cxx 2>>~%EOE%
-        %(version\.in|c\+\+|ld) .+%{3}
+        %(version|c\+\+|ld) .+%{3}
         EOE
     }
 
@@ -802,7 +802,7 @@ status += -d prj
         EOE
 
       $build prj/libprj/ $config_cxx 2>>~%EOE%
-        %(version\.in|c\+\+|ld) .+%{5}
+        %(version|c\+\+|ld) .+%{5}
         EOE
     }
 
@@ -991,7 +991,7 @@ status += -d prj
       test -f libprj/libprj/prj.hxx;
 
       $build libprj/ $config_cxx 2>>~%EOE%
-        %(version\.in|c\+\+|ar|ld) .+%{7}
+        %(version|c\+\+|ar|ld) .+%{7}
         EOE
     }
 
@@ -1006,7 +1006,7 @@ status += -d prj
       test -f libprj/libprj/prj.hpp;
 
       $build libprj/ $config_cxx 2>>~%EOE%
-        %(version\.in|c\+\+|ar|ld) .+%{7}
+        %(version|c\+\+|ar|ld) .+%{7}
         EOE
     }
 
@@ -1021,7 +1021,7 @@ status += -d prj
       test -f libprj/libprj/prj.h++;
 
       $build libprj/ $config_cxx 2>>~%EOE%
-        %(version\.in|c\+\+|ar|ld) .+%{7}
+        %(version|c\+\+|ar|ld) .+%{7}
         EOE
     }
 
@@ -1036,7 +1036,7 @@ status += -d prj
       test -f libprj/libprj/prj.hh;
 
       $build libprj/ $config_cxx 2>>~%EOE%
-        %(version\.in|c\+\+|ar|ld) .+%{7}
+        %(version|c\+\+|ar|ld) .+%{7}
         EOE
     }
 
@@ -1051,7 +1051,7 @@ status += -d prj
       test -f libprj/libprj/prj.h;
 
       $build libprj/ $config_cxx 2>>~%EOE%
-        %(version\.in|c\+\+|ar|ld) .+%{7}
+        %(version|c\+\+|ar|ld) .+%{7}
         EOE
     }
 
@@ -1066,7 +1066,7 @@ status += -d prj
       test -f libprj/libprj/prj;
 
       $build libprj/ $config_cxx 2>>~%EOE%
-        %(version\.in|c\+\+|ar|ld) .+%{7}
+        %(version|c\+\+|ar|ld) .+%{7}
         EOE
     }
 
@@ -1092,7 +1092,7 @@ status += -d prj
         EOO
 
       $build libprj/ $config_cxx 2>>~%EOE%
-        %(version\.in|c\+\+|ar|ld) .+%{7}
+        %(version|c\+\+|ar|ld) .+%{7}
         EOE
     }
 
@@ -1107,7 +1107,7 @@ status += -d prj
       test -f libprj/libprj/prj.hxx;
 
       $build libprj/ $config_cxx 2>>~%EOE%
-        %(version\.in|c\+\+|ar|ld) .+%{7}
+        %(version|c\+\+|ar|ld) .+%{7}
         EOE
     }
 
@@ -1121,7 +1121,7 @@ status += -d prj
       test -f libprj/libprj/prj.hpp;
 
       $build libprj/ $config_cxx 2>>~%EOE%
-        %(version\.in|c\+\+|ar|ld) .+%{7}
+        %(version|c\+\+|ar|ld) .+%{7}
         EOE
     }
 
@@ -1332,7 +1332,7 @@ status += -d prj
         EOO
 
       $build prj/libprj/ $config_cxx 2>>~%EOE%
-        %(version\.in|c\+\+|ar|ld) .+%{7}
+        %(version|c\+\+|ar|ld) .+%{7}
         EOE
     }
 
@@ -1588,7 +1588,7 @@ status += -d prj
         EOE
 
       $build libhello/ $config_cxx 2>>~%EOE%;
-        %(version\.in|c\+\+|ld|ar) .+%{7}
+        %(version|c\+\+|ld|ar) .+%{7}
         EOE
 
       $t libhello/ $config_cxx 2>>~%EOE%
@@ -1620,7 +1620,7 @@ status += -d prj
         EOE
 
       $build libhello/ $config_cxx 2>>~%EOE%;
-        %(version\.in|c\+\+|ld|ar) .+%{7}
+        %(version|c\+\+|ld|ar) .+%{7}
         EOE
 
       $t libhello/ $config_cxx 2>>~%EOE%
@@ -1636,7 +1636,7 @@ status += -d prj
         EOE
 
       $build libhello/ $config_cxx 2>>~%EOE%;
-        %(version\.in|c\+\+|ld|ar) .+%{7}
+        %(version|c\+\+|ld|ar) .+%{7}
         EOE
 
       $t libhello/ $config_cxx 2>>~%EOE%
@@ -1696,7 +1696,7 @@ status += -d prj
         EOE
 
       $build libhello/ $config_cxx 2>>~%EOE%;
-        %(version\.in|c\+\+|ld|ar) .+%{7}
+        %(version|c\+\+|ld|ar) .+%{7}
         EOE
 
       $t libhello/ $config_cxx 2>>~%EOE%
@@ -1714,7 +1714,7 @@ status += -d prj
         EOE
 
       $build libhello/ $config_cxx 2>>~%EOE%;
-        %(version\.in|c\+\+|ld|ar) .+%{7}
+        %(version|c\+\+|ld|ar) .+%{7}
         EOE
 
       $t libhello/ $config_cxx 2>>~%EOE%
@@ -1733,7 +1733,7 @@ subdir=hello,no-subdir-source                                \
         EOE
 
       $build libhello/ $config_cxx 2>>~%EOE%;
-        %(version\.in|c\+\+|ld|ar) .+%{7}
+        %(version|c\+\+|ld|ar) .+%{7}
         EOE
 
       $t libhello/ $config_cxx 2>>~%EOE%
@@ -1752,7 +1752,7 @@ subdir=hello,no-subdir-source                                       \
         EOE
 
       $build libhello/ $config_cxx 2>>~%EOE%;
-        %(version\.in|c\+\+|ld|ar) .+%{7}
+        %(version|c\+\+|ld|ar) .+%{7}
         EOE
 
       $t libhello/ $config_cxx 2>>~%EOE%

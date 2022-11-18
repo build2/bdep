@@ -22,7 +22,7 @@ deinit += -d prj
     EOE
 
   $clean -d prj 2>>~%EOE%;
-    %rm .+%{3}
+    %(rm|rmdir) .+%{3}
     EOE
 
   $deinit 2>>/"EOE"
@@ -64,19 +64,19 @@ deinit += -d prj
   # Clean.
   #
   $clean -d prj/pkg1 2>>~%EOE%;       # Default (cfg1).
-    %rm .+%{3}
+    %(rm|rmdir) .+%{3}
     EOE
 
   $clean @cfg2 -d prj/pkg1 2>>~%EOE%; # By name (cfg2).
-    %rm .+%{3}
+    %(rm|rmdir) .+%{3}
     EOE
 
   $clean --all -d prj 2>>~%EOE%;      # All configs (and packages).
     in configuration @cfg1:
-    %(rm|info:) .+%{4}
+    %(rm|rmdir|info:) .+%{4}
 
     in configuration @cfg2:
-    %(rm|info:) .+%{4}
+    %(rm|rmdir|info:) .+%{4}
     EOE
 
   $deinit 2>>/"EOE"
@@ -114,10 +114,10 @@ deinit += -d prj
   #
   $clean -d prj 2>>~%EOE%;
     in configuration @cfg1:
-    %rm .+pkg1.+%{3}
+    %(rm|rmdir) .+pkg1.+%{3}
 
     in configuration @cfg2:
-    %rm .+pkg2.+%{3}
+    %(rm|rmdir) .+pkg2.+%{3}
     EOE
 
   $deinit 2>>/"EOE"

@@ -64,11 +64,11 @@ deinit += -d prj
     EOO
 
   $build prj/ 2>>~%EOE%;
-    %(mkdir|version\.in|c\+\+|ld|ln) .+%{8}
+    %(mkdir|version|c\+\+|ld|ln) .+%{8}
     EOE
 
   $build 'clean:' prj/ 2>>~%EOE%;
-    %rm .+%{3}
+    %(rm|rmdir) .+%{3}
     EOE
 
   $deinit 2>>/"EOE"
@@ -179,7 +179,7 @@ deinit += -d prj
     EOE
 
   $build prj/pkg1/ 2>>~%EOE%;
-    %(mkdir|version\.in|c\+\+|ld|ln) .+%{8}
+    %(mkdir|version|c\+\+|ld|ln) .+%{8}
     EOE
 
   $build prj/pkg2/ 2>>~%EOE%;
@@ -187,11 +187,11 @@ deinit += -d prj
     EOE
 
   $build 'clean:' prj/pkg1/ 2>>~%EOE%;
-    %rm .+%{3}
+    %(rm|rmdir) .+%{3}
     EOE
 
   $build 'clean:' prj/pkg2/ 2>>~%EOE%;
-    %rm .+%{3}
+    %(rm|rmdir) .+%{3}
     EOE
 
   $deinit 2>>/"EOE"
