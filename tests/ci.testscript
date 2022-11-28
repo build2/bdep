@@ -26,6 +26,14 @@ end
 #
 +sed -i -e 's/^(version:) .*$/\1 1.0.1/' prj/manifest
 
++cat <<EOI >+prj/build/root.build
+  config [bool] config.prj.network ?= false
+  EOI
+
++cat <<EOI >+prj/manifest
+  network-build-config: config.prj.network=true
+  EOI
+
 g = [cmdline] git -C prj 2>! >&2
 
 +$g config user.name 'Test Script'
@@ -142,7 +150,7 @@ windows = ($cxx.target.class == 'windows')
 
     test.options += --no-progress
 
-    : valid
+    : common-build-constraints
     :
     : Here we only test that bdep-ci does not fail for valid overrides. It
     : seems to be impossible to verify the submitted overrides manifest.
@@ -163,6 +171,35 @@ windows = ($cxx.target.class == 'windows')
          --override 'build-exclude: *' 2>>~%EOE%
         %CI request is queued.*%
         %reference: .+%
+        EOE
+    }
+
+    : package-build-constraints
+    :
+    {
+      $clone_prj;
+
+      $* --builds 'default/&gcc' \
+         --override 'default-build-include: linux*' \
+         --override 'default-build-exclude: *' 2>>~%EOE%
+        %CI request is queued.*%
+        %reference: .+%
+        EOE
+    }
+
+    : common-package-build-constraints
+    :
+    {
+      $clone_prj;
+
+      cat <<EOI >=overrides.manifest;
+        : 1
+        builds: all
+        EOI
+
+      $* --builds 'network/&gcc' --overrides-file overrides.manifest 2>>~%EOE% != 0
+        error: invalid file referenced by --overrides-file option: 'builds' override specified together with 'network-builds' override
+          info: override: builds: all
         EOE
     }
 
@@ -220,7 +257,8 @@ windows = ($cxx.target.class == 'windows')
         $clone_prj;
 
         $* --override 'builds: all' --override 'builds: default : &gcc' 2>>EOE != 0
-          error: invalid overrides: invalid package builds in 'default : &gcc': unexpected underlying class set
+          error: invalid --override option value: invalid package builds: unexpected underlying class set
+            info: override: builds: default : &gcc
           EOE
       }
 
@@ -235,10 +273,21 @@ windows = ($cxx.target.class == 'windows')
           error: unknown option '--overrides'
           EOE
       }
+
+      : target-and-package-configs
+      :
+      {
+        $clone_prj;
+
+        $* --override 'builds: gcc' --override 'network-builds: linux' 2>>EOE != 0
+          error: invalid --override option value: 'network-builds' override specified together with 'builds' override
+            info: override: network-builds: linux
+          EOE
+      }
     }
   }
 
-  : build-config
+  : target-config
   :
   {
     +$clone_root_prj
@@ -251,7 +300,7 @@ windows = ($cxx.target.class == 'windows')
     {
       $clone_prj;
 
-      $* --build-config 'linux**/x86_64**' --build-config 'freebsd**' 2>>~%EOE%
+      $* --target-config 'linux**/x86_64**' --target-config 'freebsd**' 2>>~%EOE%
         %CI request is queued.*%
         %reference: .+%
         EOE
@@ -262,8 +311,9 @@ windows = ($cxx.target.class == 'windows')
     {
       $clone_prj;
 
-      $* --build-config '/x86_64**' 2>>EOE != 0
-        error: invalid --build-config option value: empty build configuration name pattern in '/x86_64**'
+      $* --target-config '/x86_64**' 2>>EOE != 0
+        error: invalid --target-config option value: empty build configuration name pattern
+          info: override: build-include: /x86_64**
         EOE
     }
 
@@ -272,8 +322,9 @@ windows = ($cxx.target.class == 'windows')
     {
       $clone_prj;
 
-      $* --build-config 'linux**/' 2>>EOE != 0
-        error: invalid --build-config option value: empty build target pattern in 'linux**/'
+      $* --target-config 'linux**/' 2>>EOE != 0
+        error: invalid --target-config option value: empty build target pattern
+          info: override: build-include: linux**/
         EOE
     }
 
@@ -282,8 +333,9 @@ windows = ($cxx.target.class == 'windows')
     {
       $clone_prj;
 
-      $* --build-config 'linux_debian_8-gcc_4.9' --builds '&gcc' 2>>EOE != 0
-        error: 'builds' override specified together with --build-config
+      $* --target-config 'linux_debian_8-gcc_4.9' --builds '&gcc' 2>>EOE != 0
+        error: invalid --builds option value: 'builds' override specified together with --target-config
+          info: override: builds: &gcc
         EOE
     }
 
@@ -292,8 +344,172 @@ windows = ($cxx.target.class == 'windows')
     {
       $clone_prj;
 
-      $* --build-config 'linux**' --interactive 'linux_debian_8-gcc_4.9' 2>>EOE != 0
+      $* --target-config 'linux**' --interactive 'linux_debian_8-gcc_4.9' 2>>EOE != 0
+        error: --target-config specified together with --interactive|-i
+        EOE
+    }
+
+    : package-config
+    :
+    {
+      $clone_prj;
+
+      $* --target-config 'linux**' --package-config 'default' 2>>EOE != 0
+        error: --target-config specified together with --package-config
+        EOE
+    }
+  }
+
+  : build-config
+  :
+  {
+    +$clone_root_prj
+    +$init -C @cfg &prj-cfg/***
+
+    test.options += --no-progress
+
+    : multiple
+    :
+    {
+      $clone_prj;
+
+      $* --build-config 'default/linux**/x86_64**' --build-config 'default/freebsd**' 2>>~%EOE%
+        %CI request is queued.*%
+        %reference: .+%
+        EOE
+    }
+
+    : invalid-package-config
+    :
+    {
+      $clone_prj;
+
+      $* --build-config 'default/linux**/x86_64**' --package-config 'cache' 2>>EOE != 0
+        error: invalid --package-config option value: package prj has no build configuration 'cache'
+        EOE
+    }
+
+    : with-package-config-option
+    :
+    {
+      $clone_prj;
+
+      $* --build-config 'default/linux**/x86_64**' --package-config 'network' 2>>~%EOE%
+        %CI request is queued.*%
+        %reference: .+%
+        EOE
+    }
+
+    : invalid-package-config-option
+    :
+    {
+      $clone_prj;
+
+      $* --build-config 'default/linux**/x86_64**' --package-config 'default' 2>>EOE != 0
+        error: package configuration default is specified using both --package-config and --build-config
+        EOE
+    }
+
+    : no-target-config
+    :
+    {
+      $clone_prj;
+
+      $* --build-config 'default' 2>>EOE != 0
+        error: invalid --build-config option value: no target configuration in 'default'
+        EOE
+    }
+
+    : empty-package-config
+    :
+    {
+      $clone_prj;
+
+      $* --build-config '/linux**/x86_64**' 2>>EOE != 0
+        error: invalid --build-config option value: no package configuration in '/linux**/x86_64**'
+        EOE
+    }
+
+    : empty-target-config
+    :
+    {
+      $clone_prj;
+
+      $* --build-config 'default//x86_64**' 2>>EOE != 0
+        error: invalid --build-config option value: empty build configuration name pattern
+          info: override: default-build-include: /x86_64**
+        EOE
+    }
+
+    : empty-target
+    :
+    {
+      $clone_prj;
+
+      $* --build-config 'default/linux**/' 2>>EOE != 0
+        error: invalid --build-config option value: empty build target pattern
+          info: override: default-build-include: linux**/
+        EOE
+    }
+
+    : overrides
+    :
+    {
+      $clone_prj;
+
+      $* --build-config 'default/linux_debian_8-gcc_4.9' --builds '&gcc' 2>>EOE != 0
+        error: invalid --builds option value: 'builds' override specified together with --build-config
+          info: override: builds: &gcc
+        EOE
+    }
+
+    : interactive
+    :
+    {
+      $clone_prj;
+
+      $* --build-config 'default/linux**' --interactive 'linux_debian_8-gcc_4.9' 2>>EOE != 0
         error: --build-config specified together with --interactive|-i
+        EOE
+    }
+
+    : package-config
+    :
+    {
+      $clone_prj;
+
+      $* --build-config 'linux**' --target-config 'linux_debian_8-gcc_4.9' 2>>EOE != 0
+        error: --target-config specified together with --build-config
+        EOE
+    }
+  }
+
+  : package-config
+  :
+  {
+    +$clone_root_prj
+    +$init -C @cfg &prj-cfg/***
+
+    test.options += --no-progress
+
+    : valid
+    :
+    {
+      $clone_prj;
+
+      $* --package-config 'network' 2>>~%EOE%
+        %CI request is queued.*%
+        %reference: .+%
+        EOE
+    }
+
+    : interactive
+    :
+    {
+      $clone_prj;
+
+      $* --package-config 'default' --interactive 'linux_debian_8-gcc_4.9' 2>>EOE != 0
+        error: --package-config specified together with --interactive|-i
         EOE
     }
   }
@@ -306,12 +522,34 @@ windows = ($cxx.target.class == 'windows')
 
     test.options += --no-progress
 
-    : valid
+    : target-config
     :
     {
       $clone_prj;
 
-      $* --interactive 'linux_debian_8-gcc_4.9/warning' 2>>~%EOE%
+      $* --interactive 'linux_debian_8-gcc_4.9:warning' 2>>~%EOE%
+        %CI request is queued.*%
+        %reference: .+%
+        EOE
+    }
+
+    : package-target-config
+    :
+    {
+      $clone_prj;
+
+      $* --interactive 'network/linux_debian_8-gcc_4.9:warning' 2>>~%EOE%
+        %CI request is queued.*%
+        %reference: .+%
+        EOE
+    }
+
+    : package-target-config-target
+    :
+    {
+      $clone_prj;
+
+      $* --interactive 'network/linux_debian_8-gcc_4.9/aarch64**:warning' 2>>~%EOE%
         %CI request is queued.*%
         %reference: .+%
         EOE
@@ -334,17 +572,7 @@ windows = ($cxx.target.class == 'windows')
       $clone_prj;
 
       $* --interactive '/warning' 2>>EOE != 0
-        error: invalid --interactive|-i option value '/warning': configuration name is empty
-        EOE
-    }
-
-    : config-pattern
-    :
-    {
-      $clone_prj;
-
-      $* --interactive 'linux_debian_8-gcc_4.*' 2>>EOE != 0
-        error: invalid --interactive|-i option value 'linux_debian_8-gcc_4.*': configuration name is a pattern
+        error: invalid --interactive|-i option value '/warning': package configuration name is empty
         EOE
     }
 
@@ -354,7 +582,8 @@ windows = ($cxx.target.class == 'windows')
       $clone_prj;
 
       $* --interactive 'linux_debian_8-gcc_4.9' --builds '&gcc' 2>>EOE != 0
-        error: 'builds' override specified together with --interactive|-i
+        error: invalid --builds option value: 'builds' override specified together with --interactive|-i
+          info: override: builds: &gcc
         EOE
     }
   }

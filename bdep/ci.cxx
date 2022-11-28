@@ -4,6 +4,7 @@
 #include <bdep/ci.hxx>
 
 #include <sstream>
+#include <algorithm> // equal()
 
 #include <libbutl/path-pattern.hxx>
 #include <libbutl/manifest-types.hxx>
@@ -12,6 +13,7 @@
 
 #include <bdep/git.hxx>
 #include <bdep/project.hxx>
+#include <bdep/ci-types.hxx>
 #include <bdep/database.hxx>
 #include <bdep/diagnostics.hxx>
 #include <bdep/http-service.hxx>
@@ -187,74 +189,109 @@ namespace bdep
         fail << n << " specified together with --forward";
     }
 
+    // Collect the packages manifest value overrides parsing the --override,
+    // etc options and verify that the resulting overrides list contains valid
+    // package manifest values and is semantically correct.
+    //
+    // Note that if we end up with any build package configuration-specific
+    // overrides, then we will need to verify the overrides using the package
+    // manifests to make sure that the specified build configurations are
+    // valid for the specified packages.
+    //
     vector<manifest_name_value> overrides;
 
-    auto override = [&overrides] (string n, string v)
+    using origin = cmd_ci_override_origin;
+
+    auto override = [&overrides] (string n, string v, origin o)
     {
+      uint64_t orig (static_cast<uint64_t> (o));
+
       overrides.push_back (
-        manifest_name_value {move (n), move (v),    // Name and value.
-                             0, 0, 0, 0, 0, 0, 0}); // Locations, etc.
+        manifest_name_value {move (n), move (v), // Name and value.
+                             orig, 0,            // Name line and column.
+                             orig, 0,            // Value line and column.
+                             0, 0, 0});          // File positions.
     };
 
     // Add the default overrides.
     //
-    override ("build-email", "");
+    override ("build-email", "", origin::build_email);
 
-    // Validate and append the specified overrides.
+    // Append the overrides specified by --override, --overrides-file,
+    // --build-email, and --builds which are all handled by
+    // cli::parser<cmd_ci_override>. But first verify that they don't clash
+    // with the other build constraints-related options. Also detect if any of
+    // these overrides are build package configuration-specific.
     //
-    if (o.overrides_specified ())
-    try
-    {
-      if (o.interactive_specified () || o.build_config_specified ())
-      {
-        for (const manifest_name_value& nv: o.overrides ())
-        {
-          if (nv.name == "builds"        ||
-              nv.name == "build-include" ||
-              nv.name == "build-exclude")
-            fail << "'" << nv.name << "' override specified together with "
-                 << (o.interactive_specified ()
-                     ? "--interactive|-i"
-                     : "--build-config");
-        }
-      }
+    bool pkg_config_ovr (o.build_config_specified ()   ||
+                         o.package_config_specified () ||
+                         (o.interactive_specified () &&
+                          o.interactive ().find ('/') != string::npos));
 
-      package_manifest::validate_overrides (o.overrides (), "" /* name */);
+    if (o.overrides_specified ())
+    {
+      const char* co (o.target_config_specified ()  ? "--target-config"  :
+                      o.build_config_specified ()   ? "--build-config"   :
+                      o.package_config_specified () ? "--package-config" :
+                      o.interactive_specified ()    ? "--interactive|-i" :
+                                                      nullptr);
+
+      for (const manifest_name_value& nv: o.overrides ())
+      {
+        const string& n (nv.name);
+
+        // True if the name is one of {*-builds, *-build-{include,exclude}}.
+        //
+        bool pco ((n.size () > 7 &&
+                   n.compare (n.size () - 7, 7, "-builds") == 0)          ||
+                  (n.size () > 14 &&
+                   n.compare (n.size () - 14, 14, "-build-include") == 0) ||
+                  (n.size () > 14 &&
+                   n.compare (n.size () - 14, 14, "-build-exclude") == 0));
+
+        if (pco)
+          pkg_config_ovr = true;
+
+        if (co != nullptr &&
+            (pco                  ||
+             n == "builds"        ||
+             n == "build-include" ||
+             n == "build-exclude"))
+          fail << "invalid " << to_string (static_cast<origin> (nv.name_line))
+               << ": " << "'" << n << "' override specified together with "
+               << co <<
+            info << "override: " << n << ": " << nv.value;
+      }
 
       overrides.insert (overrides.end (),
                         o.overrides ().begin (),
                         o.overrides ().end ());
     }
-    catch (const manifest_parsing& e)
-    {
-      fail << "invalid overrides: " << e;
-    }
 
-    // Validate the --build-config option values and convert them into build
-    // manifest value overrides.
+    // Append the overrides specified by --target-config, but first verify
+    // that they don't clash with the other build constraints-related options.
     //
-    if (o.build_config_specified ())
-    try
+    if (o.target_config_specified ())
     {
+      if (o.build_config_specified ())
+        fail << "--target-config specified together with --build-config";
+
+      if (o.package_config_specified ())
+        fail << "--target-config specified together with --package-config";
+
       if (o.interactive_specified ())
-        fail << "--build-config specified together with --interactive|-i";
+        fail << "--target-config specified together with --interactive|-i";
 
-      override ("builds", "all");
+      override ("builds", "all", origin::target_config);
 
-      for (const string& c: o.build_config ())
-        override ("build-include", c);
+      for (const string& c: o.target_config ())
+        override ("build-include", c, origin::target_config);
 
-      override ("build-exclude", "**");
-
-      // Note that some of the overrides are knowingly valid (builds:all,
-      // etc), but let's keep it simple and validate all of them.
-      //
-      package_manifest::validate_overrides (overrides, "" /* name */);
+      override ("build-exclude", "**", origin::target_config);
     }
-    catch (const manifest_parsing& e)
-    {
-      fail << "invalid --build-config option value: " << e;
-    }
+
+    // Note that we will add the build package configuration-specific
+    // overrides after the packages being CI-ed are determined.
 
     // If we are submitting the entire project, then we have two choices: we
     // can list all the packages in the project or we can only do so for
@@ -300,7 +337,8 @@ namespace bdep
     {
       package_name              name;
       string                    version;
-      shared_ptr<configuration> config;  // NULL in the forward mode.
+      shared_ptr<configuration> config;   // NULL in the forward mode.
+      dir_path                  src_root;
     };
     vector<package> pkgs;
 
@@ -334,7 +372,8 @@ namespace bdep
             info << "package source directory is " << d;
         }
 
-        pkgs.push_back (package {move (n), move (pi.version_string), nullptr});
+        pkgs.push_back (package {
+            move (n), move (pi.version_string), nullptr, move (pi.src_root)});
       };
 
       for (package_location& p: pp.packages)
@@ -383,8 +422,17 @@ namespace bdep
             info << *c;
         }
 
-        standard_version v (package_version (o, c->path, n));
-        pkgs.push_back (package {move (n), v.string (), move (c)});
+        package_info pi (package_b_info (o,
+                                         dir_path (c->path) /= n.string (),
+                                         false /* ext_mods */));
+
+        verify_package_info (pi, n);
+
+        pkgs.push_back (package {
+            move (n),
+            pi.version.string (),
+            move (c),
+            move (pi.src_root)});
       };
 
       if (pp.packages.empty ())
@@ -425,6 +473,194 @@ namespace bdep
       }
     }
 
+    // If there are any build package configuration-specific overrides, then
+    // load the package manifests to use them later for validation of the
+    // complete override list. Note that we also need these manifests for
+    // producing the --package-config overrides.
+    //
+    vector<package_manifest> override_manifests;
+
+    if (pkg_config_ovr)
+    {
+      override_manifests.reserve (pkgs.size ());
+
+      for (const package& p: pkgs)
+      {
+        path f (p.src_root / manifest_file);
+
+        if (!exists (f))
+          fail << "package manifest file " << f << " does not exist";
+
+        try
+        {
+          ifdstream is (f);
+          manifest_parser p (is, f.string ());
+          override_manifests.emplace_back (p);
+        }
+        catch (const manifest_parsing& e)
+        {
+          fail << "invalid package manifest: " << f << ':'
+               << e.line << ':' << e.column << ": " << e.description;
+        }
+        catch (const io_error& e)
+        {
+          fail << "unable to read " << f << ": " << e;
+        }
+      }
+    }
+
+    // Append the overrides specified by --build-config, but first verify that
+    // they don't clash with the other build constraints-related options. Also
+    // collect the names of the build package configs they involve.
+    //
+    strings package_configs;
+
+    if (o.build_config_specified ())
+    {
+      if (o.interactive_specified ())
+        fail << "--build-config specified together with --interactive|-i";
+
+      for (const string& bc: o.build_config ()) // <pc>/<tc>[/<tg>]
+      {
+        size_t n (bc.find ('/'));
+
+        if (n == string::npos)
+          fail << "invalid --build-config option value: no target "
+               << "configuration in '" << bc << '\'';
+
+        if (n == 0)
+          fail << "invalid --build-config option value: no package "
+               << "configuration in '" << bc << '\'';
+
+        string pc (bc, 0, n);
+
+        bool first (find (package_configs.begin (),  package_configs.end (),
+                          pc) == package_configs.end ());
+
+        if (first)
+          override (pc + "-builds", "all", origin::build_config);
+
+        override (pc + "-build-include",
+                  string (bc, n + 1),
+                  origin::build_config);
+
+        if (first)
+          package_configs.push_back (move (pc));
+      }
+
+      for (const string& pc: package_configs)
+        override (pc + "-build-exclude", "**", origin::build_config);
+    }
+
+    // Append the overrides specified by --package-config, but first verify
+    // that they don't clash with the other build constraints-related options.
+    //
+    // Note that we also need to make sure that we end up with the same
+    // overrides regardless of the package we use to produce them.
+    //
+    if (o.package_config_specified ())
+    {
+      if (o.interactive_specified ())
+        fail << "--package-config specified together with --interactive|-i";
+
+      for (const string& pc: o.package_config ())
+      {
+        if (find (package_configs.begin (), package_configs.end (), pc) !=
+            package_configs.end ())
+          fail << "package configuration " << pc << " is specified using "
+               << "both --package-config and --build-config";
+
+        using bpkg::build_package_config;
+        using bpkg::build_class_expr;
+        using bpkg::build_constraint;
+
+        auto override_builds = [&pc, &override]
+                               (const small_vector<build_class_expr, 1>& bs,
+                                const vector<build_constraint>& cs)
+        {
+          if (!bs.empty ())
+          {
+            string n (pc + "-builds");
+            for (const build_class_expr& e: bs)
+              override (n, e.string (), origin::package_config);
+          }
+
+          if (!cs.empty ())
+          {
+            string in (pc + "-build-include");
+            string en (pc + "-build-exclude");
+
+            for (const build_constraint& bc: cs)
+              override (bc.exclusion ? en : in,
+                        (!bc.target
+                         ? bc.config
+                         : bc.config + '/' + *bc.target),
+                        origin::package_config);
+          }
+        };
+
+        // Generate overrides based on the --package-config option for every
+        // package and verify that we always end up with the same overrides.
+        //
+        optional<vector<manifest_name_value>> overrides_initial;
+        optional<vector<manifest_name_value>> overrides_cache;
+
+        for (const package_manifest& m: override_manifests)
+        {
+          // Save/restore the initial overrides.
+          //
+          if (overrides_initial)
+            overrides = *overrides_initial;
+          else if (override_manifests.size () > 1) // Will we compare overrides?
+            overrides_initial = overrides;
+
+          const small_vector<build_package_config, 1>& cs (m.build_configs);
+
+          auto i (find_if (cs.begin (), cs.end (),
+                           [&pc] (const build_package_config& c)
+                           {return c.name == pc;}));
+
+          if (i == cs.end ())
+            fail << "invalid --package-config option value: package " << m.name
+                 << " has no build configuration '" << pc << '\'';
+
+          // Override the package configuration with it's current build
+          // constraints, if present, and with the common build constraints
+          // otherwise.
+          //
+          const build_package_config& bc (*i);
+
+          if (!bc.builds.empty () || !bc.constraints.empty ())
+            override_builds (bc.builds, bc.constraints);
+          else if (!m.builds.empty () || !m.build_constraints.empty ())
+            override_builds (m.builds, m.build_constraints);
+          else
+            override (pc + "-builds", "default", origin::package_config);
+
+          // Save the overrides for the first package and verify they are equal
+          // to the saved one for the remaining packages.
+          //
+          if (!overrides_cache)
+          {
+            overrides_cache = move (overrides);
+          }
+          else if (!equal (overrides.begin (), overrides.end (),
+                           overrides_cache->begin (), overrides_cache->end (),
+                           [] (const auto& x, const auto& y)
+                           {return x.name == y.name && x.value == y.value;}))
+          {
+            fail << "invalid --package-config option value: overrides for "
+                 << "configuration '" << pc << "' differ for packages "
+                 << override_manifests[0].name << " and " << m.name;
+          }
+        }
+
+        assert (overrides_cache); // Must be at least one package.
+
+        overrides = move (*overrides_cache);
+      }
+    }
+
     // Extract the interactive mode configuration and breakpoint from the
     // --interactive|-i option value, reducing the former to the build
     // manifest value overrides.
@@ -442,7 +678,7 @@ namespace bdep
       const string& s (o.interactive ());
       validate_utf8_graphic (s, "--interactive|-i option value");
 
-      size_t p (s.find ('/'));
+      size_t p (s.find (':'));
 
       if (p != string::npos)
       {
@@ -452,20 +688,121 @@ namespace bdep
       else
         icfg = s;
 
-      if (icfg->empty ())
-        fail << "invalid --interactive|-i option value '" << s
-             << "': configuration name is empty";
+      p = icfg->find ('/');
 
-      if (path_pattern (*icfg))
-        fail << "invalid --interactive|-i option value '" << s
-             << "': configuration name is a pattern";
+      string pc;
+      string tc;
+      string tg;
 
-      override ("builds", "all");
-      override ("build-include", *icfg);
-      override ("build-exclude", "**");
+      if (p != string::npos)
+      {
+        if (p == 0)
+          fail << "invalid --interactive|-i option value '" << s
+               << "': package configuration name is empty";
+
+        pc = string (*icfg, 0, p);
+
+        string t (*icfg, p + 1); // tc[/tg]
+
+        p = t.find ('/');
+
+        if (p != string::npos)
+        {
+          if (p == t.size () - 1)
+            fail << "invalid --interactive|-i option value '" << s
+                 << "': target name is empty";
+
+          tc = string (t, 0, p);
+          tg = string (t, p + 1);
+        }
+        else
+          tc = move (t);
+      }
+      else
+        tc = *icfg;
+
+      if (tc.empty ())
+        fail << "invalid --interactive|-i option value '" << s
+             << "': target configuration name is empty";
+
+      if (!pc.empty ())
+        pc += '-';
+
+      if (!tg.empty ())
+        tg = '/' + tg;
+
+      override (pc + "builds", "all", origin::interactive);
+      override (pc + "build-include", tc + tg, origin::interactive);
+      override (pc + "build-exclude", "**", origin::interactive);
 
       if (!ibpk)
         ibpk = "error";
+    }
+
+    // Verify the collected overrides.
+    //
+    if (!overrides.empty ())
+    {
+      // Let's also save the override value index as a name/value columns
+      // (similar to what we do with the origin options), so that we can
+      // attribute the potential error back to the override value and add it
+      // to the diagnostics.
+      //
+      for (uint64_t i (0); i != overrides.size (); ++i)
+      {
+        manifest_name_value& nv (overrides[i]);
+        nv.name_column = nv.value_column = i;
+      }
+
+      auto bad_ovr = [&overrides, &override_manifests]
+                     (const manifest_parsing& e, const package_name& n = {})
+      {
+        assert (e.column < overrides.size ());
+
+        const manifest_name_value& nv (overrides[e.column]);
+
+        diag_record dr (fail);
+        dr << "invalid " << to_string (static_cast<origin> (e.line))
+           << ": " << e.description <<
+          info << "override: " << nv.name << ": " << nv.value;
+
+        if (!n.empty () && override_manifests.size () != 1)
+          dr << info << "package: " << n;
+      };
+
+      // If the package manifests are loaded (which happens if there are any
+      // build package configuration-specific overrides), then override them
+      // all. Otherwise, use package_manifest::validate_overrides().
+      //
+      // Specify the name argument for the override validation call to make
+      // sure the origin/value information (saved into the values'
+      // lines/columns) is provided in a potential exception.
+      //
+      if (!override_manifests.empty ())
+      {
+        for (package_manifest& m: override_manifests)
+        {
+          try
+          {
+            m.override (overrides, "options");
+          }
+          catch (const manifest_parsing& e)
+          {
+            bad_ovr (e, m.name);
+          }
+        }
+      }
+      else
+      {
+        try
+        {
+          package_manifest::validate_overrides (overrides, "options");
+        }
+        catch (const manifest_parsing& e)
+        {
+          bad_ovr (e);
+        }
+      }
     }
 
     // Get the server and repository URLs.

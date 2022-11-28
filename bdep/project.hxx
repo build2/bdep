@@ -300,6 +300,12 @@ namespace bdep
 
   package_info
   package_b_info (const common_options&, const dir_path&, bool ext_mods);
+
+  // Verify that the package name matches what we expect it to be and the
+  // package uses a standard version.
+  //
+  void
+  verify_package_info (const package_info&, const package_name&);
 }
 
 #endif // BDEP_PROJECT_HXX

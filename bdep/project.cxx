@@ -537,15 +537,18 @@ namespace bdep
     package_info pi (package_b_info (o,
                                      (dir_path (cfg) /= p.string ()),
                                      false /* ext_mods */));
+    verify_package_info (pi, p);
 
-    if (pi.version.empty ())
-      fail << "package " << p << " does not use standard version";
+    return move (pi.version);
+  }
 
-    // Verify the name for good measure.
-    //
+  void
+  verify_package_info (const package_info& pi, const package_name& p)
+  {
     if (pi.project != p)
       fail << "name mismatch for package " << p;
 
-    return move (pi.version);
+    if (pi.version.empty ())
+      fail << "package " << p << " does not use standard version";
   }
 }

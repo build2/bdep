@@ -58,28 +58,40 @@ namespace bdep
 
      Some package manifest values can be overridden as part of the CI request
      submission using the \cb{--override} and \cb{--overrides-file} options as
-     well as their \cb{--builds}, \cb{--build-config}, and \cb{--build-email}
-     shortcuts. This is primarily useful for specifying alternative build
-     configurations and/or build notification emails. For example:
+     well as their \cb{--builds}, \cb{--build-config}, \cb{--target-config},
+     \cb{--package-config}, and \cb{--build-email} shortcuts. This is
+     primarily useful for specifying alternative build configurations and/or
+     build notification emails. For example:
 
      \
      $ bdep ci --builds gcc
-     $ bdep ci --build-config 'linux*-gcc*'
+     $ bdep ci --target-config 'linux*-gcc*'
+     $ bdep ci --package-config network
+     $ bdep ci --build-config 'network/linux*-gcc*'
      \
 
-     Note that manifest overrides override the entire value group that they
-     belong to. Currently, the following value groups can be overridden with
-     the \cb{build*-email} group overridden by default as if by specifying
-     an empty build email.
+     Manifest overrides override the entire value group that they belong
+     to. Currently, the following value groups can be overridden. The
+     \cb{build-*email} group is overridden by default as if by specifying an
+     empty build email.
 
      \
      build-email build-{warning,error}-email
      builds build-{include,exclude}
+     *-builds *-build-{include,exclude}
      \
 
-     Note also that the build constraints group values are overridden
-     hierarchically so that the \cb{build-{include,exclude\}} overrides don't
-     affect the \cb{builds} values.
+     Note that the build constraints group values (both common and build
+     package configuration-specific) are overridden hierarchically so that the
+     \c{[\b{*-}]\b{build-}{\b{include},\b{exclude}\}} overrides don't affect
+     the respective \c{[\b{*-}]\b{builds}} values.
+
+     Note also that the common and build package configuration-specific build
+     constraints group value overrides are mutually exclusive. If the common
+     build constraints are overridden, then all the configuration-specific
+     constraints are removed. Otherwise, if any configuration-specific
+     constraints are overridden, then for the remaining configurations the
+     build constraints are reset to \cb{builds:\ none}.
 
      If supported by the CI service, a package can be tested interactively
      in a specific build configuration using the \c{\b{--interactive}|\b{-i}}
@@ -113,14 +125,26 @@ namespace bdep
 
     string --interactive|-i
     {
-      "<cf>[/<bp>]",
+      "<cf>[:<bp>]",
       "Test the package interactively in the specified build configuration,
-       pausing the execution at the specified breakpoint. Valid breakpoint
-       values are \cb{none} (don't stop), \cb{error} (stop after first error),
-       \cb{warning} (stop after first warning), as well as the CI
-       service-specific step ids in which case the execution stops before
-       performing the specified step (see \l{bbot#arch-worker \cb{bbot} worker
-       step ids}). If no breakpoint is specified, then \cb{error} is assumed."
+       pausing the execution at the specified breakpoint. The build
+       configuration is a target configuration (\ci{tc}), optionally for a
+       specific package configuration (\ci{pc}) and/or for a specific target
+       (\ci{tg}):
+
+       \c{<cf> = [\i{pc}\b{/}]\i{tc} | \i{pc}\b{/}\i{tc}\b{/}\i{tg}}
+
+       Refer to the \cb{--build-config} option for details on the build
+       configuration component semantics. Note that for interactive testing
+       they should identify a single build configuration. Failed that, the
+       test request will be aborted.
+
+       Valid breakpoint values are \cb{none} (don't stop), \cb{error} (stop
+       after first error), \cb{warning} (stop after first warning), as well as
+       the CI service-specific step ids in which case the execution stops
+       before performing the specified step (see \l{bbot#arch-worker \cb{bbot}
+       worker step ids}). If no breakpoint is specified, then \cb{error} is
+       assumed."
     }
 
     url --server
@@ -154,26 +178,62 @@ namespace bdep
 
     strings --builds
     {
-      "<class-expr>",
-      "Shortcut for \c{\b{--override\ builds:}<class-expr>}."
+      "[<pc>/]<class-expr>",
+      "Shortcut for the following option:
+
+       \c{\b{--override\ }[<pc>\b{-}]\b{builds:}<class-expr>}
+
+       Repeat this option to specify multiple build target configuration
+       classes."
     }
 
     strings --build-config
     {
-      "<cf>[/<tg>]",
+      "<pc>/<tc>[/<tg>]",
+      "Shortcut for the following options sequence:
+
+       \c{\b{--override\ }<pc>\b{-builds:all}}\n
+       \c{\b{--override\ }<pc>\b{-build-include:}<tc>[\b{/}<tg>]}\n
+       \c{\b{--override\ }<pc>\b{-build-exclude:**}}
+
+       Repeat this option to specify multiple build configurations."
+    }
+
+    strings --target-config
+    {
+      "<tc>[/<tg>]",
       "Shortcut for the following options sequence:
 
        \c{\b{--override\ builds:all}}\n
-       \c{\b{--override\ build-include:}<cf>[/<tg>]}\n
+       \c{\b{--override\ build-include:}<tc>[\b{/}<tg>]}\n
        \c{\b{--override\ build-exclude:**}}
 
-       Repeat this option to specify multiple build configurations."
+       Repeat this option to specify multiple build target configurations."
+    }
+
+    strings --package-config
+    {
+      "<pc>",
+      "Shortcut for the following options sequence:
+
+       \c{\b{--override\ }<pc>\b{-builds:}...}\n
+       \c{\b{--override\ }<pc>\b{-build-include:}...}\n
+       \c{\b{--override\ }<pc>\b{-build-exclude:}...}
+
+       Where the override values are the build constraints for the specified
+       build package configuration from the package manifest.
+
+       Repeat this option to specify multiple build package configurations."
     }
 
     string --build-email
     {
       "<email>",
-      "Shortcut for \c{\b{--override\ build-email:}<email>}."
+      "Shortcut for the following option:
+
+       \c{\b{--override\ build-email:}<email>}
+
+      "
     }
 
     // All the overrides-related options are handled with a common parser and

@@ -1,13 +1,11 @@
 // file      : bdep/ci-parsers.cxx -*- C++ -*-
 // license   : MIT; see accompanying LICENSE file
 
+#include <bdep/ci-parsers.hxx>
+
 #include <sstream>
 
 #include <bdep/utility.hxx> // trim()
-
-#include <bdep/ci-parsers.hxx>
-
-#include <bdep/ci-options.hxx> // bdep::cli namespace
 
 namespace bdep
 {
@@ -19,12 +17,17 @@ namespace bdep
     void parser<cmd_ci_override>::
     parse (cmd_ci_override& r, bool& xs, scanner& s)
     {
-      auto add = [&r] (string&& n, string&& v)
+      using origin = cmd_ci_override_origin;
+
+      auto add = [&r] (string&& n, string&& v, origin o)
       {
+        uint64_t orig  (static_cast<uint64_t> (o));
+
         r.push_back (
-          manifest_name_value {move (n),
-                               move (v),
-                               0, 0, 0, 0, 0, 0, 0}); // Locations, etc.
+          manifest_name_value {move (n), move (v), // Name and value.
+                               orig, 0,            // Name line and column.
+                               orig, 0,            // Value line and column.
+                               0, 0, 0});          // File positions.
       };
 
       string o (s.next ());
@@ -48,13 +51,23 @@ namespace bdep
       {
         validate_value ();
 
-        add ("build-email", move (v));
+        add ("build-email", move (v), origin::build_email);
       }
       else if (o == "--builds")
       {
         validate_value ();
 
-        add ("builds", move (v));
+        size_t n (v.find ('/'));
+
+        if (n != string::npos)
+        {
+          if (n == 0)
+            throw invalid_value (o, v, "no package configuration");
+
+          add (string (v, 0, n) + "-builds", string (v, n + 1), origin::builds);
+        }
+        else
+          add ("builds", move (v), origin::builds);
       }
       else if (o == "--override")
       {
@@ -82,7 +95,7 @@ namespace bdep
         if (vn.empty ())
           throw invalid_value (o, v, "empty value name");
 
-        add (move (vn), move (vv));
+        add (move (vn), move (vv), origin::override);
       }
       else if (o == "--overrides-file")
       {
@@ -101,8 +114,19 @@ namespace bdep
           //
           manifest_parser p (is, "" /* name */);
 
+          size_t i (r.size ());
           parse_manifest (p, r);
           is.close ();
+
+          // Set the origin information for the just parsed value overrides.
+          //
+          for (; i != r.size (); ++i)
+          {
+            uint64_t orig (static_cast<uint64_t> (origin::overrides_file));
+
+            manifest_name_value& nv (r[i]);
+            nv.name_line = nv.value_line = orig;
+          }
         }
         catch (const manifest_parsing& e)
         {
