@@ -135,6 +135,20 @@ namespace bdep
         ops.push_back (o.c_str ());
       }
 
+      // Forward our --curl* options.
+      //
+      if (co.curl_specified ())
+      {
+        ops.push_back ("--curl");
+        ops.push_back (co.curl ().string ().c_str ());
+      }
+
+      for (const string& o: co.curl_option ())
+      {
+        ops.push_back ("--curl-option");
+        ops.push_back (o.c_str ());
+      }
+
       return process_start_callback (
         [v] (const char* const args[], size_t n)
         {

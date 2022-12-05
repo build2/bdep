@@ -174,7 +174,8 @@ namespace bdep
        with \cb{--curl-option}.
 
        If the curl program is not explicitly specified, then \cb{bdep} will use
-       \cb{curl} by default."
+       \cb{curl} by default. Note that this program will also be used by the
+       underlying \cb{bpkg} invocations unless overridden."
     }
 
     strings --curl-option
@@ -182,7 +183,10 @@ namespace bdep
       "<opt>",
       "Additional option to be passed to the curl program. See \cb{--curl} for
        more information on the curl program. Repeat this option to specify
-       multiple curl options."
+       multiple curl options.
+
+       Note that these options will also be used by the underlying \cb{bpkg}
+       invocations provided that curl is used."
     }
 
     string --pager // String to allow empty value.
