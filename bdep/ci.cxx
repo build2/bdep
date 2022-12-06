@@ -221,7 +221,8 @@ namespace bdep
     // --build-email, and --builds which are all handled by
     // cli::parser<cmd_ci_override>. But first verify that they don't clash
     // with the other build constraints-related options. Also detect if any of
-    // these overrides are build package configuration-specific.
+    // them are build package configuration-specific build constraint
+    // overrides.
     //
     bool pkg_config_ovr (o.build_config_specified ()   ||
                          o.package_config_specified () ||
@@ -616,22 +617,41 @@ namespace bdep
 
           const small_vector<build_package_config, 1>& cs (m.build_configs);
 
+          // Fail if the specified build configuration is not found, unless
+          // there is a corresponding *-build-config override which means that
+          // this configuration will be created. Note that no configuration-
+          // specific build constraint overrides have been specified for it,
+          // since we would fail earlier in that case (they would clash with
+          // *-package-config). Thus, we will just override this being created
+          // build configuration with the common build constraints.
+          //
+          const build_package_config* c (nullptr);
+
           auto i (find_if (cs.begin (), cs.end (),
                            [&pc] (const build_package_config& c)
                            {return c.name == pc;}));
 
           if (i == cs.end ())
-            fail << "invalid --package-config option value: package " << m.name
-                 << " has no build configuration '" << pc << '\'';
+          {
+            string v (pc + "-build-config");
+
+            if(find_if (overrides.begin (), overrides.end (),
+                        [&v] (const manifest_name_value& nv)
+                        {return nv.name == v;}) == overrides.end ())
+            {
+              fail << "invalid --package-config option value: package "
+                   << m.name << " has no build configuration '" << pc << '\'';
+            }
+          }
+          else
+            c = &*i;
 
           // Override the package configuration with it's current build
           // constraints, if present, and with the common build constraints
           // otherwise.
           //
-          const build_package_config& bc (*i);
-
-          if (!bc.builds.empty () || !bc.constraints.empty ())
-            override_builds (bc.builds, bc.constraints);
+          if (c != nullptr && (!c->builds.empty () || !c->constraints.empty ()))
+            override_builds (c->builds, c->constraints);
           else if (!m.builds.empty () || !m.build_constraints.empty ())
             override_builds (m.builds, m.build_constraints);
           else

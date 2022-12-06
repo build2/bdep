@@ -28,6 +28,7 @@ end
 
 +cat <<EOI >+prj/build/root.build
   config [bool] config.prj.network ?= false
+  config [bool] config.prj.cache ?= false
   EOI
 
 +cat <<EOI >+prj/manifest
@@ -182,6 +183,44 @@ windows = ($cxx.target.class == 'windows')
       $* --builds 'default/&gcc' \
          --override 'default-build-include: linux*' \
          --override 'default-build-exclude: *' 2>>~%EOE%
+        %CI request is queued.*%
+        %reference: .+%
+        EOE
+    }
+
+    : build-configs
+    :
+    {
+      $clone_prj;
+
+      $* --override 'mytest-build-config: config.prj.network=true config.prj.cache=true' \
+         --override 'default-build-config: config.prj.network=true' 2>>~%EOE%
+        %CI request is queued.*%
+        %reference: .+%
+        EOE
+    }
+
+    : build-configs-constraints
+    :
+    {
+      $clone_prj;
+
+      $* --override 'mytest-build-config: config.prj.network=true config.prj.cache=true' \
+         --build-config 'mytest/linux*-gcc*' \
+         --override 'default-build-config: config.prj.network=true' \
+         --build-config 'default/macos*-gcc*' 2>>~%EOE%
+        %CI request is queued.*%
+        %reference: .+%
+        EOE
+    }
+
+    : build-configs-package-config
+    :
+    {
+      $clone_prj;
+
+      $* --override 'mytest-build-config: config.prj.network=true config.prj.cache=true' \
+         --package-config 'mytest' 2>>~%EOE%
         %CI request is queued.*%
         %reference: .+%
         EOE
