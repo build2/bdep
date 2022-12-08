@@ -80,7 +80,8 @@ namespace bdep
     }
   }
 
-  bool stderr_term;
+  optional<const char*> stderr_term = nullopt;
+  bool stderr_term_color = false;
 
   dir_path
   current_directory ()

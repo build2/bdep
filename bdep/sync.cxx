@@ -1861,6 +1861,7 @@ namespace bdep
                  << "    run '" << argv0 << "' sync --hook=1 "         <<
                 "--verbose $build.verbosity "                          <<
                 "($build.progress == [null] ? : $build.progress ? --progress : --no-progress) " <<
+                "($build.diag_color == [null] ? : $build.diag_color ? --diag-color : --no-diag-color) " <<
                 "--config \"$out_root\""                               << endl
                  << "}"                                                << endl;
 

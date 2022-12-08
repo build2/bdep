@@ -122,6 +122,18 @@ namespace bdep
        network transfers, building, etc."
     }
 
+    bool --diag-color
+    {
+      "Use color in diagnostics. If printing to a terminal the color is used
+       by default provided the terminal is not dumb. Use \cb{--no-diag-color}
+       to suppress."
+    }
+
+    bool --no-diag-color
+    {
+      "Don't use color in diagnostics."
+    }
+
     path --bpkg
     {
       "<path>",

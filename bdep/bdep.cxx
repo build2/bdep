@@ -6,6 +6,7 @@
 #endif
 
 #include <limits>
+#include <cstdlib>     // getenv()
 #include <cstring>     // strcmp()
 #include <iostream>
 #include <exception>   // set_terminate(), terminate_handler
@@ -281,31 +282,47 @@ init (const common_options& co,
 
     // Verify common options.
     //
-    // Also merge the --progress/--no-progress options, overriding a less
-    // specific flag with a more specific.
+    // Also merge the --*/--no-* options, overriding a less specific flag with
+    // a more specific.
     //
-    optional<bool> progress;
-    auto merge_progress = [&progress]
-                          (const O& o,
-                           const default_options_entry<O>* e = nullptr)
+    optional<bool> progress, diag_color;
+    auto merge_no = [&progress, &diag_color] (
+      const O& o,
+      const default_options_entry<O>* e = nullptr)
     {
-      if (o.progress () && o.no_progress ())
       {
-        diag_record dr;
-        (e != nullptr ? dr << fail (e->file) : dr << fail)
+        if (o.progress () && o.no_progress ())
+        {
+          diag_record dr;
+          (e != nullptr ? dr << fail (e->file) : dr << fail)
           << "both --progress and --no-progress specified";
+        }
+
+        if (o.progress ())
+          progress = true;
+        else if (o.no_progress ())
+          progress = false;
       }
 
-      if (o.progress ())
-        progress = true;
-      else if (o.no_progress ())
-        progress = false;
+      {
+        if (o.diag_color () && o.no_diag_color ())
+        {
+          diag_record dr;
+          (e != nullptr ? dr << fail (e->file) : dr << fail)
+          << "both --diag-color and --no-diag-color specified";
+        }
+
+        if (o.diag_color ())
+          diag_color = true;
+        else if (o.no_diag_color ())
+          diag_color = false;
+      }
     };
 
     for (const default_options_entry<O>& e: dos)
-      merge_progress (e.options, &e);
+      merge_no (e.options, &e);
 
-    merge_progress (o);
+    merge_no (o);
 
     o = merge_options (dos, o);
 
@@ -313,6 +330,12 @@ init (const common_options& co,
     {
       o.progress (*progress);
       o.no_progress (!*progress);
+    }
+
+    if (diag_color)
+    {
+      o.diag_color (*diag_color);
+      o.no_diag_color (!*diag_color);
     }
   }
   catch (const invalid_argument& e)
@@ -368,7 +391,23 @@ try
 
   default_terminate = set_terminate (custom_terminate);
 
-  stderr_term = fdterm (stderr_fd ());
+  if (fdterm (stderr_fd ()))
+  {
+    stderr_term = std::getenv ("TERM");
+
+    stderr_term_color =
+#ifdef _WIN32
+      // For now we disable color on Windows since it's unclear if/where/how
+      // it is supported. Maybe one day someone will figure this out.
+      //
+      false
+#else
+      // This test was lifted from GCC (Emacs shell sets TERM=dumb).
+      //
+      *stderr_term != nullptr && strcmp (*stderr_term, "dumb") != 0
+#endif
+      ;
+  }
 
   argv0 = argv[0];
   exec_dir = path (argv0).directory ();
