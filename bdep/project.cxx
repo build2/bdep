@@ -486,12 +486,12 @@ namespace bdep
   }
 
   package_info
-  package_b_info (const common_options& o, const dir_path& d, bool ext_mods)
+  package_b_info (const common_options& o, const dir_path& d, b_info_flags fl)
   {
     try
     {
       return b_info (d,
-                     ext_mods,
+                     fl,
                      verb,
                      [] (const char* const args[], size_t n)
                      {
@@ -515,7 +515,7 @@ namespace bdep
   standard_version
   package_version (const common_options& o, const dir_path& d)
   {
-    package_info pi (package_b_info (o, d, false /* ext_mods */));
+    package_info pi (package_b_info (o, d, b_info_flags::none));
 
     if (pi.version.empty ())
       fail << "package in directory " << d << " does not use standard version";
@@ -536,7 +536,7 @@ namespace bdep
     //
     package_info pi (package_b_info (o,
                                      (dir_path (cfg) /= p.string ()),
-                                     false /* ext_mods */));
+                                     b_info_flags::none));
     verify_package_info (pi, p);
 
     return move (pi.version);

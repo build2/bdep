@@ -297,9 +297,10 @@ namespace bdep
   // Obtain build2 project info for package source or output directory.
   //
   using package_info = butl::b_project_info;
+  using butl::b_info_flags;
 
   package_info
-  package_b_info (const common_options&, const dir_path&, bool ext_mods);
+  package_b_info (const common_options&, const dir_path&, b_info_flags);
 
   // Verify that the package name matches what we expect it to be and the
   // package uses a standard version.

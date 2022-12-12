@@ -347,7 +347,9 @@ namespace bdep
     {
       // Add a package to the list and suppressing duplicates.
       //
-      auto add_package = [&o, &pkgs] (package_name n, const dir_path& d)
+      auto add_package = [&pkgs] (package_name n,
+                                      const dir_path& d,
+                                      package_info&& pi)
       {
         auto i (find_if (pkgs.begin (),
                          pkgs.end (),
@@ -355,8 +357,6 @@ namespace bdep
 
         if (i != pkgs.end ())
           return;
-
-        package_info pi (package_b_info (o, d, false /* ext_mods */));
 
         // Verify the package version, unless it is standard and thus is
         // already verified.
@@ -380,13 +380,13 @@ namespace bdep
       for (package_location& p: pp.packages)
       {
         dir_path d (pp.project / p.path);
-        package_info pi (package_b_info (o, d, false /* ext_mods */));
+        package_info pi (package_b_info (o, d, b_info_flags::none));
 
         if (pi.src_root == pi.out_root)
           fail << "package " << p.name << " source directory is not forwarded" <<
             info << "package source directory is " << d;
 
-        add_package (p.name, d);
+        add_package (p.name, d, move (pi));
       }
     }
     else
@@ -425,7 +425,7 @@ namespace bdep
 
         package_info pi (package_b_info (o,
                                          dir_path (c->path) /= n.string (),
-                                         false /* ext_mods */));
+                                         b_info_flags::none));
 
         verify_package_info (pi, n);
 

@@ -173,7 +173,7 @@ namespace bdep
       // way to deduce it and thus it needs to be specified explicitly.
       //
       string s; // Section.
-      package_info pi (package_b_info (o, d, false /* ext_mods */));
+      package_info pi (package_b_info (o, d, b_info_flags::none));
 
       if (!pi.version.empty ()) // Does the package use the standard version?
       {
@@ -1017,7 +1017,7 @@ namespace bdep
       {
         dir_path d (prj / pl.path);
 
-        package_info pi (package_b_info (o, d, false /* ext_mods */));
+        package_info pi (package_b_info (o, d, b_info_flags::none));
 
         if (pi.src_root == pi.out_root)
           fail << "package " << pl.name << " source directory is not forwarded" <<
