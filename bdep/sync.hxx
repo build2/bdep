@@ -24,7 +24,7 @@ namespace bdep
     synced_configs_guard (optional<string> o): original (move (o)) {}
     ~synced_configs_guard ();
 
-    synced_configs_guard (synced_configs_guard&& r)
+    synced_configs_guard (synced_configs_guard&& r) noexcept
         : original (move (r.original))
     {
       r.original = nullopt;
