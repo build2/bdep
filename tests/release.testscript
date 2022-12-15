@@ -931,7 +931,7 @@ log2   = [cmdline] $gp2 log '--pretty=format:"%d %s"'
 
           Fix buildfile
 
-          Add 'n' to the end of the file.
+          Add '\n' to the end of the file.
 
           Fix repositories.manifest
 
@@ -960,7 +960,7 @@ log2   = [cmdline] $gp2 log '--pretty=format:"%d %s"'
 
           Fix buildfile
 
-          Add 'n' to the end of the file.
+          Add '\n' to the end of the file.
 
           Fix repositories.manifest
 
@@ -996,7 +996,7 @@ log2   = [cmdline] $gp2 log '--pretty=format:"%d %s"'
 
           Fix buildfile
 
-          Add 'n' to the end of the file.
+          Add '\n' to the end of the file.
 
           Fix repositories.manifest
 
