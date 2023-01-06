@@ -1303,6 +1303,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
            << "*.pcm"                                                  << '\n'
            << "*.ifc"                                                  << '\n'
            << "*.so"                                                   << '\n'
+           << "*.dylib"                                                << '\n'
            << "*.dll"                                                  << '\n'
            << "*.a"                                                    << '\n'
            << "*.lib"                                                  << '\n'
