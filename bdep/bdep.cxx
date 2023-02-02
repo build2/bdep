@@ -258,7 +258,24 @@ init (const common_options& co,
   {
     optional<dir_path> extra;
     if (o.default_options_specified ())
+    {
       extra = o.default_options ();
+
+      // Note that load_default_options() expects absolute and normalized
+      // directory.
+      //
+      try
+      {
+        if (extra->relative ())
+          extra->complete ();
+
+        extra->normalize ();
+      }
+      catch (const invalid_path& e)
+      {
+        fail << "invalid --default-options value " << e.path;
+      }
+    }
 
     default_options<O> dos (
       load_default_options<O, cli::argv_file_scanner, cli::unknown_mode> (
