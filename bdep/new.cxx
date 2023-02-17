@@ -652,10 +652,11 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
   // base name for inner filesystem directories and preprocessor macros, while
   // the (sanitized) stem for modules, namespaces, etc.
   //
-  const string&   n (pkgn.string ());   // Full name.
-  const string&   b (pkgn.base ());     // Base name.
-  const string&   v (pkgn.variable ()); // Variable name.
-  string          s (b);                // Name stem.
+  const string&   n (pkgn.string ());    // Full name.
+  const string&   b (pkgn.base ());      // Base name.
+  const string&   e (pkgn.extension ()); // Name extension.
+  const string&   v (pkgn.variable ());  // Variable name.
+  string          s (b);                 // Name stem.
   {
     // Warn about the lib prefix unless we are creating a source subdirectory,
     // in which case the project is probably not meant to be a package anyway.
@@ -1478,6 +1479,68 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
       os << ": 1"                                                      << '\n'
          << "name: " << n                                              << '\n'
          << "version: 0.1.0-a.0.z"                                     << '\n';
+
+      // Add the type value unless the package type is implied by the package
+      // name, that is, the type lib and the package name starts with lib or
+      // the type is exe and the name doesn't start with lib.
+      //
+      switch (t)
+      {
+      case type::exe:
+        {
+          if (n.size () > 3 && n.compare (0, 3, "lib") == 0 )
+            os << "type: exe"                                          << '\n';
+          break;
+        }
+      case type::lib:
+        {
+          if (!(n.size () > 3 && n.compare (0, 3, "lib") == 0))
+            os << "type: lib"                                          << '\n';
+          break;
+        }
+      case type::bare:
+        {
+          os << "type: other"                                          << '\n';
+          break;
+        }
+      case type::empty:
+        {
+          assert (false);
+        }
+      }
+
+      // Add the language value(s) unless one language is used and it's
+      // implied by the package name, that is it matches the package name
+      // extension.
+      //
+      // @@ TODO: add support for --lang c,c++=impl
+      //
+      switch (l)
+      {
+      case lang::c:
+        {
+          bool cpp (l.c_opt.cpp ());
+          if (cpp || e != "c")
+          {
+            os <<   "language: c"                                      << '\n';
+            if (cpp)
+              os << "language: c++"                                    << '\n';
+          }
+          break;
+        }
+      case lang::cxx:
+        {
+          bool c (l.cxx_opt.c ());
+          if (c || e != "c++")
+          {
+            os <<   "language: c++"                                    << '\n';
+            if (c)
+              os << "language: c"                                      << '\n';
+          }
+          break;
+        }
+      }
+
       if (pn)
         os << "project: " << *pn                                       << '\n';
       if (readme_e && !readme_e->empty ())
@@ -1489,7 +1552,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
       else
         os << "license: " << license << " ; " << ln << "."             << '\n';
       if (readme_f)
-        os << "description-file: " << readme_f->leaf (out).posix_representation ()   << '\n';
+        os << "description-file: " << readme_f->leaf (out).posix_representation () << '\n';
       os << "url: https://example.org/" << (pn ? pn->string () : n)    << '\n'
          << "email: " << pe                                            << '\n'
          << "#build-error-email: " << pe                               << '\n'

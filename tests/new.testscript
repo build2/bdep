@@ -28,7 +28,39 @@ status += -d prj
       created new executable project prj-foo in $~/prj-foo/
       EOE
 
+    sed -n -e 's/^(type: .+)$/\1/p'     prj-foo/manifest >:'';
+    sed -n -e 's/^language: (.+)$/\1/p' prj-foo/manifest >'c++';
+
     $build prj-foo/ $config_cxx 2>>~%EOE%
+      %(c\+\+|ld) .+%{2}
+      EOE
+  }
+
+  : exe-lib-prefix
+  :
+  {
+    $* -t exe -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***;
+      warning: executable name starts with 'lib'
+      created new executable project libprj-foo in $~/libprj-foo/
+      EOE
+
+    sed -n -e 's/^type: (.+)$/\1/p' libprj-foo/manifest >'exe';
+
+    $build libprj-foo/ $config_cxx 2>>~%EOE%
+      %(c\+\+|ld) .+%{2}
+      EOE
+  }
+
+  : exe-c++-suffix
+  :
+  {
+    $* -t exe -l c++ foo.c++ 2>>/"EOE" &foo.c++/***;
+      created new executable project foo.c++ in $~/foo.c++/
+      EOE
+
+    sed -n -e 's/^(language: .+)$/\1/p' foo.c++/manifest >:'';
+
+    $build foo.c++/ $config_cxx 2>>~%EOE%
       %(c\+\+|ld) .+%{2}
       EOE
   }
@@ -39,6 +71,11 @@ status += -d prj
     $* -t exe -l c++,c foo 2>>/"EOE" &foo/***;
       created new executable project foo in $~/foo/
       EOE
+
+    sed -n -e 's/^language: (.+)$/\1/p' foo/manifest >>EOO;
+      c++
+      c
+      EOO
 
     touch foo/foo/bar.h;
 
@@ -59,7 +96,24 @@ status += -d prj
       created new library project libprj-foo in $~/libprj-foo/
       EOE
 
+    sed -n -e 's/^(type: .+)$/\1/p' libprj-foo/manifest >:'';
+
     $build libprj-foo/ $config_cxx 2>>~%EOE%
+      %(version|c\+\+|ar|ld) .+%{7}
+      EOE
+  }
+
+  : lib-no-lib-prefix
+  :
+  {
+    $* -t lib -l c++ prj-foo 2>>/"EOE" &prj-foo/***;
+      warning: library name does not start with 'lib'
+      created new library project prj-foo in $~/prj-foo/
+      EOE
+
+    sed -n -e 's/^type: (.+)$/\1/p' prj-foo/manifest >'lib';
+
+    $build prj-foo/ $config_cxx 2>>~%EOE%
       %(version|c\+\+|ar|ld) .+%{7}
       EOE
   }
@@ -88,6 +142,16 @@ status += -d prj
     $build libfoo/ $config_cxx $config_c 2>>~%EOE%
       %(version|c\+\+|c|ld|ar) .+%{10}
       EOE
+  }
+
+  : bare
+  :
+  {
+    $* -t bare prj 2>>/"EOE" &prj/***;
+      created new bare project prj in $~/prj/
+      EOE
+
+    sed -n -e 's/^type: (.+)$/\1/p' prj/manifest >'other'
   }
 
   : exe-prefix
@@ -403,7 +467,23 @@ status += -d prj
       created new executable project prj-foo in $~/prj-foo/
       EOE
 
+    sed -n -e 's/^language: (.+)$/\1/p' prj-foo/manifest >'c';
+
     $build prj-foo/ $config_c 2>>~%EOE%
+      %(c|ld) .+%{2}
+      EOE
+  }
+
+  : exe-c-suffix
+  :
+  {
+    $* -t exe -l c foo.c 2>>/"EOE" &foo.c/***;
+      created new executable project foo.c in $~/foo.c/
+      EOE
+
+    sed -n -e 's/^(language: .+)$/\1/p' foo.c/manifest >:'';
+
+    $build foo.c/ $config_c 2>>~%EOE%
       %(c|ld) .+%{2}
       EOE
   }
@@ -414,6 +494,11 @@ status += -d prj
     $* -t exe -l c,c++ foo 2>>/"EOE" &foo/***;
       created new executable project foo in $~/foo/
       EOE
+
+    sed -n -e 's/^language: (.+)$/\1/p' foo/manifest >>EOO;
+      c
+      c++
+      EOO
 
     touch foo/foo/bar.hxx;
 

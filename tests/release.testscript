@@ -88,7 +88,7 @@ log2   = [cmdline] $gp2 log '--pretty=format:"%d %s"'
           %.*
           name: prj
           version: 0.2.0-a.0.z
-          summary: prj C++ executable
+          language: c++
           %.*
           EOO
       }
@@ -1139,7 +1139,7 @@ log2   = [cmdline] $gp2 log '--pretty=format:"%d %s"'
       %.*
       name: prj
       version: 0.2.0-a.0.z
-      summary: prj C++ executable
+      language: c++
       %.*
       EOO
 
@@ -1147,7 +1147,7 @@ log2   = [cmdline] $gp2 log '--pretty=format:"%d %s"'
       %.*
       name: libprj
       version: 0.2.0-a.0.z
-      project: prj
+      language: c++
       %.*
       EOO
   }
