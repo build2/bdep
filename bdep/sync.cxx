@@ -709,7 +709,7 @@ namespace bdep
 
         add_info (text);
 
-        if (!yn_prompt ("continue? [Y/n]", 'y'))
+        if (!yn_prompt ("continue? [y/n]", 'y'))
         {
           // The dependency information have already been printed, so
           // suppress printing it repeatedly by the above exception guard.
