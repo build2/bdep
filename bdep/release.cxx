@@ -43,6 +43,11 @@ namespace bdep
       //
       manifest_name_value version_pos;
 
+      // File positions of *-version values (upstream, <distribution>) for
+      // warnings.
+      //
+      vector<manifest_name_value> other_version_pos;
+
       standard_version           current_version;
       optional<standard_version> release_version;
     };
@@ -632,10 +637,12 @@ namespace bdep
     }
 
     // Fully parse package manifest verifying it is valid and returning the
-    // position of the version value. In a sense we are publishing (by
-    // tagging) to a version control-based repository and it makes sense to
-    // ensure the repository will not be broken, similar to how we do it in
-    // publish.
+    // position of the version value (first) and positions of *-version values
+    // (second).
+    //
+    // In a sense we are publishing (by tagging) to a version control-based
+    // repository and it makes sense to ensure the repository will not be
+    // broken, similar to how we do it in publish.
     //
     auto parse_manifest = [&o] (const path& f)
     {
@@ -645,7 +652,7 @@ namespace bdep
       if (!exists (f))
         fail << "package manifest file " << f << " does not exist";
 
-      manifest_name_value r;
+      pair<manifest_name_value, vector<manifest_name_value>> r;
 
       try
       {
@@ -655,7 +662,15 @@ namespace bdep
                            [&r] (manifest_name_value& nv)
                            {
                              if (nv.name == "version")
-                               r = nv;
+                               r.first = nv;
+                             else
+                             {
+                               size_t n (nv.name.size ());
+
+                               if (n > 8 &&
+                                   nv.name.compare (n - 8, 8, "-version") == 0)
+                                 r.second.push_back (nv);
+                             }
 
                              return true;
                            });
@@ -674,7 +689,7 @@ namespace bdep
         package_manifest m (p,
                             [&o, &d, &r] (version& v)
                             {
-                              r.value = v.string (); // For good measure.
+                              r.first.value = v.string (); // For good measure.
                               v = version (package_version (o, d).string ());
                             });
 
@@ -706,7 +721,7 @@ namespace bdep
                         }
                       });
 
-        assert (!r.empty ());
+        assert (!r.first.empty ());
         return r;
       }
       catch (const manifest_parsing& e)
@@ -758,7 +773,8 @@ namespace bdep
         // Parse each manifest extracting name, version, position, etc.
         //
         path f (prj.path / pl.path / manifest_file);
-        manifest_name_value vv (parse_manifest (f));
+        pair<manifest_name_value, vector<manifest_name_value>> r (
+          parse_manifest (f));
 
         package_name n (move (pl.name));
         standard_version v;
@@ -771,18 +787,19 @@ namespace bdep
           if (o.revision () || o.tag ())
             f |= standard_version::allow_stub;
 
-          v = standard_version (vv.value, f);
+          v = standard_version (r.first.value, f);
         }
         catch (const invalid_argument& e)
         {
-          fail << "current package " << n << " version '" << vv.value
+          fail << "current package " << n << " version '" << r.first.value
                << "' is not standard: " << e;
         }
 
         prj.packages.push_back (
           package {move (n),
                    move (f),
-                   move (vv),
+                   move (r.first),
+                   move (r.second),
                    move (v),
                    nullopt /* release_version */});
       }
@@ -848,6 +865,21 @@ namespace bdep
     if (push && st.upstream.empty ())
       fail << "no upstream branch set for local branch '" << st.branch << "'";
 
+    // Warn about other *-version values that have to be updated manually.
+    //
+    auto warn_other_versions = [&prj] (const char* what)
+    {
+      for (const package& p: prj.packages)
+      {
+        for (const manifest_name_value& v: p.other_version_pos)
+        {
+          location l (p.manifest.string (), v.value_line, v.value_column);
+          warn (l) << v.name << " value " << v.value << " has to be "
+                   << what << " manually, if necessary";
+        }
+      }
+    };
+
     // Print the plan and ask for confirmation.
     //
     if (!o.yes ())
@@ -900,9 +932,13 @@ namespace bdep
 
       dr.flush ();
 
+      warn_other_versions ("changed");
+
       if (!yn_prompt ("continue? [y/n]"))
         return 1;
     }
+    else
+      warn_other_versions ("changed");
 
     // Stage the project changes and either commit them separately or amend
     // the latest commit. Open the commit messages in the editor if requested
@@ -978,10 +1014,16 @@ namespace bdep
           }
 
           // If we also need to open the next development cycle, update the
-          // version position for the subsequent manifest rewrite.
+          // version positions for the subsequent manifest rewrite.
           //
           if (prj.open_version)
-            vv = parse_manifest (p.manifest);
+          {
+            pair<manifest_name_value, vector<manifest_name_value>> r (
+              parse_manifest (p.manifest));
+
+            vv = move (r.first);
+            p.other_version_pos = move (r.second);
+          }
         }
         // The IO failure is unlikely to happen (as we have already read the
         // manifests) but still possible (write permission is denied, device
@@ -1158,6 +1200,11 @@ namespace bdep
     //
     if (prj.open_version)
     {
+      // Note: must be done before rewrite (which may change the locations;
+      // unless we update the location after rewrite).
+      //
+      warn_other_versions ("opened");
+
       string ov (prj.open_version->string ());
 
       // Rewrite each package manifest (similar code to above).
