@@ -1481,20 +1481,22 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
          << "version: 0.1.0-a.0.z"                                     << '\n';
 
       // Add the type value unless the package type is implied by the package
-      // name, that is, the type lib and the package name starts with lib or
-      // the type is exe and the name doesn't start with lib.
+      // name, that is, the type is binful lib and the package name starts
+      // with lib or the type is exe and the name doesn't start with lib.
       //
       switch (t)
       {
       case type::exe:
         {
-          if (n.size () > 3 && n.compare (0, 3, "lib") == 0 )
+          if (n.size () > 3 && n.compare (0, 3, "lib") == 0)
             os << "type: exe"                                          << '\n';
           break;
         }
       case type::lib:
         {
-          if (!(n.size () > 3 && n.compare (0, 3, "lib") == 0))
+          if (t.lib_opt.binless ())
+            os << "type: lib,binless"                                  << '\n';
+          else if (!(n.size () > 3 && n.compare (0, 3, "lib") == 0))
             os << "type: lib"                                          << '\n';
           break;
         }
