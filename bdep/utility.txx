@@ -80,7 +80,7 @@ namespace bdep
 
     try
     {
-      process_path pp (process::path_search (bpkg, exec_dir));
+      process_path pp (process::path_search (bpkg, true /* init */, exec_dir));
 
       small_vector<const char*, 1> ops;
 
@@ -202,7 +202,7 @@ namespace bdep
 
     try
     {
-      process_path pp (process::path_search (b, exec_dir));
+      process_path pp (process::path_search (b, true /* init */, exec_dir));
 
       small_vector<const char*, 1> ops;
 
