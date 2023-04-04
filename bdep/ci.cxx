@@ -866,7 +866,7 @@ namespace bdep
              << "  b/point: " << *ibpk;
       }
 
-      if (!yn_prompt ("continue? [y/n]"))
+      if (!yn_prompt ("continue? [Y/n]", 'y'))
         return 1;
     }
 
