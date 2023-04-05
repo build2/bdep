@@ -53,9 +53,13 @@ deinit += -d prj
     %(mkdir|c\+\+|ld) .+%{3}
     EOE
 
+  # @@ On Windows we for some reason also get a repeat:
+  #
+  # ln prj-cfg1\pkg1\pkg1\exe{pkg1} -> prj\pkg1\pkg1\
+  #
   $* --all -d prj 2>>~%EOE%;          # All configs (and packages).
     in configuration @cfg1:
-    %(mkdir|c\+\+|ld|ln|info:) .+%{5}
+    %(mkdir|c\+\+|ld|ln|info:) .+%{5,6}
 
     in configuration @cfg2:
     %(mkdir|c\+\+|ld|info:) .+%{4}
