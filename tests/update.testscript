@@ -18,7 +18,7 @@ deinit += -d prj
   $new -C @cfg prj $config_cxx &prj/*** &prj-cfg/***;
 
   $* -d prj 2>>~%EOE%;
-    %(mkdir|c\+\+|ld) .+%{3}
+    %(mkdir|c\+\+|ld|ln) .+%{4}
     EOE
 
   $clean -d prj 2>>~%EOE%;
@@ -46,7 +46,7 @@ deinit += -d prj
   # Update.
   #
   $* -d prj/pkg1 2>>~%EOE%;           # Default (cfg1).
-    %(mkdir|c\+\+|ld) .+%{3}
+    %(mkdir|c\+\+|ld|ln) .+%{4}
     EOE
 
   $* @cfg2 -d prj/pkg1 2>>~%EOE%;     # By name (cfg2).
@@ -55,7 +55,7 @@ deinit += -d prj
 
   $* --all -d prj 2>>~%EOE%;          # All configs (and packages).
     in configuration @cfg1:
-    %(mkdir|c\+\+|ld|info:) .+%{4}
+    %(mkdir|c\+\+|ld|ln|info:) .+%{5}
 
     in configuration @cfg2:
     %(mkdir|c\+\+|ld|info:) .+%{4}
@@ -104,10 +104,10 @@ deinit += -d prj
   #
   $* -d prj 2>>~%EOE%;
     in configuration @cfg1:
-    %(mkdir|c\+\+|ld) .+pkg1.+%{3}
+    %(mkdir|c\+\+|ld|ln) .+pkg1.+%{4}
 
     in configuration @cfg2:
-    %(mkdir|c\+\+|ld) .+pkg2.+%{3}
+    %(mkdir|c\+\+|ld|ln) .+pkg2.+%{4}
     EOE
 
   # Clean.

@@ -19,7 +19,10 @@ deinit += -d prj
   : name-dir
   :
   {
-    $clone_root_prj;
+    # Note: custom cleanup to deal with backlinks.
+    #
+    #$clone_root_prj
+    cp -pr --no-cleanup ../../prj ./ &prj/***;
 
     $* create @cfg cfg-dir $config_cxx 2>>/"EOE" &cfg-dir/***;
       created configuration @cfg $~/cfg-dir/ 1 target default,forwarded,auto-synchronized
@@ -61,7 +64,7 @@ deinit += -d prj
       EOO
 
     $update @cfg 2>>~%EOE%;
-      %(mkdir|c\+\+|ld) .+%{3}
+      %(mkdir|c\+\+|ld|ln) .+%{4}
       EOE
 
     $deinit @cfg 2>>/"EOE"
@@ -74,7 +77,10 @@ deinit += -d prj
   : name
   :
   {
-    $clone_root_prj;
+    # Note: custom cleanup to deal with backlinks.
+    #
+    #$clone_root_prj
+    cp -pr --no-cleanup ../../prj ./ &prj/***;
 
     $* create -- @cfg $config_cxx 2>>/"EOE" &prj-cfg/***;
       created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
@@ -93,7 +99,7 @@ deinit += -d prj
       EOO
 
     $update @cfg 2>>~%EOE%;
-      %(mkdir|c\+\+|ld) .+%{3}
+      %(mkdir|c\+\+|ld|ln) .+%{4}
       EOE
 
     $deinit @cfg 2>>/"EOE"
@@ -106,7 +112,10 @@ deinit += -d prj
   : dir
   :
   {
-    $clone_root_prj;
+    # Note: custom cleanup to deal with backlinks.
+    #
+    #$clone_root_prj
+    cp -pr --no-cleanup ../../prj ./ &prj/***;
 
     $* create cfg $config_cxx 2>>/"EOE" &cfg/***;
       created configuration $~/cfg/ 1 target default,forwarded,auto-synchronized
@@ -125,7 +134,7 @@ deinit += -d prj
       EOO
 
     $update -c cfg 2>>~%EOE%;
-      %(mkdir|c\+\+|ld) .+%{3}
+      %(mkdir|c\+\+|ld|ln) .+%{4}
       EOE
 
     $deinit -c cfg 2>>/"EOE"
@@ -138,7 +147,10 @@ deinit += -d prj
   : type
   :
   {
-    $clone_root_prj;
+    # Note: custom cleanup to deal with backlinks.
+    #
+    #$clone_root_prj
+    cp -pr --no-cleanup ../../prj ./ &prj/***;
 
     $* create --config-type host -- @cfg $config_cxx 2>>/"EOE" &prj-cfg/***;
       created configuration @cfg $~/prj-cfg/ 1 host default,forwarded,auto-synchronized
@@ -157,7 +169,7 @@ deinit += -d prj
       EOO
 
     $update @cfg 2>>~%EOE%;
-      %(mkdir|c\+\+|ld) .+%{3}
+      %(mkdir|c\+\+|ld|ln) .+%{4}
       EOE
 
     $deinit @cfg 2>>/"EOE"
@@ -205,7 +217,10 @@ deinit += -d prj
 : add
 :
 {
-  $clone_root_prj;
+  # Note: custom cleanup to deal with backlinks.
+  #
+  #$clone_root_prj
+  cp -pr --no-cleanup ../prj ./ &prj/***;
 
   # Pre-create configurations.
   #
@@ -246,7 +261,7 @@ deinit += -d prj
 
   $update --all 2>>~%EOE%;
     in configuration @cfg1:
-    %(mkdir|c\+\+|ld) .+%{3}
+    %(mkdir|c\+\+|ld|ln) .+%{4}
 
     in configuration @cfg2:
     %(mkdir|c\+\+|ld) .+%{3}
@@ -357,7 +372,10 @@ deinit += -d prj
 : rename
 :
 {
-  $clone_root_prj;
+  # Note: custom cleanup to deal with backlinks.
+  #
+  #$clone_root_prj
+  cp -pr --no-cleanup ../prj ./ &prj/***;
 
   $* create -- @cfg $config_cxx 2>>/"EOE" &prj-cfg/***;
     created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
@@ -374,7 +392,7 @@ deinit += -d prj
     EOE
 
   $update @cfg2 2>>~%EOE%;
-    %(mkdir|c\+\+|ld) .+%{3}
+    %(mkdir|c\+\+|ld|ln) .+%{4}
     EOE
 
   $deinit 2>>/"EOE"

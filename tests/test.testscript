@@ -15,7 +15,7 @@ deinit += -d prj
   $new -C @cfg prj $config_cxx &prj/*** &prj-cfg/***;
 
   $* -d prj 2>>~%EOE%;
-    %(mkdir|c\+\+|ld|test) .+%{4}
+    %(mkdir|c\+\+|ld|ln|test) .+%{5}
     EOE
 
   $deinit 2>>/"EOE"
@@ -83,7 +83,7 @@ deinit += -d prj
     %  new libprj.+ \(required by pkg1\)%
     %  upgrade pkg1.+19700101000000#1%
     %  upgrade pkg2.+19700101000000#1%
-    %(mkdir|c\+\+|ld|test) .+%{4}
+    %(mkdir|c\+\+|ld|ln|test) .+%{5}
     EOE
 
   $* @cfg2 -d prj/pkg2 2>>/~%EOE%;         # By name (cfg2).
@@ -97,7 +97,7 @@ deinit += -d prj
 
   $* -a --recursive -d prj/pkg1 2>>~%EOE%   # All configs recursive.
     in configuration @cfg1:
-    %(mkdir|version|c\+\+|ld|test) .+%{12}
+    %(mkdir|version|c\+\+|ld|ln|test) .+%{13}
 
     in configuration @cfg2:
     %(mkdir|version|c\+\+|ld|test) .+%{12}
