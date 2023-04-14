@@ -279,6 +279,10 @@ deinit += -d prj
     depends: * bar
     EOI
 
+  +cat <<EOI >+libfoo/buildfile
+    import bar = bar%exe{bar}
+    EOI
+
   +cat <<EOI >+libfix/repositories.manifest
     :
     role: prerequisite
@@ -288,6 +292,14 @@ deinit += -d prj
 
   +cat <<EOI >+libfix/manifest
     depends: * bar
+    EOI
+
+  +cat <<EOI >+libfix/buildfile
+    import bar = bar%exe{bar}
+    EOI
+
+  +cat <<EOI >=bar/build/export.build
+    export $out_root/$import.target
     EOI
 
   : create
