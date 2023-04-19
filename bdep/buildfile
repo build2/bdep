@@ -104,7 +104,7 @@ switch $cxx.class
 
 # Make sure backtrace includes function names.
 #
-if ($cxx.target.class == 'linux')
+if ($cxx.target.class == 'linux' && $cc.stdlib == 'glibc')
   cxx.loptions += -rdynamic
 
 # @@ TMP work around what looks like Clang bug #45021 (first triggered with
