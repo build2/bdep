@@ -3220,10 +3220,16 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
     bool e (exists (f));
     try
     {
+      // Note: add an extra newline if appending to an existing file. While
+      // this will normally result in an extra blank line between entries
+      // which we don't really need, it will also make sure we don't generate
+      // invalid file if there is no newline at the end of file (which can
+      // happen if the file was edited manually).
+      //
       ofdstream os (f, (fdopen_mode::out    |
                         fdopen_mode::create |
                         fdopen_mode::append));
-      os << (e ? ":" : ": 1")                                          << '\n'
+      os << (e ? "\n:" : ": 1")                                        << '\n'
          << "location: " << pkg->posix_representation ()               << '\n';
       os.close ();
     }
