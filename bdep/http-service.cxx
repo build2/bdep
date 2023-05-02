@@ -1,4 +1,4 @@
-// file      : bdep/submit.cxx -*- C++ -*-
+// file      : bdep/http-service.cxx -*- C++ -*-
 // license   : MIT; see accompanying LICENSE file
 
 #include <bdep/http-service.hxx>
