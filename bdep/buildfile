@@ -124,7 +124,6 @@ if $cli.configured
   #
   cli.cxx{common-options}:         cli{common}
   cli.cxx{project-options}:        cli{project}
-  cli.cxx{configuration-options}:  cli{configuration}
   cli.cxx{bdep-options}:           cli{bdep}
 
   # Command.
