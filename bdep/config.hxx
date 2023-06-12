@@ -15,7 +15,9 @@ namespace bdep
   // If type is nullopt, then assume that an existing configuration is being
   // added. If that's the case, query the bpkg configuration type and links
   // and warn the user if any host or build2 configurations are linked, unless
-  // they are already associated with the project.
+  // they are already associated with the project. If dry_run is true, then
+  // make sure the configuration can be added without path/name/id clash but
+  // don't actually add anything, returning NULL.
   //
   shared_ptr<configuration>
   cmd_config_add (const common_options&,
@@ -27,7 +29,8 @@ namespace bdep
                   optional<string>          name,
                   optional<string>          type,
                   optional<uint64_t>        id = nullopt,
-                  const char*               what = "added");
+                  const char*               what = "added",
+                  bool                      dry_run = false);
 
   // Configuration directory should exist and its path should be absolute and
   // normalized.
@@ -41,7 +44,8 @@ namespace bdep
                   bool                    default_ = true,
                   bool                    forward = true,
                   bool                    auto_sync = true,
-                  optional<uint64_t>      id = nullopt);
+                  optional<uint64_t>      id = nullopt,
+                  bool                    dry_run = false);
 
   void
   cmd_config_add_print (diag_record&,

@@ -151,8 +151,37 @@ namespace bdep
                   bool                    default_,
                   bool                    forward,
                   bool                    auto_sync,
-                  optional<uint64_t>      id)
+                  optional<uint64_t>      id,
+                  bool                    dry_run)
   {
+    database& db (t.database ());
+
+    //@@ TODO: Maybe redo by querying the conflicting configuration and then
+    //         printing its path, like in rename?
+
+    using count = configuration_count;
+    using query = bdep::query<count>;
+
+    // See if there is an id, name, or path conflict.
+    //
+    if (id && db.query_value<count> (query::id == *id) != 0)
+      fail << "configuration with id " << *id << " already exists "
+           << "in project " << prj <<
+        info << "use 'bdep config remove --config-id " << *id << "' to remove";
+
+    if (name && db.query_value<count> (query::name == *name) != 0)
+      fail << "configuration with name '" << *name << "' already exists "
+           << "in project " << prj <<
+        info << "use 'bdep config remove @" << *name << "' to remove";
+
+    if (db.query_value<count> (query::path == path.string ()) != 0)
+      fail << "configuration with directory " << path << " already exists "
+           << "in project " << prj <<
+        info << "use 'bdep config remove --config " << path << "' to remove";
+
+    if (dry_run)
+      return nullptr;
+
     shared_ptr<configuration> r (
       new configuration {
         id,
@@ -165,38 +194,7 @@ namespace bdep
         auto_sync,
         {} /* packages */});
 
-    database& db (t.database ());
-
-    try
-    {
-      db.persist (r);
-    }
-    catch (const odb::exception&)
-    {
-      //@@ TODO: Maybe redo by querying the conflicting configuration and then
-      //         printing its path, line in rename? Also do it before persist.
-
-      using count = configuration_count;
-      using query = bdep::query<count>;
-
-      // See if this is id, name, or path conflict.
-      //
-      if (id && db.query_value<count> (query::id == *id) != 0)
-        fail << "configuration with id " << *id << " already exists "
-             << "in project " << prj;
-
-      if (name && db.query_value<count> (query::name == *name) != 0)
-        fail << "configuration with name '" << *name << "' already exists "
-             << "in project " << prj;
-
-      if (db.query_value<count> (query::path == path.string ()) != 0)
-        fail << "configuration with directory " << path << " already exists "
-             << "in project " << prj;
-
-      // Hm, what could that be?
-      //
-      throw;
-    }
+    db.persist (r); // Shouldn't fail due to a conflict.
 
     return r;
   }
@@ -246,14 +244,17 @@ namespace bdep
                   optional<string>                 name,
                   optional<string>                 type,
                   optional<uint64_t>               id,
-                  const char*                      what)
+                  const char*                      what,
+                  bool                             dry_run)
   {
     translate_path_name (prj, path, name);
 
     if (name && name->empty ())
       fail << "empty configuration name specified";
 
-    if (!exists (path))
+    // Note: if dry_run, then configuration may not yet exist.
+    //
+    if (!dry_run && !exists (path))
       fail << "configuration directory " << path << " does not exist";
 
     // Make sure the configuration path is absolute and normalized. Also
@@ -269,7 +270,11 @@ namespace bdep
     //
     vector<pair<dir_path, string>> host_configs;
 
-    if (!type)
+    if (type)
+      ;
+    else if (dry_run)
+      type = string (); // Not used.
+    else
     {
       fdpipe pipe (open_pipe ()); // Text mode seems appropriate.
 
@@ -416,7 +421,14 @@ namespace bdep
                       *def,
                       *fwd,
                       !ao.no_auto_sync (),
-                      id));
+                      id,
+                      dry_run));
+
+    if (dry_run)
+    {
+      t.commit ();
+      return r;
+    }
 
     // Let's issue a single warning about non-associated host configurations
     // (rather than for each of them) and do it after the configuration is
@@ -532,6 +544,20 @@ namespace bdep
                      const strings&          args,
                      optional<uint64_t>      id)
   {
+    // Check for any path/name/id conflicts before actually creating the
+    // configuration. This is especially helpful with --wipe.
+    //
+    cmd_config_add (prj,
+                    t,
+                    path,
+                    name,
+                    type,
+                    default_,
+                    forward,
+                    auto_sync,
+                    id,
+                    true /* dry_run */);
+
     create_config (co, path, name, type, existing, wipe, args);
 
     return cmd_config_add (prj,
@@ -565,18 +591,34 @@ namespace bdep
 
     verify_configuration_path (path, prj, pkgs);
 
+    // Check for any path/name/id conflicts before actually creating the
+    // configuration. This is especially helpful with --wipe.
+    //
+    const char* what (ao.existing () ? "initialized" : "created");
+    cmd_config_add (co,
+                    ao,
+                    prj,
+                    package_locations {}, // Already verified.
+                    db,
+                    path,
+                    name,
+                    type,
+                    id,
+                    what,
+                    true /* dry_run */);
+
     create_config (co, path, name, type, ao.existing (), ao.wipe (), args);
 
     return cmd_config_add (co,
                            ao,
                            prj,
-                           package_locations {}, // Already verified.
+                           package_locations {},
                            db,
                            move (path),
                            move (name),
                            move (type),
                            id,
-                           ao.existing () ? "initialized" : "created");
+                           what);
   }
 
   void
