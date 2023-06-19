@@ -112,6 +112,19 @@ namespace bdep
                      bool create_host_config = false,
                      bool create_build2_config = false);
 
+  // As above but deinitialize the specified project packages in the specified
+  // configuration instead of upgrading them.
+  //
+  // Specifically, in bpkg terms, unhold and deorphan these packages in the
+  // specified configuration with their project directory repository being
+  // masked.
+  //
+  void
+  cmd_sync_deinit (const common_options&,
+                   const dir_path& prj,
+                   const shared_ptr<configuration>&,
+                   const strings& pkgs);
+
   int
   cmd_sync (cmd_sync_options&&, cli::group_scanner& args);
 

@@ -9,12 +9,13 @@
 config_cxx = [cmdline] cc config.cxx=$quote($recall($cxx.path) $cxx.config.mode, true)
 
 status += -d prj
-deinit += -d prj
 
 : create-cfg
 :
 {
   +$clone_prj
+
+  deinit += -d prj
 
   : with-dependency
   :
@@ -152,6 +153,8 @@ deinit += -d prj
 {
   $clone_prj;
 
+  deinit += -d prj;
+
   cat <<EOI >+prj/manifest;
     depends: libprj
     EOI
@@ -215,6 +218,8 @@ deinit += -d prj
 : project.
 :
 {
+  deinit += -d prj;
+
   # Create (and build) the executable single-package project.
   #
   cp --no-cleanup -pr ../prj ./ &prj/***;
@@ -308,4 +313,228 @@ deinit += -d prj
       drop prj
       drop libprj
     EOE
+}
+
+: deinit-deorphan
+:
+{
+  +$clone_prj
+
+  +cat <<EOI >+prj/manifest
+    depends: libprj
+    EOI
+
+  +$new -t lib -o libprj.git libprj &libprj.git/*** 2>!
+
+  g = [cmdline] git -C libprj.git 2>! >&2
+
+  +$g config user.name 'Test Script'
+  +$g config user.email 'testscript@example.com'
+  +$g add '*'
+  +$g commit -m 'Create' --no-verify
+
+  : dependency-only
+  :
+  {
+    $clone_prj;
+    cp -rp ../libprj.git ./;
+
+    cat <<EOI >+prj/repositories.manifest;
+      :
+      role: prerequisite
+      location: ../libprj.git#master
+      EOI
+
+    $* $config_cxx -C @cfg &prj-cfg/*** 2>!;
+
+    git clone libprj.git &libprj/*** 2>! >&2;
+
+    $init -d libprj -A prj-cfg 2>>/~"%EOE%";
+      initializing in project $~/libprj/
+      added configuration $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
+      synchronizing:
+      %  upgrade libprj.0.1.0-a.0.+#1%
+      %  reconfigure prj.0.1.0-a.0.19700101000000%
+      EOE
+
+    $build prj/ 2>>/~%EOE%;
+      %(mkdir|c\+\+|ld|ln) .+%{4}
+      EOE
+
+    $deinit -d libprj 2>>/~"%EOE%";
+      deinitializing in project $~/libprj/
+      %fetching dir:.+/libprj%
+      %fetching dir:.+/prj%
+      %fetching git:.+/libprj#.+ \\\(prerequisite of dir:.+/prj\\\)%
+      querying $~/libprj.git
+      synchronizing:
+      %  deorphan.downgrade.unhold libprj.0.1.0-a.0.+%
+      %  reconfigure prj.0.1.0-a.0.+%
+      verifying symlinks...
+      %fixing up symlinks...%?
+      %distributing libprj.0.1.0-a.0.+%
+      EOE
+
+    $build prj/ 2>>/~%EOE%;
+      %ln prj-cfg/prj/prj/exe\{prj\} -> prj/prj/%?
+      info: prj-cfg/dir{prj/} is up to date
+      EOE
+
+    $build 'clean:' prj/ 2>>~%EOE%;
+      %(rm|rmdir) .+%{3}
+      EOE
+
+    $deinit -d prj 2>>/"EOE"
+      deinitializing in project $~/prj/
+      synchronizing:
+        drop prj
+        drop libprj
+      EOE
+  }
+
+  : not-only-dependency
+  :
+  : Similar to the above but with an additional libprj/libprj-extras library
+  : which has no initialized dependents. Here we test that it is dropped while
+  : being deorphaned.
+  :
+  {
+    $clone_prj;
+
+    $new -t empty -o libprj.git libprj &libprj.git/*** 2>!;
+    $new --package -t lib libprj -d libprj.git 2>!;
+    $new --package -t lib libprj-extras -d libprj.git 2>!;
+
+    $g config user.name 'Test Script';
+    $g config user.email 'testscript@example.com';
+    $g add '*';
+    $g commit -m 'Create' --no-verify;
+
+    cat <<EOI >+prj/repositories.manifest;
+      :
+      role: prerequisite
+      location: ../libprj.git#master
+      EOI
+
+    $* $config_cxx -C @cfg &prj-cfg/*** 2>!;
+
+    git clone libprj.git &libprj/*** 2>! >&2;
+
+    $init -d libprj -A prj-cfg 2>>/~"%EOE%";
+      initializing in project $~/libprj/
+      added configuration $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
+      initializing package libprj
+      initializing package libprj-extras
+      synchronizing:
+      %  upgrade libprj.0.1.0-a.0.+#1%
+      %  new libprj-extras.0.1.0-a.0.+%
+      %  reconfigure prj.0.1.0-a.0.19700101000000%
+      EOE
+
+    $build prj/ 2>>/~%EOE%;
+      %(mkdir|c\+\+|ld|ln) .+%{4}
+      EOE
+
+    $deinit -d libprj 2>>/~"%EOE%";
+      deinitializing in project $~/libprj/
+      deinitializing package libprj
+      deinitializing package libprj-extras
+      %fetching dir:.+/libprj%
+      %fetching dir:.+/prj%
+      %fetching git:.+/libprj#.+ \\\(prerequisite of dir:.+/prj\\\)%
+      querying $~/libprj.git
+      synchronizing:
+      %  drop libprj-extras.0.1.0-a.0.+ \\\(unused\\\)%
+      %  deorphan.downgrade.unhold libprj.0.1.0-a.0.+%
+      %  reconfigure prj.0.1.0-a.0.+%
+      verifying symlinks...
+      %fixing up symlinks...%?
+      %distributing libprj.0.1.0-a.0.+%
+      EOE
+
+    $build prj/ 2>>/~%EOE%;
+      %ln prj-cfg/prj/prj/exe\{prj\} -> prj/prj/%?
+      info: prj-cfg/dir{prj/} is up to date
+      EOE
+
+    $build 'clean:' prj/ 2>>~%EOE%;
+      %(rm|rmdir) .+%{3}
+      EOE
+
+    $deinit -d prj 2>>/"EOE"
+      deinitializing in project $~/prj/
+      synchronizing:
+        drop prj
+        drop libprj
+      EOE
+  }
+
+  : not-found
+  :
+  {
+    $clone_prj;
+    cp -rp ../libprj.git ./;
+
+    git clone libprj.git &libprj/*** 2>! >&2;
+
+    $init $config_cxx -d libprj -C @cfg &libprj-cfg/*** 2>!;
+
+    $* -A libprj-cfg 2>>/~"%EOE%";
+      initializing in project $~/prj/
+      added configuration $~/libprj-cfg/ 1 target default,forwarded,auto-synchronized
+      synchronizing:
+      %  new prj.0.1.0-a.0.19700101000000%
+      EOE
+
+    $build prj/ 2>>/~%EOE%;
+      %(mkdir|c\+\+|ld|ln) .+%{4}
+      EOE
+
+    $deinit -d libprj 2>>/~"%EOE%" != 0;
+      deinitializing in project $~/libprj/
+      %fetching dir:.+/libprj%
+      %fetching dir:.+/prj%
+      error: unknown package libprj
+      EOE
+
+    # While at it, test that adding the repository to the manifest fixes the
+    # issue.
+    #
+    cat <<EOI >+prj/repositories.manifest;
+      :
+      role: prerequisite
+      location: ../libprj.git#master
+      EOI
+
+    $deinit -d libprj 2>>/~"%EOE%";
+      deinitializing in project $~/libprj/
+      %fetching dir:.+/libprj%
+      %fetching dir:.+/prj%
+      %fetching git:.+/libprj#.+ \\\(prerequisite of dir:.+/prj\\\)%
+      querying $~/libprj.git
+      fetching from $~/libprj.git
+      synchronizing:
+      %  deorphan.unhold libprj.0.1.0-a.0.+%
+      %  reconfigure prj.0.1.0-a.0.+%
+      verifying symlinks...
+      %fixing up symlinks...%?
+      %distributing libprj.0.1.0-a.0.+%
+      EOE
+
+    $build prj/ 2>>/~%EOE%;
+      %ln libprj-cfg/prj/prj/exe\{prj\} -> prj/prj/%?
+      info: libprj-cfg/dir{prj/} is up to date
+      EOE
+
+    $build 'clean:' prj/ 2>>~%EOE%;
+      %(rm|rmdir) .+%{3}
+      EOE
+
+    $deinit -d prj 2>>/"EOE"
+      deinitializing in project $~/prj/
+      synchronizing:
+        drop prj
+        drop libprj
+      EOE
+  }
 }

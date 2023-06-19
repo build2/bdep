@@ -47,6 +47,12 @@ namespace bdep
        configuration. This mode is primarily useful when the configuration
        directory has been removed or is otherwise unusable."
     }
+
+    bool --no-fetch
+    {
+      "Do not re-fetch the repository information before attempting to replace
+       packages being deinitialized with versions from repositories."
+    }
   };
 
   "

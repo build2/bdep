@@ -820,6 +820,8 @@ namespace bdep
   // If upgrade is not nullopt, then: If there are dep_pkgs, then we are
   // upgrading specific dependency packages. Otherwise -- project packages.
   //
+  // If deinit_pkgs is not empty, then sync in the deinit mode.
+  //
   // Note that if origin_prj is not empty, then origin_cfgs are specified as
   // configurations (as opposed to paths). Also upgrade can only be specified
   // with origin_prj.
@@ -847,6 +849,7 @@ namespace bdep
             bool disfigure,
             const package_locations& prj_pkgs,
             const strings&           dep_pkgs,
+            const strings&           deinit_pkgs,
             bool create_host_config,
             bool create_build2_config,
             transaction* origin_tr = nullptr,
@@ -858,7 +861,11 @@ namespace bdep
     //
     bool origin (!origin_prj.empty ());
 
-    assert (prj_pkgs.empty () || dep_pkgs.empty ()); // Can't have both.
+    // Cannot have more than one package list specified.
+    //
+    assert ((prj_pkgs.empty ()    ? 0 : 1) +
+            (dep_pkgs.empty ()    ? 0 : 1) +
+            (deinit_pkgs.empty () ? 0 : 1) <= 1);
 
     // If a transaction is specified, then it must be started on the origin
     // project's database (which therefore must be specified) and it must be
@@ -1076,6 +1083,14 @@ namespace bdep
 
         for (const package_state& pkg: cfg->packages)
         {
+          // In the deinit mode skip the being deinitialized packages to add
+          // them to the command line differently (see below).
+          //
+          if (find (deinit_pkgs.begin (), deinit_pkgs.end (), pkg.name) !=
+              deinit_pkgs.end () &&
+              prj.path == origin_prj)
+            continue;
+
           // Return true if this package is part of the list specified
           // explicitly or, if none are specified, init'ed in the origin
           // project.
@@ -1523,6 +1538,42 @@ namespace bdep
       }
 
       args.push_back (move (a));
+    }
+
+    // Add the being deinitialized packages.
+    //
+    if (!deinit_pkgs.empty ())
+    {
+      assert (!origin_prj.empty ()); // Project the packages belong to.
+
+      // Must contain the configuration where the packages are being
+      // deinitialized.
+      //
+      assert (origin_cfgs.size () == 1);
+
+      string config_uuid (
+        linked_cfgs.find (origin_cfgs.front ().path ())->uuid.string ());
+
+      args.push_back ("--mask-repository-uuid");
+      args.push_back (config_uuid + '=' + repository_name (origin_prj));
+
+      args.push_back ("{");
+
+      if (multi_cfg)
+        args.push_back ("--config-uuid=" + config_uuid);
+
+      args.push_back ("--deorphan");
+      args.push_back ("--dependency");
+      args.push_back ("}+");
+
+      if (deinit_pkgs.size () > 1)
+        args.push_back ("{");
+
+      for (const string& p: deinit_pkgs)
+        args.push_back (p);
+
+      if (deinit_pkgs.size () > 1)
+        args.push_back ("}");
     }
 
     // We do a separate fetch instead of letting pkg-build do it. This way we
@@ -2105,11 +2156,12 @@ namespace bdep
               fetch,
               yes,
               name_cfg,
-              nullopt              /* upgrade   */,
-              nullopt              /* recursive */,
-              false                /* disfigure */,
-              package_locations () /* prj_pkgs  */,
-              strings ()           /* dep_pkgs  */,
+              nullopt              /* upgrade     */,
+              nullopt              /* recursive   */,
+              false                /* disfigure   */,
+              package_locations () /* prj_pkgs    */,
+              strings ()           /* dep_pkgs    */,
+              strings ()           /* deinit_pkgs */,
               create_host_config,
               create_build2_config,
               t,
@@ -2180,11 +2232,12 @@ namespace bdep
                 fetch,
                 yes,
                 name_cfg,
-                nullopt              /* upgrade   */,
-                nullopt              /* recursive */,
-                false                /* disfigure */,
-                package_locations () /* prj_pkgs  */,
-                strings ()           /* dep_pkgs  */,
+                nullopt              /* upgrade     */,
+                nullopt              /* recursive   */,
+                false                /* disfigure   */,
+                package_locations () /* prj_pkgs    */,
+                strings ()           /* dep_pkgs    */,
+                strings ()           /* deinit_pkgs */,
                 create_host_config,
                 create_build2_config,
                 nullptr,
@@ -2220,16 +2273,17 @@ namespace bdep
               dir_path () /* prj */,
               {sync_config (cfg)},
               move (lcfgs),
-              strings ()            /* pkg_args */,
-              true                  /* implicit */,
+              strings ()            /* pkg_args   */,
+              true                  /* implicit   */,
               fetch,
               yes,
               name_cfg,
-              nullopt               /* upgrade   */,
-              nullopt               /* recursive */,
-              false                 /* disfigure */,
-              package_locations ()  /* prj_pkgs  */,
-              strings ()            /* dep_pkgs  */,
+              nullopt               /* upgrade     */,
+              nullopt               /* recursive   */,
+              false                 /* disfigure   */,
+              package_locations ()  /* prj_pkgs    */,
+              strings ()            /* dep_pkgs    */,
+              strings ()            /* deinit_pkgs */,
               create_host_config,
               create_build2_config);
 
@@ -2286,19 +2340,48 @@ namespace bdep
                 dir_path () /* prj */,
                 move (ocfgs),
                 move (lcfgs),
-                strings ()            /* pkg_args */,
-                true                  /* implicit */,
+                strings ()            /* pkg_args   */,
+                true                  /* implicit   */,
                 fetch,
                 yes,
                 name_cfg,
-                nullopt               /* upgrade   */,
-                nullopt               /* recursive */,
-                false                 /* disfigure */,
-                package_locations ()  /* prj_pkgs  */,
-                strings ()            /* dep_pkgs  */,
+                nullopt               /* upgrade     */,
+                nullopt               /* recursive   */,
+                false                 /* disfigure   */,
+                package_locations ()  /* prj_pkgs    */,
+                strings ()            /* dep_pkgs    */,
+                strings ()            /* deinit_pkgs */,
                 create_host_config,
                 create_build2_config);
     }
+  }
+
+  void
+  cmd_sync_deinit (const common_options& co,
+                   const dir_path& prj,
+                   const shared_ptr<configuration>& cfg,
+                   const strings& pkgs)
+  {
+    sync_configs ocfgs {cfg};
+    linked_configs lcfgs (find_config_cluster (co, cfg->path));
+
+    cmd_sync (co,
+              prj,
+              move (ocfgs),
+              move (lcfgs),
+              strings ()            /* pkg_args             */,
+              true                  /* implicit             */,
+              true                  /* fetch                */,
+              true                  /* yes                  */,
+              false                 /* name_cfg             */,
+              nullopt               /* upgrade              */,
+              nullopt               /* recursive            */,
+              false                 /* disfigure            */,
+              package_locations ()  /* prj_pkgs             */,
+              strings ()            /* dep_pkgs             */,
+              pkgs,
+              false                 /* create_host_config   */,
+              false                 /* create_build2_config */);
   }
 
   int
@@ -2643,6 +2726,7 @@ namespace bdep
                   o.disfigure (),
                   package_locations ()     /* prj_pkgs  */,
                   dep_pkgs,
+                  strings ()               /* deinit_pkgs */,
                   o.create_host_config (),
                   o.create_build2_config ());
       }
@@ -2665,6 +2749,7 @@ namespace bdep
                   o.disfigure (),
                   prj_pkgs,
                   strings ()               /* dep_pkgs  */,
+                  strings ()               /* deinit_pkgs */,
                   o.create_host_config (),
                   o.create_build2_config ());
       }
@@ -2682,13 +2767,14 @@ namespace bdep
                   pkg_args,
                   o.implicit (),
                   !fetch,
-                  true                     /* yes       */,
-                  o.implicit ()            /* name_cfg  */,
-                  nullopt                  /* upgrade   */,
-                  nullopt                  /* recursive */,
+                  true                     /* yes         */,
+                  o.implicit ()            /* name_cfg    */,
+                  nullopt                  /* upgrade     */,
+                  nullopt                  /* recursive   */,
                   o.disfigure (),
-                  package_locations ()     /* prj_pkgs  */,
-                  strings ()               /* dep_pkgs  */,
+                  package_locations ()     /* prj_pkgs    */,
+                  strings ()               /* dep_pkgs    */,
+                  strings ()               /* deinit_pkgs */,
                   o.create_host_config (),
                   o.create_build2_config ());
       }

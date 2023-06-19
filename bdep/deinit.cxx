@@ -8,7 +8,8 @@
 #include <bdep/database.hxx>
 #include <bdep/diagnostics.hxx>
 
-#include <bdep/sync.hxx> // configuration_projects(), hook_file
+#include <bdep/sync.hxx>
+#include <bdep/fetch.hxx>
 
 using namespace std;
 
@@ -77,19 +78,44 @@ namespace bdep
       }
     }
 
-    // Note that --keep-dependent is important: if we drop dependent packages
-    // that are managed by bdep, then its view of what has been initialized
-    // in the configuration will become invalid.
+    // Try to drop the packages watching out for their potential dependents.
+    // If there are any dependents, then sync in the deinit mode. This way we
+    // handle the plausible scenario when a dependency is pushed/submitted to
+    // a git/pkg repository after being developed and now we switch (back) to
+    // tracking it from that repository.
     //
     if (!force)
-      run_bpkg (2,
-                o,
-                "drop",
-                "-d", cfg,
-                "--keep-dependent",
-                "--plan", "synchronizing:",
-                "--yes",
-                pkgs);
+    {
+      process pr (start_bpkg (2,
+                              o,
+                              1 /* stdout */,
+                              2 /* stderr */,
+                              "drop",
+                              "-d", cfg,
+                              "--dependent-exit", 125,
+                              "--plan", "synchronizing:",
+                              "--yes",
+                              pkgs));
+
+      if (pr.wait ())
+        return;
+
+      const process_exit& e (*pr.exit);
+      if (e.normal ())
+      {
+        if (e.code () != 125)
+          throw failed (); // Assume the child issued diagnostics.
+
+        // Fall through.
+      }
+      else
+        fail << "process " << name_bpkg (o) << " " << e;
+
+      if (!o.no_fetch ())
+        cmd_fetch (o, prj, c, true /* fetch_full */);
+
+      cmd_sync_deinit (o, prj, c, pkgs);
+    }
   }
 
   int
