@@ -501,7 +501,12 @@ namespace bdep
      \li|\cb{git}
 
          Initialize a \cb{git(1)} repository inside the project and generate
-         \cb{.gitignore} files.||
+         \cb{.gitignore} files. Recognized version control system sub-options:|
+
+     \li|\n\ \ \ \c{\b{branch=}\i{name}}
+
+         Use the specified name for the initial branch in the newly created
+         repository.||
 
      \dl|
 
@@ -632,6 +637,7 @@ namespace bdep
   //
   class cmd_new_git_options
   {
+    string branch;
   };
 
   class cmd_new_none_options

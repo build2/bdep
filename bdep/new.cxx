@@ -24,6 +24,13 @@ using namespace butl;
 
 namespace bdep
 {
+  // While we don't have any specific requirements for git version here, let's
+  // use the lowest common denominator for other bdep commands. Note that
+  // *_git() functions require the minimum supported git version as an
+  // argument.
+  //
+  static const semantic_version git_ver {2, 1, 0};
+
   // License id to full name map.
   //
   // Used for the license full name search for the auto-detected and
@@ -1235,8 +1242,43 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
   {
     switch (vc)
     {
-    case vcs::git:  run ("git", "init", "-q", out); break;
-    case vcs::none:                                 break;
+    case vcs::git:
+      {
+        const cmd_new_git_options& opt (vc.git_opt);
+
+        // If the branch name is specified, then pass it to git-init using the
+        // --initial-branch option if the git version is at least 2.28.0 (the
+        // one which has introduced this option). Otherwise, run git-init
+        // normally and then change HEAD to refer to the requested name. Note
+        // that the branch will only be created on the first commit.
+        //
+        if (opt.branch_specified ())
+        {
+          if (git_try_check_version (semantic_version {2, 28, 0},
+                                     true /* system */))
+          {
+            run_git (git_ver, true /* system */, nullptr /* repo */,
+                     "init", "-q", "--initial-branch", opt.branch (), out);
+          }
+          else
+          {
+            run_git (git_ver, true /* system */, nullptr /* repo */,
+                     "init", "-q", out);
+
+            run_git (git_ver, true /* system */, out,
+                     "symbolic-ref",
+                     "-q",
+                     "HEAD",
+                     "refs/heads/" + opt.branch ());
+          }
+        }
+        else
+          run_git (git_ver, true /* system */, nullptr /* repo */,
+                   "init", "-q", out);
+
+        break;
+      }
+    case vcs::none: break;
     }
   }
 

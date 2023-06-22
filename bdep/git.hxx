@@ -67,13 +67,45 @@ namespace bdep
 
   // Run git process.
   //
+  // Pass NULL as the repository argument if the git command is not
+  // repository-specific (e.g., init).
+  //
   template <typename... A>
   void
   run_git (const semantic_version&,
            bool system,
            bool progress,
-           const dir_path& repo,
+           const dir_path* repo,
            A&&... args);
+
+  template <typename... A>
+  inline void
+  run_git (const semantic_version& min_ver,
+           bool system,
+           const dir_path* repo,
+           A&&... args)
+  {
+    run_git (min_ver,
+             system,
+             true /* progress */,
+             repo,
+             forward<A> (args)...);
+  }
+
+  template <typename... A>
+  inline void
+  run_git (const semantic_version& min_ver,
+           bool system,
+           bool progress,
+           const dir_path& repo,
+           A&&... args)
+  {
+    run_git (min_ver,
+             system,
+             progress,
+             &repo,
+             forward<A> (args)...);
+  }
 
   template <typename... A>
   inline void
@@ -173,6 +205,12 @@ namespace bdep
   template <typename... A>
   void
   git_push (const common_options&, const dir_path& repo, A&&... args);
+
+  // Return true if git is at least of the specified minimum supported
+  // version.
+  //
+  bool
+  git_try_check_version (const semantic_version&, bool system);
 }
 
 #include <bdep/git.ixx>

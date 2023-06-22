@@ -16,7 +16,7 @@ g = [cmdline] git 2>! >&2
 # Create the remote repository.
 #
 +mkdir --no-cleanup prj.git
-+$g -C prj.git init --bare &prj.git/***
++$g -C prj.git -c init.defaultBranch=master init --bare &prj.git/***
 
 clone_rep      = [cmdline] cp --no-cleanup -pr ../prj.git ./ &prj.git/***
 clone_root_rep = [cmdline] cp --no-cleanup -pr $~/prj.git ./ &prj.git/***
@@ -53,6 +53,8 @@ clone2 = [cmdline] $g clone prj.git prj2 &prj2/***
 pull2  = [cmdline] $gp2 pull --ff-only
 fetch2 = [cmdline] $gp2 fetch
 log2   = [cmdline] $gp2 log '--pretty=format:"%d %s"'
+
+new += --vcs git,branch=master 2>-
 
 : single-pkg
 :
@@ -1103,11 +1105,10 @@ log2   = [cmdline] $gp2 log '--pretty=format:"%d %s"'
   # Create the remote repository.
   #
   +mkdir --no-cleanup prj.git
-  +git -C prj.git init --bare --quiet &prj.git/***
+  +git -C prj.git -c init.defaultBranch=master init --bare --quiet &prj.git/***
 
   # Create the local repository.
   #
-  new += 2>-
   +$new -t empty prj &prj/***
   +$new -t exe --package prj -d prj
   +$new -t lib --package libprj -d prj

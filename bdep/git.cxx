@@ -24,10 +24,8 @@ namespace bdep
   static optional<semantic_version>           bun_git_ver;
 #endif
 
-  // Check that git is at least of the specified minimum supported version.
-  //
-  void
-  git_check_version (const semantic_version& min_ver, bool system)
+  bool
+  git_try_check_version (const semantic_version& min_ver, bool system)
   {
     // Query and cache git version on the first call.
     //
@@ -50,9 +48,24 @@ namespace bdep
     // Note that we don't expect the min_ver to contain the build component,
     // that doesn't matter functionality-wise for git.
     //
-    if (*gv < min_ver)
+    return *gv >= min_ver;
+  }
+
+  // As above but issue diagnostics and fail if git is older than the
+  // specified minimum supported version.
+  //
+  void
+  git_check_version (const semantic_version& min_ver, bool system)
+  {
+    if (!git_try_check_version (min_ver, system))
+    {
+      optional<semantic_version>& gv (system ? sys_git_ver : bun_git_ver);
+
+      assert (gv); // Must have been cached by git_try_check_version().
+
       fail << "unsupported git version " << *gv <<
         info << "minimum supported version is " << min_ver << endf;
+    }
   }
 
   // Return git process path and the --exec-path option, if it is required for

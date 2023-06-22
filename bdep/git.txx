@@ -8,7 +8,7 @@ namespace bdep
   run_git (const semantic_version& min_ver,
            bool system,
            bool progress,
-           const dir_path& repo,
+           const dir_path* repo,
            A&&... args)
   {
     // Unfortunately git doesn't have any kind of a no-progress option but
@@ -30,10 +30,12 @@ namespace bdep
     //
     process pr (start_git (min_ver,
                            system,
-                           repo,
                            0   /* stdin  */,
                            err /* stdout */,
                            err /* stderr */,
+                           (repo != nullptr
+                            ? cstrings ({"-C", repo->string ().c_str ()})
+                            : cstrings ()),
                            forward<A> (args)...));
 
     bool io (false);

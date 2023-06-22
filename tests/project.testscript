@@ -9,7 +9,10 @@
 # project can not be shared between multiple bdep processes. Also we need to
 # make sure that projects are not cloned while being used by bdep.
 #
-+$new prj 2>- &prj/*** # By default: -t exe -l c++.
+# Make sure that the initial branch is named as 'master', since tests may rely
+# on that.
+#
++$new --vcs git,branch=master prj 2>! &prj/*** # By default: -t exe -l c++.
 
 # The most commonly used project cloning command that copies it from the
 # parent scope working directory.

@@ -20,7 +20,7 @@ end
 # Create the remote repository.
 #
 +mkdir --no-cleanup prj.git
-+git -C prj.git init --bare --quiet &prj.git/***
++git -C prj.git -c init.defaultBranch=master init --bare --quiet &prj.git/***
 
 # Adjust the local repository and push it to the remote one.
 #
@@ -53,7 +53,7 @@ test.arguments += --yes --repository "$repository" --server "$server" \
 
 config_cxx = [cmdline] cc config.cxx=$quote($recall($cxx.path) $cxx.config.mode, true)
 
-new  += 2>!
+new  += --vcs git,branch=master 2>!
 init += $config_cxx -d prj 2>! &prj/**/bootstrap/***
 
 windows = ($cxx.target.class == 'windows')
@@ -663,7 +663,7 @@ windows = ($cxx.target.class == 'windows')
   # Create the remote repository.
   #
   +mkdir --no-cleanup prj.git
-  +git -C prj.git init --bare --quiet &prj.git/***
+  +git -C prj.git -c init.defaultBranch=master init --bare --quiet &prj.git/***
 
   # Create the local repository and push it to the remote one.
   #
