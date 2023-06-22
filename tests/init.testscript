@@ -369,7 +369,7 @@ status += -d prj
       %fetching git:.+/libprj#.+ \\\(prerequisite of dir:.+/prj\\\)%
       querying $~/libprj.git
       synchronizing:
-      %  deorphan.downgrade.unhold libprj.0.1.0-a.0.+%
+      %  replace.downgrade.unhold libprj.0.1.0-a.0.+%
       %  reconfigure prj.0.1.0-a.0.+%
       verifying symlinks...
       %fixing up symlinks...%?
@@ -446,7 +446,7 @@ status += -d prj
       querying $~/libprj.git
       synchronizing:
       %  drop libprj-extras.0.1.0-a.0.+ \\\(unused\\\)%
-      %  deorphan.downgrade.unhold libprj.0.1.0-a.0.+%
+      %  replace.downgrade.unhold libprj.0.1.0-a.0.+%
       %  reconfigure prj.0.1.0-a.0.+%
       verifying symlinks...
       %fixing up symlinks...%?
@@ -515,7 +515,7 @@ status += -d prj
       querying $~/libprj.git
       fetching from $~/libprj.git
       synchronizing:
-      %  deorphan.unhold libprj.0.1.0-a.0.+%
+      %  replace.unhold libprj.0.1.0-a.0.+%
       %  reconfigure prj.0.1.0-a.0.+%
       verifying symlinks...
       %fixing up symlinks...%?
