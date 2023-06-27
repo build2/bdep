@@ -95,6 +95,7 @@ namespace bdep
             const package_locations& pkgs,
             const strings& pkg_args,
             bool sync,
+            const sys_options& so,
             bool create_host_config,
             bool create_build2_config)
   {
@@ -268,6 +269,7 @@ namespace bdep
                     true      /* fetch */,
                     true      /* yes */,
                     false     /* name_cfg */,
+                    so,
                     create_host_config,
                     create_build2_config,
                     &t,
@@ -443,6 +445,7 @@ namespace bdep
               pp.packages,
               scan_arguments (args) /* pkg_args */,
               !o.no_sync (),
+              sys_options (o),
               o.create_host_config (),
               o.create_build2_config ());
 

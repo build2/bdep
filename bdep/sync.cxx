@@ -850,6 +850,7 @@ namespace bdep
             const package_locations& prj_pkgs,
             const strings&           dep_pkgs,
             const strings&           deinit_pkgs,
+            const sys_options& so,
             bool create_host_config,
             bool create_build2_config,
             transaction* origin_tr = nullptr,
@@ -1708,6 +1709,11 @@ namespace bdep
                       "--keep-out",
                       "--plan", plan,
                       (yes ? "--yes" : nullptr),
+                      (so.no_query ? "--sys-no-query" : nullptr),
+                      (so.install  ? "--sys-install"  : nullptr),
+                      (so.no_fetch ? "--sys-no-fetch" : nullptr),
+                      (so.no_stub  ? "--sys-no-stub"  : nullptr),
+                      (so.yes      ? "--sys-yes"      : nullptr),
                       args));
 
         // Shouldn't throw, unless something is severely damaged.
@@ -2125,6 +2131,7 @@ namespace bdep
             bool fetch,
             bool yes,
             bool name_cfg,
+            const sys_options& so,
             bool create_host_config,
             bool create_build2_config,
             transaction* t,
@@ -2162,6 +2169,7 @@ namespace bdep
               package_locations () /* prj_pkgs    */,
               strings ()           /* dep_pkgs    */,
               strings ()           /* deinit_pkgs */,
+              so,
               create_host_config,
               create_build2_config,
               t,
@@ -2179,6 +2187,7 @@ namespace bdep
             bool fetch,
             bool yes,
             bool name_cfg,
+            const sys_options& so,
             bool create_host_config,
             bool create_build2_config)
   {
@@ -2238,6 +2247,7 @@ namespace bdep
                 package_locations () /* prj_pkgs    */,
                 strings ()           /* dep_pkgs    */,
                 strings ()           /* deinit_pkgs */,
+                so,
                 create_host_config,
                 create_build2_config,
                 nullptr,
@@ -2251,6 +2261,7 @@ namespace bdep
                      bool fetch,
                      bool yes,
                      bool name_cfg,
+                     const sys_options& so,
                      bool create_host_config,
                      bool create_build2_config)
   {
@@ -2284,6 +2295,7 @@ namespace bdep
               package_locations ()  /* prj_pkgs    */,
               strings ()            /* dep_pkgs    */,
               strings ()            /* deinit_pkgs */,
+              so,
               create_host_config,
               create_build2_config);
 
@@ -2296,6 +2308,7 @@ namespace bdep
                      bool fetch,
                      bool yes,
                      bool name_cfg,
+                     const sys_options& so,
                      bool create_host_config,
                      bool create_build2_config)
   {
@@ -2351,6 +2364,7 @@ namespace bdep
                 package_locations ()  /* prj_pkgs    */,
                 strings ()            /* dep_pkgs    */,
                 strings ()            /* deinit_pkgs */,
+                so,
                 create_host_config,
                 create_build2_config);
     }
@@ -2380,6 +2394,7 @@ namespace bdep
               package_locations ()  /* prj_pkgs             */,
               strings ()            /* dep_pkgs             */,
               pkgs,
+              sys_options (),
               false                 /* create_host_config   */,
               false                 /* create_build2_config */);
   }
@@ -2727,6 +2742,7 @@ namespace bdep
                   package_locations ()     /* prj_pkgs  */,
                   dep_pkgs,
                   strings ()               /* deinit_pkgs */,
+                  sys_options (o),
                   o.create_host_config (),
                   o.create_build2_config ());
       }
@@ -2750,6 +2766,7 @@ namespace bdep
                   prj_pkgs,
                   strings ()               /* dep_pkgs  */,
                   strings ()               /* deinit_pkgs */,
+                  sys_options (o),
                   o.create_host_config (),
                   o.create_build2_config ());
       }
@@ -2775,6 +2792,7 @@ namespace bdep
                   package_locations ()     /* prj_pkgs    */,
                   strings ()               /* dep_pkgs    */,
                   strings ()               /* deinit_pkgs */,
+                  sys_options (o),
                   o.create_host_config (),
                   o.create_build2_config ());
       }

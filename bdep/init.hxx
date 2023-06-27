@@ -7,6 +7,7 @@
 #include <bdep/types.hxx>
 #include <bdep/utility.hxx>
 
+#include <bdep/sync.hxx>         // sys_options
 #include <bdep/project.hxx>
 #include <bdep/init-options.hxx>
 
@@ -37,6 +38,7 @@ namespace bdep
             const package_locations&,
             const strings& pkg_args,
             bool sync = true,
+            const sys_options& = sys_options (),
             bool create_host_config = false,
             bool create_build2_config = false);
 

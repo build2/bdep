@@ -59,6 +59,26 @@ namespace bdep
   // the created configurations with the project using the configuration types
   // also as their names.
   //
+  struct sys_options
+  {
+    bool no_query = false;
+    bool install  = false;
+    bool no_fetch = false;
+    bool no_stub  = false;
+    bool yes      = false;
+
+    sys_options () = default;
+
+    template <typename O>
+    explicit
+    sys_options (const O& o)
+        : no_query (o.sys_no_query ()),
+          install (o.sys_install ()),
+          no_fetch (o.sys_no_fetch ()),
+          no_stub (o.sys_no_stub ()),
+          yes (o.sys_yes ()) {}
+  };
+
   synced_configs_guard
   cmd_sync (const common_options&,
             const dir_path& prj,
@@ -68,6 +88,7 @@ namespace bdep
             bool fetch = true,
             bool yes = true,
             bool name_cfg = false,
+            const sys_options& = sys_options (),
             bool create_host_config = false,
             bool create_build2_config = false,
             transaction* = nullptr,
@@ -85,6 +106,7 @@ namespace bdep
             bool fetch = true,
             bool yes = true,
             bool name_cfg = false,
+            const sys_options& = sys_options (),
             bool create_host_config = false,
             bool create_build2_config = false);
 
@@ -97,6 +119,7 @@ namespace bdep
                      bool fetch = true,
                      bool yes = true,
                      bool name_cfg = true,
+                     const sys_options& = sys_options (),
                      bool create_host_config = false,
                      bool create_build2_config = false);
 
@@ -109,6 +132,7 @@ namespace bdep
                      bool fetch = true,
                      bool yes = true,
                      bool name_cfg = true,
+                     const sys_options& = sys_options (),
                      bool create_host_config = false,
                      bool create_build2_config = false);
 

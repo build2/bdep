@@ -225,6 +225,40 @@ namespace bdep
       "Perform the \cb{fetch --full} command prior to synchronization."
     }
 
+    bool --sys-no-query
+    {
+      "Do not query the system package manager for the installed versions of
+       packages specified with the \cb{sys} scheme. See the corresponding
+       \l{bpkg-pkg-build(1)} option for details."
+    }
+
+    bool --sys-install
+    {
+      "Instruct the system package manager to install available versions of
+       packages specified with the \cb{sys} scheme that are not already
+       installed. See the corresponding \l{bpkg-pkg-build(1)} option for
+       details."
+    }
+
+    bool --sys-no-fetch
+    {
+      "Do not fetch the system package manager metadata before querying for
+       available versions of packages specified with the \cb{sys} scheme. See
+       the corresponding \l{bpkg-pkg-build(1)} option for details."
+    }
+
+    bool --sys-no-stub
+    {
+      "Do no require a stub for packages specified with the \cb{sys} scheme.
+       See the corresponding \l{bpkg-pkg-build(1)} option for details."
+    }
+
+    bool --sys-yes
+    {
+      "Assume the answer to the system package manager prompts is \cb{yes}.
+       See the corresponding \l{bpkg-pkg-build(1)} option for details."
+    }
+
     bool --create-host-config
     {
       "Create a configuration for build-time dependencies without prompt."
