@@ -1,3 +1,36 @@
+Version 0.16.0
+
+  * The bdep-deinit command can now deinitialize a package that still has
+    dependents.
+
+    In this case, the package is replaced with the closest available version
+    from a repository. See also the new --no-fetch option in bdep-deinit(1).
+
+  * New bdep-ci command --target-config and --package-config options to match
+    the *-package-config package manifest values.
+
+    Note that the existing --interactive|-i, --builds, and --build-config
+    option values have been adjusted as well. See bdep-ci(1) for details.
+
+  * The bdep-new command may now add `type` and `language` values to the newly
+    created package manifests.
+
+    These values can help determine the package type (executable, library) and
+    language and are used, for example, by bpkg-pkg-bindist to produce correct
+    binary distribution packages.
+
+  * New `branch` suboption for the git vcs option in the bdep-new command.
+
+    This suboption can be used to specify the initial branch name in the newly
+    created repository.
+
+  * New --sys-* options in the bdep-init and bdep-sync commands.
+
+    This is a subset of the bpkg-pkg-build --sys-* options for controlling
+    interaction with the system package manager. See the "System package
+    manager query/installation support for Debian and Fedora" NEWS item in
+    bpkg for background.
+
 Version 0.15.0
 
   * Support for JSON output in the bdep-status, bdep-config-list commands.
