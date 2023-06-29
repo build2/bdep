@@ -220,6 +220,15 @@ namespace bdep
        See the corresponding \l{bpkg-pkg-build(1)} option for details."
     }
 
+    string --sys-sudo = "sudo"
+    {
+      "<prog>",
+      "The \cb{sudo} program to use for system package manager interactions
+       that normally require administrative privileges (fetch package
+       metadata, install packages, etc). See the corresponding
+       \l{bpkg-pkg-build(1)} option for details."
+    }
+
     bool --create-host-config
     {
       "Create a configuration for build-time dependencies without prompt (see

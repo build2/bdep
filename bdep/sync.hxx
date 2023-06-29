@@ -66,6 +66,7 @@ namespace bdep
     bool no_fetch = false;
     bool no_stub  = false;
     bool yes      = false;
+    optional<string> sudo;
 
     sys_options () = default;
 
@@ -76,7 +77,10 @@ namespace bdep
           install (o.sys_install ()),
           no_fetch (o.sys_no_fetch ()),
           no_stub (o.sys_no_stub ()),
-          yes (o.sys_yes ()) {}
+          yes (o.sys_yes ()),
+          sudo (o.sys_sudo_specified ()
+                ? o.sys_sudo ()
+                : optional<string> ()) {}
   };
 
   synced_configs_guard

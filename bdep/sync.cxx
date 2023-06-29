@@ -1714,6 +1714,9 @@ namespace bdep
                       (so.no_fetch ? "--sys-no-fetch" : nullptr),
                       (so.no_stub  ? "--sys-no-stub"  : nullptr),
                       (so.yes      ? "--sys-yes"      : nullptr),
+                      (so.sudo
+                       ? cstrings ({"--sys-sudo", so.sudo->c_str ()})
+                       : cstrings ()),
                       args));
 
         // Shouldn't throw, unless something is severely damaged.
