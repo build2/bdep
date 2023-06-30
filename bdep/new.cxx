@@ -1600,8 +1600,8 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
       os << "url: https://example.org/" << (pn ? pn->string () : n)    << '\n'
          << "email: " << pe                                            << '\n'
          << "#build-error-email: " << pe                               << '\n'
-         << "depends: * build2 >= 0.15.0"                              << '\n'
-         << "depends: * bpkg >= 0.15.0"                                << '\n'
+         << "depends: * build2 >= 0.16.0"                              << '\n'
+         << "depends: * bpkg >= 0.16.0"                                << '\n'
          << "#depends: libhello ^1.0.0"                                << '\n';
       os.close ();
     }
