@@ -1,6 +1,6 @@
 : 1
 name: bdep
-version: 0.16.0
+version: 0.17.0-a.0.z
 project: build2
 summary: build2 project dependency manager
 license: MIT
@@ -18,7 +18,7 @@ depends: * build2 >= 0.16.0-
 depends: * bpkg >= 0.16.0-
 # @@ DEP Should probably become conditional dependency.
 #requires: ? cli ; Only required if changing .cli files.
-depends: libodb ^2.5.0-b.25
-depends: libodb-sqlite ^2.5.0-b.25
-depends: libbutl ^0.16.0
-depends: libbpkg ^0.16.0
+depends: libodb [2.5.0-b.26.1 2.5.0-b.27)
+depends: libodb-sqlite [2.5.0-b.26.1 2.5.0-b.27)
+depends: libbutl [0.17.0-a.0.1 0.17.0-a.1)
+depends: libbpkg [0.17.0-a.0.1 0.17.0-a.1)
