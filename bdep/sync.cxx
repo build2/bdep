@@ -1006,9 +1006,10 @@ namespace bdep
     //
     // If we have dep_pkgs (third form), then non-global configuration
     // variables should only apply to them. Otherwise, if we have origin
-    // (first form), then they should only apply to packages from the origin
-    // project in origin configurations. They don't seem to make sense
-    // otherwise (second form, implicit).
+    // (first form), then they should only apply to the specified packages or,
+    // if unspecified, to all packages from the origin project in origin
+    // configurations. They don't seem to make sense otherwise (second form,
+    // implicit).
     //
     bool dep_vars (false);
     bool origin_vars (false);
@@ -1182,7 +1183,7 @@ namespace bdep
             }
           }
 
-          bool vars (origin_vars && cfg.origin);
+          bool vars (origin_vars && cfg.origin && origin_pkg ());
 
           bool g (multi_cfg || vars || dev || disf);
           if (g)
@@ -2134,6 +2135,7 @@ namespace bdep
             bool fetch,
             bool yes,
             bool name_cfg,
+            const package_locations& prj_pkgs,
             const sys_options& so,
             bool create_host_config,
             bool create_build2_config,
@@ -2169,7 +2171,7 @@ namespace bdep
               nullopt              /* upgrade     */,
               nullopt              /* recursive   */,
               false                /* disfigure   */,
-              package_locations () /* prj_pkgs    */,
+              prj_pkgs,
               strings ()           /* dep_pkgs    */,
               strings ()           /* deinit_pkgs */,
               so,
@@ -2190,6 +2192,7 @@ namespace bdep
             bool fetch,
             bool yes,
             bool name_cfg,
+            const package_locations& prj_pkgs,
             const sys_options& so,
             bool create_host_config,
             bool create_build2_config)
@@ -2247,7 +2250,7 @@ namespace bdep
                 nullopt              /* upgrade     */,
                 nullopt              /* recursive   */,
                 false                /* disfigure   */,
-                package_locations () /* prj_pkgs    */,
+                prj_pkgs,
                 strings ()           /* dep_pkgs    */,
                 strings ()           /* deinit_pkgs */,
                 so,
@@ -2792,7 +2795,7 @@ namespace bdep
                   nullopt                  /* upgrade     */,
                   nullopt                  /* recursive   */,
                   o.disfigure (),
-                  package_locations ()     /* prj_pkgs    */,
+                  prj_pkgs,
                   strings ()               /* dep_pkgs    */,
                   strings ()               /* deinit_pkgs */,
                   sys_options (o),

@@ -39,6 +39,9 @@ namespace bdep
   // The optional pkg_args are the additional dependency packages and/or
   // configuration variables to pass to bpkg-pkg-build (see bdep-init).
   //
+  // If the origin project packages (prj_pkgs) are specified, then non-global
+  // configuration variables are only applied to these packages.
+  //
   // If fetch is false, don't perform a (shallow) fetch of the project
   // repository. If yes is false, then don't suppress bpkg prompts. If
   // name_cfg is true then include the configuration name/directory into
@@ -92,6 +95,7 @@ namespace bdep
             bool fetch = true,
             bool yes = true,
             bool name_cfg = false,
+            const package_locations& prj_pkgs = {},
             const sys_options& = sys_options (),
             bool create_host_config = false,
             bool create_build2_config = false,
@@ -110,6 +114,7 @@ namespace bdep
             bool fetch = true,
             bool yes = true,
             bool name_cfg = false,
+            const package_locations& prj_pkgs = {},
             const sys_options& = sys_options (),
             bool create_host_config = false,
             bool create_build2_config = false);

@@ -269,6 +269,7 @@ namespace bdep
                     true      /* fetch */,
                     true      /* yes */,
                     false     /* name_cfg */,
+                    pkgs,
                     so,
                     create_host_config,
                     create_build2_config,
