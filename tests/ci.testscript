@@ -200,6 +200,42 @@ windows = ($cxx.target.class == 'windows')
         EOE
     }
 
+    : package-build-emails
+    :
+    {
+      $clone_prj;
+
+      $* --override 'default-build-email: foo@example.com' \
+         --override 'default-build-warning-email: bar@example.com' 2>>~%EOE%
+        %CI request is queued.*%
+        %reference: .+%
+        EOE
+    }
+
+    : common-package-build-emails
+    :
+    {
+      $clone_prj;
+
+      $* --build-email 'foo@example.com' \
+         --override 'default-build-warning-email: bar@example.com' 2>>EOE != 0
+        error: invalid --override option value: 'default-build-warning-email' override specified together with 'build-email' override
+          info: override: default-build-warning-email: bar@example.com
+        EOE
+    }
+
+    : package-build-common-emails
+    :
+    {
+      $clone_prj;
+
+      $* --override 'default-build-warning-email: foo@example.com' \
+         --override 'build-error-email: bar@example.com' 2>>EOE != 0
+        error: invalid --override option value: 'build-error-email' override specified together with 'default-build-warning-email' override
+          info: override: build-error-email: bar@example.com
+        EOE
+    }
+
     : build-configs-constraints
     :
     {

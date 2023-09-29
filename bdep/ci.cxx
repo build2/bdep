@@ -213,10 +213,6 @@ namespace bdep
                              0, 0, 0});          // File positions.
     };
 
-    // Add the default overrides.
-    //
-    override ("build-email", "", origin::build_email);
-
     // Append the overrides specified by --override, --overrides-file,
     // --build-email, and --builds which are all handled by
     // cli::parser<cmd_ci_override>. But first verify that they don't clash
@@ -228,6 +224,8 @@ namespace bdep
                          o.package_config_specified () ||
                          (o.interactive_specified () &&
                           o.interactive ().find ('/') != string::npos));
+
+    bool build_email_ovr (false);
 
     if (o.overrides_specified ())
     {
@@ -258,16 +256,36 @@ namespace bdep
              n == "builds"        ||
              n == "build-include" ||
              n == "build-exclude"))
+        {
           fail << "invalid " << to_string (static_cast<origin> (nv.name_line))
                << ": " << "'" << n << "' override specified together with "
                << co <<
             info << "override: " << n << ": " << nv.value;
+        }
+
+        if (n == "build-email"                                            ||
+            n == "build-warning-email"                                    ||
+            n == "build-error-email"                                      ||
+            (n.size () > 12 &&
+             n.compare (n.size () - 12, 12, "-build-email") == 0)         ||
+            (n.size () > 20 &&
+             n.compare (n.size () - 20, 20, "-build-warning-email") == 0) ||
+            (n.size () > 18 &&
+             n.compare (n.size () - 18, 18, "-build-error-email") == 0))
+        {
+          build_email_ovr = true;
+        }
       }
 
       overrides.insert (overrides.end (),
                         o.overrides ().begin (),
                         o.overrides ().end ());
     }
+
+    // Add the default overrides.
+    //
+    if (!build_email_ovr)
+      override ("build-email", "", origin::build_email);
 
     // Append the overrides specified by --target-config, but first verify
     // that they don't clash with the other build constraints-related options.

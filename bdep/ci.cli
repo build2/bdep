@@ -87,15 +87,17 @@ namespace bdep
      builds build-{include,exclude}
      *-builds *-build-{include,exclude}
      *-build-config
+     *-build-email *-build-{warning,error}-email
      \
 
-     For the package configuration-specific build constraint overrides the
-     corresponding configuration must exist in the package manifest. In
-     contrast, the package configuration override (\cb{*-build-config}) adds a
-     new configuration if it doesn't exist and updates the arguments of the
-     existing configuration otherwise. In the former case, all the potential
-     build constraint overrides for such a newly added configuration must
-     follow the corresponding \cb{*-build-config} override.
+     For the package configuration-specific build constraint and email
+     overrides the corresponding configuration must exist in the package
+     manifest. In contrast, the package configuration override
+     (\cb{*-build-config}) adds a new configuration if it doesn't exist and
+     updates the arguments of the existing configuration otherwise. In the
+     former case, all the potential build constraint and email overrides for
+     such a newly added configuration must follow the corresponding
+     \cb{*-build-config} override.
 
      Note that the build constraints group values (both common and build
      package configuration-specific) are overridden hierarchically so that the
@@ -108,6 +110,15 @@ namespace bdep
      constraints are removed. Otherwise, if any configuration-specific
      constraints are overridden, then for the remaining configurations the
      build constraints are reset to \cb{builds:\ none}.
+
+     Similar to the build constraints groups, the common and build package
+     configuration-specific build emails group value overrides are mutually
+     exclusive. If the common build emails are overridden, then all the
+     configuration-specific emails are removed. Otherwise, if any
+     configuration-specific emails are overridden, then for the remaining
+     configurations the build emails are reset to the empty values and the
+     build warning and error emails are removed (which effectively disables
+     email notifications for such configurations).
 
      If supported by the CI service, a package can be tested interactively
      in a specific build configuration using the \c{\b{--interactive}|\b{-i}}
