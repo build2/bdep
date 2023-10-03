@@ -381,12 +381,15 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
   // wrong). All this seems reasonable for what this mode is expected to be
   // used ("end-product" kind of projects).
   //
-  bool readme  (false); // !no-readme
-  bool altn    (false); // alt-naming
-  bool itest   (false); // !no-tests
-  bool utest   (false); // unit-tests
-  bool install (false); // !no-install
-  bool ver     (false); // !no-version
+  bool readme         (false); // !no-readme
+  bool altn           (false); // alt-naming
+  bool binless        (false); // binless
+  bool itest          (false); // !no-tests
+  bool utest          (false); // unit-tests
+  bool install        (false); // !no-install
+  bool ver            (false); // !no-version
+  bool symexport      (false); // !no-symexport && !binless
+  bool auto_symexport (false); // auto-symexport
 
   string license;
   bool   license_o (false);
@@ -415,6 +418,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
       {
         readme  = !t.lib_opt.no_readme ()  && !src;
         altn    =  t.lib_opt.alt_naming ();
+        binless =  t.lib_opt.binless ();
         itest   = !t.lib_opt.no_tests ()   && !src;
         utest   =  t.lib_opt.unit_tests ();
         install = !t.lib_opt.no_install ();
@@ -425,6 +429,20 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           license   = t.lib_opt.license ();
           license_o = t.lib_opt.license_specified ();
         }
+
+        if (t.lib_opt.auto_symexport ())
+        {
+          if (binless)
+            fail << "both --type|-t,binless and --type|-t,auto-symexport "
+                 << "specified";
+
+          if (t.lib_opt.no_symexport ())
+            fail << "both --type|-t,no-symexport and --type|-t,auto-symexport "
+                 << "specified";
+        }
+
+        symexport = !t.lib_opt.no_symexport () && !binless;
+        auto_symexport = t.lib_opt.auto_symexport ();
         break;
       }
     case type::bare:
@@ -2204,7 +2222,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           mx.pop_back ();
 
         string apih; // API header name.
-        string exph; // Export header name (empty if binless).
+        string exph; // Export header name (empty if binless, no/auto-symexport).
         string verh; // Version header name.
 
         // Language-specific source code comment markers.
@@ -2215,8 +2233,6 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
         string B; // Begin of a single-line comment (no trailing space).
         string E; // End of a single-line comment.
-
-        bool binless (t.lib_opt.binless ());
 
         switch (l)
         {
@@ -2261,7 +2277,10 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
             else
             {
               apih = s + ".h";
-              exph = "export.h";
+
+              if (symexport && !auto_symexport)
+                exph = "export.h";
+
               verh = ver ? "version.h" : string ();
 
               // <inc>/<stem>.h
@@ -2270,14 +2289,21 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
               os << "#pragma once"                                     << '\n'
                  <<                                                       '\n'
                  << "#include <stdio.h>"                               << '\n'
-                 <<                                                       '\n'
-                 << "#include <" << ip << exph << ">"                  << '\n'
-                 <<                                                       '\n'
-                 << "/* Print a greeting for the specified name into the specified" << '\n'
+                 <<                                                       '\n';
+
+              if (!exph.empty ())
+                os << "#include <" << ip << exph << ">"                << '\n'
+                   <<                                                     '\n';
+
+              os << "/* Print a greeting for the specified name into the specified" << '\n'
                  << " * stream. On success, return the number of characters printed." << '\n'
                  << " * On failure, set errno and return a negative value." << '\n'
-                 << " */"                                              << '\n'
-                 << mx << "_SYMEXPORT int"                             << '\n'
+                 << " */"                                              << '\n';
+
+              if (!exph.empty ())
+                os << mx << "_SYMEXPORT ";
+
+              os << "int"                                              << '\n'
                  << "say_hello (FILE *, const char *name);"            << '\n';
               os.close ();
 
@@ -2346,7 +2372,10 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
             else
             {
               apih = s + he;
-              exph = "export" + he;
+
+              if (symexport && !auto_symexport)
+                exph = "export" + he;
+
               verh = ver ? "version" + he : string ();
 
               // <inc>/<stem>[.<hxx-ext>]
@@ -2356,15 +2385,23 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                  <<                                                       '\n'
                  << "#include <iosfwd>"                                << '\n'
                  << "#include <string>"                                << '\n'
-                 <<                                                       '\n'
-                 << "#include <" << ip << exph << ">"                  << '\n'
-                 <<                                                       '\n'
-                 << "namespace " << id                                 << '\n'
+                 <<                                                       '\n';
+
+              if (!exph.empty ())
+                os << "#include <" << ip << exph << ">"                << '\n'
+                   <<                                                     '\n';
+
+              os << "namespace " << id                                 << '\n'
                  << "{"                                                << '\n'
                  << "  // Print a greeting for the specified name into the specified" << '\n'
                  << "  // stream. Throw std::invalid_argument if the name is empty." << '\n'
                  << "  //"                                             << '\n'
-                 << "  " << mx << "_SYMEXPORT void"                    << '\n'
+                 << "  ";
+
+              if (!exph.empty ())
+                os << mx << "_SYMEXPORT ";
+
+              os <<   "void"                                           << '\n'
                  << "  say_hello (std::ostream&, const std::string& name);" << '\n'
                  << "}"                                                << '\n';
               os.close ();
@@ -2640,14 +2677,26 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
             {
               assert (!binless); // Make sure pub_hdrs is assigned (see above).
 
-              os << "lib{" << s << "}: $pub/{$pub_hdrs}"               << '\n'
+              os << "lib{" << s << "}: ";
+
+              if (auto_symexport)
+                os << "libul{" << s << "}: ";
+
+              os << "$pub/{$pub_hdrs}"                                 << '\n'
                  <<                                                       '\n'
                  << "# Private headers and sources as well as dependencies." << '\n'
-                 << "#"                                                << '\n';
+                 << "#"                                                << '\n'
+                 << (!auto_symexport ? "lib{" : "libul{") << s << "}: ";
+            }
+            else
+            {
+              os << "lib{" << s << "}: ";
+
+              if (auto_symexport)
+                os << "libul{" << s << "}: ";
             }
 
-            os << "lib{" << s << "}: "
-               << tt (binless ? ha : ha + ' ' + xa) << "{" << w;
+            os << tt (binless ? ha : ha + ' ' + xa) << "{" << w;
 
             if (ver && !split)
               os << " -version} " << hg << "{version}";
@@ -2679,8 +2728,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                    << "  " << hg << "{version}";
               else
                 os << "}";
-              os << " $impl_libs $intf_libs"                           << '\n'
-                 <<                                                       '\n';
+              os << " $impl_libs $intf_libs"                           << '\n';
             }
             else if (!split) // Binless.
             {
@@ -2691,11 +2739,20 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                    << " ";
               else
                 os << "}";
-              os << " $intf_libs"                                      << '\n'
-                 <<                                                       '\n';
+              os << " $intf_libs"                                      << '\n';
             }
+          }
 
-            os << "# Unit tests."                                      << '\n'
+          if (auto_symexport)
+            os <<                                                         '\n'
+               << "libs{" << s << "}: def{" << s << "}: include = ($"  <<
+              mp << ".target.system == 'win32-msvc')"                  << '\n'
+               << "def{" << s << "}: libul{" << s << "}"               << '\n';
+
+          if (utest)
+          {
+            os <<                                                         '\n'
+               << "# Unit tests."                                      << '\n'
                << "#"                                                  << '\n';
 
             if (install)
@@ -2784,10 +2841,18 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
             os << mc << ".poptions =+ \"-I" << opi << "\" \"-I" << spi << '"' << '\n';
           }
 
-          if (!binless)
-            os <<                                                         '\n'
-               << "{hbmia obja}{*}: " << mc << ".poptions += -D" << mx << "_STATIC_BUILD" << '\n'
-               << "{hbmis objs}{*}: " << mc << ".poptions += -D" << mx << "_SHARED_BUILD" << '\n';
+          if (symexport)
+          {
+            if (!auto_symexport)
+              os <<                                                       '\n'
+                 << "{hbmia obja}{*}: " << mc << ".poptions += -D" << mx << "_STATIC_BUILD" << '\n'
+                 << "{hbmis objs}{*}: " << mc << ".poptions += -D" << mx << "_SHARED_BUILD" << '\n';
+
+            else
+              os <<                                                       '\n'
+                 << "if ($" << mp << ".target.system == 'mingw32')"    << '\n'
+                 << "  " << mp << ".loptions += -Wl,--export-all-symbols" << '\n';
+          }
 
           // Export.
           //
@@ -2805,7 +2870,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                << "}"                                                  << '\n';
           }
 
-          if (!binless)
+          if (symexport && !auto_symexport)
             os <<                                                         '\n'
                << "liba{" << s << "}: " << mc << ".export.poptions += -D" << mx << "_STATIC" << '\n'
                << "libs{" << s << "}: " << mc << ".export.poptions += -D" << mx << "_SHARED" << '\n';
@@ -2862,7 +2927,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
         //
         bool root (out_src == out);
 
-        if (ver || utest || root)
+        if (ver || utest || root || auto_symexport)
         {
           if (vc == vcs::git)
           {
@@ -2877,7 +2942,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
               open (out_src / ".gitignore");
               write_root_gitignore ();
 
-              if (!ver && !utest)
+              if (!ver && !auto_symexport && !utest)
                 os.close ();
             }
 
@@ -2895,7 +2960,22 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                  << "#"                                                << '\n'
                  << verh                                               << '\n';
 
-              if (!utest || split)
+              if ((!auto_symexport && !utest) || split)
+                os.close ();
+            }
+
+            if (auto_symexport)
+            {
+              if (!os.is_open ())
+                open (out_src / ".gitignore");
+              else
+                os <<                                                     '\n';
+
+              os << "# Generated DLL symbol-exporting file."           << '\n'
+                 << "#"                                                << '\n'
+                 << s << ".def"                                        << '\n';
+
+              if (!utest)
                 os.close ();
             }
 

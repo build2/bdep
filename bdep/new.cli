@@ -361,6 +361,14 @@ namespace bdep
 
          Don't add support for generating the version header.|
 
+     \li|\n\ \ \ \cb{no-symexport}
+
+         Don't add support for DLL symbol exporting.|
+
+     \li|\n\ \ \ \cb{auto-symexport}
+
+         Add support for automatic DLL symbol exporting.|
+
      \li|\n\ \ \ \c{\b{prefix-include=}\i{dir}}
 
          Optional public header prefix relative to project/package root.|
@@ -601,6 +609,8 @@ namespace bdep
     bool unit-tests;
     bool no-install;
     bool no-version;
+    bool no-symexport;
+    bool auto-symexport;
     dir_path prefix-source;
     dir_path prefix-include;
     dir_path prefix;
