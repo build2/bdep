@@ -43,7 +43,8 @@ namespace bdep
      project/package (the \cb{--source} form). All the forms except
      \cb{--source} first create according to <spec> a new \cb{build2}
      project/package called <name> in the <name> subdirectory of the current
-     working directory (unless overridden with \c{\b{--output-dir}|\b{-o}}).
+     working directory (unless overridden with \c{\b{--output-dir}|\b{-o}}
+     or, in case of \cb{--package}, with \c{\b{--directory}|\b{-d}}).
      If <name> contains a directory component, then the project/package is
      created in this directory, as if it was specified with
      \c{\b{--output-dir}|\b{-o}}.
@@ -77,8 +78,9 @@ namespace bdep
      The \cb{--package} form adds the new package to the
      \cb{packages.manifest} file creating it if necessary. If no project
      directory is explicitly specified with \c{\b{--directory}|\b{-d}}, then
-     the current working directory is assumed. Note that nested packages are
-     not allowed. For example:
+     it will be deduced from the current working directory (see
+     \l{bdep-projects-configs(1)} for details on specifying projects). Note
+     that nested packages are not allowed. For example:
 
      \
      $ bdep new -t empty hello
