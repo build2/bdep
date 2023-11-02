@@ -118,7 +118,7 @@ namespace bdep
     }
     catch (const invalid_path& e)
     {
-      fail << "invalid " << what << " directory " << e.path;
+      fail << "invalid " << what << ' ' << e.path;
     }
     catch (const system_error& e)
     {

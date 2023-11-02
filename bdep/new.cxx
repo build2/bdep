@@ -854,16 +854,18 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
   dir_path           sub; // Source subdirectory relative to source prefix.
   bool               src (false); // Source subdirectory mode.
 
-  dir_path out;     // Project/package root output directory.
-  dir_path out_inc; // Include output directory.
-  dir_path out_src; // Source output directory.
+  dir_path out;         // Project/package root output directory.
+  dir_path out_pfx_inc; // Include prefix output directory (out + prefix).
+  dir_path out_pfx_src; // Source prefix output directory (out + prefix).
+  dir_path out_inc;     // Include output directory (out + prefix + subdir)
+  dir_path out_src;     // Source output directory (out + prefix + subdir).
 
   {
     // In all the cases out_inc and our_src are derived the same way except
     // for the --source mode if --output is specified.
     //
     auto set_out = [&sub,
-                    &out, &out_inc, &out_src,
+                    &out, &out_pfx_inc, &out_pfx_src, &out_inc, &out_src,
                     &pfx_inc, &pfx_src,
                     subdir, sub_inc, sub_src]
                    (const string& n)
@@ -872,8 +874,19 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
              sub_inc || sub_src ? dir_path (n) :
              dir_path ());
 
-      out_inc = out / pfx_inc / (sub_inc ? sub : dir_path ());
-      out_src = out / pfx_src / (sub_src ? sub : dir_path ());
+      // Normalize the output directory paths for the sake of comparison.
+      //
+      out_pfx_inc = out / pfx_inc;
+      normalize (out_pfx_inc, "include prefix");
+
+      out_pfx_src = out / pfx_src;
+      normalize (out_pfx_src, "source prefix");
+
+      out_inc = out_pfx_inc / (sub_inc ? sub : dir_path ());
+      normalize (out_inc, "include subdirectory");
+
+      out_src = out_pfx_src / (sub_src ? sub : dir_path ());
+      normalize (out_inc, "source subdirectory");
     };
 
     // Figure the final output and tentative project directories.
@@ -881,12 +894,12 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
     if (o.package ())
     {
       if (o.directory_specified ())
-        prj = normalize (o.directory (), "project");
+        prj = normalize (o.directory (), "project directory");
       else
         prj = current_directory ();
 
       out = o.output_dir_specified () ? o.output_dir () : prj / dir_path (n);
-      normalize (out, "output");
+      normalize (out, "output directory");
       set_out (b);
     }
     else if (o.source ())
@@ -899,7 +912,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
         fail << "both --output-dir|-o and --type|-t,subdir specified";
 
       if (o.directory_specified ())
-        prj = normalize (o.directory (), "project");
+        prj = normalize (o.directory (), "project directory");
       else
         prj = current_directory ();
 
@@ -911,7 +924,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
         // subdirectory until the project directory is finalized.
         //
         out_src = o.output_dir ();
-        normalize (out_src, "output");
+        normalize (out_src, "output directory");
         out_inc = out_src;
       }
       else
@@ -920,7 +933,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
     else
     {
       out = o.output_dir_specified () ? o.output_dir () : dir_path (n);
-      normalize (out, "output");
+      normalize (out, "output directory");
       prj = out;
       set_out (b);
     }
@@ -1007,11 +1020,17 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
         // Here we treat out as subdirectory unless instructed otherwise in
         // which case we treat it as a prefix.
         //
+        // Note: out == prj (is always the case for --source; see above for
+        // details).
+        //
         dir_path s (out_src.leaf (prj));
         if (sub_inc || sub_src)
           sub = move (s);
         else
           pfx_inc = pfx_src = move (s);
+
+        out_pfx_inc = prj / pfx_inc;
+        out_pfx_src = prj / pfx_src;
       }
 
       src = true;
@@ -1034,18 +1053,73 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
   //
   assert ((!pkg && !src) || pkg.has_value () == !src);
 
+  // We should have failed earlier otherwise.
+  //
+  assert ((sub_inc || sub_src) == !sub.empty ());
+
+  bool no_source (binless && !utest);
+
+  // Note that to re-locate a buildfile due to --type|-t,buildfile-in-prefix,
+  // both the source prefix directory and the source subdirectory needs to be
+  // present. In the split layout this may not be the case for either of the
+  // header or source buildfile but not for both, in which case we fail.
+  //
+  bool bfile_in_pfx_inc (false);
+  bool bfile_in_pfx_src (false);
+  {
+    bool bfile_in_pfx (t == type::exe ? t.exe_opt.buildfile_in_prefix () :
+                       t == type::lib ? t.lib_opt.buildfile_in_prefix () :
+                       false);
+
+    if (bfile_in_pfx)
+    {
+      bfile_in_pfx_inc = !pfx_inc.empty () && sub_inc;
+      bfile_in_pfx_src = !pfx_src.empty () && sub_src;
+
+      if (!bfile_in_pfx_inc && !bfile_in_pfx_src)
+        fail << "--type|-t,buildfile-in-prefix requires both source prefix "
+             << "and source subdirectory";
+
+      // Note that we don't need to check for the executable type of the
+      // project here, since for such a project bfile_in_pfx_{inc,src} are
+      // both either true or false.
+      //
+      if (!bfile_in_pfx_inc)
+        info << "--type|-t,buildfile-in-prefix ignored for include prefix "
+             << "because either prefix or subdirectory is absent";
+
+      if (!bfile_in_pfx_src && !no_source)
+        info << "--type|-t,buildfile-in-prefix ignored for source prefix "
+             << "because either prefix or subdirectory is absent";
+
+      // Issue a warning if on POSIX the executable file name may potentially
+      // clash with the source subdirectory name.
+      //
+      if (t == type::exe)
+      {
+        assert (!sub.empty ()); // Would have already failed otherwise.
+
+        if (*sub.begin () == s)
+          warn << "source subdirectory " << sub << " may clash with "
+               << "executable file name on some platforms" <<
+            info << "consider specifying alternative subdirectory with "
+                 << "--type|-t,subdir";
+      }
+    }
+  }
+
   // Note that the header and source directories may differ due to different
   // source prefixes (--type|-t,prefix-{include,source}) as well as different
-  // source subdirectories (--type|-t,no-sub-source).
+  // source subdirectories (--type|-t,no-sub-source,no-sub-include).
   //
-  bool split (out_inc != out_src);
+  bool split_source (out_inc != out_src);
 
-  // In the split mode allowing the header or source directories to be the
-  // project/package root directory could end up with clashing of the root,
-  // header, and/or source buildfiles in different combinations. For the sake
-  // of simplicity let's not support it for now.
+  // In the source directory split mode allowing the header or source
+  // directories to be the project/package root directory could end up with
+  // clashing of the root, header, and/or source .gitignore files in different
+  // combinations. For the sake of simplicity let's not support it for now.
   //
-  if (split)
+  if (split_source)
   {
     if (out_inc == out)
       fail << "split header directory is project/package root";
@@ -1054,12 +1128,63 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
       fail << "split source directory is project/package root";
   }
 
+  const dir_path& inc_bfile_dir (!bfile_in_pfx_inc ? out_inc : out_pfx_inc);
+  const dir_path& src_bfile_dir (!bfile_in_pfx_src ? out_src : out_pfx_src);
+
+  // Note that a library's buildfile can be split into the header and source
+  // buildfiles due to different source prefixes
+  // (--type|-t,prefix-{include,source}) as well as different source
+  // subdirectories (--type|-t,no-sub-source,no-sub-include). Also note that
+  // the source directories split and the buildfiles split are orthogonal.
+  // Specifically, there can be the source directory split without the
+  // buildfile split (due to buildfiles being merged as result of the
+  // buildfile-in-prefix sub-option) and the buildfile split without the
+  // source directory split (some degenerate cases; see new/no-cfg/split tests
+  // for details).
+  //
+  bool split_buildfile (inc_bfile_dir != src_bfile_dir);
+
+  // In the buildfile split mode allowing the header or source buildfile
+  // directories to be the project/package root directory could end up with
+  // clashing of the root, header, and/or source buildfiles in different
+  // combinations. For the sake of simplicity let's not support it for now.
+  //
+  if (split_buildfile)
+  {
+    if (inc_bfile_dir == out)
+      fail << "header buildfile directory is project/package root";
+
+    if (src_bfile_dir == out)
+      fail << "source buildfile directory is project/package root";
+  }
+
+  // Fail in the split layout if the header buildfile "hides" the source
+  // buildfile. Note that the source buildfile doesn't "hide" the header
+  // buildfile since it includes it directly, unless this is a binless
+  // library (with unit tests).
+  //
+  if (split_buildfile && !no_source)
+  {
+    if (src_bfile_dir.sub (inc_bfile_dir))
+      fail << "split layout where source buildfile directory is a "
+           << "subdirectory of header buildfile directory is not supported" <<
+        info << "header buildfile directory: " << inc_bfile_dir <<
+        info << "source buildfile directory: " << src_bfile_dir;
+
+    if (binless && inc_bfile_dir.sub (src_bfile_dir))
+      fail << "split layout where header buildfile directory is a "
+           << "subdirectory of source buildfile directory is not supported "
+           << "for binless library" <<
+        info << "source buildfile directory: " << src_bfile_dir <<
+        info << "header buildfile directory: " << inc_bfile_dir;
+  }
+
   // Merging the source and root directory buildfiles is a bit hairy when the
   // project has the functional/integration tests subproject. Thus, we require
   // them to be explicitly disabled. Note however, that getting rid of this
   // requirement is not too complicated and can be considered in the future.
   //
-  if (t == type::lib && itest && out_src == out)
+  if (t == type::lib && itest && src_bfile_dir == out)
     fail << "functional/integration testing is not supported in this layout" <<
       info << "specify --type|-t,no-tests explicitly";
 
@@ -2050,9 +2175,9 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           }
         }
 
-        // <src>/buildfile
+        // <[pfx_]src>/buildfile
         //
-        open (out_src / buildfile_file);
+        open (src_bfile_dir / buildfile_file);
         os << "libs ="                                                 << '\n'
            << "#import libs += libhello%lib{hello}"                    << '\n'
            <<                                                             '\n';
@@ -2072,18 +2197,26 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
         //
         const char* w (out_src == out ? "*" : "**");
 
+        string src_dir (!bfile_in_pfx_src ? "" : sub.posix_representation ());
+
         if (!utest)
+        {
           os << "exe{" << s << "}: "                                   <<
             tt (ha + ' ' + xa) << "{" << w << "} "                     <<
-            "$libs"                                                    <<
-            (itest ? " testscript" : "")                               << '\n';
+            "$libs";
+
+          if (itest)
+            os << ' ' << src_dir << "testscript";
+
+          os                                                           << '\n';
+        }
         else
         {
           os << "./: exe{" << s << "}: libue{" << s << "}: "           <<
             tt (ha + ' ' + xa) << "{" << w << " -" << w << ".test...} $libs" << '\n';
 
           if (itest)
-            os << "exe{" << s << "}: testscript"                       << '\n';
+            os << "exe{" << s << "}: " << src_dir << "testscript"      << '\n';
 
           os <<                                                           '\n'
              << "# Unit tests."                                        << '\n'
@@ -2126,27 +2259,68 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
         // <src>/.gitignore
         //
-        if (vc == vcs::git)
+        // Add the root .gitignore file content at the beginning of our
+        // .gitignore file, if required.
+        //
+        bool root      (out_src == out);
+        bool exe_src   (!bfile_in_pfx_src);          // Add <stem>.
+        bool itest_src (itest && !bfile_in_pfx_src); // Add test-<stem>.
+
+        if (root || exe_src || utest || itest_src)
         {
-          open (out_src / ".gitignore");
+          if (vc == vcs::git)
+          {
+            open (out_src / ".gitignore");
 
-          // Add the root .gitignore file content, if required.
-          //
-          if (out_src == out)
-            write_root_gitignore (true /* newline */);
+            // Add the root .gitignore file content, if required.
+            //
+            if (root)
+              write_root_gitignore (exe_src || utest || itest_src /* newline */);
 
-          os << s                                                      << '\n';
-          if (utest)
-            os << "*.test"                                             << '\n';
-          if (itest || utest)
-            os <<                                                         '\n'
-               << "# Testscript output directory (can be symlink)."    << '\n'
-               << "#"                                                  << '\n';
-          if (itest)
-            os << "test-" << s                                         << '\n';
-          if (utest)
-            os << "test-*.test"                                        << '\n';
-          os.close ();
+            if (exe_src)
+              os << s                                                  << '\n';
+
+            if (utest)
+              os << "*.test"                                           << '\n';
+
+            if (itest_src || utest)
+            {
+              if (exe_src || utest)
+                os <<                                                     '\n';
+
+              os << "# Testscript output directory (can be symlink)."  << '\n'
+                 << "#"                                                << '\n';
+
+              if (itest_src)
+                os << "test-" << s                                     << '\n';
+              if (utest)
+                os << "test-*.test"                                    << '\n';
+            }
+
+            os.close ();
+          }
+        }
+
+        // <pfx_src>/.gitignore
+        //
+        // Note: should never need to be merged with root since we banned such
+        // layouts (buildfile will clash with root buildfile).
+        //
+        if (bfile_in_pfx_src)
+        {
+          if (vc == vcs::git)
+          {
+            open (out_pfx_src / ".gitignore");
+            os << s                                                    << '\n';
+
+            if (itest)
+              os <<                                                       '\n'
+                 << "# Testscript output directory (can be symlink)."  << '\n'
+                 << "#"                                                << '\n'
+                 << "test-" << s                                       << '\n';
+
+            os.close ();
+          }
         }
 
         // <src>/testscript
@@ -2538,22 +2712,24 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           os.close ();
         }
 
-        // <inc>/buildfile
+        // <[pfx_]inc>/buildfile
         //
-        if (split)
+        if (split_buildfile)
         {
           // We shouldn't clash with the root buildfile: we should have failed
           // earlier if that were the case.
           //
-          assert (out_inc != out);
+          assert (inc_bfile_dir != out);
 
-          open (out_inc / buildfile_file);
+          open (inc_bfile_dir / buildfile_file);
 
           // Use the recursive headers wildcard since the include directory
           // cannot be the project/package root for a split layout (see
           // above).
           //
           const char* w ("**");
+
+          string inc_dir (!bfile_in_pfx_inc ? "" : sub.posix_representation ());
 
           if (binless)
           {
@@ -2562,7 +2738,8 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                <<                                                         '\n'
                << "lib{" << s << "}: " << tt (ha) << "{" << w;
             if (ver)
-              os << " -version} " << hg << "{version}";
+              os << " -" << inc_dir << "version} " << inc_dir << hg
+                 << "{version}";
             else
               os << "}";
             os << " $intf_libs"                                        << '\n';
@@ -2571,7 +2748,8 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           {
             os << "pub_hdrs = " << tt (ha) << "{" << w;
             if (ver)
-              os << " -version} " << hg << "{version}"                 << '\n';
+              os << " -" << inc_dir << "version} " << inc_dir << hg    <<
+                "{version}"                                            << '\n';
             else
               os << "}"                                                << '\n';
             os <<                                                         '\n'
@@ -2580,11 +2758,14 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
           if (ver)
             os <<                                                         '\n'
-               << hg << "{version}: in{version} $src_root/manifest"    << '\n';
+               << inc_dir << hg << "{version}: " << inc_dir << "in{version} " <<
+              "$src_root/manifest"                                     << '\n';
 
           if (!exph.empty ())
             os <<                                                         '\n'
-               << hg << "{export}@./: " << mp << ".importable = false" << '\n';
+               << inc_dir << hg << "{export}@"                         <<
+              (!bfile_in_pfx_inc ? "./" : inc_dir) << ": " << mp       <<
+              ".importable = false"                                    << '\n';
 
           if (binless)
           {
@@ -2612,9 +2793,11 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
           if (install)
           {
-            if (!ip.empty ())
+            const string& install_dir (!bfile_in_pfx_inc ? ip : empty_string);
+
+            if (!install_dir.empty ())
               os <<                                                       '\n'
-                 << "# Install into the " << ip << " subdirectory of, say, /usr/include/" << '\n'
+                 << "# Install into the " << install_dir << " subdirectory of, say, /usr/include/" << '\n'
                  << "# recreating subdirectories."                     << '\n'
                  << "#"                                                << '\n';
             else
@@ -2624,7 +2807,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
             os << tt (ha) << "{*}:"                                    << '\n'
                << "{"                                                  << '\n'
-               << "  install         = include/" << ip                 << '\n'
+               << "  install         = include/" << install_dir        << '\n'
                << "  install.subdirs = true"                           << '\n'
                << "}"                                                  << '\n';
           }
@@ -2632,17 +2815,17 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           os.close ();
         }
 
-        // <src>/buildfile
+        // <[pfx_]src>/buildfile
         //
         // Note that there is no <src>/buildfile for a split binless library
         // with the unit tests disabled, since there are no files in <src>/ in
         // this case.
         //
-        if (!(binless && !utest && split))
+        if (!(split_buildfile && no_source))
         {
-          open (out_src / buildfile_file);
+          open (src_bfile_dir / buildfile_file);
 
-          if (!(split && binless))
+          if (!(split_buildfile && binless))
           {
             os << "intf_libs = # Interface dependencies."              << '\n';
 
@@ -2653,9 +2836,10 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                <<                                                         '\n';
           }
 
-          if (split)
+          if (split_buildfile)
           {
-            string rel (out_inc.relative (out_src).posix_representation ());
+            string rel (
+              inc_bfile_dir.relative (src_bfile_dir).posix_representation ());
 
             os << "# Public headers."                                  << '\n'
                << "#"                                                  << '\n'
@@ -2683,9 +2867,15 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           //
           const char* w (out_src == out ? "*" : "**");
 
+          // Note that inc_dir is only used if there is no buildfile split.
+          // Also note that there can still be the source directory split, in
+          // which case it is not empty.
+          //
+          string inc_dir (!bfile_in_pfx_inc ? "" : sub.posix_representation ());
+
           if (!utest)
           {
-            if (split)
+            if (split_buildfile)
             {
               assert (!binless); // Make sure pub_hdrs is assigned (see above).
 
@@ -2710,8 +2900,9 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
             os << tt (binless ? ha : ha + ' ' + xa) << "{" << w;
 
-            if (ver && !split)
-              os << " -version} " << hg << "{version}";
+            if (ver && !split_buildfile)
+              os << " -" << inc_dir << "version} " << inc_dir << hg
+                 << "{version}";
             else
               os << "}";
 
@@ -2724,7 +2915,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           {
             if (!binless)
             {
-              if (split)
+              if (split_buildfile)
                 os << "./: lib{" << s << "}: libul{" << s << "}: $pub/{$pub_hdrs}" << '\n'
                    <<                                                     '\n'
                    << "# Private headers and sources as well as dependencies." << '\n'
@@ -2735,19 +2926,20 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
               os << "libul{" << s << "}: " << tt (ha + ' ' + xa)       <<
                 "{" << w << " -" << w << ".test...";
 
-              if (ver && !split)
-                os << " -version} \\"                                  << '\n'
-                   << "  " << hg << "{version}";
+              if (ver && !split_buildfile)
+                os << " -" << inc_dir << "version} \\"                 << '\n'
+                   << "  " << inc_dir << hg << "{version}";
               else
                 os << "}";
               os << " $impl_libs $intf_libs"                           << '\n';
             }
-            else if (!split) // Binless.
+            else if (!split_buildfile) // Binless.
             {
               os << "./: lib{" << s << "}: "
                  << tt (ha) << "{" << w << " -" << w << ".test...";
               if (ver)
-                os << " -version} " << hg << "{version} \\"            << '\n'
+                os << " -" << inc_dir << "version} " << inc_dir << hg  <<
+                  "{version} \\"                                       << '\n'
                    << " ";
               else
                 os << "}";
@@ -2786,10 +2978,11 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                << "  n = $name($t)..."                                 << '\n'
                <<                                                         '\n'
                << "  ./: $d/exe{$n}: $t $d/" << tt (ha) << "{"
-               << (split && binless ? w : "+$n") << "} $d/testscript{+$n}";
+               << (split_buildfile && binless ? w : "+$n")
+               << "} $d/testscript{+$n}";
 
             if (binless)
-              os << (split ? " $pub/" : " ") << "lib{" << s << "}"     << '\n';
+              os << (split_buildfile ? " $pub/" : " ") << "lib{" << s << "}" << '\n';
             else
               os <<                                                       '\n'
                  << "  $d/exe{$n}: libul{" << s << "}: bin.whole = false" << '\n';
@@ -2797,13 +2990,16 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
             os << "}"                                                  << '\n';
           }
 
-          if (ver && !split)
+          if (ver && !split_buildfile)
             os <<                                                         '\n'
-               << hg << "{version}: in{version} $src_root/manifest"    << '\n';
+               << inc_dir << hg << "{version}: " << inc_dir << "in{version} " <<
+              "$src_root/manifest"                                     << '\n';
 
-          if (!exph.empty () && !split)
+          if (!exph.empty () && !split_buildfile)
             os <<                                                         '\n'
-               << hg << "{export}@./: " << mp << ".importable = false" << '\n';
+               << inc_dir << hg << "{export}@"                         <<
+              (!bfile_in_pfx_inc ? "./" : inc_dir) << ": " << mp       <<
+              ".importable = false"                                    << '\n';
 
           // Build.
           //
@@ -2817,7 +3013,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           string opi;
           string spi;
 
-          if (split && !binless)
+          if (split_source && !binless)
           {
             opi = !pi.empty () ? "$out_pfx_inc" : "$out_root";
             spi = !pi.empty () ? "$src_pfx_inc" : "$src_root";
@@ -2869,7 +3065,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
           // Export.
           //
-          if (!(split && binless))
+          if (!(split_buildfile && binless))
           {
             os <<                                                         '\n'
                << "# Export options."                                  << '\n'
@@ -2907,11 +3103,13 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           //
           if (install)
           {
-            if (!split)
+            if (!split_buildfile)
             {
-              if (!ip.empty ())
+              const string& install_dir (!bfile_in_pfx_inc ? ip : empty_string);
+
+              if (!install_dir.empty ())
                 os <<                                                     '\n'
-                   << "# Install into the " << ip << " subdirectory of, say, /usr/include/" << '\n'
+                   << "# Install into the " << install_dir << " subdirectory of, say, /usr/include/" << '\n'
                    << "# recreating subdirectories."                   << '\n'
                    << "#"                                              << '\n';
               else
@@ -2921,7 +3119,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
               os << tt (ha) << "{*}:"                                  << '\n'
                  << "{"                                                << '\n'
-                 << "  install         = include/" << ip               << '\n'
+                 << "  install         = include/" << install_dir      << '\n'
                  << "  install.subdirs = true"                         << '\n'
                  << "}"                                                << '\n';
             }
@@ -2942,7 +3140,11 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
         //
         bool root (out_src == out);
 
-        if (ver || utest || root || auto_symexport)
+        // Add <stem>.def.
+        //
+        bool auto_symexport_src (auto_symexport && !bfile_in_pfx_src);
+
+        if (root || ver || auto_symexport_src || utest)
         {
           if (vc == vcs::git)
           {
@@ -2952,12 +3154,12 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
             //
             if (root)
             {
-              assert (!split);
+              assert (!split_source);
 
               open (out_src / ".gitignore");
               write_root_gitignore ();
 
-              if (!ver && !auto_symexport && !utest)
+              if (!ver && !auto_symexport_src && !utest)
                 os.close ();
             }
 
@@ -2975,11 +3177,11 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                  << "#"                                                << '\n'
                  << verh                                               << '\n';
 
-              if ((!auto_symexport && !utest) || split)
+              if ((!auto_symexport_src && !utest) || split_source)
                 os.close ();
             }
 
-            if (auto_symexport)
+            if (auto_symexport_src)
             {
               if (!os.is_open ())
                 open (out_src / ".gitignore");
@@ -3009,6 +3211,22 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
               os.close ();
             }
+          }
+        }
+
+        // <pfx_src>/.gitignore
+        //
+        if (bfile_in_pfx_src && auto_symexport)
+        {
+          if (vc == vcs::git)
+          {
+            open (out_pfx_src / ".gitignore");
+
+            os << "# Generated DLL symbol-exporting file."             << '\n'
+               << "#"                                                  << '\n'
+               << s << ".def"                                          << '\n';
+
+            os.close ();
           }
         }
 
@@ -3068,11 +3286,11 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           // Note: for the binless library the library target is defined in
           // the header directory buildfile.
           //
-          string sd ((binless
-                      ? pfx_inc / (sub_inc ? sub : empty_dir_path)
-                      : pfx_src / (sub_src ? sub : empty_dir_path)).
-                     posix_representation ());
-
+          string sd (
+            (binless
+             ? pfx_inc / (sub_inc && !bfile_in_pfx_inc ? sub : empty_dir_path)
+             : pfx_src / (sub_src && !bfile_in_pfx_src ? sub : empty_dir_path)).
+            posix_representation ());
 
           open (bd / "export." + build_ext);
           os << "$out_root/"                                           << '\n'
@@ -3422,7 +3640,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
     if (src)
     {
       bool pi (exists (out_inc));
-      bool ps (split && exists (out_src));
+      bool ps (split_source && exists (out_src));
 
       dr << "source subdirectory " << n << " in";
 
@@ -3499,14 +3717,15 @@ options_files (const char*, const cmd_new_options& o, const strings&)
 
   auto output_parent_dir = [&o] ()
   {
-    return normalize (o.output_dir (), "output");
+    return normalize (o.output_dir (), "output directory");
   };
 
   if (o.package () || o.source ())
   {
     start =
-      o.output_dir_specified () ? output_parent_dir ()                  :
-      o.directory_specified  () ? normalize (o.directory (), "project") :
+      o.output_dir_specified () ? output_parent_dir ()            :
+      o.directory_specified  () ? normalize (o.directory (),
+                                             "project directory") :
       current_directory ();
 
     // Get the actual project directory.

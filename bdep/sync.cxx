@@ -1449,7 +1449,7 @@ namespace bdep
           // origin project (which we may not have).
           //
           for (dir_path d: po.config ())
-            append (normalize (d, "configuration"));
+            append (normalize (d, "configuration directory"));
 
           if (const char* o = (po.config_id_specified ()  ? "--config-id" :
                                po.config_name_specified () ? "--config-name|-n" :
@@ -2571,7 +2571,7 @@ namespace bdep
       {
         dir_path d (c.first);
 
-        normalize (d, "configuration");
+        normalize (d, "configuration directory");
 
         if (open && contains (*open, d))
           continue;

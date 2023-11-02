@@ -165,7 +165,7 @@ namespace bdep
      libraries) as well as sources. This can be customized in a number of ways
      using the \cb{prefix*} and \cb{split} project type sub-options (see below
      for details). For example, to move the source subdirectory inside
-     \c{src/}:
+     \cb{src/}:
 
      \
      $ bdep new -l c++ -t exe,prefix=src hello
@@ -328,6 +328,11 @@ namespace bdep
 
          Omit the source subdirectory.|
 
+     \li|\n\ \ \ \cb{buildfile-in-prefix}
+
+         Create the \cb{buildfile} in the source prefix directory rather than
+         in its source subdirectory.|
+
      \li|\n\ \ \ \c{\b{license=}\i{name}}|
 
      \li|\ \ \ \cb{no-readme}|
@@ -402,6 +407,11 @@ namespace bdep
      \li|\n\ \ \ \cb{no-subdir}
 
          Shortcut for \cb{no-subdir-include,no-subdir-source}.|
+
+     \li|\n\ \ \ \cb{buildfile-in-prefix}
+
+         Create the \cb{buildfiles} in the header/source prefix directories
+         rather than in their source subdirectories.|
 
      \li|\n\ \ \ \c{\b{license=}\i{name}}|
 
@@ -596,6 +606,7 @@ namespace bdep
     dir_path prefix;
     dir_path subdir;
     bool no-subdir;
+    bool buildfile-in-prefix;
     string license = "other: proprietary";
     bool no-readme;
     bool alt-naming;
@@ -624,6 +635,7 @@ namespace bdep
     bool no-subdir-include;
     bool no-subdir-source;
     bool no-subdir;
+    bool buildfile-in-prefix;
     string license = "other: proprietary";
     bool no-readme;
     bool alt-naming;
@@ -1134,6 +1146,58 @@ namespace bdep
    └── src/
        └── hello/
            └── hello.cxx
+   \
+
+   When packaging a third-party project for \cb{build2}, one of the common
+   approaches is to create a project with the split layout and the
+   \cb{buildfiles} in the source prefix directories rather than in the source
+   subdirectories:
+
+   \
+   # hello/libhello/{include,src}/hello/
+   # hello/libhello/{include,src}/buildfile
+
+   $ bdep new -l c -t empty hello
+
+   $ bdep new -d hello --package                                      \
+     -l c                                                             \
+     -t lib,                                                          \
+   split,subdir=hello,no-version,no-symexport,buildfile-in-prefix     \
+     libhello
+
+   $ tree hello/
+   hello/
+   └── libhello/
+       ├── include/
+       │   ├── buildfile
+       │   └── hello/
+       │       └── hello.h
+       └── src/
+           ├── buildfile
+           └── hello/
+               └── hello.c
+   \
+
+   After that the upstream project is added as a \cb{git} submodule to the
+   project root directory and the source subdirectories are replaced with the
+   symbolic links to the directories inside the upstream project directory:
+
+   \
+   $ tree hello/
+   hello/
+   ├── libhello/
+   │   ├── include/
+   │   │   ├── buildfile
+   │   │   └── hello/ -> ../../upstream/include/hello/
+   │   └── src/
+   │       ├── buildfile
+   │       └── hello/ -> ../../upstream/src/
+   └── upstream/
+       ├── include/
+       │   └── hello/
+       │       └── hello.h
+       └── src/
+           └── hello.c
    \
 
    \h|DEFAULT OPTIONS FILES|

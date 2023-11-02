@@ -90,7 +90,7 @@ namespace bdep
         {
           dir_path d (di->first);
 
-          normalize (d, "configuration");
+          normalize (d, "configuration directory");
 
           if (auto c = db.query_one<configuration> (query::path ==
                                                     d.string ()))
@@ -182,7 +182,7 @@ namespace bdep
     dir_path prj;
     optional<dir_path> pkg;
 
-    dir_path d (normalize (start, "project"));
+    dir_path d (normalize (start, "project directory"));
     for (; !d.empty (); d = d.directory ())
     {
       // Ignore errors when checking for file existence since we may be
