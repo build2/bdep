@@ -388,8 +388,9 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
   bool utest          (false); // unit-tests
   bool install        (false); // !no-install
   bool ver            (false); // !no-version
-  bool symexport      (false); // !no-symexport && !binless
+  bool no_symexport   (false); // no-symexport
   bool auto_symexport (false); // auto-symexport
+  bool symexport      (false); // !no-symexport && !binless
 
   string license;
   bool   license_o (false);
@@ -430,19 +431,22 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           license_o = t.lib_opt.license_specified ();
         }
 
-        if (t.lib_opt.auto_symexport ())
+        no_symexport   = t.lib_opt.no_symexport ();
+        auto_symexport = t.lib_opt.auto_symexport ();
+
+        if (auto_symexport)
         {
           if (binless)
             fail << "both --type|-t,binless and --type|-t,auto-symexport "
                  << "specified";
 
-          if (t.lib_opt.no_symexport ())
+          if (no_symexport)
             fail << "both --type|-t,no-symexport and --type|-t,auto-symexport "
                  << "specified";
         }
 
-        symexport = !t.lib_opt.no_symexport () && !binless;
-        auto_symexport = t.lib_opt.auto_symexport ();
+        symexport = !no_symexport && !binless;
+
         break;
       }
     case type::bare:
@@ -2841,13 +2845,14 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
             os << mc << ".poptions =+ \"-I" << opi << "\" \"-I" << spi << '"' << '\n';
           }
 
-          if (symexport)
+          if (!binless)
           {
             if (!auto_symexport)
               os <<                                                       '\n'
-                 << "{hbmia obja}{*}: " << mc << ".poptions += -D" << mx << "_STATIC_BUILD" << '\n'
-                 << "{hbmis objs}{*}: " << mc << ".poptions += -D" << mx << "_SHARED_BUILD" << '\n';
-
+                 << (no_symexport ? "#" : "") << "{hbmia obja}{*}: "   <<
+                mc << ".poptions += -D" << mx << "_STATIC_BUILD"       << '\n'
+                 << (no_symexport ? "#" : "") << "{hbmis objs}{*}: "   <<
+                mc << ".poptions += -D" << mx << "_SHARED_BUILD"       << '\n';
             else
               os <<                                                       '\n'
                  << "if ($" << mp << ".target.system == 'mingw32')"    << '\n'
@@ -2870,10 +2875,12 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                << "}"                                                  << '\n';
           }
 
-          if (symexport && !auto_symexport)
+          if (!binless && !auto_symexport)
             os <<                                                         '\n'
-               << "liba{" << s << "}: " << mc << ".export.poptions += -D" << mx << "_STATIC" << '\n'
-               << "libs{" << s << "}: " << mc << ".export.poptions += -D" << mx << "_SHARED" << '\n';
+               << (no_symexport ? "#" : "") << "liba{" << s << "}: "   <<
+              mc << ".export.poptions += -D" << mx << "_STATIC"        << '\n'
+               << (no_symexport ? "#" : "") << "libs{" << s << "}: "   <<
+              mc << ".export.poptions += -D" << mx << "_SHARED"        << '\n';
 
           // Library versioning.
           //
