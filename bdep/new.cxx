@@ -507,37 +507,50 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
   bool sub_inc; // false if the header subdirectory is omitted.
   bool sub_src; // false if the source subdirectory is omitted.
   {
+    bool no_subdir_inc (t == type::lib && t.lib_opt.no_subdir_include ());
+    bool no_subdir_src (t == type::lib && t.lib_opt.no_subdir_source ());
+
+    if (no_subdir_inc && no_subdir_src)
+    {
+      if (subdir != nullptr)
+        fail << "both --type|-t,subdir and --type|-t,no-subdir-include,"
+             << "no-subdir-source specified";
+    }
+
     bool no_subdir (t == type::exe ? t.exe_opt.no_subdir () :
                     t == type::lib ? t.lib_opt.no_subdir () :
                     false);
-
-    bool no_subdir_src (t == type::lib && t.lib_opt.no_subdir_source ());
 
     if (no_subdir)
     {
       if (subdir != nullptr)
         fail << "both --type|-t,subdir and --type|-t,no-subdir specified";
 
+      if (no_subdir_inc)
+        fail << "both --type|-t,no-subdir and --type|-t,no-subdir-include "
+             << "specified";
+
       if (no_subdir_src)
         fail << "both --type|-t,no-subdir and --type|-t,no-subdir-source "
              << "specified";
 
+      no_subdir_inc = no_subdir_src = true;
+    }
+
+    if (no_subdir_inc)
+    {
       // Note that the generated header machinery requires the source
       // subdirectory as a prefix for #include directive. Thus, the version
-      // header generation needs if no-subdir.
+      // header generation needs to be disabled if no-subdir-include is
+      // specified.
       //
       if (t == type::lib && !t.lib_opt.no_version ())
         fail << "generated version header is not supported in this layout" <<
           info << "specify --type|-t,no-version explicitly";
     }
 
-    sub_inc = !no_subdir;
-    sub_src = !no_subdir && !no_subdir_src;
-
-    // The header subdirectory can only be omited together with the source
-    // subdirectory.
-    //
-    assert (sub_inc || !sub_src);
+    sub_inc = !no_subdir_inc;
+    sub_src = !no_subdir_src;
   }
 
   if (subdir != nullptr && subdir->absolute ())
@@ -855,9 +868,9 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                     subdir, sub_inc, sub_src]
                    (const string& n)
     {
-      sub = (subdir != nullptr ? *subdir      :
-             sub_inc           ? dir_path (n) : // Note: no need to check for
-             dir_path ());                      // sub_src (see above).
+      sub = (subdir != nullptr  ? *subdir      :
+             sub_inc || sub_src ? dir_path (n) :
+             dir_path ());
 
       out_inc = out / pfx_inc / (sub_inc ? sub : dir_path ());
       out_src = out / pfx_src / (sub_src ? sub : dir_path ());
@@ -994,10 +1007,8 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
         // Here we treat out as subdirectory unless instructed otherwise in
         // which case we treat it as a prefix.
         //
-        // Note: no need to check for sub_src (see above).
-        //
         dir_path s (out_src.leaf (prj));
-        if (sub_inc)
+        if (sub_inc || sub_src)
           sub = move (s);
         else
           pfx_inc = pfx_src = move (s);
@@ -2206,10 +2217,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
       {
         // Include prefix.
         //
-        // Note: if sub is not empty, then there is no need to check if
-        // sub_inc is true (see above).
-        //
-        string ip (sub.posix_representation ());
+        string ip (sub_inc ? sub.posix_representation () : "");
 
         // Macro prefix.
         //

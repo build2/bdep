@@ -391,14 +391,17 @@ namespace bdep
 
          Alternative source subdirectory relative to header/source prefix.|
 
-     \li|\n\ \ \ \cb{no-subdir}
+     \li|\n\ \ \ \cb{no-subdir-include}
 
-         Omit the source subdirectory.|
+         Omit the source subdirectory relative to the header prefix.|
 
      \li|\n\ \ \ \cb{no-subdir-source}
 
-         Omit the source subdirectory relative to the source prefix but still
-         create it relative to the header prefix.|
+         Omit the source subdirectory relative to the source prefix.|
+
+     \li|\n\ \ \ \cb{no-subdir}
+
+         Shortcut for \cb{no-subdir-include,no-subdir-source}.|
 
      \li|\n\ \ \ \c{\b{license=}\i{name}}|
 
@@ -613,13 +616,14 @@ namespace bdep
     bool no-version;
     bool no-symexport;
     bool auto-symexport;
-    dir_path prefix-source;
     dir_path prefix-include;
+    dir_path prefix-source;
     dir_path prefix;
     bool split;
     dir_path subdir;
-    bool no-subdir;
+    bool no-subdir-include;
     bool no-subdir-source;
+    bool no-subdir;
     string license = "other: proprietary";
     bool no-readme;
     bool alt-naming;
@@ -975,6 +979,28 @@ namespace bdep
    │       └── hello.hxx
    └── src/
        └── hello.cxx
+   \
+
+   Similarly, we can also omit the source subdirectory but only in the header
+   prefix of the split layout by specifying the \cb{no-subdir-include}
+   sub-option (we also have to disable the generated version header that is
+   not supported in this layout):
+
+   \
+   # libhello/{include,src/hello}/
+
+   $ bdep new                                                         \
+     -l c++                                                           \
+     -t lib,split,subdir=hello,no-subdir-include,no-version           \
+     libhello
+
+   $ tree libhello/
+   libhello/
+   ├── include/
+   │   └── hello.hxx
+   └── src/
+       └── hello/
+           └── hello.cxx
    \
 
    To achieve the split layout where the \cb{include/} directory is inside

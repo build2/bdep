@@ -1937,6 +1937,22 @@ status += -d prj
         EOE
     }
 
+    : split-no-subdir-include
+    :
+    {
+      $* -l c++ -t lib,split,subdir=hello,no-subdir-include,no-version libhello 2>>/"EOE" &libhello/***;
+        created new library project libhello in $~/libhello/
+        EOE
+
+      $build libhello/ $config_cxx 2>>~%EOE%;
+        %(c\+\+|ld|ar) .+%{6}
+        EOE
+
+      $t libhello/ $config_cxx 2>>~%EOE%
+        %test .+%
+        EOE
+    }
+
     : include-in-src
     :
     {
