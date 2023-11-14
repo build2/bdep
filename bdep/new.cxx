@@ -1322,9 +1322,20 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
         readme_f = move (f);
       }
 
-      // LICENSE or UNLICENSE
+      // LICENSE
+      // LICENSE.txt
+      // LICENSE.md
+      // COPYING
+      // UNLICENSE
       //
-      if (exists ((f = out / "LICENSE")) || exists ((f = out / "UNLICENSE")))
+      // Note that LICENSE.md is often just a plain text file without any
+      // markup so we should be able to detect the license.
+      //
+      if (exists ((f = out / "LICENSE"))     ||
+          exists ((f = out / "LICENSE.txt")) ||
+          exists ((f = out / "LICENSE.md"))  ||
+          exists ((f = out / "COPYING"))     ||
+          exists ((f = out / "UNLICENSE")))
       {
         license_e = extract_license (f);
 
