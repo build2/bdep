@@ -181,10 +181,10 @@ namespace bdep
   }
 
   // Extract a summary line from a README.md file returning an empty string if
-  // unable to. The second argument is the project name.
+  // unable to. The project name can be empty.
   //
   static string
-  extract_summary (const path& f, const string& n)
+  extract_summary (const path& f, const string& pkgn, const string& prjn)
   {
     // README.md created by popular hosting services (GitHub, GitLab) have the
     // following format (give or take a few blank lines in between):
@@ -214,12 +214,14 @@ namespace bdep
 
       if (next ())
       {
-        if (icasecmp (l, "# " + n) == 0)
+        if (                   icasecmp (l, "# " + pkgn) == 0 ||
+            (!prjn.empty () && icasecmp (l, "# " + prjn) == 0))
         {
           if (next ())
           {
             // Potential improvements:
             //
+            // - Uppercase first letter.
             // - Strip trailing period, if any.
             // - Get only the first sentence.
             //
@@ -1057,6 +1059,45 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
   //
   assert ((sub_inc || sub_src) == !sub.empty ());
 
+  // Project name.
+  //
+  // If this is a package in a project (--package mode), then use the
+  // project directory name as the project name. Otherwise, the project
+  // name is the same as the package and is therefore omitted.
+  //
+  // In case of a library, we could have used either the full name or the
+  // stem without the lib prefix. And it could go either way: if a library
+  // is (likely to be) accompanied by an executable (or some other extra
+  // packages), then its project should probably be the stem. Otherwise,
+  // if it is a standalone library, then the full library name is probably
+  // preferred. The stem also has another problem: it could be an invalid
+  // project name. So using the full name seems like a simpler and more
+  // robust approach.
+  //
+  // There was also an idea to warn if the project name ends with a digit
+  // (think libfoo and libfoo2).
+  //
+  optional<project_name> prjn;
+  if (pkg)
+  {
+    string p (prj.leaf ().string ());
+
+    if (p != n) // Omit if the same as the package name.
+    {
+      try
+      {
+        prjn = project_name (move (p));
+      }
+      catch (const invalid_argument& e)
+      {
+        warn << "project name '" << p << "' is invalid: " << e <<
+          info << "leaving the 'project' manifest value empty";
+
+        prjn = project_name ();
+      }
+    }
+  }
+
   bool no_source (binless && !utest);
 
   // Note that to re-locate a buildfile due to --type|-t,buildfile-in-prefix,
@@ -1313,7 +1354,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
       //
       if (exists ((f = out / "README.md")))
       {
-        readme_e = extract_summary (f, n);
+        readme_e = extract_summary (f, n, prjn ? prjn->string () : string ());
 
         if (readme_e->empty ())
           warn << "unable to extract project summary from " << f <<
@@ -1627,45 +1668,6 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
     //
     if (!src)
     {
-      // Project name.
-      //
-      // If this is a package in a project (--package mode), then use the
-      // project directory name as the project name. Otherwise, the project
-      // name is the same as the package and is therefore omitted.
-      //
-      // In case of a library, we could have used either the full name or the
-      // stem without the lib prefix. And it could go either way: if a library
-      // is (likely to be) accompanied by an executable (or some other extra
-      // packages), then its project should probably be the stem. Otherwise,
-      // if it is a standalone library, then the full library name is probably
-      // preferred. The stem also has another problem: it could be an invalid
-      // project name. So using the full name seems like a simpler and more
-      // robust approach.
-      //
-      // There was also an idea to warn if the project name ends with a digit
-      // (think libfoo and libfoo2).
-      //
-      optional<project_name> pn;
-      if (pkg)
-      {
-        string p (prj.leaf ().string ());
-
-        if (p != n) // Omit if the same as the package name.
-        {
-          try
-          {
-            pn = project_name (move (p));
-          }
-          catch (const invalid_argument& e)
-          {
-            warn << "project name '" << p << "' is invalid: " << e <<
-              info << "leaving the 'project' manifest value empty";
-
-            pn = project_name ();
-          }
-        }
-      }
-
       // Project email.
       //
       string pe;
@@ -1754,8 +1756,8 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
         }
       }
 
-      if (pn)
-        os << "project: " << *pn                                       << '\n';
+      if (prjn)
+        os << "project: " << *prjn                                     << '\n';
       if (readme_e && !readme_e->empty ())
         os << "summary: " << *readme_e                                 << '\n';
       else
@@ -1766,7 +1768,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
         os << "license: " << license << " ; " << ln << "."             << '\n';
       if (readme_f)
         os << "description-file: " << readme_f->leaf (out).posix_representation () << '\n';
-      os << "url: https://example.org/" << (pn ? pn->string () : n)    << '\n'
+      os << "url: https://example.org/" << (prjn ? prjn->string () : n)<< '\n'
          << "email: " << pe                                            << '\n'
          << "#build-error-email: " << pe                               << '\n'
          << "depends: * build2 >= 0.16.0"                              << '\n'
