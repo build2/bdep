@@ -46,6 +46,9 @@ namespace bdep
   using butl::lcase;
   using butl::icasecmp;
 
+  using butl::alpha;
+  using butl::alnum;
+
   using butl::trim;
   using butl::next_word;
   using butl::sanitize_identifier;

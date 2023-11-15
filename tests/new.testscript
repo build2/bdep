@@ -1716,7 +1716,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     cat <<EOI >=libfoo/README.md &!libfoo/README.md;
     # libfoo
 
-    cool foo
+    Cool foo.
 
     Some more stuff.
     EOI
@@ -1732,7 +1732,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
       created new library project libfoo in $~/libfoo/
       EOE
     test -f libfoo/.gitignore;
-    sed -n -e 's/^summary: (.+)$/\1/p'      libfoo/manifest >'cool foo';
+    sed -n -e 's/^summary: (.+)$/\1/p'      libfoo/manifest >'Cool foo';
     sed -n -e 's/^license: ([^ ]+).*$/\1/p' libfoo/manifest >'Apache-2.0'
   }
 

@@ -184,7 +184,7 @@ namespace bdep
   // unable to. The project name can be empty.
   //
   static string
-  extract_summary (const path& f, const string& pkgn, const string& prjn)
+  extract_summary (const path& f, const string& pkg, const string& prj)
   {
     // README.md created by popular hosting services (GitHub, GitLab) have the
     // following format (give or take a few blank lines in between):
@@ -197,8 +197,9 @@ namespace bdep
     //
     // # <name> - <summary>
     //
-    // Let's start simple by only support the first version and maybe
-    // extend/complicate things later.
+    // We will also treat the heading that doesn't start with <name> as:
+    //
+    // # <summary>
     //
     try
     {
@@ -212,25 +213,70 @@ namespace bdep
         return !l.empty ();
       };
 
-      if (next ())
+      if (!next () || l.compare (0, 2, "# ") != 0)
+        return "";
+
+      l.erase (0, 2); // Remove `# `.
+
+      size_t m;
+      auto prefix = [&l, &m] (const string& n) -> bool
       {
-        if (                   icasecmp (l, "# " + pkgn) == 0 ||
-            (!prjn.empty () && icasecmp (l, "# " + prjn) == 0))
+        m = n.size ();
+        return (l.size () >= m                            &&
+                icasecmp (l.c_str (), n.c_str (), m) == 0 &&
+                (l.size () == m ||
+                 (!alnum (l[m]) && // Separated.
+                  l[m] != '_' && l[m] != '-' && l[m] != '+' && l[m] != '.')));
+      };
+
+      if (prefix (pkg) || (!prj.empty () && prefix (prj)))
+      {
+        size_t n (l.size ());
+        if (n > m) // # <name> - <summary>
         {
-          if (next ())
-          {
-            // Potential improvements:
-            //
-            // - Uppercase first letter.
-            // - Strip trailing period, if any.
-            // - Get only the first sentence.
-            //
-            return l;
-          }
+          // Let's try to handle similar cases like `# <name>: <summary>`.
+          //
+          size_t i (m + 1);
+
+          for (; i != n && !alnum (l[i]); ++i) // Skip separators.
+            ;
+
+          l.erase (0, i);
         }
+        else if (next ())
+        {
+          // # <name>
+          // <summary>
+          //
+          // Use the following line as is.
+        }
+        else
+          return "";
+      }
+      else
+      {
+        // # <summary>
+        //
+        // Use this line as is.
       }
 
-      return "";
+      // Sanitize the line.
+      //
+
+      // Keep only the first sentence and strip trailing period.
+      //
+      size_t p (l.find ('.'));
+      if (p != string::npos)
+        l.resize (p);
+
+      if (!trim (l).empty ())
+      {
+        // Uppercase the first letter.
+        //
+        ucase (l, 0, 1);
+      }
+
+      return l;
     }
     catch (const io_error& e)
     {
