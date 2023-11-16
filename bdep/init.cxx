@@ -223,6 +223,8 @@ namespace bdep
         //
         db.reload (*c);
 
+        bool first (c->packages.empty ()); // First init for this project.
+
         for (const package_location& p: pkgs)
         {
           if (initialized (p, c))
@@ -260,15 +262,19 @@ namespace bdep
         // Note: semantically equivalent to the first form of the sync
         // command.
         //
+        // If this is the first initialization of this project, also force
+        // full repository refetch for good measure (see GH issue #343 for
+        // details).
+        //
         if (sync)
           cmd_sync (o,
                     prj,
                     c,
-                    false     /* implicit */,
+                    false                /* implicit */,
                     pkg_args,
-                    true      /* fetch */,
-                    true      /* yes */,
-                    false     /* name_cfg */,
+                    first ? true : false /* fetch (full/shallow) */,
+                    true                 /* yes */,
+                    false                /* name_cfg */,
                     pkgs,
                     so,
                     create_host_config,

@@ -841,7 +841,7 @@ namespace bdep
             linked_configs&& linked_cfgs,
             const strings& pkg_args,
             bool implicit,
-            bool fetch,
+            optional<bool> fetch,
             bool yes,
             bool name_cfg,
             optional<bool> upgrade,   // true - upgrade,   false - patch
@@ -894,7 +894,8 @@ namespace bdep
         //
         assert (c != nullptr);
         prjs.back ().configs.push_back (
-          sync_project::config {c, true /* origin */, implicit, fetch});
+          sync_project::config {
+            c, true /* origin */, implicit, fetch.has_value ()});
       }
     }
 
@@ -1600,7 +1601,11 @@ namespace bdep
       if (cfg.reps.empty ())
         continue;
 
-      run_bpkg (3, co, "fetch", "-d", cfg.path.get (), "--shallow", cfg.reps);
+      run_bpkg (3, co,
+                "fetch",
+                "-d", cfg.path.get (),
+                (*fetch ? nullptr : "--shallow"),
+                cfg.reps);
     }
 
     string plan;
@@ -2132,7 +2137,7 @@ namespace bdep
             const shared_ptr<configuration>& c,
             bool implicit,
             const strings& pkg_args,
-            bool fetch,
+            optional<bool> fetch,
             bool yes,
             bool name_cfg,
             const package_locations& prj_pkgs,
@@ -2244,7 +2249,7 @@ namespace bdep
                 move (lcfgs),
                 pkg_args,
                 implicit,
-                fetch,
+                fetch ? false /* shallow */ : optional<bool> (),
                 yes,
                 name_cfg,
                 nullopt              /* upgrade     */,
@@ -2292,7 +2297,7 @@ namespace bdep
               move (lcfgs),
               strings ()            /* pkg_args   */,
               true                  /* implicit   */,
-              fetch,
+              fetch ? false /* shallow */ : optional<bool> (),
               yes,
               name_cfg,
               nullopt               /* upgrade     */,
@@ -2361,7 +2366,7 @@ namespace bdep
                 move (lcfgs),
                 strings ()            /* pkg_args   */,
                 true                  /* implicit   */,
-                fetch,
+                fetch ? false /* shallow */ : optional<bool> (),
                 yes,
                 name_cfg,
                 nullopt               /* upgrade     */,
@@ -2391,7 +2396,7 @@ namespace bdep
               move (lcfgs),
               strings ()            /* pkg_args             */,
               true                  /* implicit             */,
-              true                  /* fetch                */,
+              false                 /* shallow fetch        */,
               true                  /* yes                  */,
               false                 /* name_cfg             */,
               nullopt               /* upgrade              */,
@@ -2738,7 +2743,7 @@ namespace bdep
                   move (lcfgs),
                   pkg_args,
                   false                    /* implicit */,
-                  !fetch,
+                  !fetch ? false /* shallow */ : optional<bool> (),
                   o.recursive () || o.immediate () ? o.yes () : true,
                   false                    /* name_cfg */,
                   !o.patch (), // Upgrade by default unless patch requested.
@@ -2763,7 +2768,7 @@ namespace bdep
                   move (lcfgs),
                   pkg_args,
                   false                    /* implicit */,
-                  !fetch,
+                  !fetch ? false /* shallow */ : optional<bool> (),
                   o.yes (),
                   false                    /* name_cfg */,
                   o.upgrade (),
@@ -2789,7 +2794,7 @@ namespace bdep
                   move (lcfgs),
                   pkg_args,
                   o.implicit (),
-                  !fetch,
+                  !fetch ? false /* shallow */ : optional<bool> (),
                   true                     /* yes         */,
                   o.implicit ()            /* name_cfg    */,
                   nullopt                  /* upgrade     */,

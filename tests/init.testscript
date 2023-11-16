@@ -353,6 +353,8 @@ status += -d prj
     $init -d libprj -A prj-cfg 2>>/~"%EOE%";
       initializing in project $~/libprj/
       added configuration $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
+      %fetching .+%
+      %querying .+%
       synchronizing:
       %  upgrade libprj.0.1.0-a.0.+#1%
       %  reconfigure prj.0.1.0-a.0.19700101000000%
@@ -426,6 +428,8 @@ status += -d prj
       added configuration $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
       initializing package libprj
       initializing package libprj-extras
+      %fetching .+%
+      %querying .+%
       synchronizing:
       %  upgrade libprj.0.1.0-a.0.+#1%
       %  new libprj-extras.0.1.0-a.0.+%

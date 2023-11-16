@@ -42,10 +42,10 @@ namespace bdep
   // If the origin project packages (prj_pkgs) are specified, then non-global
   // configuration variables are only applied to these packages.
   //
-  // If fetch is false, don't perform a (shallow) fetch of the project
-  // repository. If yes is false, then don't suppress bpkg prompts. If
-  // name_cfg is true then include the configuration name/directory into
-  // progress.
+  // If fetch_full is not nullopt, perform a fetch of the project repository,
+  // shallow if false and full if true. If yes is false, then don't suppress
+  // bpkg prompts. If name_cfg is true then include the configuration
+  // name/directory into progress.
   //
   // Before automatically creating a configuration for a build-time dependency
   // and associating it with the project(s), the user is prompted unless the
@@ -92,7 +92,7 @@ namespace bdep
             const shared_ptr<configuration>&,
             bool implicit,
             const strings& pkg_args = strings (),
-            bool fetch = true,
+            optional<bool> fetch_full = false, // Shallow fetch.
             bool yes = true,
             bool name_cfg = false,
             const package_locations& prj_pkgs = {},
@@ -104,6 +104,9 @@ namespace bdep
 
   // As above but sync multiple configurations. If some configurations belong
   // to the same cluster, then they are synced at once.
+  //
+  // Note: in the rest of cmd_sync() overloads, fetch is bool, with false
+  // meaning do not fetch and true -- fetch shallow.
   //
   void
   cmd_sync (const common_options&,
