@@ -1999,10 +1999,12 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
          << "h{*}: extension = h"                                      << '\n'
          << "c{*}: extension = c"                                      << '\n';
 
+#if 0
       os <<                                                               '\n'
          << "# Assume headers are importable unless stated otherwise." << '\n'
          << "#"                                                        << '\n'
          << "h{*}: c.importable = true"                                << '\n';
+#endif
 
       if (newline)
         os <<                                                             '\n';
@@ -2022,10 +2024,12 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
       if (te) os << "txx{*}: extension = " << pure_ext (*te)           << '\n';
       os         << "cxx{*}: extension = " << pure_ext (xe)            << '\n';
 
+#if 0
       os <<                                                               '\n'
          << "# Assume headers are importable unless stated otherwise." << '\n'
          << "#"                                                        << '\n'
          << "hxx{*}: cxx.importable = true"                            << '\n';
+#endif
 
       if (newline)
         os <<                                                             '\n';
@@ -2820,11 +2824,13 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                << inc_dir << hg << "{version}: " << inc_dir << "in{version} " <<
               "$src_root/manifest"                                     << '\n';
 
+#if 0
           if (!exph.empty ())
             os <<                                                         '\n'
                << inc_dir << hg << "{export}@"                         <<
               (!bfile_in_pfx_inc ? "./" : inc_dir) << ": " << mp       <<
               ".importable = false"                                    << '\n';
+#endif
 
           if (binless)
           {
@@ -3054,11 +3060,13 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                << inc_dir << hg << "{version}: " << inc_dir << "in{version} " <<
               "$src_root/manifest"                                     << '\n';
 
+#if 0
           if (!exph.empty () && !split_buildfile)
             os <<                                                         '\n'
                << inc_dir << hg << "{export}@"                         <<
               (!bfile_in_pfx_inc ? "./" : inc_dir) << ": " << mp       <<
               ".importable = false"                                    << '\n';
+#endif
 
           // Build.
           //
