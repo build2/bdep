@@ -3157,9 +3157,9 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           //
           if (!binless)
             os <<                                                         '\n'
-               << "# For pre-releases use the complete version to make sure they cannot be used"   << '\n'
-               << "# in place of another pre-release or the final version. See the version module" << '\n'
-               << "# for details on the version.* variable values."    << '\n'
+               << "# For pre-releases use the complete version to make sure they cannot" << '\n'
+               << "# be used in place of another pre-release or the final version. See"  << '\n'
+               << "# the version module for details on the version.* variable values."   << '\n'
                << "#"                                                  << '\n'
                << "if $version.pre_release"                            << '\n'
                << "  lib{" << s << "}: bin.lib.version = \"-$version.project_id\"" << '\n'
