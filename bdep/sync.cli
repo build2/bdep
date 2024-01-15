@@ -22,7 +22,7 @@ namespace bdep
      \c{\b{bdep sync} [<options>] [<pkg-spec>] [<cfg-spec>] [<pkg-args>]\n
         \b{bdep sync} [<options>] [<pkg-spec>] [<cfg-spec>] \ \b{--upgrade}|\b{-u} | \b{--patch}|\b{-p}\n
         \b{bdep sync} [<options>] [<pkg-spec>] [<cfg-spec>] [\b{--upgrade}|\b{-u} | \b{--patch}|\b{-p}]\n
-        \ \ \ \ \ \ \ \ \ \ <dep-spec>...
+        \ \ \ \ \ \ \ \ \ \ <dep-spec>... [<cfg-var>...]
         }
 
      \c{<dep-spec> = <pkg>[\b{/}<ver>]\n
