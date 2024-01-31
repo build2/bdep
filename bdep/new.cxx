@@ -3120,9 +3120,17 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           {
             if (!auto_symexport)
               os <<                                                       '\n'
+#if 0
                  << (no_symexport ? "#" : "") << "{hbmia obja}{*}: "   <<
+#else
+                 << (no_symexport ? "#" : "") << "obja{*}: "           <<
+#endif
                 mc << ".poptions += -D" << mx << "_STATIC_BUILD"       << '\n'
+#if 0
                  << (no_symexport ? "#" : "") << "{hbmis objs}{*}: "   <<
+#else
+                 << (no_symexport ? "#" : "") << "objs{*}: "           <<
+#endif
                 mc << ".poptions += -D" << mx << "_SHARED_BUILD"       << '\n';
             else
               os <<                                                       '\n'
