@@ -508,7 +508,7 @@ namespace bdep
 
      \li|\n\ \ \ \cb{no-readme}
 
-         Don't add \cb{README.md}.|
+         Don't add new \cb{README.md} (but still check for the existing).|
 
      \li|\n\ \ \ \cb{alt-naming}
 

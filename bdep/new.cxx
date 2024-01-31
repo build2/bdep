@@ -1466,13 +1466,6 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           info << "requested: " << vc;
     }
 
-    if (readme_f)
-    {
-      if (!readme)
-        fail << "--type|-t,no-readme sub-option specified but README "
-             << "already exists";
-    }
-
     if (license_e)
     {
       if (!license_o)
