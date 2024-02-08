@@ -24,6 +24,10 @@ using namespace butl;
 
 namespace bdep
 {
+  using type = cmd_new_type;
+  using lang = cmd_new_lang;
+  using vcs  = cmd_new_vcs;
+
   // While we don't have any specific requirements for git version here, let's
   // use the lowest common denominator for other bdep commands. Note that
   // *_git() functions require the minimum supported git version as an
@@ -284,9 +288,148 @@ namespace bdep
     }
   }
 
-  using type = cmd_new_type;
-  using lang = cmd_new_lang;
-  using vcs  = cmd_new_vcs;
+  static void
+  generate_lib_readme (ostream& os,
+                       const package_name& pkg,
+                       const lang& l,
+                       const optional<string>& sum,
+                       bool package_readme)
+  {
+    const string& p (pkg.string ());
+    const string& v (pkg.variable ());
+    const string& s (sum && !sum->empty ()
+                     ? *sum
+                     : "A " + l.string () + " library");
+
+    os << "# " << p << " - " << s                                      << '\n'
+       <<                                                                 '\n';
+
+    if (package_readme)
+    {
+      os << "This is a `build2` package for the [`<UPSTREAM-NAME>`](https://<UPSTREAM-URL>)" << '\n'
+         << l << " library. It provides <SUMMARY-OF-FUNCTIONALITY>."   << '\n';
+    }
+    else
+    {
+      os << "The `" << p << "` " << l << " library provides <SUMMARY-OF-FUNCTIONALITY>." << '\n';
+    }
+
+    os <<                                                                 '\n'
+       <<                                                                 '\n'
+       << "## Usage"                                                   << '\n'
+       <<                                                                 '\n'
+       << "To start using this library in your project, add the following `depends`" << '\n'
+       << "value to your `manifest`, adjusting the version constraint as appropriate:" << '\n'
+       <<                                                                 '\n'
+       << "```"                                                        << '\n'
+       << "depends: " << p << " ^<VERSION>"                            << '\n'
+       << "```"                                                        << '\n'
+       <<                                                                 '\n'
+       << "Then import the library in your `buildfile`:"               << '\n'
+       <<                                                                 '\n'
+       << "```"                                                        << '\n'
+       << "import libs = " << p << "%lib{<TARGET>}"                    << '\n'
+       << "```"                                                        << '\n';
+
+    os <<                                                                 '\n'
+       <<                                                                 '\n'
+       << "## Importable targets"                                      << '\n'
+       <<                                                                 '\n'
+       << "This package provides the following importable targets:"    << '\n'
+       <<                                                                 '\n'
+       << "```"                                                        << '\n'
+       << "lib{<TARGET>}"                                              << '\n'
+       << "```"                                                        << '\n'
+       <<                                                                 '\n'
+       << "<DESCRIPTION-OF-IMPORTABLE-TARGETS>"                        << '\n';
+
+    os <<                                                                 '\n'
+       <<                                                                 '\n'
+       << "## Configuration variables"                                 << '\n'
+       <<                                                                 '\n'
+       << "This package provides the following configuration variables:" << '\n'
+       <<                                                                 '\n'
+       << "```"                                                        << '\n'
+       << "[bool] config." << v << ".<VARIABLE> ?= false"              << '\n'
+       << "```"                                                        << '\n'
+       <<                                                                 '\n'
+       << "<DESCRIPTION-OF-CONFIG-VARIABLES>"                          << '\n';
+  }
+
+  // Key differences compared to the library:
+  //
+  // - Build-time dependency.
+  // - We don't need to mention the implementation language.
+  // - We use "it is a" rather than "it provides" in the description.
+  // - We mention metadata.
+  //
+  static void
+  generate_exe_readme (ostream& os,
+                       const package_name& pkg,
+                       const optional<string>& sum,
+                       bool package_readme)
+  {
+    const string& p (pkg.string ());
+    const string& v (pkg.variable ());
+    const string& s (sum && !sum->empty () ? *sum : "An executable");
+
+    os << "# " << p << " - " << s                                      << '\n'
+       <<                                                                 '\n';
+
+    if (package_readme)
+    {
+      os << "This is a `build2` package for the [`<UPSTREAM-NAME>`](https://<UPSTREAM-URL>)" << '\n'
+         << "executable. It is a <SUMMARY-OF-FUNCTIONALITY>."          << '\n';
+    }
+    else
+    {
+      os << "The `" << p << "` executable is a <SUMMARY-OF-FUNCTIONALITY>." << '\n';
+    }
+
+    os <<                                                                 '\n'
+       <<                                                                 '\n'
+       << "## Usage"                                                   << '\n'
+       <<                                                                 '\n'
+       << "To start using this executable in your project, add the following build-time" << '\n'
+       << "`depends` value to your `manifest`, adjusting the version constraint as" << '\n'
+       << "appropriate:"                                               << '\n'
+       <<                                                                 '\n'
+       << "```"                                                        << '\n'
+       << "depends: * " << p << " ^<VERSION>"                          << '\n'
+       << "```"                                                        << '\n'
+       <<                                                                 '\n'
+       << "Then import the executable in your `buildfile`:"            << '\n'
+       <<                                                                 '\n'
+       << "```"                                                        << '\n'
+       << "import <TARGET> = " << p << "%exe{<TARGET>}"                << '\n'
+       << "```"                                                        << '\n'
+       <<                                                                 '\n'
+       << "Note that the `<TARGET>` executable provides `build2` metadata." << '\n';
+
+    os <<                                                                 '\n'
+       <<                                                                 '\n'
+       << "## Importable targets"                                      << '\n'
+       <<                                                                 '\n'
+       << "This package provides the following importable targets:"    << '\n'
+       <<                                                                 '\n'
+       << "```"                                                        << '\n'
+       << "exe{<TARGET>}"                                              << '\n'
+       << "```"                                                        << '\n'
+       <<                                                                 '\n'
+       << "<DESCRIPTION-OF-IMPORTABLE-TARGETS>"                        << '\n';
+
+    os <<                                                                 '\n'
+       <<                                                                 '\n'
+       << "## Configuration variables"                                 << '\n'
+       <<                                                                 '\n'
+       << "This package provides the following configuration variables:" << '\n'
+       <<                                                                 '\n'
+       << "```"                                                        << '\n'
+       << "[bool] config." << v << ".<VARIABLE> ?= false"              << '\n'
+       << "```"                                                        << '\n'
+       <<                                                                 '\n'
+       << "<DESCRIPTION-OF-CONFIG-VARIABLES>"                          << '\n';
+  }
 }
 
 int bdep::
@@ -429,14 +572,16 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
   // wrong). All this seems reasonable for what this mode is expected to be
   // used ("end-product" kind of projects).
   //
-  bool readme         (false); // !no-readme
+  bool third_party    (false); // third-party
+  bool readme         (false); // !no-readme && !third_party
+  bool pkg_readme     (false); // !no-package-readme && third-party
   bool altn           (false); // alt-naming
   bool binless        (false); // binless
   bool itest          (false); // !no-tests
   bool utest          (false); // unit-tests
   bool install        (false); // !no-install
-  bool ver            (false); // !no-version
-  bool no_symexport   (false); // no-symexport
+  bool ver            (false); // !no-version && !third_party
+  bool no_symexport   (false); // no-symexport || (third_party && !auto_symexport)
   bool auto_symexport (false); // auto-symexport
   bool symexport      (false); // !no-symexport && !binless
 
@@ -450,11 +595,13 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
     {
     case type::exe:
       {
-        readme  = !t.exe_opt.no_readme ()  && !src;
-        altn    =  t.exe_opt.alt_naming ();
-        itest   = !t.exe_opt.no_tests ();
-        utest   =  t.exe_opt.unit_tests ();
-        install = !t.exe_opt.no_install ();
+        third_party =  t.exe_opt.third_party ();
+        readme      = !t.exe_opt.no_readme () && !third_party && !src;
+        pkg_readme  = !t.exe_opt.no_package_readme () && third_party && !src;
+        altn        =  t.exe_opt.alt_naming ();
+        itest       = !t.exe_opt.no_tests ();
+        utest       =  t.exe_opt.unit_tests ();
+        install     = !t.exe_opt.no_install ();
 
         if (!src)
         {
@@ -465,13 +612,15 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
       }
     case type::lib:
       {
-        readme  = !t.lib_opt.no_readme ()  && !src;
-        altn    =  t.lib_opt.alt_naming ();
-        binless =  t.lib_opt.binless ();
-        itest   = !t.lib_opt.no_tests ()   && !src;
-        utest   =  t.lib_opt.unit_tests ();
-        install = !t.lib_opt.no_install ();
-        ver     = !t.lib_opt.no_version () && !src;
+        third_party =  t.lib_opt.third_party ();
+        readme      = !t.lib_opt.no_readme () && !third_party && !src;
+        pkg_readme  = !t.lib_opt.no_package_readme () && third_party && !src;
+        altn        =  t.lib_opt.alt_naming ();
+        binless     =  t.lib_opt.binless ();
+        itest       = !t.lib_opt.no_tests () && !src;
+        utest       =  t.lib_opt.unit_tests ();
+        install     = !t.lib_opt.no_install ();
+        ver         = !t.lib_opt.no_version () && !third_party && !src;
 
         if (!src)
         {
@@ -492,6 +641,9 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
             fail << "both --type|-t,no-symexport and --type|-t,auto-symexport "
                  << "specified";
         }
+
+        if (third_party && !auto_symexport)
+          no_symexport = true;
 
         symexport = !no_symexport && !binless;
 
@@ -1371,13 +1523,14 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
   // Check if certain things already exist.
   //
-  optional<vcs::vcs_type> vc_e;        // Detected version control system.
-  optional<string>        readme_e;    // Extracted summary line.
-  optional<path>          readme_f;    // README file path.
-  optional<string>        license_e;   // Extracted license id.
-  optional<path>          license_f;   // LICENSE file path.
-  optional<path>          copyright_f; // COPYRIGHT file path.
-  optional<path>          authors_f;   // AUTHORS file path.
+  optional<vcs::vcs_type> vc_e;         // Detected version control system.
+  optional<string>        readme_e;     // Extracted summary line.
+  optional<path>          readme_f;     // README file path.
+  optional<path>          pkg_readme_f; // PACKAGE-README file path.
+  optional<string>        license_e;    // Extracted license id.
+  optional<path>          license_f;    // LICENSE file path.
+  optional<path>          copyright_f;  // COPYRIGHT file path.
+  optional<path>          authors_f;    // AUTHORS file path.
   {
     if (!src)
     {
@@ -1387,13 +1540,6 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           vc_e = vcs::git;
       }
 
-      // @@ What if in the --package mode these files already exist but are
-      //    not in the package but in the project root? This also goes back to
-      //    an existing desire to somehow reuse project README.md/LICENSE in
-      //    its packages (currently a reference from manifest out of package
-      //    is illegal). Maybe via symlinks? We could probably even
-      //    automatically find and symlink them?
-      //
       path f;
 
       // README.md
@@ -1407,6 +1553,52 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
             info << "using generic summary in manifest";
 
         readme_f = move (f);
+      }
+      else if (third_party)
+      {
+        // Recognize a few more README equivalents in the third-party mode
+        // (but without an attempt to extract the summary).
+        //
+        // Note: we should probably only recognize extensions that are also
+        // recognized in the description-file manifest value.
+        //
+        if (exists ((f = out / "README")) ||
+            exists ((f = out / "README.txt")))
+        {
+          warn << "unable to extract project summary from " << f <<
+            info << "using generic summary in manifest";
+
+          readme_f = move (f);
+        }
+        else
+          warn << "no existing README.md (or equivalent) file in third-party "
+               << "package";
+      }
+
+      // PACKAGE[-_]README.md
+      // README[-_]PACKAGE.md
+      //
+      // Note that we are checking for this file even if not in the third-
+      // party mode. Feels harmless and could be potentially useful.
+      //
+      if (exists ((f = out / "PACKAGE-README.md")) ||
+          exists ((f = out / "PACKAGE_README.md")) ||
+          exists ((f = out / "README-PACKAGE.md")) ||
+          exists ((f = out / "README_PACKAGE.md")))
+      {
+        // If we have no README.md but have PACKAGE-README.md, might as well
+        // try to extract the summary from that.
+        //
+        if (!readme_f)
+        {
+          readme_e = extract_summary (f, n, prjn ? prjn->string () : string ());
+
+          if (readme_e->empty ())
+            warn << "unable to extract project summary from " << f <<
+              info << "using generic summary in manifest";
+        }
+
+        pkg_readme_f = move (f);
       }
 
       // LICENSE
@@ -1427,11 +1619,23 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
         license_e = extract_license (f);
 
         if (license_e->empty () && !license_o)
-          fail << "unable to guess project license from " << f <<
+        {
+          diag_record dr; if (third_party) dr << warn; else dr << fail;
+
+          dr << "unable to guess project license from " << f <<
             info << "use --type|-t,license sub-option to specify explicitly";
+
+          if (third_party)
+            dr << info << "or adjust manually in manifest";
+
+          license_e = nullopt;
+        }
 
         license_f = move (f);
       }
+      else if (third_party)
+        warn << "no existing LICENSE (or equivalent) file in third-party "
+             << "package";
 
       // COPYRIGHT
       //
@@ -1470,7 +1674,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
     {
       if (!license_o)
       {
-        // We should have failed earlier if the license wasn't recognized.
+        // We should have failed/cleared if the license wasn't recognized.
         //
         assert (!license_e->empty ());
 
@@ -1680,14 +1884,13 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
       switch (t)
       {
       case type::exe:
+        {
+          generate_exe_readme (os, pkgn, readme_e, false /*package_readme*/);
+          break;
+        }
       case type::lib:
         {
-          // @@ Maybe we should generate a "Hello, World" description and
-          //    usage example as a guide, at least for a library?
-
-          os << "# " << n                                              << '\n'
-             <<                                                           '\n'
-             << l << " " << t                                          << '\n';
+          generate_lib_readme (os, pkgn, l, readme_e, false /*package_readme*/);
           break;
         }
       case type::bare:
@@ -1696,6 +1899,30 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           os << "# " << n                                              << '\n';
           break;
         }
+      }
+      os.close ();
+    }
+
+    // PACKAGE-README.md
+    //
+    if (!pkg_readme_f && pkg_readme)
+    {
+      open (*(pkg_readme_f = out / "PACKAGE-README.md"));
+      switch (t)
+      {
+      case type::exe:
+        {
+          generate_exe_readme (os, pkgn, readme_e, true /*package_readme*/);
+          break;
+        }
+      case type::lib:
+        {
+          generate_lib_readme (os, pkgn, l, readme_e, true /*package_readme*/);
+          break;
+        }
+      case type::bare:
+      case type::empty:
+        assert (false);
       }
       os.close ();
     }
@@ -1807,12 +2034,22 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
         os << "license: " << license << " ; " << ln << "."             << '\n';
       if (readme_f)
         os << "description-file: " << readme_f->leaf (out).posix_representation () << '\n';
-      os << "url: https://example.org/" << (prjn ? prjn->string () : n)<< '\n'
-         << "email: " << pe                                            << '\n'
-         << "#build-error-email: " << pe                               << '\n'
-         << "depends: * build2 >= 0.16.0"                              << '\n'
-         << "depends: * bpkg >= 0.16.0"                                << '\n'
-         << "#depends: libhello ^1.0.0"                                << '\n';
+      if (pkg_readme_f)
+        os << "package-description-file: " << pkg_readme_f->leaf (out).posix_representation () << '\n';
+      if (!third_party)
+        os << "url: https://example.org/" << (prjn ? prjn->string () : n)<< '\n'
+           << "email: " << pe                                          << '\n';
+      else
+        os << "url: https://example.org/upstream"                      << '\n'
+           << "email: upstream@example.org"                            << '\n'
+           << "package-url: https://github.com/build2-packaging/" << (prjn ? prjn->string () : n) << '\n'
+           << "package-email: packaging@build2.org ; Mailing list."    << '\n';
+      if (!third_party)
+        os << "#build-error-email: " << pe                             << '\n';
+      os << "depends: * build2 >= 0.16.0"                              << '\n'
+         << "depends: * bpkg >= 0.16.0"                                << '\n';
+      if (!third_party)
+        os  << "#depends: libhello ^1.0.0"                             << '\n';
       os.close ();
     }
 
@@ -2110,11 +2347,14 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
     // Write the root directory doc type prerequisites to the stream,
     // optionally adding the trailing newline.
     //
-    auto write_doc_prerequisites = [
-      &os, &out,
-      &readme_f, &license_f, &copyright_f, &authors_f] (bool newline = false)
+    auto write_doc_prerequisites = [&os, &out,
+                                    &readme_f,
+                                    &pkg_readme_f,
+                                    &license_f,
+                                    &copyright_f,
+                                    &authors_f] (bool newline = false)
     {
-      if (readme_f || license_f || copyright_f || authors_f)
+      if (readme_f || pkg_readme_f || license_f || copyright_f || authors_f)
       {
         const char* s;
         auto write = [&os, &out, &s] (const path& f)
@@ -2123,12 +2363,13 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           s = " ";
         };
 
-        if (readme_f)
+        if (readme_f || pkg_readme_f)
         {
           s = "";
 
           os << "doc{";
-          write (*readme_f);
+          if (readme_f) write (*readme_f);
+          if (pkg_readme_f) write (*pkg_readme_f);
           os << "} ";
         }
 

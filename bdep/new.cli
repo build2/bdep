@@ -333,9 +333,22 @@ namespace bdep
          Create the \cb{buildfile} in the source prefix directory rather than
          in its source subdirectory.|
 
+     \li|\n\ \ \ \cb{third-party}
+
+         Create a package for converting an existing third-party executable to
+         \cb{build2}. This sub-option automatically enables the \cb{no-readme}
+         sub-option. It also adds a number of values to \cb{manifest} that
+         makes sense to specify in a package of a third-party project and,
+         unless \cb{no-package-readme} is specified, generates the
+         \cb{PACKAGE-README.md} template (see
+         \l{bpkg#manifest-package-description \cb{package-description}}
+         package manifest value for background).|
+
      \li|\n\ \ \ \c{\b{license=}\i{name}}|
 
      \li|\ \ \ \cb{no-readme}|
+
+     \li|\ \ \ \cb{no-package-readme}|
 
      \li|\ \ \ \cb{alt-naming}
 
@@ -413,9 +426,24 @@ namespace bdep
          Create the \cb{buildfiles} in the header/source prefix directories
          rather than in their source subdirectories.|
 
+     \li|\n\ \ \ \cb{third-party}
+
+         Create a package for converting an existing third-party library to
+         \cb{build2}. This sub-option automatically enables the
+         \cb{no-version} and \cb{no-readme} sub-options as well as
+         \cb{no-symexport} unless \cb{auto-symexport} is specified. It also
+         adds a number of values to \cb{manifest} that makes sense to specify
+         in a package of a third-party project and, unless
+         \cb{no-package-readme} is specified, generates the
+         \cb{PACKAGE-README.md} template (see
+         \l{bpkg#manifest-package-description \cb{package-description}}
+         package manifest value for background).|
+
      \li|\n\ \ \ \c{\b{license=}\i{name}}|
 
      \li|\ \ \ \cb{no-readme}|
+
+     \li|\ \ \ \cb{no-package-readme}|
 
      \li|\ \ \ \cb{alt-naming}
 
@@ -508,7 +536,12 @@ namespace bdep
 
      \li|\n\ \ \ \cb{no-readme}
 
-         Don't add new \cb{README.md} (but still check for the existing).|
+         Don't add new \cb{README.md} (but still check for the existing one).|
+
+     \li|\n\ \ \ \cb{no-package-readme}
+
+         Don't add new \cb{PACKAGE-README.md} (but still check for the
+         existing one).|
 
      \li|\n\ \ \ \cb{alt-naming}
 
@@ -607,11 +640,13 @@ namespace bdep
     dir_path subdir;
     bool no-subdir;
     bool buildfile-in-prefix;
+    bool third-party;
     string license = "other: proprietary";
     bool no-readme;
+    bool no-package-readme;
     bool alt-naming;
 
-    // Old name for the subdir sub-option (thus undocumented).
+    // Old name for the subdir sub-option (thus undocumented). @@ TMP drop
     //
     // If specified, we will fail suggesting to use the new sub-option instead.
     //
@@ -636,11 +671,13 @@ namespace bdep
     bool no-subdir-source;
     bool no-subdir;
     bool buildfile-in-prefix;
+    bool third-party;
     string license = "other: proprietary";
     bool no-readme;
+    bool no-package-readme;
     bool alt-naming;
 
-    // Old name for the subdir sub-option (thus undocumented).
+    // Old name for the subdir sub-option (thus undocumented). @@ TMP drop.
     //
     // If specified, we will fail suggesting to use the new sub-option instead.
     //
