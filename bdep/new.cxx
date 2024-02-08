@@ -1527,6 +1527,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
   optional<string>        readme_e;     // Extracted summary line.
   optional<path>          readme_f;     // README file path.
   optional<path>          pkg_readme_f; // PACKAGE-README file path.
+  optional<path>          changes_f;    // NEWS/ChangeLog file path.
   optional<string>        license_e;    // Extracted license id.
   optional<path>          license_f;    // LICENSE file path.
   optional<path>          copyright_f;  // COPYRIGHT file path.
@@ -1599,6 +1600,41 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
         }
 
         pkg_readme_f = move (f);
+      }
+
+      // NEWS{.md,txt,}
+      // {CHANGES,Changes}{.md,.txt,}
+      // {CHANGELOG,ChangeLog}{.md,.txt,}
+      //
+      // Note: some projects may have several, for example, NEWS and ChangeLog
+      // and we look in a specific order (from the high-level overview to more
+      // detailed).
+      //
+      // Note: we should probably only recognize extensions that are also
+      // recognized in the changes-file manifest value.
+      //
+      // Other things seen in the wild:
+      //
+      // RELEASE-NOTES (curl)
+      // WhatsNew.txt (SDL2)
+      //
+      if (exists ((f = out / "NEWS.md"))       ||
+          exists ((f = out / "NEWS.txt"))      ||
+          exists ((f = out / "NEWS"))          ||
+          exists ((f = out / "CHANGES.md"))    ||
+          exists ((f = out / "CHANGES.txt"))   ||
+          exists ((f = out / "CHANGES"))       ||
+          exists ((f = out / "Changes.md"))    ||
+          exists ((f = out / "Changes.txt"))   ||
+          exists ((f = out / "Changes"))       ||
+          exists ((f = out / "CHANGELOG.md"))  ||
+          exists ((f = out / "CHANGELOG.txt")) ||
+          exists ((f = out / "CHANGELOG"))     ||
+          exists ((f = out / "ChangeLog.md"))  ||
+          exists ((f = out / "ChangeLog.txt")) ||
+          exists ((f = out / "ChangeLog")))
+      {
+        changes_f = move (f);
       }
 
       // LICENSE
@@ -2036,6 +2072,8 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
         os << "description-file: " << readme_f->leaf (out).posix_representation () << '\n';
       if (pkg_readme_f)
         os << "package-description-file: " << pkg_readme_f->leaf (out).posix_representation () << '\n';
+      if (changes_f)
+        os << "changes-file: " << changes_f->leaf (out).posix_representation () << '\n';
       if (!third_party)
         os << "url: https://example.org/" << (prjn ? prjn->string () : n)<< '\n'
            << "email: " << pe                                          << '\n';
@@ -2350,11 +2388,17 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
     auto write_doc_prerequisites = [&os, &out,
                                     &readme_f,
                                     &pkg_readme_f,
+                                    &changes_f,
                                     &license_f,
                                     &copyright_f,
                                     &authors_f] (bool newline = false)
     {
-      if (readme_f || pkg_readme_f || license_f || copyright_f || authors_f)
+      if (readme_f     ||
+          pkg_readme_f ||
+          changes_f    ||
+          license_f    ||
+          copyright_f  ||
+          authors_f)
       {
         const char* s;
         auto write = [&os, &out, &s] (const path& f)
@@ -2363,13 +2407,14 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           s = " ";
         };
 
-        if (readme_f || pkg_readme_f)
+        if (readme_f || pkg_readme_f || changes_f)
         {
           s = "";
 
           os << "doc{";
-          if (readme_f) write (*readme_f);
+          if (readme_f)     write (*readme_f);
           if (pkg_readme_f) write (*pkg_readme_f);
+          if (changes_f)    write (*changes_f);
           os << "} ";
         }
 
