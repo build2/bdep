@@ -318,7 +318,7 @@ namespace bdep
        <<                                                                 '\n'
        << "## Usage"                                                   << '\n'
        <<                                                                 '\n'
-       << "To start using this library in your project, add the following `depends`" << '\n'
+       << "To start using `" << p << "` in your project, add the following `depends`" << '\n'
        << "value to your `manifest`, adjusting the version constraint as appropriate:" << '\n'
        <<                                                                 '\n'
        << "```"                                                        << '\n'
@@ -387,10 +387,13 @@ namespace bdep
     }
 
     os <<                                                                 '\n'
+       << "Note that the `" << p << "` executable in this package provides `build2` metadata." << '\n';
+
+    os <<                                                                 '\n'
        <<                                                                 '\n'
        << "## Usage"                                                   << '\n'
        <<                                                                 '\n'
-       << "To start using this executable in your project, add the following build-time" << '\n'
+       << "To start using `" << p << "` in your project, add the following build-time" << '\n'
        << "`depends` value to your `manifest`, adjusting the version constraint as" << '\n'
        << "appropriate:"                                               << '\n'
        <<                                                                 '\n'
@@ -401,10 +404,8 @@ namespace bdep
        << "Then import the executable in your `buildfile`:"            << '\n'
        <<                                                                 '\n'
        << "```"                                                        << '\n'
-       << "import <TARGET> = " << p << "%exe{<TARGET>}"                << '\n'
-       << "```"                                                        << '\n'
-       <<                                                                 '\n'
-       << "Note that the `<TARGET>` executable provides `build2` metadata." << '\n';
+       << "import! [metadata] <TARGET> = " << p << "%exe{<TARGET>}"    << '\n'
+       << "```"                                                        << '\n';
 
     os <<                                                                 '\n'
        <<                                                                 '\n'
