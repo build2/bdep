@@ -518,7 +518,8 @@ namespace bdep
     package_info pi (package_b_info (o, d, b_info_flags::none));
 
     if (pi.version.empty ())
-      fail << "package in directory " << d << " does not use standard version";
+      fail << "package in directory " << d << " does not use standard version" <<
+        info << "perhaps the package does not load the version module?";
 
     return move (pi.version);
   }
@@ -549,6 +550,7 @@ namespace bdep
       fail << "name mismatch for package " << p;
 
     if (pi.version.empty ())
-      fail << "package " << p << " does not use standard version";
+      fail << "package " << p << " does not use standard version" <<
+        info << "perhaps the package does not load the version module?";
   }
 }
