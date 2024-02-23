@@ -3,8 +3,7 @@
 
 #include <bdep/http-service.hxx>
 
-#include <cstdlib> // strtoul()
-
+#include <libbutl/curl.hxx>
 #include <libbutl/fdstream.hxx> // fdterm()
 
 #include <bdep/diagnostics.hxx>
@@ -186,119 +185,18 @@ namespace bdep
           file_text = nullptr;
         }
 
-        // Parse and return the HTTP status code. Return 0 if the argument is
-        // invalid.
-        //
-        auto status_code = [] (const string& s)
-        {
-          char* e (nullptr);
-          unsigned long c (strtoul (s.c_str (), &e, 10)); // Can't throw.
-          assert (e != nullptr);
-
-          return *e == '\0' && c >= 100 && c < 600
-                 ? static_cast<uint16_t> (c)
-                 : 0;
-        };
-
-        // Read the CRLF-terminated line from the stream stripping the
-        // trailing CRLF.
-        //
-        auto read_line = [&is] ()
-        {
-          string l;
-          getline (is, l); // Strips the trailing LF (0xA).
-
-          // Note that on POSIX CRLF is not automatically translated into
-          // LF, so we need to strip CR (0xD) manually.
-          //
-          if (!l.empty () && l.back () == '\r')
-            l.pop_back ();
-
-          return l;
-        };
-
         auto bad_response = [] (const string& d) {throw runtime_error (d);};
 
-        // Read and parse the HTTP response status line, return the status
-        // code and the reason phrase.
-        //
-        struct http_status
+        curl::http_status rs;
+
+        try
         {
-          uint16_t code;
-          string reason;
-        };
-
-        auto read_status = [&read_line, &status_code, &bad_response] ()
+          rs = curl::read_http_status (is, false /* skip_headers */);
+        }
+        catch (const invalid_argument& e)
         {
-          string l (read_line ());
-
-          for (;;) // Breakout loop.
-          {
-            if (l.compare (0, 5, "HTTP/") != 0)
-              break;
-
-            size_t p (l.find (' ', 5));             // The protocol end.
-            if (p == string::npos)
-              break;
-
-            p = l.find_first_not_of (' ', p + 1);   // The code start.
-            if (p == string::npos)
-              break;
-
-            size_t e (l.find (' ', p + 1));         // The code end.
-            if (e == string::npos)
-              break;
-
-            uint16_t c (status_code (string (l, p, e - p)));
-            if (c == 0)
-              break;
-
-            string r;
-            p = l.find_first_not_of (' ', e + 1);   // The reason start.
-            if (p != string::npos)
-            {
-              e = l.find_last_not_of (' ');         // The reason end.
-              assert (e != string::npos && e >= p);
-
-              r = string (l, p, e - p + 1);
-            }
-
-            return http_status {c, move (r)};
-          }
-
-          bad_response ("invalid HTTP response status line '" + l + '\'');
-
-          assert (false); // Can't be here.
-          return http_status {};
-        };
-
-        // The curl output for a successfull request looks like this:
-        //
-        // HTTP/1.1 100 Continue
-        //
-        // HTTP/1.1 200 OK
-        // Content-Length: 83
-        // Content-Type: text/manifest;charset=utf-8
-        //
-        // : 1
-        // status: 200
-        // message: submission is queued
-        // reference: 256910ca46d5
-        //
-        // curl normally sends the 'Expect: 100-continue' header for uploads,
-        // so we need to handle the interim HTTP server response with the
-        // continue (100) status code.
-        //
-        // Interestingly, Apache can respond with the continue (100) code and
-        // with the not found (404) code afterwords. Can it be configured to
-        // just respond with 404?
-        //
-        http_status rs (read_status ());
-
-        if (rs.code == 100)
-        {
-          while (!read_line ().empty ()) ; // Skips the interim response.
-          rs = read_status ();             // Reads the final status code.
+          bad_response (
+            string ("unable to read HTTP response status line: ") + e.what ());
         }
 
         // Read through the response headers until the empty line is
@@ -333,7 +231,7 @@ namespace bdep
           return optional<string> (move (r));
         };
 
-        while (!(l = read_line ()).empty ())
+        while (!(l = curl::read_http_response_line (is)).empty ())
         {
           if (optional<string> v = header ("Content-Type"))
             ctype = move (v);
@@ -392,7 +290,7 @@ namespace bdep
             if (n != "status")
               bad_value ("no status specified");
 
-            uint16_t c (status_code (v));
+            uint16_t c (curl::parse_http_status_code (v));
             if (c == 0)
               bad_value ("invalid HTTP status '" + v + '\'');
 
