@@ -155,11 +155,19 @@ namespace bdep
   // specified configuration with their project directory repository being
   // masked.
   //
+  // Note that it is not very likely but still possible that the
+  // deinitialization of a package may end up with associating new
+  // configurations with the project. Think of deorphaning a package, which
+  // has been replaced with another version that got some new build-time
+  // dependency.
+  //
   void
   cmd_sync_deinit (const common_options&,
                    const dir_path& prj,
                    const shared_ptr<configuration>&,
-                   const strings& pkgs);
+                   const strings& pkgs,
+                   transaction* = nullptr,
+                   vector<pair<dir_path, string>>* created_cfgs = nullptr);
 
   int
   cmd_sync (cmd_sync_options&&, cli::group_scanner& args);

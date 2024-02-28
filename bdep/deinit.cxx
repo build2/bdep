@@ -10,6 +10,7 @@
 
 #include <bdep/sync.hxx>
 #include <bdep/fetch.hxx>
+#include <bdep/config.hxx>
 
 using namespace std;
 
@@ -19,7 +20,9 @@ namespace bdep
   cmd_deinit (const cmd_deinit_options& o,
               const dir_path& prj,
               const shared_ptr<configuration>& c,
-              const strings& pkgs)
+              const strings& pkgs,
+              transaction& t,
+              vector<pair<dir_path, string>>& created_cfgs)
   {
     bool force (o.force ());
     const dir_path& cfg (c->path);
@@ -114,7 +117,7 @@ namespace bdep
       if (!o.no_fetch ())
         cmd_fetch (o, prj, c, true /* fetch_full */);
 
-      cmd_sync_deinit (o, prj, c, pkgs);
+      cmd_sync_deinit (o, prj, c, pkgs, &t, &created_cfgs);
     }
   }
 
@@ -231,38 +234,61 @@ namespace bdep
         continue;
       }
 
-      transaction t (db.begin ());
+      vector<pair<dir_path, string>> created_cfgs;
 
-      // Remove collected packages from the configuration.
-      //
-      c->packages.erase (
-        remove_if (c->packages.begin (),
-                   c->packages.end (),
-                   [&ps] (const package_state& p)
-                   {
-                     return find_if (ps.begin (),
-                                     ps.end (),
-                                     [&p] (const string& n)
-                                     {
-                                       return p.name == n;
-                                     }) != ps.end ();
-                   }),
-        c->packages.end ());
-
-      // If we are deinitializing multiple packages, print their names.
-      //
-      if (verb && ps.size () > 1)
+      try
       {
-        for (const string& n: ps)
-          text << "deinitializing package " << n;
+        transaction t (db.begin ());
+
+        // Remove collected packages from the configuration.
+        //
+        c->packages.erase (
+          remove_if (c->packages.begin (),
+                     c->packages.end (),
+                     [&ps] (const package_state& p)
+                     {
+                       return find_if (ps.begin (),
+                                       ps.end (),
+                                       [&p] (const string& n)
+                                       {
+                                         return p.name == n;
+                                       }) != ps.end ();
+                     }),
+          c->packages.end ());
+
+        // If we are deinitializing multiple packages, print their names.
+        //
+        if (verb && ps.size () > 1)
+        {
+          for (const string& n: ps)
+            text << "deinitializing package " << n;
+        }
+
+        // The same story as in init with regard to the state update order.
+        //
+        cmd_deinit (o, prj, c, ps, t, created_cfgs);
+
+        db.update (c);
+        t.commit ();
       }
+      catch (const failed&)
+      {
+        if (!created_cfgs.empty ())
+        {
+          transaction t (db.begin ());
 
-      // The same story as in init with regard to the state update order.
-      //
-      cmd_deinit (o, prj, c, ps);
+          for (const auto& c: created_cfgs)
+            cmd_config_add (prj,
+                            t,
+                            c.first  /* path */,
+                            c.second /* name */,
+                            c.second /* type */);
 
-      db.update (c);
-      t.commit ();
+          t.commit ();
+        }
+
+        throw;
+      }
 
       // Remove our repository from the configuration if we have no more
       // packages that are initialized in it.

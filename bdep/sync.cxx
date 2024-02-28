@@ -2385,7 +2385,9 @@ namespace bdep
   cmd_sync_deinit (const common_options& co,
                    const dir_path& prj,
                    const shared_ptr<configuration>& cfg,
-                   const strings& pkgs)
+                   const strings& pkgs,
+                   transaction* origin_tr,
+                   vector<pair<dir_path, string>>* created_cfgs)
   {
     sync_configs ocfgs {cfg};
     linked_configs lcfgs (find_config_cluster (co, cfg->path));
@@ -2407,7 +2409,9 @@ namespace bdep
               pkgs,
               sys_options (),
               false                 /* create_host_config   */,
-              false                 /* create_build2_config */);
+              false                 /* create_build2_config */,
+              origin_tr,
+              created_cfgs);
   }
 
   int
