@@ -499,11 +499,11 @@ status += -d prj
       deinitializing in project $~/libprj/
       %fetching dir:.+/libprj%
       %fetching dir:.+/prj%
-      error: unknown package libprj
+      error: libprj is not available from its dependents' repositories
       EOE
 
-    # While at it, test that adding the repository to the manifest fixes the
-    # issue.
+    # While at it, test that adding the repository to the dependent'
+    # repositories manifest fixes the issue.
     #
     cat <<EOI >+prj/repositories.manifest;
       :
