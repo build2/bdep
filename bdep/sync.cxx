@@ -960,9 +960,10 @@ namespace bdep
         if (empty)
         {
           // Note that we keep empty origin configurations if we have any
-          // dependencies to upgrade (see below for details).
+          // dependencies to upgrade or we deinitialize some packages (see
+          // below for details).
           //
-          if (dep_pkgs.empty ())
+          if (dep_pkgs.empty () && deinit_pkgs.empty ())
             continue;
           else
           {
