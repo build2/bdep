@@ -1078,6 +1078,14 @@ namespace bdep
 
     // Next collect init'ed packages.
     //
+    // Note that in the deinit mode the being deinitialized packages must have
+    // already been removed from the configuration (see cmd_deinit() for
+    // details) and will be collected differently (see below). The details of
+    // their collection, however, depends on if any packages will remain
+    // initialized in the origin project. Thus, while at it, let's note that.
+    //
+    bool deinit_remain_initialized (false);
+
     for (const sync_project& prj: prjs)
     {
       for (const sync_project::config& cfg: prj.configs)
@@ -1087,13 +1095,24 @@ namespace bdep
 
         for (const package_state& pkg: cfg->packages)
         {
-          // In the deinit mode skip the being deinitialized packages to add
-          // them to the command line differently (see below).
-          //
-          if (find (deinit_pkgs.begin (), deinit_pkgs.end (), pkg.name) !=
-              deinit_pkgs.end () &&
-              prj.path == origin_prj)
-            continue;
+          if (!deinit_pkgs.empty () && prj.path == origin_prj)
+          {
+            // Must contain the configuration where the packages are being
+            // deinitialized.
+            //
+            assert (origin_cfgs.size () == 1);
+
+            if (origin_cfgs.front ().path () == cfg->path)
+            {
+              // Must have been removed from the configuration.
+              //
+              assert (find (deinit_pkgs.begin (),
+                            deinit_pkgs.end (),
+                            pkg.name) == deinit_pkgs.end ());
+
+              deinit_remain_initialized = true;
+            }
+          }
 
           // Return true if this package is part of the list specified
           // explicitly or, if none are specified, init'ed in the origin
@@ -1558,15 +1577,25 @@ namespace bdep
       string config_uuid (
         linked_cfgs.find (origin_cfgs.front ().path ())->uuid.string ());
 
-      args.push_back ("--mask-repository-uuid");
-      args.push_back (config_uuid + '=' + repository_name (origin_prj));
+      // If any initialized packages will remain in the origin project, then
+      // the respective repository won't be removed from the bpkg
+      // configuration (see cmd_deinit() for details) and thus we don't mask
+      // it nor deorphan the being deinitialized packages (just unhold them).
+      //
+      if (!deinit_remain_initialized)
+      {
+        args.push_back ("--mask-repository-uuid");
+        args.push_back (config_uuid + '=' + repository_name (origin_prj));
+      }
 
       args.push_back ("{");
 
       if (multi_cfg)
         args.push_back ("--config-uuid=" + config_uuid);
 
-      args.push_back ("--deorphan");
+      if (!deinit_remain_initialized)
+        args.push_back ("--deorphan");
+
       args.push_back ("--dependency");
       args.push_back ("}+");
 
