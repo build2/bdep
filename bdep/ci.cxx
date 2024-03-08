@@ -194,9 +194,9 @@ namespace bdep
     // package manifest values and is semantically correct.
     //
     // Note that if we end up with any build package configuration-specific
-    // overrides, then we will need to verify the overrides using the package
-    // manifests to make sure that the specified build configurations are
-    // valid for the specified packages.
+    // overrides or any [*-]build-auxiliary[-*] overrides, then we will need
+    // to verify the overrides using the package manifests to make sure that
+    // these overrides are valid for the specified packages.
     //
     vector<manifest_name_value> overrides;
 
@@ -226,6 +226,7 @@ namespace bdep
                           o.interactive ().find ('/') != string::npos));
 
     bool build_email_ovr (false);
+    bool aux_ovr         (false);
 
     if (o.overrides_specified ())
     {
@@ -263,17 +264,30 @@ namespace bdep
             info << "override: " << n << ": " << nv.value;
         }
 
-        if (n == "build-email"                                            ||
-            n == "build-warning-email"                                    ||
-            n == "build-error-email"                                      ||
-            (n.size () > 12 &&
-             n.compare (n.size () - 12, 12, "-build-email") == 0)         ||
-            (n.size () > 20 &&
-             n.compare (n.size () - 20, 20, "-build-warning-email") == 0) ||
-            (n.size () > 18 &&
-             n.compare (n.size () - 18, 18, "-build-error-email") == 0))
-        {
+        bool eo (
+          (n == "build-email"                                            ||
+           n == "build-warning-email"                                    ||
+           n == "build-error-email"                                      ||
+           (n.size () > 12 &&
+            n.compare (n.size () - 12, 12, "-build-email") == 0)         ||
+           (n.size () > 20 &&
+            n.compare (n.size () - 20, 20, "-build-warning-email") == 0) ||
+           (n.size () > 18 &&
+            n.compare (n.size () - 18, 18, "-build-error-email") == 0)));
+
+        if (eo)
           build_email_ovr = true;
+
+        if (!pco && !eo)
+        {
+          if (optional<pair<string, string>> an =
+              bpkg::build_auxiliary::parse_value_name (n))
+          {
+            aux_ovr = true;
+
+            if (!an->first.empty ())
+              pkg_config_ovr = true;
+          }
         }
       }
 
@@ -492,14 +506,14 @@ namespace bdep
       }
     }
 
-    // If there are any build package configuration-specific overrides, then
-    // load the package manifests to use them later for validation of the
-    // complete override list. Note that we also need these manifests for
-    // producing the --package-config overrides.
+    // If there are any build package configuration-specific overrides or any
+    // build auxiliary overrides, then load the package manifests to use them
+    // later for validation of the complete override list. Note that we also
+    // need these manifests for producing the --package-config overrides.
     //
     vector<package_manifest> override_manifests;
 
-    if (pkg_config_ovr)
+    if (pkg_config_ovr || aux_ovr)
     {
       override_manifests.reserve (pkgs.size ());
 
@@ -809,8 +823,9 @@ namespace bdep
       };
 
       // If the package manifests are loaded (which happens if there are any
-      // build package configuration-specific overrides), then override them
-      // all. Otherwise, use package_manifest::validate_overrides().
+      // build package configuration-specific or build auxiliary overrides),
+      // then override them all. Otherwise, use
+      // package_manifest::validate_overrides().
       //
       // Specify the name argument for the override validation call to make
       // sure the origin/value information (saved into the values'

@@ -75,10 +75,15 @@ namespace bdep
 
      $ bdep ci --override 'mytest-build-config: config.foo.cache=true' \
        --package-config mytest
+
+     $ bdep ci --override 'build-auxiliary: *-postgresql_16'
      \
 
-     Manifest overrides override the entire value group that they belong
-     to. Currently, the following value groups can be overridden. The
+     Manifest overrides other than \c{[\b{*-}]\b{build-auxiliary}[\b{-*}]}
+     override the entire value group that they belong to. The
+     \c{[\b{*-}]\b{build-auxiliary}[\b{-*}]} values only override the matching
+     values, which are expected to already be present in the package manifest.
+     Currently, the following value groups/values can be overridden. The
      \cb{build-*email} group is overridden by default as if by specifying an
      empty build email.
 
@@ -88,16 +93,18 @@ namespace bdep
      *-builds *-build-{include,exclude}
      *-build-config
      *-build-email *-build-{warning,error}-email
+
+     [*-]build-auxiliary[-*]
      \
 
-     For the package configuration-specific build constraint and email
-     overrides the corresponding configuration must exist in the package
-     manifest. In contrast, the package configuration override
+     For the package configuration-specific build constraint, email, and
+     auxiliary overrides, the corresponding configuration must exist in the
+     package manifest. In contrast, the package configuration override
      (\cb{*-build-config}) adds a new configuration if it doesn't exist and
      updates the arguments of the existing configuration otherwise. In the
-     former case, all the potential build constraint and email overrides for
-     such a newly added configuration must follow the corresponding
-     \cb{*-build-config} override.
+     former case, all the potential build constraint, email, and auxiliary
+     overrides for such a newly added configuration must follow the
+     corresponding \cb{*-build-config} override.
 
      Note that the build constraints group values (both common and build
      package configuration-specific) are overridden hierarchically so that the

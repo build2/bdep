@@ -32,6 +32,7 @@ end
   EOI
 
 +cat <<EOI >+prj/manifest
+  build-auxiliary: *-postgresql_*
   network-build-config: config.prj.network=true
   EOI
 
@@ -275,6 +276,22 @@ windows = ($cxx.target.class == 'windows')
       $* --builds 'network/&gcc' --overrides-file overrides.manifest 2>>~%EOE% != 0
         error: invalid file referenced by --overrides-file option: 'builds' override specified together with 'network-builds' override
           info: override: builds: all
+        EOE
+    }
+
+    : build-auxiliary
+    :
+    {
+      $clone_prj;
+
+      $* --override 'build-auxiliary: *-postgresql_16' 2>>~%EOE%;
+        %CI request is queued.*%
+        %reference: .+%
+        EOE
+
+      $* --override 'build-auxiliary-pgsql: *-postgresql_16' 2>>EOE != 0
+        error: invalid --override option value: no match for 'build-auxiliary-pgsql' value override
+          info: override: build-auxiliary-pgsql: *-postgresql_16
         EOE
     }
 
