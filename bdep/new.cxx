@@ -745,7 +745,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
       // header generation needs to be disabled if no-subdir-include is
       // specified.
       //
-      if (t == type::lib && !t.lib_opt.no_version ())
+      if (t == type::lib && ver)
         fail << "generated version header is not supported in this layout" <<
           info << "specify --type|-t,no-version explicitly";
     }
