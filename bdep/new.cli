@@ -479,6 +479,12 @@ namespace bdep
          An empty project that can be filled with packages (see
          \cb{--package}). Recognized empty project sub-options:|
 
+     \li|\n\ \ \ \cb{third-party}
+
+         Create a project for converting an existing third-party project to
+         \cb{build2}. This sub-option adjusts the generated \cb{README.md}
+         template wording to reflect such a conversion.|
+
      \li|\n\ \ \ \cb{no-readme}
 
          See \cb{common} sub-options below.||
@@ -695,6 +701,7 @@ namespace bdep
 
   class cmd_new_empty_options
   {
+    bool third-party;
     bool no-readme;
   };
 

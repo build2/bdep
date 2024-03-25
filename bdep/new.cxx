@@ -431,6 +431,49 @@ namespace bdep
        <<                                                                 '\n'
        << "<DESCRIPTION-OF-CONFIG-VARIABLES>"                          << '\n';
   }
+
+  // Generate README.md for a multi-package repository root (--type empty).
+  //
+  static void
+  generate_empty_readme (ostream& os,
+                         const string& n,
+                         bool tp /* third-party */)
+  {
+    os << "# " << n << " - <SUMMARY>"                                  << '\n'
+       <<                                                                 '\n';
+
+    if (tp)
+    {
+      os << "This is a `build2` package reporitory for [`" << n << "`](https://<UPSTREAM-URL>)," << '\n'
+         << "a <SUMMARY-OF-FUNCTIONALITY>."                            << '\n';
+    }
+    else
+    {
+      os << "`" << n << "` is a <SUMMARY-OF-FUNCTIONALITY>."           << '\n';
+    }
+
+    os <<                                                                 '\n'
+       << "This file contains setup instructions and other details that are more" << '\n'
+       << "appropriate for development rather than consumption. If you want to use" << '\n'
+       << "`" << n << "` in your `build2`-based project, then instead see the accompanying" << '\n';
+    if (tp)
+      os << "[`PACKAGE-README.md`](<PACKAGE>/PACKAGE-README.md) file." << '\n';
+    else
+      os << "package [`README.md`](<PACKAGE>/README.md) file." << '\n';
+
+    os <<                                                                 '\n'
+       << "The development setup for `" << n << "` uses the standard `bdep`-based workflow." << '\n'
+       << "For example:"                                               << '\n'
+       <<                                                                 '\n'
+       << "```"                                                        << '\n'
+       << "git clone .../" << n << ".git"                              << '\n'
+       << "cd " << n                                                   << '\n'
+       <<                                                                 '\n'
+       << "bdep init -C @gcc cc config.cxx=g++"                        << '\n'
+       << "bdep update"                                                << '\n'
+       << "bdep test"                                                  << '\n'
+       << "```"                                                        << '\n';
+  }
 }
 
 int bdep::
@@ -573,7 +616,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
   // wrong). All this seems reasonable for what this mode is expected to be
   // used ("end-product" kind of projects).
   //
-  bool third_party    (false); // third-party
+  bool third_party    (false); // third-party (only exe and lib)
   bool readme         (false); // !no-readme && !third_party
   bool pkg_readme     (false); // !no-package-readme && third-party
   bool altn           (false); // alt-naming
@@ -673,6 +716,8 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                              pkg ? "package"             : nullptr))
           fail << "cannot create empty " << w;
 
+        // Note: don't initialize third_party.
+        //
         readme = !t.empty_opt.no_readme ();
         break;
       }
@@ -1931,9 +1976,13 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           break;
         }
       case type::bare:
-      case type::empty:
         {
           os << "# " << n                                              << '\n';
+          break;
+        }
+      case type::empty:
+        {
+          generate_empty_readme (os, n, t.empty_opt.third_party ());
           break;
         }
       }
