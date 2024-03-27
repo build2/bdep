@@ -316,6 +316,10 @@ namespace bdep
 
          Don't add support for installing.|
 
+     \li|\n\ \ \ \cb{export-stub}
+
+         Add support for importing this project's targets from other projects.|
+
      \li|\n\ \ \ \c{\b{prefix=}\i{dir}}
 
          Optional source prefix relative to project/package root.|
@@ -642,6 +646,7 @@ namespace bdep
     bool no-tests;
     bool unit-tests;
     bool no-install;
+    bool export-stub;
     dir_path prefix;
     dir_path subdir;
     bool no-subdir;

@@ -2777,6 +2777,24 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           }
         }
 
+        // build/export.build
+        //
+        if (!src && t.exe_opt.export_stub ())
+        {
+          string sd (
+            (pfx_src / (sub_src && !bfile_in_pfx_src ? sub : empty_dir_path)).
+            posix_representation ());
+
+          open (bd / "export." + build_ext);
+          os << "$out_root/"                                           << '\n'
+             << "{"                                                    << '\n'
+             << "  include " << (!sd.empty () ? sd : "./")             << '\n'
+             << "}"                                                    << '\n'
+             <<                                                           '\n'
+             << "export $out_root/" << sd << "$import.target"          << '\n';
+          os.close ();
+        }
+
         break;
       }
     case type::lib:
