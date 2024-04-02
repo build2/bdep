@@ -444,7 +444,7 @@ namespace bdep
 
     if (tp)
     {
-      os << "This is a `build2` package reporitory for [`" << n << "`](https://<UPSTREAM-URL>)," << '\n'
+      os << "This is a `build2` package repository for [`" << n << "`](https://<UPSTREAM-URL>)," << '\n'
          << "a <SUMMARY-OF-FUNCTIONALITY>."                            << '\n';
     }
     else
