@@ -295,6 +295,189 @@ windows = ($cxx.target.class == 'windows')
         EOE
     }
 
+    : build-bot
+    :
+    {
+      +$clone_prj
+
+      : common
+      :
+      {
+        $clone_prj;
+
+        cat <<EOI >=f;
+          : 1
+          build-bot:
+          \
+          -----BEGIN PUBLIC KEY-----
+          MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAw5liP5pyU9ebC/nD3djZ
+          1H2dlKmUyiX0Z8POvKhLREd0B3rM59bPcnbRB4HMIhj0J0hUBvS8xb4u5udCPToa
+          x0A/LMWZ6claiivNtJ3CdLV98eklWdNUg5WXOuqq9QDKXw2ZpGbwDwCOh6aHSWVq
+          98N9AQx0ZMmMWz3qhRyxPfh+GeJ05uj2ohU9FeUJxeqUcgJT/UcMZ3+7KYbwr+Uq
+          /HCoX1BmN6nvzhQGHvJIZ2IcjvOQ0AUrPmpSZN01Zr3ZEpkHM3hJWNLu3ntJLGBQ
+          0aT5kG3iqFyr9q3M3c4J8c0AWrnDjvj0qnCyjNwqW+qIpatmCNT43DmgYr9fQLW0
+          UHusburz53AbXs12zu3gZzkb0irlShatkMqqQaqaU0/+zw1LnoZ+rvmn2XV97UuK
+          LFKMKXCnyi2ZG65IZHGkjBVAPuvsX6RgLNyner/QtkDJTbfhktInbG08dCPqv1EF
+          1OtcYKMTn8I5P2VmMO6SXXDLMSdU8b5DA5EY6Ca6JBB8g06S9sqGqXgQFysAnZs1
+          VFgMopf8WZqj23x+DX+9KKT2pVnjbwRvBAntuCDoO75gWoETDnCQXEei/PbyamPq
+          9+NjNsTDn67iJTGncZbII+eciY2YiFHm6GMzBPsUYlQcxiuO4X36jW6m2rwuw37K
+          oFDbGI3uY4LnhwmDFLbjtk8CAwEAAQ==
+          -----END PUBLIC KEY-----
+          \
+          EOI
+
+        $* --overrides-file f 2>>~%EOE%
+          %CI request is queued.*%
+          %reference: .+%
+          EOE
+      }
+
+      : config-specific
+      :
+      {
+        $clone_prj;
+
+        cat <<EOI >=f;
+          : 1
+          network-build-bot:
+          \
+          -----BEGIN PUBLIC KEY-----
+          MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAw5liP5pyU9ebC/nD3djZ
+          1H2dlKmUyiX0Z8POvKhLREd0B3rM59bPcnbRB4HMIhj0J0hUBvS8xb4u5udCPToa
+          x0A/LMWZ6claiivNtJ3CdLV98eklWdNUg5WXOuqq9QDKXw2ZpGbwDwCOh6aHSWVq
+          98N9AQx0ZMmMWz3qhRyxPfh+GeJ05uj2ohU9FeUJxeqUcgJT/UcMZ3+7KYbwr+Uq
+          /HCoX1BmN6nvzhQGHvJIZ2IcjvOQ0AUrPmpSZN01Zr3ZEpkHM3hJWNLu3ntJLGBQ
+          0aT5kG3iqFyr9q3M3c4J8c0AWrnDjvj0qnCyjNwqW+qIpatmCNT43DmgYr9fQLW0
+          UHusburz53AbXs12zu3gZzkb0irlShatkMqqQaqaU0/+zw1LnoZ+rvmn2XV97UuK
+          LFKMKXCnyi2ZG65IZHGkjBVAPuvsX6RgLNyner/QtkDJTbfhktInbG08dCPqv1EF
+          1OtcYKMTn8I5P2VmMO6SXXDLMSdU8b5DA5EY6Ca6JBB8g06S9sqGqXgQFysAnZs1
+          VFgMopf8WZqj23x+DX+9KKT2pVnjbwRvBAntuCDoO75gWoETDnCQXEei/PbyamPq
+          9+NjNsTDn67iJTGncZbII+eciY2YiFHm6GMzBPsUYlQcxiuO4X36jW6m2rwuw37K
+          oFDbGI3uY4LnhwmDFLbjtk8CAwEAAQ==
+          -----END PUBLIC KEY-----
+          \
+          EOI
+
+        $* --overrides-file f 2>>~%EOE%
+          %CI request is queued.*%
+          %reference: .+%
+          EOE
+      }
+
+      : common-and-config-specific
+      :
+      {
+        $clone_prj;
+
+        cat <<EOI >=f;
+          : 1
+          build-bot:
+          \
+          -----BEGIN PUBLIC KEY-----
+          ABCCIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAw5liP5pyU9ebC/nD3djZ
+          1H2dlKmUyiX0Z8POvKhLREd0B3rM59bPcnbRB4HMIhj0J0hUBvS8xb4u5udCPToa
+          x0A/LMWZ6claiivNtJ3CdLV98eklWdNUg5WXOuqq9QDKXw2ZpGbwDwCOh6aHSWVq
+          98N9AQx0ZMmMWz3qhRyxPfh+GeJ05uj2ohU9FeUJxeqUcgJT/UcMZ3+7KYbwr+Uq
+          /HCoX1BmN6nvzhQGHvJIZ2IcjvOQ0AUrPmpSZN01Zr3ZEpkHM3hJWNLu3ntJLGBQ
+          0aT5kG3iqFyr9q3M3c4J8c0AWrnDjvj0qnCyjNwqW+qIpatmCNT43DmgYr9fQLW0
+          UHusburz53AbXs12zu3gZzkb0irlShatkMqqQaqaU0/+zw1LnoZ+rvmn2XV97UuK
+          LFKMKXCnyi2ZG65IZHGkjBVAPuvsX6RgLNyner/QtkDJTbfhktInbG08dCPqv1EF
+          1OtcYKMTn8I5P2VmMO6SXXDLMSdU8b5DA5EY6Ca6JBB8g06S9sqGqXgQFysAnZs1
+          VFgMopf8WZqj23x+DX+9KKT2pVnjbwRvBAntuCDoO75gWoETDnCQXEei/PbyamPq
+          9+NjNsTDn67iJTGncZbII+eciY2YiFHm6GMzBPsUYlQcxiuO4X36jW6m2rwuw37K
+          oFDbGI3uY4LnhwmDFLbjtk8CAwEAAQ==
+          -----END PUBLIC KEY-----
+          \
+          network-build-bot:
+          \
+          -----BEGIN PUBLIC KEY-----
+          MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAw5liP5pyU9ebC/nD3djZ
+          1H2dlKmUyiX0Z8POvKhLREd0B3rM59bPcnbRB4HMIhj0J0hUBvS8xb4u5udCPToa
+          x0A/LMWZ6claiivNtJ3CdLV98eklWdNUg5WXOuqq9QDKXw2ZpGbwDwCOh6aHSWVq
+          98N9AQx0ZMmMWz3qhRyxPfh+GeJ05uj2ohU9FeUJxeqUcgJT/UcMZ3+7KYbwr+Uq
+          /HCoX1BmN6nvzhQGHvJIZ2IcjvOQ0AUrPmpSZN01Zr3ZEpkHM3hJWNLu3ntJLGBQ
+          0aT5kG3iqFyr9q3M3c4J8c0AWrnDjvj0qnCyjNwqW+qIpatmCNT43DmgYr9fQLW0
+          UHusburz53AbXs12zu3gZzkb0irlShatkMqqQaqaU0/+zw1LnoZ+rvmn2XV97UuK
+          LFKMKXCnyi2ZG65IZHGkjBVAPuvsX6RgLNyner/QtkDJTbfhktInbG08dCPqv1EF
+          1OtcYKMTn8I5P2VmMO6SXXDLMSdU8b5DA5EY6Ca6JBB8g06S9sqGqXgQFysAnZs1
+          VFgMopf8WZqj23x+DX+9KKT2pVnjbwRvBAntuCDoO75gWoETDnCQXEei/PbyamPq
+          9+NjNsTDn67iJTGncZbII+eciY2YiFHm6GMzBPsUYlQcxiuO4X36jW6m2rwuw37K
+          oFDbGI3uY4LnhwmDFLbjtk8CAwEAAQ==
+          -----END PUBLIC KEY-----
+          \
+          EOI
+
+        $* --overrides-file f 2>>EOE != 0
+          error: invalid file referenced by --overrides-file option: 'network-build-bot' override specified together with 'build-bot' override
+            info: override: network-build-bot:
+          \
+          -----BEGIN PUBLIC KEY-----
+          MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAw5liP5pyU9ebC/nD3djZ
+          1H2dlKmUyiX0Z8POvKhLREd0B3rM59bPcnbRB4HMIhj0J0hUBvS8xb4u5udCPToa
+          x0A/LMWZ6claiivNtJ3CdLV98eklWdNUg5WXOuqq9QDKXw2ZpGbwDwCOh6aHSWVq
+          98N9AQx0ZMmMWz3qhRyxPfh+GeJ05uj2ohU9FeUJxeqUcgJT/UcMZ3+7KYbwr+Uq
+          /HCoX1BmN6nvzhQGHvJIZ2IcjvOQ0AUrPmpSZN01Zr3ZEpkHM3hJWNLu3ntJLGBQ
+          0aT5kG3iqFyr9q3M3c4J8c0AWrnDjvj0qnCyjNwqW+qIpatmCNT43DmgYr9fQLW0
+          UHusburz53AbXs12zu3gZzkb0irlShatkMqqQaqaU0/+zw1LnoZ+rvmn2XV97UuK
+          LFKMKXCnyi2ZG65IZHGkjBVAPuvsX6RgLNyner/QtkDJTbfhktInbG08dCPqv1EF
+          1OtcYKMTn8I5P2VmMO6SXXDLMSdU8b5DA5EY6Ca6JBB8g06S9sqGqXgQFysAnZs1
+          VFgMopf8WZqj23x+DX+9KKT2pVnjbwRvBAntuCDoO75gWoETDnCQXEei/PbyamPq
+          9+NjNsTDn67iJTGncZbII+eciY2YiFHm6GMzBPsUYlQcxiuO4X36jW6m2rwuw37K
+          oFDbGI3uY4LnhwmDFLbjtk8CAwEAAQ==
+          -----END PUBLIC KEY-----
+          \
+          EOE
+      }
+
+      : unknown-config
+      :
+      {
+        $clone_prj;
+
+        cat <<EOI >=f;
+          : 1
+          unknown-build-bot:
+          \
+          -----BEGIN PUBLIC KEY-----
+          MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAw5liP5pyU9ebC/nD3djZ
+          1H2dlKmUyiX0Z8POvKhLREd0B3rM59bPcnbRB4HMIhj0J0hUBvS8xb4u5udCPToa
+          x0A/LMWZ6claiivNtJ3CdLV98eklWdNUg5WXOuqq9QDKXw2ZpGbwDwCOh6aHSWVq
+          98N9AQx0ZMmMWz3qhRyxPfh+GeJ05uj2ohU9FeUJxeqUcgJT/UcMZ3+7KYbwr+Uq
+          /HCoX1BmN6nvzhQGHvJIZ2IcjvOQ0AUrPmpSZN01Zr3ZEpkHM3hJWNLu3ntJLGBQ
+          0aT5kG3iqFyr9q3M3c4J8c0AWrnDjvj0qnCyjNwqW+qIpatmCNT43DmgYr9fQLW0
+          UHusburz53AbXs12zu3gZzkb0irlShatkMqqQaqaU0/+zw1LnoZ+rvmn2XV97UuK
+          LFKMKXCnyi2ZG65IZHGkjBVAPuvsX6RgLNyner/QtkDJTbfhktInbG08dCPqv1EF
+          1OtcYKMTn8I5P2VmMO6SXXDLMSdU8b5DA5EY6Ca6JBB8g06S9sqGqXgQFysAnZs1
+          VFgMopf8WZqj23x+DX+9KKT2pVnjbwRvBAntuCDoO75gWoETDnCQXEei/PbyamPq
+          9+NjNsTDn67iJTGncZbII+eciY2YiFHm6GMzBPsUYlQcxiuO4X36jW6m2rwuw37K
+          oFDbGI3uY4LnhwmDFLbjtk8CAwEAAQ==
+          -----END PUBLIC KEY-----
+          \
+          EOI
+
+        $* --overrides-file f 2>>EOE != 0
+          error: invalid file referenced by --overrides-file option: cannot override 'unknown-build-bot' value: no build package configuration 'unknown'
+            info: override: unknown-build-bot:
+          \
+          -----BEGIN PUBLIC KEY-----
+          MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAw5liP5pyU9ebC/nD3djZ
+          1H2dlKmUyiX0Z8POvKhLREd0B3rM59bPcnbRB4HMIhj0J0hUBvS8xb4u5udCPToa
+          x0A/LMWZ6claiivNtJ3CdLV98eklWdNUg5WXOuqq9QDKXw2ZpGbwDwCOh6aHSWVq
+          98N9AQx0ZMmMWz3qhRyxPfh+GeJ05uj2ohU9FeUJxeqUcgJT/UcMZ3+7KYbwr+Uq
+          /HCoX1BmN6nvzhQGHvJIZ2IcjvOQ0AUrPmpSZN01Zr3ZEpkHM3hJWNLu3ntJLGBQ
+          0aT5kG3iqFyr9q3M3c4J8c0AWrnDjvj0qnCyjNwqW+qIpatmCNT43DmgYr9fQLW0
+          UHusburz53AbXs12zu3gZzkb0irlShatkMqqQaqaU0/+zw1LnoZ+rvmn2XV97UuK
+          LFKMKXCnyi2ZG65IZHGkjBVAPuvsX6RgLNyner/QtkDJTbfhktInbG08dCPqv1EF
+          1OtcYKMTn8I5P2VmMO6SXXDLMSdU8b5DA5EY6Ca6JBB8g06S9sqGqXgQFysAnZs1
+          VFgMopf8WZqj23x+DX+9KKT2pVnjbwRvBAntuCDoO75gWoETDnCQXEei/PbyamPq
+          9+NjNsTDn67iJTGncZbII+eciY2YiFHm6GMzBPsUYlQcxiuO4X36jW6m2rwuw37K
+          oFDbGI3uY4LnhwmDFLbjtk8CAwEAAQ==
+          -----END PUBLIC KEY-----
+          \
+          EOE
+      }
+    }
+
     : invalid-option
     :
     {

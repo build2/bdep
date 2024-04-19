@@ -240,20 +240,21 @@ namespace bdep
       {
         const string& n (nv.name);
 
-        // True if the name is one of {*-builds, *-build-{include,exclude}}.
+        // True if the name is one of {*-builds, *-build-{include,exclude}}
+        // and update the pkg_config_ovr flag accordingly if that's the case.
         //
-        bool pco ((n.size () > 7 &&
+        bool cbo ((n.size () > 7 &&
                    n.compare (n.size () - 7, 7, "-builds") == 0)          ||
                   (n.size () > 14 &&
                    n.compare (n.size () - 14, 14, "-build-include") == 0) ||
                   (n.size () > 14 &&
                    n.compare (n.size () - 14, 14, "-build-exclude") == 0));
 
-        if (pco)
+        if (cbo)
           pkg_config_ovr = true;
 
         if (co != nullptr &&
-            (pco                  ||
+            (cbo                  ||
              n == "builds"        ||
              n == "build-include" ||
              n == "build-exclude"))
@@ -264,21 +265,34 @@ namespace bdep
             info << "override: " << n << ": " << nv.value;
         }
 
-        bool eo (
-          (n == "build-email"                                            ||
-           n == "build-warning-email"                                    ||
-           n == "build-error-email"                                      ||
-           (n.size () > 12 &&
-            n.compare (n.size () - 12, 12, "-build-email") == 0)         ||
-           (n.size () > 20 &&
-            n.compare (n.size () - 20, 20, "-build-warning-email") == 0) ||
-           (n.size () > 18 &&
-            n.compare (n.size () - 18, 18, "-build-error-email") == 0)));
+        // Check if the name is one of {[*-]build-*email} and update the
+        // pkg_config_ovr and build_email_ovr flags accordingly if that's the
+        // case.
+        //
+        if (!cbo)
+        {
+          bool ceo (
+            (n.size () > 12 &&
+             n.compare (n.size () - 12, 12, "-build-email") == 0)         ||
+            (n.size () > 20 &&
+             n.compare (n.size () - 20, 20, "-build-warning-email") == 0) ||
+            (n.size () > 18 &&
+             n.compare (n.size () - 18, 18, "-build-error-email") == 0));
 
-        if (eo)
-          build_email_ovr = true;
+          if (ceo)
+            pkg_config_ovr = true;
 
-        if (!pco && !eo)
+          build_email_ovr = (ceo                        ||
+                             n == "build-email"         ||
+                             n == "build-warning-email" ||
+                             n == "build-error-email");
+        }
+
+        // Check if the name is one of {[*-]build-auxiliary[-*]} and update
+        // the pkg_config_ovr and aux_ovr flags accordingly if that's the
+        // case.
+        //
+        if (!cbo && !build_email_ovr)
         {
           if (optional<pair<string, string>> an =
               bpkg::build_auxiliary::parse_value_name (n))
@@ -288,6 +302,16 @@ namespace bdep
             if (!an->first.empty ())
               pkg_config_ovr = true;
           }
+        }
+
+        // Check if the name is one of {*-build-bot}and update the
+        // pkg_config_ovr flag accordingly if that's the case.
+        //
+        if (!cbo && !build_email_ovr && !aux_ovr)
+        {
+          if (n.size () > 10 &&
+              n.compare (n.size () - 10, 10, "-build-bot") == 0)
+            pkg_config_ovr = true;
         }
       }
 
@@ -816,7 +840,12 @@ namespace bdep
         diag_record dr (fail);
         dr << "invalid " << to_string (static_cast<origin> (e.line))
            << ": " << e.description <<
-          info << "override: " << nv.name << ": " << nv.value;
+          info << "override: " << nv.name << ':';
+
+        if (nv.value.find ('\n') == string::npos)
+          dr << ' ' << nv.value;
+        else
+          dr << "\n\\\n" << nv.value << "\n\\";
 
         if (!n.empty () && override_manifests.size () != 1)
           dr << info << "package: " << n;
