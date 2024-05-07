@@ -16,8 +16,9 @@ if test -d ../.bdep; then
 sed -r -ne 's#^(@[^ ]+ )?([^ ]+)/ .*default.*$#\2#p')"
   fi
 
-  inc+=("-I$(echo "$cfg"/libodb-[1-9]*/)")
-  inc+=("-I$(echo "$cfg"/libodb-sqlite-[1-9]*/)")
+  # Note: there is nothing generated in libbutl-odb.
+  #
+  inc+=("-I../../libbutl/libbutl-odb")
 
   inc+=("-I$cfg/libbutl")
   inc+=("-I../../libbutl")
@@ -30,11 +31,7 @@ sed -r -ne 's#^(@[^ ]+ )?([^ ]+)/ .*default.*$#\2#p')"
 
 else
 
-  inc+=("-I$HOME/work/odb/builds/default/libodb-sqlite-default")
-  inc+=("-I$HOME/work/odb/libodb-sqlite")
-
-  inc+=("-I$HOME/work/odb/builds/default/libodb-default")
-  inc+=("-I$HOME/work/odb/libodb")
+  inc+=("-I../../libbutl/libbutl-odb")
 
   inc+=(-I.. -I../../libbpkg -I../../libbutl)
 
