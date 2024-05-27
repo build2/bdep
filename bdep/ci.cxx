@@ -404,8 +404,8 @@ namespace bdep
       // Add a package to the list and suppressing duplicates.
       //
       auto add_package = [&pkgs] (package_name n,
-                                      const dir_path& d,
-                                      package_info&& pi)
+                                  const dir_path& d,
+                                  package_info&& pi)
       {
         auto i (find_if (pkgs.begin (),
                          pkgs.end (),
@@ -447,15 +447,17 @@ namespace bdep
     }
     else
     {
-      configurations cfgs;
+      pair<configurations, bool> cfgs;
       {
         // Don't keep the database open longer than necessary.
         //
         database db (open (prj, trace));
 
         transaction t (db.begin ());
-        cfgs = find_configurations (o, prj, t).first;
+        cfgs = find_configurations (o, prj, t);
         t.commit ();
+
+        verify_project_packages (pp, cfgs);
       }
 
       // Add a package to the list, suppressing duplicates and verifying that
@@ -494,7 +496,7 @@ namespace bdep
 
       if (pp.packages.empty ())
       {
-        for (const shared_ptr<configuration>& c: cfgs)
+        for (const shared_ptr<configuration>& c: cfgs.first)
         {
           for (const package_state& p: c->packages)
             add_package (p.name, c);
@@ -506,7 +508,7 @@ namespace bdep
         {
           bool init (false);
 
-          for (const shared_ptr<configuration>& c: cfgs)
+          for (const shared_ptr<configuration>& c: cfgs.first)
           {
             if (find_if (c->packages.begin (),
                          c->packages.end (),
@@ -523,9 +525,7 @@ namespace bdep
             }
           }
 
-          if (!init)
-            fail << "package " << p.name << " is not initialized in any "
-                 << "configuration";
+          assert (init); // Wouldn't be here otherwise.
         }
       }
     }

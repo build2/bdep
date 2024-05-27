@@ -1053,15 +1053,17 @@ namespace bdep
     }
     else
     {
-      configurations cfgs;
+      pair<configurations, bool> cfgs;
       {
         // Don't keep the database open longer than necessary.
         //
         database db (open (prj, trace));
 
         transaction t (db.begin ());
-        cfgs = find_configurations (o, prj, t).first;
+        cfgs = find_configurations (o, prj, t);
         t.commit ();
+
+        verify_project_packages (pp, cfgs);
       }
 
       // Configurations to sync.
@@ -1080,7 +1082,7 @@ namespace bdep
       {
         shared_ptr<configuration> pc;
 
-        for (const shared_ptr<configuration>& c: cfgs)
+        for (const shared_ptr<configuration>& c: cfgs.first)
         {
           if (find_if (c->packages.begin (),
                        c->packages.end (),
@@ -1099,9 +1101,7 @@ namespace bdep
           }
         }
 
-        if (pc == nullptr)
-          fail << "package " << p.name << " is not initialized in any "
-               << "configuration";
+        assert (pc != nullptr); // Wouldn't be here otherwise.
 
         dist_dirs.push_back (dir_path (pc->path) /= p.name.string ());
 

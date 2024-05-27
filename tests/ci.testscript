@@ -939,7 +939,7 @@ windows = ($cxx.target.class == 'windows')
     # While at it, test that we fail for uninitialized package.
     #
     $* -d prj/prj 2>>EOE != 0;
-      error: package prj is not initialized in any configuration
+      error: package prj is not initialized in any default configuration(s)
       EOE
 
     $init -C @cfg2 --config-type host -d prj/prj &prj-cfg2/***;
