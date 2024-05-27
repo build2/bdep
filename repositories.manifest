@@ -3,8 +3,8 @@ summary: build2 project dependency manager repository
 
 :
 role: prerequisite
-location: ../libbutl.git##HEAD
+location: ../libbutl.git#HEAD
 
 :
 role: prerequisite
-location: ../libbpkg.git##HEAD
+location: ../libbpkg.git#HEAD
