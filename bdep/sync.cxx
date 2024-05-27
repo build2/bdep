@@ -1631,9 +1631,18 @@ namespace bdep
       if (cfg.reps.empty ())
         continue;
 
+      const path& p (cfg.path);
+
+      // If we are deep-fetching multiple configurations, print their names.
+      // Failed that it will be quite confusing since we may be re-fetching
+      // the same repositories over and over.
+      //
+      if (cfgs.size () != 1 && *fetch)
+        text << "fetching in configuration " << p.representation ();
+
       run_bpkg (3, co,
                 "fetch",
-                "-d", cfg.path.get (),
+                "-d", p,
                 (*fetch ? nullptr : "--shallow"),
                 cfg.reps);
     }
