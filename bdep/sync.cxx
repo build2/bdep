@@ -842,6 +842,7 @@ namespace bdep
             const strings& pkg_args,
             bool implicit,
             optional<bool> fetch,
+            uint16_t bpkg_fetch_verb,
             bool yes,
             bool name_cfg,
             optional<bool> upgrade,   // true - upgrade,   false - patch
@@ -1640,7 +1641,7 @@ namespace bdep
       if (cfgs.size () != 1 && *fetch)
         text << "fetching in configuration " << p.representation ();
 
-      run_bpkg (3, co,
+      run_bpkg (bpkg_fetch_verb, co,
                 "fetch",
                 "-d", p,
                 (*fetch ? nullptr : "--shallow"),
@@ -2210,14 +2211,15 @@ namespace bdep
               pkg_args,
               implicit,
               fetch,
+              3                    /* bpkg_fetch_verb */,
               yes,
               name_cfg,
-              nullopt              /* upgrade     */,
-              nullopt              /* recursive   */,
-              false                /* disfigure   */,
+              nullopt              /* upgrade         */,
+              nullopt              /* recursive       */,
+              false                /* disfigure       */,
               prj_pkgs,
-              strings ()           /* dep_pkgs    */,
-              strings ()           /* deinit_pkgs */,
+              strings ()           /* dep_pkgs        */,
+              strings ()           /* deinit_pkgs     */,
               so,
               create_host_config,
               create_build2_config,
@@ -2289,14 +2291,15 @@ namespace bdep
                 pkg_args,
                 implicit,
                 fetch ? false /* shallow */ : optional<bool> (),
+                3                    /* bpkg_fetch_verb */,
                 yes,
                 name_cfg,
-                nullopt              /* upgrade     */,
-                nullopt              /* recursive   */,
-                false                /* disfigure   */,
+                nullopt              /* upgrade         */,
+                nullopt              /* recursive       */,
+                false                /* disfigure       */,
                 prj_pkgs,
-                strings ()           /* dep_pkgs    */,
-                strings ()           /* deinit_pkgs */,
+                strings ()           /* dep_pkgs        */,
+                strings ()           /* deinit_pkgs     */,
                 so,
                 create_host_config,
                 create_build2_config,
@@ -2334,17 +2337,18 @@ namespace bdep
               dir_path () /* prj */,
               {sync_config (cfg)},
               move (lcfgs),
-              strings ()            /* pkg_args   */,
-              true                  /* implicit   */,
+              strings ()            /* pkg_args        */,
+              true                  /* implicit        */,
               fetch ? false /* shallow */ : optional<bool> (),
+              3                     /* bpkg_fetch_verb */,
               yes,
               name_cfg,
-              nullopt               /* upgrade     */,
-              nullopt               /* recursive   */,
-              false                 /* disfigure   */,
-              package_locations ()  /* prj_pkgs    */,
-              strings ()            /* dep_pkgs    */,
-              strings ()            /* deinit_pkgs */,
+              nullopt               /* upgrade         */,
+              nullopt               /* recursive       */,
+              false                 /* disfigure       */,
+              package_locations ()  /* prj_pkgs        */,
+              strings ()            /* dep_pkgs        */,
+              strings ()            /* deinit_pkgs     */,
               so,
               create_host_config,
               create_build2_config);
@@ -2400,20 +2404,21 @@ namespace bdep
       }
 
       cmd_sync (co,
-                dir_path () /* prj */,
+                dir_path ()           /* prj             */,
                 move (ocfgs),
                 move (lcfgs),
-                strings ()            /* pkg_args   */,
-                true                  /* implicit   */,
+                strings ()            /* pkg_args        */,
+                true                  /* implicit        */,
                 fetch ? false /* shallow */ : optional<bool> (),
+                3,                    /* bpkg_fetch_verb */
                 yes,
                 name_cfg,
-                nullopt               /* upgrade     */,
-                nullopt               /* recursive   */,
-                false                 /* disfigure   */,
-                package_locations ()  /* prj_pkgs    */,
-                strings ()            /* dep_pkgs    */,
-                strings ()            /* deinit_pkgs */,
+                nullopt               /* upgrade         */,
+                nullopt               /* recursive       */,
+                false                 /* disfigure       */,
+                package_locations ()  /* prj_pkgs        */,
+                strings ()            /* dep_pkgs        */,
+                strings ()            /* deinit_pkgs     */,
                 so,
                 create_host_config,
                 create_build2_config);
@@ -2438,6 +2443,7 @@ namespace bdep
               strings ()            /* pkg_args             */,
               true                  /* implicit             */,
               false                 /* shallow fetch        */,
+              3                     /* bpkg_fetch_verb      */,
               true                  /* yes                  */,
               false                 /* name_cfg             */,
               nullopt               /* upgrade              */,
@@ -2769,6 +2775,11 @@ namespace bdep
           cmd_fetch (o, prj, c, o.fetch_full ());
       }
 
+      // Increase verbosity for bpkg-fetch command in cmd_sync() if we perform
+      // explicit fetches as well.
+      //
+      uint16_t bpkg_fetch_verb (fetch && !ocfgs.empty () ? 2 : 3);
+
       if (!dep_pkgs.empty ())
       {
         // We ignore the project packages if the dependencies are specified
@@ -2787,6 +2798,7 @@ namespace bdep
                   pkg_args,
                   false                    /* implicit */,
                   !fetch ? false /* shallow */ : optional<bool> (),
+                  bpkg_fetch_verb,
                   o.recursive () || o.immediate () ? o.yes () : true,
                   false                    /* name_cfg */,
                   !o.patch (), // Upgrade by default unless patch requested.
@@ -2812,6 +2824,7 @@ namespace bdep
                   pkg_args,
                   false                    /* implicit */,
                   !fetch ? false /* shallow */ : optional<bool> (),
+                  bpkg_fetch_verb,
                   o.yes (),
                   false                    /* name_cfg */,
                   o.upgrade (),
@@ -2838,6 +2851,7 @@ namespace bdep
                   pkg_args,
                   o.implicit (),
                   !fetch ? false /* shallow */ : optional<bool> (),
+                  bpkg_fetch_verb,
                   true                     /* yes         */,
                   o.implicit ()            /* name_cfg    */,
                   nullopt                  /* upgrade     */,
