@@ -1638,13 +1638,18 @@ namespace bdep
       // Failed that it will be quite confusing since we may be re-fetching
       // the same repositories over and over.
       //
-      if (cfgs.size () != 1 && *fetch)
+      // Note: counter-intuitively, we may end up here even if fetch is
+      // nullopt; see load_implicit() for details.
+      //
+      bool deep_fetch (fetch && *fetch);
+
+      if (cfgs.size () != 1 && deep_fetch)
         text << "fetching in configuration " << p.representation ();
 
       run_bpkg (bpkg_fetch_verb, co,
                 "fetch",
                 "-d", p,
-                (*fetch ? nullptr : "--shallow"),
+                (deep_fetch ? nullptr : "--shallow"),
                 cfg.reps);
     }
 
