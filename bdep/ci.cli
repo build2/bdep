@@ -237,9 +237,12 @@ namespace bdep
       "<pc>/<tc>[/<tg>]",
       "Shortcut for the following options sequence:
 
-       \c{\b{--override\ }<pc>\b{-builds:all}}\n
+       [\c{\b{--override\ }<pc>\b{-builds:all}}]\n
        \c{\b{--override\ }<pc>\b{-build-include:}<tc>[\b{/}<tg>]}\n
        \c{\b{--override\ }<pc>\b{-build-exclude:**}}
+
+       The first override is omitted from the above sequence if the
+       \c{<pc>\b{-builds}} override is specified on the command line.
 
        Repeat this option to specify multiple build configurations."
     }
@@ -249,9 +252,12 @@ namespace bdep
       "<tc>[/<tg>]",
       "Shortcut for the following options sequence:
 
-       \c{\b{--override\ builds:all}}\n
+       [\c{\b{--override\ builds:all}}]\n
        \c{\b{--override\ build-include:}<tc>[\b{/}<tg>]}\n
        \c{\b{--override\ build-exclude:**}}
+
+       The first override is omitted from the above sequence if the
+       \cb{builds} override is specified on the command line.
 
        Repeat this option to specify multiple build target configurations."
     }

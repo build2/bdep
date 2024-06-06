@@ -228,6 +228,30 @@ namespace bdep
     bool build_email_ovr (false);
     bool aux_ovr         (false);
 
+    // Return true, if the [*-]builds override is specified.
+    //
+    auto builds_override = [&overrides] (const string& config = empty_string)
+    {
+      if (config.empty ())
+      {
+        return find_if (overrides.begin (), overrides.end (),
+                        [] (const manifest_name_value& v)
+                        {
+                          return v.name == "builds";
+                        }) != overrides.end ();
+      }
+      else
+      {
+        string n (config + "-builds");
+
+        return find_if (overrides.begin (), overrides.end (),
+                        [&n] (const manifest_name_value& v)
+                        {
+                          return v.name == n;
+                        }) != overrides.end ();
+      }
+    };
+
     if (o.overrides_specified ())
     {
       const char* co (o.target_config_specified ()  ? "--target-config"  :
@@ -240,11 +264,15 @@ namespace bdep
       {
         const string& n (nv.name);
 
+        // True if the name is *-builds.
+        //
+        bool cbso (
+          n.size () > 7 && n.compare (n.size () - 7, 7, "-builds") == 0);
+
         // True if the name is one of {*-builds, *-build-{include,exclude}}
         // and update the pkg_config_ovr flag accordingly if that's the case.
         //
-        bool cbo ((n.size () > 7 &&
-                   n.compare (n.size () - 7, 7, "-builds") == 0)          ||
+        bool cbo (cbso                                                    ||
                   (n.size () > 14 &&
                    n.compare (n.size () - 14, 14, "-build-include") == 0) ||
                   (n.size () > 14 &&
@@ -253,9 +281,12 @@ namespace bdep
         if (cbo)
           pkg_config_ovr = true;
 
+        // Fail if --{target,build,package}-config or --interactive is
+        // combined with a [*-]build-{include,exclude} override (but not with
+        // [*-]builds).
+        //
         if (co != nullptr &&
-            (cbo                  ||
-             n == "builds"        ||
+            ((cbo && !cbso)       ||
              n == "build-include" ||
              n == "build-exclude"))
         {
@@ -339,7 +370,10 @@ namespace bdep
       if (o.interactive_specified ())
         fail << "--target-config specified together with --interactive|-i";
 
-      override ("builds", "all", origin::target_config);
+      // Add "builds: all", unless the builds value is already overridden.
+      //
+      if (!builds_override ())
+        override ("builds", "all", origin::target_config);
 
       for (const string& c: o.target_config ())
         override ("build-include", c, origin::target_config);
@@ -594,7 +628,11 @@ namespace bdep
         bool first (find (package_configs.begin (),  package_configs.end (),
                           pc) == package_configs.end ());
 
-        if (first)
+        // For the specific <pc> add "<pc>-builds: all" when the first
+        // --build-config <pc>/... option is encountered, unless the
+        // "<pc>-builds" value is already overridden.
+        //
+        if (first && !builds_override (pc))
           override (pc + "-builds", "all", origin::build_config);
 
         override (pc + "-build-include",
@@ -626,6 +664,14 @@ namespace bdep
             package_configs.end ())
           fail << "package configuration " << pc << " is specified using "
                << "both --package-config and --build-config";
+
+        // If for the specific <pc> the "<pc>-builds" value is already
+        // overridden, then skip the --package-config <pc> option, assuming
+        // that the former override has already selected the <pc>
+        // configuration for the CI task.
+        //
+        if (builds_override (pc))
+          continue;
 
         using bpkg::build_package_config;
         using bpkg::build_class_expr;
@@ -801,13 +847,20 @@ namespace bdep
         fail << "invalid --interactive|-i option value '" << s
              << "': target configuration name is empty";
 
+      // For the specific <pc> add "<pc>-builds: all", unless the
+      // "<pc>-builds" value is already overridden.
+      //
+      bool bo (builds_override (pc));
+
       if (!pc.empty ())
         pc += '-';
 
       if (!tg.empty ())
         tg = '/' + tg;
 
-      override (pc + "builds", "all", origin::interactive);
+      if (!bo)
+        override (pc + "builds", "all", origin::interactive);
+
       override (pc + "build-include", tc + tg, origin::interactive);
       override (pc + "build-exclude", "**", origin::interactive);
 

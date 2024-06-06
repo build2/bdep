@@ -608,9 +608,21 @@ windows = ($cxx.target.class == 'windows')
     {
       $clone_prj;
 
-      $* --target-config 'linux_debian_8-gcc_4.9' --builds '&gcc' 2>>EOE != 0
-        error: invalid --builds option value: 'builds' override specified together with --target-config
-          info: override: builds: &gcc
+      $* --target-config 'linux_debian_8-gcc_4.9' \
+         --override 'build-include: linux_debian_12-gcc_13' 2>>EOE != 0
+        error: invalid --override option value: 'build-include' override specified together with --target-config
+          info: override: build-include: linux_debian_12-gcc_13
+        EOE
+    }
+
+    : builds-overrides
+    :
+    {
+      $clone_prj;
+
+      $* --target-config 'linux_debian_8-gcc_4.9' --builds '&gcc' 2>>~%EOE%
+        %CI request is queued.*%
+        %reference: .+%
         EOE
     }
 
@@ -733,8 +745,8 @@ windows = ($cxx.target.class == 'windows')
       $clone_prj;
 
       $* --build-config 'default/linux_debian_8-gcc_4.9' --builds '&gcc' 2>>EOE != 0
-        error: invalid --builds option value: 'builds' override specified together with --build-config
-          info: override: builds: &gcc
+        error: invalid --build-config option value: 'default-builds' override specified together with 'builds' override
+          info: override: default-builds: all
         EOE
     }
 
@@ -856,9 +868,21 @@ windows = ($cxx.target.class == 'windows')
     {
       $clone_prj;
 
-      $* --interactive 'linux_debian_8-gcc_4.9' --builds '&gcc' 2>>EOE != 0
-        error: invalid --builds option value: 'builds' override specified together with --interactive|-i
-          info: override: builds: &gcc
+      $* --interactive 'linux_debian_8-gcc_4.9' \
+         --override 'build-include: linux_debian_12-gcc_13' 2>>EOE != 0
+        error: invalid --override option value: 'build-include' override specified together with --interactive|-i
+          info: override: build-include: linux_debian_12-gcc_13
+        EOE
+    }
+
+    : overrides-builds
+    :
+    {
+      $clone_prj;
+
+      $* --interactive 'linux_debian_8-gcc_4.9' --builds '&gcc' 2>>~%EOE%
+        %CI request is queued.*%
+        %reference: .+%
         EOE
     }
   }
