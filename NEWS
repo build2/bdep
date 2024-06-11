@@ -1,3 +1,22 @@
+Version 0.17.0
+
+  * New `third-party` library and executable sub-option in bdep-new.
+
+    This sub-option is meant for converting an existing third-party project
+    to build2. It automatically enables a number of other sub-options (such
+    as no-version, no-readme, and no-symexport). It also adds a number of
+    values to manifest that makes sense to specify in a package of a third-
+    party project and, unless no-package-readme is specified, generates the
+    PACKAGE-README.md template.
+
+  * New buildfile-in-prefix library and executable sub-option in bdep-new.
+
+  * New export-stub executable sub-option in bdep-new.
+
+  * New no-symexport and auto-symexport library sub-options in bdep-new.
+
+  * New no-subdir-include library sub-option in bdep-new.
+
 Version 0.16.0
 
   * The bdep-deinit command can now deinitialize a package that still has
