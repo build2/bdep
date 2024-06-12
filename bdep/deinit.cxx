@@ -114,6 +114,12 @@ namespace bdep
       else
         fail << "process " << name_bpkg (o) << " " << e;
 
+      // Give the user a hint on what's going on. Failed that, a fetch during
+      // deinit looks very strange.
+      //
+      if (verb)
+        text << "deinitializing in replacement mode due to existing dependents";
+
       if (!o.no_fetch ())
         cmd_fetch (o, prj, c, true /* fetch_full */);
 

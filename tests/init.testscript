@@ -366,6 +366,7 @@ status += -d prj
 
     $deinit -d libprj 2>>/~"%EOE%";
       deinitializing in project $~/libprj/
+      deinitializing in replacement mode due to existing dependents
       %fetching dir:.+/libprj%
       %fetching dir:.+/prj%
       %fetching git:.+/libprj#.+ \\\(prerequisite of dir:.+/prj\\\)%
@@ -444,6 +445,7 @@ status += -d prj
       deinitializing in project $~/libprj/
       deinitializing package libprj
       deinitializing package libprj-extras
+      deinitializing in replacement mode due to existing dependents
       %fetching dir:.+/libprj%
       %fetching dir:.+/prj%
       %fetching git:.+/libprj#.+ \\\(prerequisite of dir:.+/prj\\\)%
@@ -497,6 +499,7 @@ status += -d prj
 
     $deinit -d libprj 2>>/~"%EOE%" != 0;
       deinitializing in project $~/libprj/
+      deinitializing in replacement mode due to existing dependents
       %fetching dir:.+/libprj%
       %fetching dir:.+/prj%
       error: libprj is not available from its dependents' repositories
@@ -513,6 +516,7 @@ status += -d prj
 
     $deinit -d libprj 2>>/~"%EOE%";
       deinitializing in project $~/libprj/
+      deinitializing in replacement mode due to existing dependents
       %fetching dir:.+/libprj%
       %fetching dir:.+/prj%
       %fetching git:.+/libprj#.+ \\\(prerequisite of dir:.+/prj\\\)%
