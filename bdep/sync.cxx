@@ -2777,7 +2777,16 @@ namespace bdep
       if (fetch)
       {
         for (const sync_config& c: ocfgs)
-          cmd_fetch (o, prj, c, o.fetch_full ());
+        {
+          // Make sure this configuration is known in this project and has
+          // some of its packages initialized. Failed, that, the project
+          // repository we are trying to fetch will not be know in this
+          // configuration and we will fail (see GitHub issue 391 for
+          // details).
+          //
+          if (c != nullptr && !c->packages.empty ())
+            cmd_fetch (o, prj, c, o.fetch_full ());
+        }
       }
 
       // Increase verbosity for bpkg-fetch command in cmd_sync() if we perform
