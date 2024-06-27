@@ -546,4 +546,63 @@ status += -d prj
         drop libprj
       EOE
   }
+
+  : orphan-dependency-dependent
+  :
+  : Regression test for GH issue #397.
+  :
+  {
+    $clone_prj;
+
+    cat <<EOI >+prj/repositories.manifest;
+      :
+      role: prerequisite
+      location: ../libprj.git#master
+      EOI
+
+    $new -t empty -o libprj.git libprj &libprj.git/*** 2>!;
+    $new -t lib libprj --package -d libprj.git/ 2>!;
+    $new -t lib libprj-extra --package -d libprj.git/ 2>!;
+
+    cat <<EOI >+libprj.git/libprj/manifest;
+      depends: libprj-extra
+      EOI
+
+    $g config user.name 'Test Script';
+    $g config user.email 'testscript@example.com';
+    $g add '*';
+    $g commit -m 'Create' --no-verify;
+
+    git clone libprj.git &libprj/*** >! 2>!;
+
+    $init -C cfg @cfg -d libprj -- cc &cfg/*** 2>!;
+    $init -A cfg @cfg -d prj 2>!;
+
+    touch libprj/TODO;
+    $sync -d libprj 2>!;
+
+    $deinit -d libprj 2>>~%EOE%;
+      %deinitializing in project .+libprj.%
+      deinitializing package libprj
+      deinitializing package libprj-extra
+      deinitializing in replacement mode due to existing dependents
+      %fetching dir:.+libprj%
+      %fetching dir:.+prj%
+      %fetching git:.+libprj#master \(prerequisite of dir:.+prj\)%
+      %querying .+libprj.git%
+      synchronizing:
+      %  replace/downgrade/unhold libprj-extra/0.1.0-.+%
+      %  replace/downgrade/unhold libprj/0.1.0-.+%
+      %  reconfigure prj/0.1.0-.+%
+      %.*
+      EOE
+
+    $deinit -d prj 2>>/"EOE"
+      deinitializing in project $~/prj/
+      synchronizing:
+        drop prj
+        drop libprj
+        drop libprj-extra
+      EOE
+  }
 }
