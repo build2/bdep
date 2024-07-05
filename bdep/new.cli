@@ -656,12 +656,6 @@ namespace bdep
     bool no-readme;
     bool no-package-readme;
     bool alt-naming;
-
-    // Old name for the subdir sub-option (thus undocumented). @@ TMP drop
-    //
-    // If specified, we will fail suggesting to use the new sub-option instead.
-    //
-    dir_path "source";
   };
 
   class cmd_new_lib_options
@@ -687,12 +681,6 @@ namespace bdep
     bool no-readme;
     bool no-package-readme;
     bool alt-naming;
-
-    // Old name for the subdir sub-option (thus undocumented). @@ TMP drop.
-    //
-    // If specified, we will fail suggesting to use the new sub-option instead.
-    //
-    dir_path "source";
   };
 
   class cmd_new_bare_options
@@ -741,12 +729,6 @@ namespace bdep
       "Create a new source subdirectory inside an already existing project or
        package rather than a new project."
     }
-
-    // Old name for the --source option (thus undocumented).
-    //
-    // If specified, we will fail suggesting to use the new option instead.
-    //
-    bool --subdirectory;
 
     dir_path --output-dir|-o
     {

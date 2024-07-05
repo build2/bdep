@@ -495,9 +495,6 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
                        ? cao.type ()
                        : optional<string> ());
 
-  if (o.subdirectory ())
-    fail << "--subdirectory was renamed to --source";
-
   if (o.package () && o.source ())
     fail << "both --package and --source specified";
 
@@ -605,10 +602,6 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
   // Validate type options.
   //
   const type& t (o.type ());
-
-  if ((t == type::exe && t.exe_opt.source_specified ()) ||
-      (t == type::lib && t.lib_opt.source_specified ()))
-    fail << "--type|-t,source was renamed to --type|-t,subdir";
 
   // For a library source subdirectory (--source) we don't generate the export
   // stub, integration tests (because there is no export stub), or the version
