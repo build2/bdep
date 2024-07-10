@@ -4105,7 +4105,13 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
         ca,
         move (cc))};
 
-    cmd_init (o, prj, db, cfgs, pkgs, strings () /* pkg_args */);
+    cmd_init (o,
+              prj,
+              db,
+              cfgs,
+              pkgs,
+              strings () /* pkg_args */,
+              t != type::empty /* sync */);
   }
 
   return 0;
