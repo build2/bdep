@@ -384,3 +384,97 @@ deinit += -d prj
       EOO
   }
 }
+
+: failure-preserve-user-config
+:
+{
+  $new -t empty -C @cfg prj $config_cxx &prj/*** &prj-cfg/***;
+
+  $new --package           pkg -d prj;
+  $new --package -t lib libpkg -d prj;
+
+  echo 'depends: libpkg' >+prj/pkg/manifest;
+  sed -i -e 's/^#import.+$/import libs += libpkg%lib{pkg}/' prj/pkg/pkg/buildfile;
+
+  echo 'config [bool] config.pkg.feature ?= false' >+prj/pkg/build/root.build;
+  echo 'config [bool] config.libpkg.feature ?= false' >+prj/libpkg/build/root.build;
+
+  $init -d prj/ @cfg config.pkg.feature=true config.libpkg.feature=true;
+
+  sed -n -e 's/config.pkg.feature = (.+)/\1/p' \
+      prj-cfg/pkg/build/config.build >'true';
+
+  sed -n -e 's/src_root = (.+)/\1/p' \
+      prj-cfg/pkg/build/bootstrap/src-root.build >/~'%.+/prj/pkg/%';
+
+  sed -n -e 's/config.libpkg.feature = (.+)/\1/p' \
+      prj-cfg/libpkg/build/config.build >'true';
+
+  sed -n -e 's/src_root = (.+)/\1/p' \
+      prj-cfg/libpkg/build/bootstrap/src-root.build >/~'%.+/prj/libpkg/%';
+
+  sed -n -e 's/src_root = (.+)/\1/p' \
+      prj-cfg/libpkg/tests/build/bootstrap/src-root.build >/~'%.+/prj/libpkg/tests/%';
+
+  mkdir --no-cleanup prj/libpkg/stray;
+  echo '' >+prj/libpkg/manifest;
+
+  $build prj/pkg/ 2>>~%EOE% != 0;
+    %synchronizing .*prj-cfg.:%
+      upgrade libpkg/0.1.0-a.0.19700101000000#1
+        config.libpkg.feature=true (user configuration)
+      reconfigure pkg/0.1.0-a.0.19700101000000
+        config.pkg.feature=true (user configuration)
+    %error: no explicit target for .+stray.+%
+    info: while configuring libpkg
+    %.*
+    EOE
+
+  sed -n -e 's/config.pkg.feature = (.+)/\1/p' \
+      prj-cfg/pkg/build/config.build >'true';
+
+  sed -n -e 's/src_root = (.+)/\1/p' \
+      prj-cfg/pkg/build/bootstrap/src-root.build >/~'%.+/prj/pkg/%';
+
+  sed -n -e 's/config.libpkg.feature = (.+)/\1/p' \
+      prj-cfg/libpkg/build/config.build >'true';
+
+  sed -n -e 's/src_root = (.+)/\1/p' \
+      prj-cfg/libpkg/build/bootstrap/src-root.build >/~'%.+/prj/libpkg/%';
+
+  sed -n -e 's/src_root = (.+)/\1/p' \
+      prj-cfg/libpkg/tests/build/bootstrap/src-root.build >/~'%.+/prj/libpkg/tests/%';
+
+  rmdir prj/libpkg/stray;
+
+  $build prj/pkg/ 2>>~%EOE%;
+    %synchronizing .*prj-cfg.:%
+      update libpkg/0.1.0-a.0.19700101000000#1
+      update pkg/0.1.0-a.0.19700101000000
+    %(mkdir|version|c\+\+|ld|ln) .+%{8}
+    EOE
+
+  sed -n -e 's/config.pkg.feature = (.+)/\1/p' \
+      prj-cfg/pkg/build/config.build >'true';
+
+  sed -n -e 's/src_root = (.+)/\1/p' \
+      prj-cfg/pkg/build/bootstrap/src-root.build >/~'%.+/prj/pkg/%';
+
+  sed -n -e 's/config.libpkg.feature = (.+)/\1/p' \
+      prj-cfg/libpkg/build/config.build >'true';
+
+  sed -n -e 's/src_root = (.+)/\1/p' \
+      prj-cfg/libpkg/build/bootstrap/src-root.build >/~'%.+/prj/libpkg/%';
+
+  sed -n -e 's/src_root = (.+)/\1/p' \
+      prj-cfg/libpkg/tests/build/bootstrap/src-root.build >/~'%.+/prj/libpkg/tests/%';
+
+  $deinit 2>>/"EOE"
+    deinitializing in project $~/prj/
+    deinitializing package pkg
+    deinitializing package libpkg
+    synchronizing:
+      drop pkg
+      drop libpkg
+    EOE
+}
