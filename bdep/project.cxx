@@ -447,6 +447,63 @@ namespace bdep
     return r;
   }
 
+  pair<project_packages, strings>
+  find_project_packages (dir_path prj,
+                         const strings& pkgs,
+                         bool ignore_nf,
+                         bool allow_empty)
+  {
+    package_locations pls (load_packages (prj, allow_empty));
+
+    package_locations rpls;
+    strings           rps;
+
+    for (const string& p: pkgs)
+    {
+      // Skip duplicates to be consistent with the other function overloads.
+      //
+      if (find_if (rpls.begin (), rpls.end (),
+                   [&p] (const package_location& pl)
+                   {
+                     return pl.name == p;
+                   }) != rpls.end ())
+        continue;
+
+      auto i (find_if (pls.begin (), pls.end (),
+                       [&p] (const package_location& pl)
+                       {
+                         return pl.name == p;
+                       }));
+
+      if (i != pls.end ())
+      {
+        rpls.push_back (move (*i));
+
+        // Keep name in the definite state, since it is referred during search.
+        //
+        i->name = package_name ();
+      }
+      else if (ignore_nf)
+      {
+        rps.push_back (p);
+      }
+      else
+      {
+        try
+        {
+          package_name n (p);
+          fail << "no package " << n << " in project " << prj;
+        }
+        catch (const invalid_argument& e)
+        {
+          fail << "package name '" << p << "' is invalid: " << e;
+        }
+      }
+    }
+
+    return make_pair (project_packages {move (prj), move (rpls)}, move (rps));
+  }
+
   void
   verify_project_packages (const project_packages& pp,
                            const pair<configurations, bool>& cfgs)
@@ -552,5 +609,23 @@ namespace bdep
     if (pi.version.empty ())
       fail << "package " << p << " does not use standard version" <<
         info << "perhaps the package does not load the version module?";
+  }
+
+  // project_packages
+  //
+  void project_packages::
+  append (package_locations&& pls)
+  {
+    for (package_location& l: pls)
+    {
+      if (find_if (packages.begin (), packages.end (),
+                   [&l] (const package_location& pl)
+                   {
+                     return pl.path == l.path;
+                   }) == packages.end ())
+      {
+        packages.push_back (move (l));
+      }
+    }
   }
 }

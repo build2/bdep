@@ -22,17 +22,18 @@ namespace bdep
   {
     tracer trace ("build");
 
-    // Save cfg-vars with some sanity checking.
+    // Save cfg-vars and the package names.
     //
     strings cfg_vars;
+    strings ps;
     while (args.more ())
     {
       const char* a (args.next ());
 
-      if (strchr (a , '=') == nullptr)
-        fail << "'" << a << "' does not look like a variable assignment";
-
-      cfg_vars.push_back (trim (a));
+      if (strchr (a , '=') != nullptr)
+        cfg_vars.push_back (trim (a));
+      else
+        ps.emplace_back (a);
     }
 
     // The same ignore/load story as in sync.
@@ -43,6 +44,9 @@ namespace bdep
                              false /* load_packages   */));
 
     const dir_path& prj (pp.project);
+
+    if (!ps.empty ())
+      pp.append (find_project_packages (prj, ps).first.packages);
 
     // Load the configurations without keeping the database open longer than
     // necessary.

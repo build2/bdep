@@ -298,6 +298,8 @@ namespace bdep
 
   // Scan and return/append arguments preserving grouping.
   //
+  // Note: the group is always appended after the argument.
+  //
   void
   scan_argument (strings&, cli::group_scanner&);
 

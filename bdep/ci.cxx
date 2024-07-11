@@ -176,7 +176,7 @@ namespace bdep
   }
 
   int
-  cmd_ci (const cmd_ci_options& o, cli::scanner&)
+  cmd_ci (const cmd_ci_options& o, cli::scanner& args)
   {
     tracer trace ("ci");
 
@@ -188,6 +188,12 @@ namespace bdep
                            o.all ()                   ? "--all|-a"    : nullptr))
         fail << n << " specified together with --forward";
     }
+
+    // Save the package names.
+    //
+    strings ns;
+    while (args.more ())
+      ns.emplace_back (args.next ());
 
     // Collect the packages manifest value overrides parsing the --override,
     // etc options and verify that the resulting overrides list contains valid
@@ -409,17 +415,21 @@ namespace bdep
     //
     // In the forward mode we use package's forwarded source directories to
     // obtain their versions. Also we load the project packages if the
-    // specified directory is a project directory.
+    // specified directory is a project directory, unless some package names
+    // are specified on the command line.
     //
     // Note also that no pre-sync is needed since we are only getting versions
     // (via the info meta-operation).
     //
     project_packages pp (
       find_project_packages (o,
-                             false        /* ignore_packages */,
-                             o.forward () /* load_packages */));
+                             false                       /* ignore_packages */,
+                             o.forward () && ns.empty () /* load_packages */));
 
     const dir_path& prj (pp.project);
+
+    if (!ns.empty ())
+      pp.append (find_project_packages (prj, ns).first.packages);
 
     // Collect package names, versions, and configurations used (except for
     // the forward mode).

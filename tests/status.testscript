@@ -102,8 +102,8 @@ config += -d prj 2>!
     ]
     EOO
 
-    $* libbar 2>>EOE;
-      info: no packages initialized in configuration @cfg, skipping
+    $* libbar 2>>/"EOE" != 0;
+      error: no packages in project $~/prj/
       EOE
 
     $* --stdout-format 'json' libbar >>~%EOO%
@@ -320,6 +320,181 @@ config += -d prj 2>!
     deinitializing in project $~/prj/
     synchronizing:
       drop prj
+      drop libprj
+    EOE
+}
+
+: pkg-by-name
+:
+{
+  $new -t empty prj &prj/***;
+
+  $new --package pkg1 -d prj;
+  $new --package pkg2 -d prj;
+
+  $init -C @cfg $config_cxx -d prj/pkg1 &prj-cfg/***;
+
+  $new -t lib libprj &libprj/***;
+
+  cat <<EOI >+prj/repositories.manifest;
+    :
+    role: prerequisite
+    location: ../libprj
+    type: dir
+    EOI
+
+  cat <<EOI >+prj/pkg1/manifest;
+    depends: libprj
+    EOI
+
+  $sync;
+
+  # Initialized package is specified.
+  #
+  $* -d prj/pkg1 >>EOO;
+    pkg1 configured 0.1.0-a.0.19700101000000#1
+    EOO
+
+  $* pkg1 --stdout-format 'json' >>~%EOO%;
+    [
+      {
+        "configuration": {
+          "id": 1,
+    %      "path": ".+prj-cfg",%
+          "name": "cfg"
+        },
+        "packages": [
+      {
+        "name": "pkg1",
+        "status": "configured",
+        "version": "0.1.0-a.0.19700101000000#1",
+        "hold_package": true,
+        "hold_version": true
+      }
+    ]
+      }
+    ]
+    EOO
+
+  # Not initialized package is specified.
+  #
+  $* pkg2 >>EOO;
+    pkg2 available 0.1.0-a.0.19700101000000
+    EOO
+
+  $* pkg2 --stdout-format 'json' >>~%EOO%;
+    [
+      {
+        "configuration": {
+          "id": 1,
+    %      "path": ".+prj-cfg",%
+          "name": "cfg"
+        },
+        "packages": [
+      {
+        "name": "pkg2",
+        "status": "available",
+        "available_versions": [
+          {
+            "version": "0.1.0-a.0.19700101000000"
+          }
+        ]
+      }
+    ]
+      }
+    ]
+    EOO
+
+  # Dependency package is specified.
+  #
+  $* libprj >>EOO;
+    libprj configured 0.1.0-a.0.19700101000000
+    EOO
+
+  $* libprj --stdout-format 'json' >>~%EOO%;
+    [
+      {
+        "configuration": {
+          "id": 1,
+    %      "path": ".+prj-cfg",%
+          "name": "cfg"
+        },
+        "packages": [
+      {
+        "name": "libprj",
+        "status": "configured",
+        "version": "0.1.0-a.0.19700101000000"
+      }
+    ]
+      }
+    ]
+    EOO
+
+  # Unknown dependency package is specified.
+  #
+  $* libprj1 >>EOO;
+    libprj1 unknown
+    EOO
+
+  $* libprj1 --stdout-format 'json' >>~%EOO%;
+    [
+      {
+        "configuration": {
+          "id": 1,
+    %      "path": ".+prj-cfg",%
+          "name": "cfg"
+        },
+        "packages": [
+      {
+        "name": "libprj1",
+        "status": "unknown"
+      }
+    ]
+      }
+    ]
+    EOO
+
+  # No packages are specified.
+  #
+  $* >>EOO;
+    pkg1 configured 0.1.0-a.0.19700101000000#1
+    EOO
+
+  $* --stdout-format 'json' >>~%EOO%;
+    [
+      {
+        "configuration": {
+          "id": 1,
+    %      "path": ".+prj-cfg",%
+          "name": "cfg"
+        },
+        "packages": [
+      {
+        "name": "pkg1",
+        "status": "configured",
+        "version": "0.1.0-a.0.19700101000000#1",
+        "hold_package": true,
+        "hold_version": true
+      },
+      {
+        "name": "pkg2",
+        "status": "uninitialized"
+      }
+    ]
+      }
+    ]
+    EOO
+
+  # Both initialized and dependency packages are specified.
+  #
+  $* libprj pkg1 -d prj 2>>EOE != 0;
+    error: initialized package pkg1 specified with dependency package libprj
+    EOE
+
+  $deinit 2>>/"EOE"
+    deinitializing in project $~/prj/
+    synchronizing:
+      drop pkg1
       drop libprj
     EOE
 }

@@ -33,7 +33,7 @@ g = [cmdline] git -C prj >! 2>!
 # duplicate submissions. We will use unique version for each test,
 # incrementing the patch version for 1.0.X.
 #
-# Next version to use: 1.0.22
+# Next version to use: 1.0.25
 #
 
 # Normally we disable the progress indication that complicates stderr output
@@ -136,17 +136,39 @@ g = [cmdline] git -C prj >! 2>!
     :
     {
       $new --no-init --no-amalgamation prj 2>- &prj/***;
-      sed -i -e 's/^(version:) .*$/\1 12345/' prj/manifest;
+      sed -i -e 's/^(version:) .*$/\1 1.0.22/' prj/manifest;
 
       sed -i \
-          -e 's/^(amalgamation =.*)$/\1\nversion = 12345\ndist.package = $project-$version/' \
+          -e 's/^(amalgamation =.*)$/\1\nversion = 1.0.22\ndist.package = $project-$version/' \
           -e 's/^using version$//' \
           prj/build/bootstrap.build;
 
       $build 'configure:' prj/@prj-cfg/,forward &prj/build/bootstrap/*** 2>!;
 
-      $* --no-progress --forward --section alpha 2>>~%EOE%
-        %package submission is queued(: .*prj/12345)?%
+      $* --no-progress --forward --section alpha 2>>~%EOE%;
+        %package submission is queued(: .*prj/1.0.22)?%
+        %reference: .{12}%
+        EOE
+
+      # While at it, test specifying a package name on the command line.
+      #
+      sed -i -e 's/^(version:) .*$/\1 1.0.23/'  prj/manifest;
+      sed -i -e 's/^(version =) .*$/\1 1.0.23/' prj/build/bootstrap.build;
+
+      # Suppress the --yes option.
+      #
+      test.arguments = $regex.apply($test.arguments, '^--yes$', '');
+
+      $* --no-progress --forward --section alpha prj <'y' 2>>~"%EOE%"
+        publishing:
+        %  to:      $repository%
+          as:      user <user@example.com>
+          package: prj
+          version: 1.0.23
+          project: prj
+          section: alpha
+        %.?
+        %continue\\?.+ package submission is queued.+%
         %reference: .{12}%
         EOE
     }
@@ -174,6 +196,32 @@ g = [cmdline] git -C prj >! 2>!
         %package submission is queued(: \.*libprj/1.0.2)?%d
         %reference: .{12}%
         %package submission is queued(: \.*prj/1.0.2)?%d
+        %reference: .{12}%
+        EOE
+    }
+
+    : pkg-by-name
+    :
+    {
+      $clone_prj;
+      sed -i -e 's/^(version:) .*$/\1 1.0.24/' prj/libprj/manifest;
+      sed -i -e 's/^(version:) .*$/\1 1.0.24/' prj/prj/manifest;
+      $init -C @cfg &prj-cfg/***;
+
+      # Suppress the --yes option.
+      #
+      test.arguments = $regex.apply($test.arguments, '^--yes$', '');
+
+      $* libprj <'y' 2>>~"%EOE%"
+        publishing:
+        %  to:      $repository%
+          as:      user <user@example.com>
+          package: libprj
+          version: 1.0.24
+          project: prj
+          section: stable
+        %.?
+        %continue\\?.+ package submission is queued.+%
         %reference: .{12}%
         EOE
     }
@@ -241,7 +289,7 @@ g = [cmdline] git -C prj >! 2>!
 
       # Suppress the --yes option.
       #
-      test.arguments = $regex.apply($test.arguments, '^(--yes)$', '');
+      test.arguments = $regex.apply($test.arguments, '^--yes$', '');
 
       $* <'y' 2>>~"%EOE%"
         publishing:

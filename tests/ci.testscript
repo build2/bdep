@@ -910,8 +910,24 @@ windows = ($cxx.target.class == 'windows')
 
     $build 'configure:' prj/@prj-cfg/,forward &prj/build/bootstrap/*** 2>!;
 
-    $* --no-progress --forward 2>>~%EOE%
+    $* --no-progress --forward 2>>~%EOE%;
       %CI request is queued.*%
+      %reference: .+%
+      EOE
+
+    # While at it, test specifying a package name on the command line.
+    #
+    # Suppress the --yes option.
+    #
+    test.arguments = $regex.apply($test.arguments, '^--yes$', '');
+
+    $* --no-progress --forward prj <'y' 2>>~"%EOE%"
+      submitting:
+        to:      $server
+      %  in:      $repository#non-standard-version@.{40}%
+        package: prj
+        version: 12345
+      %continue\\?.+ CI request is queued.*%
       %reference: .+%
       EOE
   }
@@ -950,6 +966,27 @@ windows = ($cxx.target.class == 'windows')
 
     $* 2>>~%EOE%
       %CI request is queued.*%
+      %reference: .+%
+      EOE
+  }
+
+  : pkg-by-name
+  :
+  {
+    $clone_prj;
+    $init -C @cfg &prj-cfg/***;
+
+    # Suppress the --yes option.
+    #
+    test.arguments = $regex.apply($test.arguments, '^--yes$', '');
+
+    $* libprj <'y' 2>>~"%EOE%"
+      submitting:
+        to:      $server
+      %  in:      $repository#master@.{40}%
+        package: libprj
+        version: 1.0.1
+      %continue\\?.+ CI request is queued.*%
       %reference: .+%
       EOE
   }
@@ -1009,7 +1046,7 @@ windows = ($cxx.target.class == 'windows')
 
     # Suppress the --yes option.
     #
-    test.arguments = $regex.apply($test.arguments, '^(--yes)$', '');
+    test.arguments = $regex.apply($test.arguments, '^--yes$', '');
 
     $* <'y' 2>>~"%EOE%"
       submitting:

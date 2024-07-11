@@ -2488,22 +2488,6 @@ namespace bdep
         fail << n << " requires explicit --upgrade|-u or --patch|-p";
     }
 
-    // Sort arguments (if any) into pkg-args and dep-spec: if the argument
-    // starts with '?' (dependency flag) or contains '=' (config variable),
-    // then we assume it is pkg-args.
-    //
-    // Note: scan_argument() passes through groups.
-    //
-    strings pkg_args;
-    strings dep_pkgs;
-    while (args.more ())
-    {
-      const char* r (args.peek ());
-      scan_argument (
-        (*r == '?' || strchr (r, '=') != nullptr) ? pkg_args : dep_pkgs,
-        args);
-    }
-
     // --hook
     //
     if (o.hook_specified ())
@@ -2516,6 +2500,160 @@ namespace bdep
         fail << "--hook specified with project directory";
 
       o.implicit (true); // Implies --implicit.
+    }
+
+    optional<pair<configurations, bool>> cs; // Load if/when required.
+
+    auto load_configurations = [&o, &trace] (const dir_path& prj)
+    {
+      database db (open (prj, trace));
+
+      transaction t (db.begin ());
+      optional<pair<configurations, bool>> r (find_configurations (o, prj, t));
+      t.commit ();
+
+      return r;
+    };
+
+    // Note: in the implicit mode we don't search the current working
+    // directory for a project.
+    //
+    bool implicit_no_orig (o.implicit () && !o.directory_specified ());
+
+    // Sort arguments (if any) into pkg-args, dep-specs, and pkg-specs as
+    // follows:
+    //
+    // - If the argument starts with '?' (dependency flag) or contains '='
+    //   (config variable), then we assume it is pkg-arg.
+    //
+    // - Otherwise, if this is an implicit sync without an originating project
+    //   or the argument contains '/' (package version) or this package
+    //   doesn't belong to this project or is not initialized, then we assume
+    //   dep-spec.
+    //
+    // - Otherwise, we assume pkg-spec.
+    //
+    // Note: scan_argument() passes through groups.
+    //
+    strings pkg_args;
+    strings dep_pkgs;
+    package_locations pkgs;
+    {
+      // Collect the package names (non pkg-args) into dep_pkgs. Those which
+      // we are not sure about if they are really dep-specs or are pkg-specs
+      // (don't contain version and we are not in the `implicit sync without
+      // an originating project` mode) we also stash together with their group
+      // index ranges (in the [n, k) form) in the parallel ns and gs vectors.
+      //
+      strings ns;                      // Names.
+      vector<pair<size_t, size_t>> gs; // Group ranges ([n, n) in no group).
+
+      while (args.more ())
+      {
+        const char* r (args.peek ());
+
+        if (*r == '?' || strchr (r, '=') != nullptr)
+        {
+          scan_argument (pkg_args, args);
+        }
+        else
+        {
+          bool ambiguous (!implicit_no_orig && strchr (r, '/') == nullptr);
+
+          size_t n (dep_pkgs.size ());
+          scan_argument (dep_pkgs, args);
+
+          if (ambiguous)
+          {
+            ns.push_back (dep_pkgs[n]);
+            gs.emplace_back (n + 1, dep_pkgs.size ());
+          }
+        }
+      }
+
+      // Move the initialized packages of this project out of dep_pkgs into
+      // pkgs.
+      //
+      // Note that currently we don't support groups for initialized packages,
+      // but may add such support in the future.
+      //
+      if (!ns.empty ())
+      {
+        pair<project_packages, strings> pps (
+          find_project_packages (o, ns, true /* ignore_not_found */));
+
+        // Also assume the initialized packages of the project are pkg-specs
+        // and dep-specs otherwise.
+        //
+        // Note that here we check if the packages are initialized in only the
+        // specified configurations.
+        //
+        project_packages& pp (pps.first);
+
+        if (!pp.packages.empty ())
+        {
+          cs = load_configurations (pp.project);
+
+          // Add initialized packages to pkgs.
+          //
+          for (package_location& p: pp.packages)
+          {
+            for (const shared_ptr<configuration>& c: cs->first)
+            {
+              if (find_if (c->packages.begin (),
+                           c->packages.end (),
+                           [&p] (const package_state& s)
+                           {
+                             return p.name == s.name;
+                           }) != c->packages.end ())
+              {
+                pkgs.push_back (move (p));
+                break;
+              }
+            }
+          }
+
+          // Remove initialized packages from dep_pkgs.
+          //
+          if (!pkgs.empty ())
+          {
+            // Iterate ns in the reverse order not to invalidate the index
+            // ranges.
+            //
+            for (size_t i (ns.size () - 1); true; --i)
+            {
+              const string& n (ns[i]);
+
+              if (find_if (pkgs.begin (),
+                           pkgs.end (),
+                           [&n] (const package_location& l)
+                           {
+                             return l.name == n;
+                           }) != pkgs.end ())
+              {
+                // Note: currenlty we don't suport groups for initialized
+                // packages.
+                //
+                if (gs[i].first != gs[i].second)
+                  fail << "initialized package " << n << " specified with "
+                       << "arguments group";
+
+                // Erase the package name together with its group.
+                //
+                dep_pkgs.erase (dep_pkgs.begin () + gs[i].first - 1,
+                                dep_pkgs.begin () + gs[i].second);
+              }
+
+              if (i == 0)
+                break;
+            }
+          }
+
+          if (!pkgs.empty () && !dep_pkgs.empty ())
+            fail << "initialized package " << pkgs[0].name
+                 << " specified with dependency package " << dep_pkgs[0];
+        }
+      }
     }
 
     // --implicit
@@ -2557,10 +2695,7 @@ namespace bdep
 
     bool default_fallback (false);
 
-    // In the implicit mode we don't search the current working directory
-    // for a project.
-    //
-    if (o.directory_specified () || !o.implicit ())
+    if (!implicit_no_orig)
     {
       // We could be running from a package directory (or the user specified
       // one with -d) that has not been init'ed in this configuration. This,
@@ -2577,32 +2712,29 @@ namespace bdep
                                !dep_pkgs.empty () /* ignore_packages */,
                                false              /* load_packages   */));
 
+      if (!pkgs.empty ())
+        pp.append (move (pkgs));
+
       // Initialize tmp directory.
       //
       init_tmp (pp.project);
 
-      // Load project configurations.
+      // Load project configurations, if not loaded yet.
       //
-      pair<configurations, bool> cs;
-      {
-        database db (open (pp.project, trace));
-
-        transaction t (db.begin ());
-        cs = find_configurations (o, pp.project, t);
-        t.commit ();
-      }
+      if (!cs)
+        cs = load_configurations (pp.project);
 
       // If specified, verify packages are present in at least one
       // configuration.
       //
       if (!pp.packages.empty ())
-        verify_project_packages (pp, cs);
+        verify_project_packages (pp, *cs);
 
       prj = move (pp.project);
       prj_pkgs = move (pp.packages);
-      cfgs.assign (make_move_iterator (cs.first.begin ()),
-                   make_move_iterator (cs.first.end ()));
-      default_fallback = cs.second;
+      cfgs.assign (make_move_iterator (cs->first.begin ()),
+                   make_move_iterator (cs->first.end ()));
+      default_fallback = cs->second;
     }
     else
     {

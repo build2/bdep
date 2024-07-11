@@ -862,7 +862,7 @@ namespace bdep
   }
 
   int
-  cmd_publish (const cmd_publish_options& o, cli::scanner&)
+  cmd_publish (const cmd_publish_options& o, cli::scanner& args)
   {
     tracer trace ("publish");
 
@@ -875,6 +875,12 @@ namespace bdep
         fail << n << " specified together with --forward";
     }
 
+    // Save the package names.
+    //
+    strings ns;
+    while (args.more ())
+      ns.emplace_back (args.next ());
+
     // If we are publishing the entire project, then we have two choices: we
     // can publish all the packages in the project or we can only do so for
     // packages that were initialized in the configuration that we are going
@@ -885,10 +891,14 @@ namespace bdep
     //
     project_packages pp (
       find_project_packages (o,
-                             false /* ignore_packages */,
-                             true  /* load_packages   */));
+                             false       /* ignore_packages */,
+                             ns.empty () /* load_packages   */));
 
     const dir_path& prj (pp.project);
+
+    if (!ns.empty ())
+      pp.append (find_project_packages (prj, ns).first.packages);
+
     package_locations& pkgs (pp.packages);
 
     // If we are submitting multiple packages, verify they are from the same

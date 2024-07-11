@@ -12,7 +12,7 @@ namespace bdep
   {
     "<options>
      <prj-spec> <prj-dir>
-     <pkg-spec> <pkg-dir>
+     <pkg-spec> <pkg> <pkg-dir>
      <cfg-spec> <cfg-name> <cfg-dir>
      <dep-spec> <pkg> <ver>",
 
@@ -22,7 +22,7 @@ namespace bdep
 
      \c{<dep-spec> = <pkg>[\b{/}<ver>]\n
         <cfg-spec> = (\b{@}<cfg-name> | \b{--config}|\b{-c} <cfg-dir>)... | \b{--all}|\b{-a}\n
-        <pkg-spec> = (\b{--directory}|\b{-d} <pkg-dir>)... | <prj-spec>\n
+        <pkg-spec> = (<pkg> | (\b{--directory}|\b{-d} <pkg-dir>))... | <prj-spec>\n
         <prj-spec> = \b{--directory}|\b{-d} <prj-dir>}
 
      \h|DESCRIPTION|
@@ -34,6 +34,11 @@ namespace bdep
      directory is assumed. If no configuration is specified, then the default
      configurations are assumed. See \l{bdep-projects-configs(1)} for details
      on specifying projects and configurations.
+
+     Note that if a package that is specified as a <pkg> name (as opposed to
+     as a directory with \c{\b{--directory}|\b{-d}}) belongs to the project
+     and is initialized in any of the specified configurations, then it is
+     interpreted as <pkg-spec>. Otherwise, it is interpreted as <dep-spec>.
 
      If no <dep-spec> arguments are specified, then \cb{status} prints the
      status of the project's packages. Otherwise, the status of the specified

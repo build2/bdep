@@ -348,13 +348,117 @@ namespace bdep
     if (o.immediate () && o.recursive ())
       fail << "both --immediate|-i and --recursive|-r specified";
 
+    bool json (o.stdout_format () == stdout_format::json);
+
+    optional<pair<configurations, bool>> cs; // Load if/when required.
+
+    auto load_configurations = [&o, json, &trace] (const dir_path& prj)
+    {
+      database db (open (prj, trace));
+
+      transaction t (db.begin ());
+
+      // If --all|-a is specified and the project has no associated
+      // configurations let's print an empty array of configurations for the
+      // JSON format instead of failing (as we do for the lines format).
+      //
+      optional<pair<configurations, bool>> r (
+        find_configurations (o,
+                             prj,
+                             t,
+                             true /* fallback_default */,
+                             true /* validate */,
+                             json /* allow_none */));
+
+      t.commit ();
+
+      return r;
+    };
+
     // We have two pretty different modes: project package status and
-    // dependency package status (have arguments).
+    // dependency package status (<dep-specs> are specified).
+    //
+    // Sort arguments (if any) into dep-specs and pkg-specs as follows:
+    //
+    // - If the argument contains '/' (package version) or this package
+    //   doesn't belong to this project or is not initialized, then we assume
+    //   dep-spec.
+    //
+    // - Otherwise, we assume pkg-spec.
     //
     strings dep_pkgs;
-    for (; args.more (); dep_pkgs.push_back (args.next ())) ;
+    package_locations pkgs;
+    {
+      strings ns;
+      while (args.more ())
+      {
+        const char* a (args.next ());
 
-    bool json (o.stdout_format () == stdout_format::json);
+        if (strchr (a, '/') != nullptr)
+          dep_pkgs.push_back (a);
+        else
+          ns.push_back (a);
+      }
+
+      // Add packages which don't belong to the project or are not initialized
+      // to dep_pkgs and to pkgs otherwise.
+      //
+      if (!ns.empty ())
+      {
+        pair<project_packages, strings> pps (
+          find_project_packages (o,
+                                 ns,
+                                 true /* ignore_not_found */,
+                                 json /* allow_empty */));
+
+        // Assume the packages that don't belong to the project as dep-specs.
+        //
+        dep_pkgs.insert (dep_pkgs.end (),
+                         make_move_iterator (pps.second.begin ()),
+                         make_move_iterator (pps.second.end ()));
+
+        // Assume the initialized packages of the project as the pkg-specs and
+        // the dep-specs otherwise.
+        //
+        // Note that here we check if the packages are initialized only in the
+        // specified configurations.
+        //
+        project_packages& pp (pps.first);
+
+        if (!pp.packages.empty ())
+        {
+          cs = load_configurations (pp.project);
+
+          for (package_location& p: pp.packages)
+          {
+            bool init (false);
+
+            for (const shared_ptr<configuration>& c: cs->first)
+            {
+              if (find_if (c->packages.begin (),
+                           c->packages.end (),
+                           [&p] (const package_state& s)
+                           {
+                             return p.name == s.name;
+                           }) != c->packages.end ())
+              {
+                init = true;
+                break;
+              }
+            }
+
+            if (init)
+              pkgs.push_back (move (p));
+            else
+              dep_pkgs.push_back (move (p.name).string ());
+          }
+
+          if (!pkgs.empty () && !dep_pkgs.empty ())
+            fail << "initialized package " << pkgs[0].name
+                 << " specified with dependency package " << dep_pkgs[0];
+        }
+      }
+    }
 
     // The same ignore/load story as in sync for the lines format.
     //
@@ -365,40 +469,28 @@ namespace bdep
     //
     project_packages pp (
       find_project_packages (o,
-                             !dep_pkgs.empty () /* ignore_packages */,
-                             json               /* load_packages */,
-                             json               /* allow_empty */));
+                             !dep_pkgs.empty ()    /* ignore_packages */,
+                             json && pkgs.empty () /* load_packages */,
+                             json                  /* allow_empty */));
 
-    const dir_path& prj (pp.project);
-
-    database db (open (prj, trace));
+    if (!pkgs.empty ())
+      pp.append (move (pkgs));
 
     configurations cfgs;
     {
-      transaction t (db.begin ());
-
-      // If --all|-a is specified and the project has no associated
-      // configurations let's print an empty array of configurations for the
-      // JSON format instead of failing (as we do for the lines format).
+      // Load project configurations, if not loaded yet.
       //
-      pair<configurations, bool> cs (
-        find_configurations (o,
-                             prj,
-                             t,
-                             true /* fallback_default */,
-                             true /* validate */,
-                             json /* allow_none */));
-
-      t.commit ();
+      if (!cs)
+        cs = load_configurations (pp.project);
 
       // If specified, verify packages are present in at least one
       // configuration. But not for the JSON format where we also print
       // statuses of uninitialized packages.
       //
       if (!pp.packages.empty () && !json)
-        verify_project_packages (pp, cs);
+        verify_project_packages (pp, *cs);
 
-      cfgs = move (cs.first);
+      cfgs = move (cs->first);
     }
 
     switch (o.stdout_format ())

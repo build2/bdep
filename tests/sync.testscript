@@ -205,6 +205,67 @@ deinit += -d prj
     EOE
 }
 
+: pkg-by-name
+:
+{
+  $new -t empty prj &prj/***;
+
+  $new --package pkg1 -d prj;
+  $new --package pkg2 -d prj;
+
+  init += -d prj;
+
+  $init -C @cfg $config_cxx &prj-cfg/***;
+
+  $new -t lib libprj &libprj/***;
+
+  cat <<EOI >+prj/repositories.manifest;
+    :
+    role: prerequisite
+    location: ../libprj
+    type: dir
+    EOI
+
+  cat <<EOI >+prj/pkg1/manifest;
+    depends: libprj
+    EOI
+
+  cat <<EOI >+prj/pkg2/manifest;
+    tags: c++
+    EOI
+
+  $* pkg1 -d prj/pkg2 ?libprj 2>>~%EOE%;
+    %.+
+    synchronizing:
+      new libprj/0.1.0-a.0.19700101000000 (required by pkg1)
+      upgrade pkg1/0.1.0-a.0.19700101000000#1
+      upgrade pkg2/0.1.0-a.0.19700101000000#1
+    EOE
+
+  sed -i -e 's/^(version:).+$/\1 1.0.0/' libprj/manifest;
+
+  $* libprj -f -d prj 2>>~%EOE%;
+    %.+
+    synchronizing:
+      upgrade libprj/1.0.0
+      reconfigure pkg1/0.1.0-a.0.19700101000000#1
+    EOE
+
+  $* libprj pkg1 -d prj 2>>EOE != 0;
+    error: initialized package pkg1 specified with dependency package libprj
+    EOE
+
+  $deinit 2>>/"EOE"
+    deinitializing in project $~/prj/
+    deinitializing package pkg1
+    deinitializing package pkg2
+    synchronizing:
+      drop pkg1
+      drop libprj
+      drop pkg2
+    EOE
+}
+
 : config-vars
 :
 {

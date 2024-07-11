@@ -135,3 +135,45 @@ deinit += -d prj
       drop pkg1
     EOE
 }
+
+: pkg-by-name
+:
+{
+  $new -t empty prj &prj/***;
+
+  $new --package pkg1 -d prj;
+  $new --package pkg2 -d prj;
+
+  $init -C @cfg &prj-cfg/***;
+
+  $* pkg3 -d prj/ 2>>/"EOE" != 0;
+    error: no package pkg3 in project $~/prj/
+    EOE
+
+  $* pkg1 -d prj/pkg2 2>>~%EOE%;
+    %(mkdir|c\+\+|ld|ln) .+%{8}
+    EOE
+
+  # @@ TMP Strangely, get re-symlinked on Windows (every time if run this
+  #        command multiple times).
+  #
+  $* pkg1 -d prj/ 2>>~%EOE%;
+    %ln .+pkg1.+ -> .+pkg1.+%?
+    %info: .+pkg1.+ is up to date%
+    EOE
+
+  $deinit pkg3 -d prj 2>>/"EOE" != 0;
+    error: no package pkg3 in project $~/prj/
+    EOE
+
+    # While at it, test specifying a package name on the deinit command line.
+    #
+    $deinit pkg1 -d prj/pkg2 2>>/"EOE"
+    deinitializing in project $~/prj/
+    deinitializing package pkg1
+    deinitializing package pkg2
+    synchronizing:
+      drop pkg1
+      drop pkg2
+    EOE
+}

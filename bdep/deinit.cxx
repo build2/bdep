@@ -128,9 +128,15 @@ namespace bdep
   }
 
   int
-  cmd_deinit (const cmd_deinit_options& o, cli::scanner&)
+  cmd_deinit (const cmd_deinit_options& o, cli::scanner& args)
   {
     tracer trace ("deinit");
+
+    // Save the package names.
+    //
+    strings ns;
+    while (args.more ())
+      ns.emplace_back (args.next ());
 
     bool force (o.force ());
 
@@ -142,6 +148,9 @@ namespace bdep
                              false /* load_packages   */));
 
     const dir_path& prj (pp.project);
+
+    if (!ns.empty ())
+      pp.append (find_project_packages (prj, ns).first.packages);
 
     if (verb)
       text << "deinitializing in project " << prj;
