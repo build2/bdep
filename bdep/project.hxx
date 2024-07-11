@@ -241,6 +241,11 @@ namespace bdep
   {
     dir_path          project;
     package_locations packages;
+
+    // Append package locations suppressing duplicates.
+    //
+    void
+    append (package_locations&&);
   };
 
   // Search project packages in the specified directories or the current
@@ -272,6 +277,34 @@ namespace bdep
   find_project (const project_options& o)
   {
     return find_project_packages (o, true /* ignore_packages */).project;
+  }
+
+  // Search for the specified packages in the specified project
+  // directory. Fail if some packages are not found in the project, unless
+  // ignore_not_found is true in which case return them (`second` member).
+  //
+  pair<project_packages, strings>
+  find_project_packages (dir_path,
+                         const strings&,
+                         bool ignore_not_found = false,
+                         bool allow_empty = false);
+
+  inline pair<project_packages, strings>
+  find_project_packages (const dir_paths& dirs,
+                         const strings& pkgs,
+                         bool ignore_nf = false,
+                         bool ae = false)
+  {
+    return find_project_packages (find_project (dirs), pkgs, ignore_nf, ae);
+  }
+
+  inline pair<project_packages, strings>
+  find_project_packages (const project_options& po,
+                         const strings& pkgs,
+                         bool ignore_nf = false,
+                         bool ae = false)
+  {
+    return find_project_packages (po.directory (), pkgs, ignore_nf, ae);
   }
 
   // Verify that each package is present in at least one configuration.
