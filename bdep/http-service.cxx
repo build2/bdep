@@ -4,7 +4,8 @@
 #include <bdep/http-service.hxx>
 
 #include <libbutl/curl.hxx>
-#include <libbutl/fdstream.hxx> // fdterm()
+#include <libbutl/fdstream.hxx>         // fdterm()
+#include <libbutl/semantic-version.hxx>
 
 #include <bdep/diagnostics.hxx>
 
@@ -15,6 +16,8 @@ namespace bdep
 {
   namespace http_service
   {
+    static optional<semantic_version> curl_version;
+
     result
     post (const common_options& o, const url& u, const parameters& params)
     {
@@ -112,6 +115,17 @@ namespace bdep
           p.name + '='  + p.value);
       }
 
+      // Query the curl's version, if not done yet. If something goes wrong,
+      // set the version to 0.0.0 so that we treat it as a really old curl.
+      //
+      if (!curl_version)
+      {
+        if (optional<semantic_version> v = curl::version (o.curl ()))
+          curl_version = move (*v);
+        else
+          curl_version = semantic_version {0, 0, 0};
+      }
+
       // Note that it's a bad idea to issue the diagnostics while curl is
       // running, as it will be messed up with the progress output. Thus, we
       // throw the runtime_error exception on the HTTP response parsing error
@@ -147,6 +161,18 @@ namespace bdep
                // status code/reason, content type, and the redirect location.
                //
                "--include",
+
+               // Note that in the presence of the --include|-i option, the
+               // output may include the CONNECT request response headers if
+               // curl tunnels through a proxy. To suppress these headers we
+               // also add the --suppress-connect-headers option for the curl
+               // versions 7.54.0 (when the option was invented) and
+               // above. For the earlier versions we just don't support the
+               // tunneling.
+               //
+               (*curl_version >= semantic_version {7, 54, 0}
+                ? "--suppress-connect-headers"
+                : nullptr),
 
                fos,
                u.string ()));
