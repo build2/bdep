@@ -399,22 +399,32 @@ deinit += -d prj
   echo 'config [bool] config.pkg.feature ?= false' >+prj/pkg/build/root.build;
   echo 'config [bool] config.libpkg.feature ?= false' >+prj/libpkg/build/root.build;
 
-  $init -d prj/ @cfg config.pkg.feature=true config.libpkg.feature=true;
+  $init -d prj/ @cfg config.pkg.feature=true config.libpkg.feature=true 2>>~%EOE%;
+    %initializing in project .+failure-preserve-user-config.+%
+    initializing package pkg
+    initializing package libpkg
+    synchronizing:
+      new libpkg/0.1.0-a.0.19700101000000
+        config.libpkg.feature=true (user configuration)
+      new pkg/0.1.0-a.0.19700101000000
+        config.pkg.feature=true (user configuration)
+    %.*
+    EOE
 
   sed -n -e 's/config.pkg.feature = (.+)/\1/p' \
       prj-cfg/pkg/build/config.build >'true';
 
   sed -n -e 's/src_root = (.+)/\1/p' \
-      prj-cfg/pkg/build/bootstrap/src-root.build >/~'%.+/prj/pkg/%';
+      prj-cfg/pkg/build/bootstrap/src-root.build >/~"%.+/prj/pkg/'?%";
 
   sed -n -e 's/config.libpkg.feature = (.+)/\1/p' \
       prj-cfg/libpkg/build/config.build >'true';
 
   sed -n -e 's/src_root = (.+)/\1/p' \
-      prj-cfg/libpkg/build/bootstrap/src-root.build >/~'%.+/prj/libpkg/%';
+      prj-cfg/libpkg/build/bootstrap/src-root.build >/~"%.+/prj/libpkg/'?%";
 
   sed -n -e 's/src_root = (.+)/\1/p' \
-      prj-cfg/libpkg/tests/build/bootstrap/src-root.build >/~'%.+/prj/libpkg/tests/%';
+      prj-cfg/libpkg/tests/build/bootstrap/src-root.build >/~"%.+/prj/libpkg/tests/'?%";
 
   mkdir --no-cleanup prj/libpkg/stray;
   echo '' >+prj/libpkg/manifest;
@@ -434,16 +444,16 @@ deinit += -d prj
       prj-cfg/pkg/build/config.build >'true';
 
   sed -n -e 's/src_root = (.+)/\1/p' \
-      prj-cfg/pkg/build/bootstrap/src-root.build >/~'%.+/prj/pkg/%';
+      prj-cfg/pkg/build/bootstrap/src-root.build >/~"%.+/prj/pkg/'?%";
 
   sed -n -e 's/config.libpkg.feature = (.+)/\1/p' \
       prj-cfg/libpkg/build/config.build >'true';
 
   sed -n -e 's/src_root = (.+)/\1/p' \
-      prj-cfg/libpkg/build/bootstrap/src-root.build >/~'%.+/prj/libpkg/%';
+      prj-cfg/libpkg/build/bootstrap/src-root.build >/~"%.+/prj/libpkg/'?%";
 
   sed -n -e 's/src_root = (.+)/\1/p' \
-      prj-cfg/libpkg/tests/build/bootstrap/src-root.build >/~'%.+/prj/libpkg/tests/%';
+      prj-cfg/libpkg/tests/build/bootstrap/src-root.build >/~"%.+/prj/libpkg/tests/'?%";
 
   rmdir prj/libpkg/stray;
 
@@ -458,16 +468,16 @@ deinit += -d prj
       prj-cfg/pkg/build/config.build >'true';
 
   sed -n -e 's/src_root = (.+)/\1/p' \
-      prj-cfg/pkg/build/bootstrap/src-root.build >/~'%.+/prj/pkg/%';
+      prj-cfg/pkg/build/bootstrap/src-root.build >/~"%.+/prj/pkg/'?%";
 
   sed -n -e 's/config.libpkg.feature = (.+)/\1/p' \
       prj-cfg/libpkg/build/config.build >'true';
 
   sed -n -e 's/src_root = (.+)/\1/p' \
-      prj-cfg/libpkg/build/bootstrap/src-root.build >/~'%.+/prj/libpkg/%';
+      prj-cfg/libpkg/build/bootstrap/src-root.build >/~"%.+/prj/libpkg/'?%";
 
   sed -n -e 's/src_root = (.+)/\1/p' \
-      prj-cfg/libpkg/tests/build/bootstrap/src-root.build >/~'%.+/prj/libpkg/tests/%';
+      prj-cfg/libpkg/tests/build/bootstrap/src-root.build >/~"%.+/prj/libpkg/tests/'?%";
 
   $deinit 2>>/"EOE"
     deinitializing in project $~/prj/
