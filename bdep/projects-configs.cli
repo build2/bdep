@@ -39,14 +39,10 @@ include <bdep/common-options.hxx>;
   \cb{git(1)}.
 
   Alternatively, the project or (several) package directories can be specified
-  with the \c{\b{--directory}|\b{-d}} options. Note that \cb{bdep} operates
-  on a single project but potentially multiple packages belonging to said
-  project at a time.
-
-  A package can always be specified with the \c{\b{--directory}|\b{-d}} option
-  and normally with the package name argument, unless such an argument would
-  be ambiguous. Refer to the specific command documentation on the possibility
-  of specifying a package as a name.
+  with the \c{\b{--directory}|\b{-d}} options. Additionally, in all the
+  commands except \cb{init}, an initialized project package can be specified
+  as a <pkg> name. Note that \cb{bdep} operates on a single project but
+  potentially multiple packages belonging to said project at a time.
 
   Some \cb{bdep} commands, such as \cb{fetch}, operate on the whole project.
   If such a command is given a package directory (either as the working

@@ -191,9 +191,9 @@ namespace bdep
 
     // Save the package names.
     //
-    strings ps;
+    strings ns;
     while (args.more ())
-      ps.emplace_back (args.next ());
+      ns.emplace_back (args.next ());
 
     // Collect the packages manifest value overrides parsing the --override,
     // etc options and verify that the resulting overrides list contains valid
@@ -424,12 +424,12 @@ namespace bdep
     project_packages pp (
       find_project_packages (o,
                              false                       /* ignore_packages */,
-                             o.forward () && ps.empty () /* load_packages */));
+                             o.forward () && ns.empty () /* load_packages */));
 
     const dir_path& prj (pp.project);
 
-    if (!ps.empty ())
-      pp.append (find_project_packages (prj, ps).first.packages);
+    if (!ns.empty ())
+      pp.append (find_project_packages (prj, ns).first.packages);
 
     // Collect package names, versions, and configurations used (except for
     // the forward mode).

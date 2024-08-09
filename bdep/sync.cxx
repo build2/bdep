@@ -2502,12 +2502,7 @@ namespace bdep
       o.implicit (true); // Implies --implicit.
     }
 
-    // Note: in the implicit mode we don't search the current working
-    // directory for a project.
-    //
-    bool implicit_no_orig (o.implicit () && !o.directory_specified ());
-
-    optional<pair<configurations, bool>> cs;
+    optional<pair<configurations, bool>> cs; // Load if/when required.
 
     auto load_configurations = [&o, &trace] (const dir_path& prj)
     {
@@ -2520,6 +2515,11 @@ namespace bdep
       return r;
     };
 
+    // Note: in the implicit mode we don't search the current working
+    // directory for a project.
+    //
+    bool implicit_no_orig (o.implicit () && !o.directory_specified ());
+
     // Sort arguments (if any) into pkg-args, dep-specs, and pkg-specs as
     // follows:
     //
@@ -2527,9 +2527,9 @@ namespace bdep
     //   (config variable), then we assume it is pkg-arg.
     //
     // - Otherwise, if this is an implicit sync without an originating project
-    //   or the argument contains '/' (package version) or has a group or this
-    //   package doesn't belong to this project or is not initialized, then we
-    //   assume dep-spec.
+    //   or the argument contains '/' (package version) or this package
+    //   doesn't belong to this project or is not initialized, then we assume
+    //   dep-spec.
     //
     // - Otherwise, we assume pkg-spec.
     //
@@ -2539,6 +2539,10 @@ namespace bdep
     strings dep_pkgs;
     package_locations pkgs;
     {
+      // @@ TODO: redo group sema (fails for now with "not yet implemented"
+      //    for initialized project packages).
+      //
+
       strings ps;
       while (args.more ())
       {
@@ -2576,14 +2580,14 @@ namespace bdep
         pair<project_packages, strings> pps (
           find_project_packages (o, ps, true /* ignore_not_found */));
 
-        // Assume the packages that don't belong to the project as dep-specs.
+        // Assume the packages that don't belong to the project are dep-specs.
         //
         dep_pkgs.insert (dep_pkgs.end (),
                          make_move_iterator (pps.second.begin ()),
                          make_move_iterator (pps.second.end ()));
 
-        // Assume the initialized packages of the project as the pkg-specs and
-        // the dep-specs otherwise.
+        // Assume the initialized packages of the project are pkg-specs and
+        // dep-specs otherwise.
         //
         // Note that here we check if the packages are initialized in only the
         // specified configurations.
@@ -2619,9 +2623,8 @@ namespace bdep
           }
 
           if (!pkgs.empty () && !dep_pkgs.empty ())
-            fail << "initialized packages specified with dependency packages" <<
-              info << "initialized package " << pkgs[0].name <<
-              info << "dependency package " << dep_pkgs[0];
+            fail << "initialized package " << pkgs[0].name
+                 << " specified with dependency package " << dep_pkgs[0];
         }
       }
     }

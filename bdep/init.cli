@@ -43,10 +43,13 @@ namespace bdep
      If no project directory is specified, then the current working directory
      is assumed. If no configuration is specified, then the default
      configuration is assumed (failing if multiple default configurations are
-     present). See \l{bdep-projects-configs(1)} for details on specifying
-     projects and configurations. Optional <pkg-args> are the additional
-     dependency packages and/or configuration variables to pass to the
-     underlying \l{bpkg-pkg-build(1)} command.
+     present). Note that unlike in all other commands, in \cb{init} the
+     package to initialize in <pkg-spec> cannot be specified as a <pkg> name,
+     only as a directory with \c{\b{--directory}|\b{-d}}. See
+     \l{bdep-projects-configs(1)} for details on specifying projects and
+     configurations. Optional <pkg-args> are the additional dependency
+     packages and/or configuration variables to pass to the underlying
+     \l{bpkg-pkg-build(1)} command.
 
      The second form (\cb{--empty} is specified) initializes an empty project
      database that can later be used to first add build configurations

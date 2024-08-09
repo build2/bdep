@@ -279,9 +279,10 @@ namespace bdep
     return find_project_packages (o, true /* ignore_packages */).project;
   }
 
-  // Search for the specified packages in the specified project
+  // Search for the specified package names in the specified project
   // directory. Fail if some packages are not found in the project, unless
-  // ignore_not_found is true in which case return them (`second` member).
+  // ignore_not_found is true in which case return them in the second half of
+  // the pair.
   //
   pair<project_packages, strings>
   find_project_packages (dir_path,

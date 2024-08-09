@@ -35,9 +35,10 @@ namespace bdep
      configurations are assumed. See \l{bdep-projects-configs(1)} for details
      on specifying projects and configurations.
 
-     Note that if the package specified as a name on the command line belongs
-     to the project and is initialized in any of the specified configurations,
-     then it is a <pkg-spec>. Otherwise, it is a <dep-spec>.
+     Note that if a package that is specified as a <pkg> name (as opposed to
+     as a directory with \c{\b{--directory}|\b{-d}}) belongs to the project
+     and is initialized in any of the specified configurations, then it is
+     interpreted as <pkg-spec>. Otherwise, it is interpreted as <dep-spec>.
 
      If no <dep-spec> arguments are specified, then \cb{status} prints the
      status of the project's packages. Otherwise, the status of the specified

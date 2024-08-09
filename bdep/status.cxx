@@ -350,7 +350,7 @@ namespace bdep
 
     bool json (o.stdout_format () == stdout_format::json);
 
-    optional<pair<configurations, bool>> cs;
+    optional<pair<configurations, bool>> cs; // Load if/when required.
 
     auto load_configurations = [&o, json, &trace] (const dir_path& prj)
     {
@@ -420,7 +420,7 @@ namespace bdep
         // Assume the initialized packages of the project as the pkg-specs and
         // the dep-specs otherwise.
         //
-        // Note that here we check if the packages are initialized in only the
+        // Note that here we check if the packages are initialized only in the
         // specified configurations.
         //
         project_packages& pp (pps.first);
@@ -454,9 +454,8 @@ namespace bdep
           }
 
           if (!pkgs.empty () && !dep_pkgs.empty ())
-            fail << "initialized packages specified with dependency packages" <<
-              info << "initialized package " << pkgs[0].name <<
-              info << "dependency package " << dep_pkgs[0];
+            fail << "initialized package " << pkgs[0].name
+                 << " specified with dependency package " << dep_pkgs[0];
         }
       }
     }
