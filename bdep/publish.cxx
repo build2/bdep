@@ -881,6 +881,10 @@ namespace bdep
     while (args.more ())
       ns.emplace_back (args.next ());
 
+    // If no project directory nor package directory/name is specified, then
+    // we publish the entire project. Otherwise, we only publish the specified
+    // packages.
+    //
     // If we are publishing the entire project, then we have two choices: we
     // can publish all the packages in the project or we can only do so for
     // packages that were initialized in the configuration that we are going
@@ -889,15 +893,46 @@ namespace bdep
     // mistake than the desired behavior. So we will assume it's all the
     // packages and verify they are all initialized in the configuration.
     //
-    project_packages pp (
-      find_project_packages (o,
-                             false       /* ignore_packages */,
-                             ns.empty () /* load_packages   */));
+    project_packages pp;
+    dir_path& prj (pp.project);
 
-    const dir_path& prj (pp.project);
+    if (o.directory_specified () || !ns.empty ())
+    {
+      pp = find_project_packages (o,
+                                  false       /* ignore_packages */,
+                                  ns.empty () /* load_packages   */);
 
-    if (!ns.empty ())
-      pp.append (find_project_packages (prj, ns).first.packages);
+      if (!ns.empty ())
+        pp.append (find_project_packages (prj, ns).first.packages);
+
+      // Issue a warning if some project packages are not being published.
+      //
+      package_locations pls;
+
+      for (package_location& pl: load_packages (prj))
+      {
+        if (find_if (pp.packages.begin (), pp.packages.end (),
+                     [&pl] (const package_location& l)
+                     {
+                       return l.path == pl.path;
+                     }) == pp.packages.end ())
+          pls.push_back (move (pl));
+      }
+
+      if (!pls.empty ())
+      {
+        diag_record dr (warn);
+        dr << "following project packages not being published:";
+
+        for (const package_location& pl: pls)
+          dr << ' ' << pl.name;
+      }
+    }
+    else
+    {
+      prj = find_project (o.directory ());
+      pp.packages = load_packages (prj);
+    }
 
     package_locations& pkgs (pp.packages);
 

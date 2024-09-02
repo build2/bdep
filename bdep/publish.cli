@@ -30,12 +30,16 @@ namespace bdep
      The \cb{publish} command publishes the project packages to an
      archive-based repository.
 
-     If no project or package directory is specified, then the current working
-     directory is assumed. If no configuration is specified, then the default
-     configurations are used to prepare the package distributions. If the
-     specified directory is a project directory, then all the packages in the
-     project are published. See \l{bdep-projects-configs(1)} for details on
-     specifying projects and configurations.
+     Normally, \cb{publish} operates on all the packages in a project. If no
+     project directory nor package directory/name is specified, then the
+     current working directory is assumed and all the packages are published,
+     even if the current directory is a package directory. If, however, one or
+     more packages are specified explicitly with \c{\b{--directory}|\b{-d}} or
+     as <pkg> names, then \cb{publish} assumes you know what you are doing and
+     only publishes these packages. If no configuration is specified, then the
+     default configurations are used to prepare the package distributions. See
+     \l{bdep-projects-configs(1)} for details on specifying projects and
+     configurations.
 
      For each specified package the \cb{publish} command prepares a package
      archive and sends it as part of the package submission request to an

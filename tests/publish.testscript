@@ -33,7 +33,7 @@ g = [cmdline] git -C prj >! 2>!
 # duplicate submissions. We will use unique version for each test,
 # incrementing the patch version for 1.0.X.
 #
-# Next version to use: 1.0.25
+# Next version to use: 1.0.27
 #
 
 # Normally we disable the progress indication that complicates stderr output
@@ -213,6 +213,7 @@ g = [cmdline] git -C prj >! 2>!
       test.arguments = $regex.apply($test.arguments, '^--yes$', '');
 
       $* libprj <'y' 2>>~"%EOE%"
+        warning: following project packages not being published: prj
         publishing:
         %  to:      $repository%
           as:      user <user@example.com>
@@ -274,7 +275,26 @@ g = [cmdline] git -C prj >! 2>!
       test.arguments = $regex.apply($test.arguments, '^(prj)$', '\1/libprj');
 
       $* 2>>~%EOE%
+        warning: following project packages not being published: prj
         %package submission is queued(: \.*prj/1.0.3)?%d
+        %reference: .{12}%
+        EOE
+    }
+
+    : all
+    :
+    {
+      $clone_prj;
+      sed -i -e 's/^(version:) .*$/\1 1.0.25/' prj/prj/manifest;
+      sed -i -e 's/^(version:) .*$/\1 1.0.26/' prj/libprj/manifest;
+      $init -C @cfg &prj-cfg/***;
+
+      test.arguments = $regex.apply($test.arguments, '^(-d|prj)$', '');
+
+      env -c prj/libprj -- $* 2>>~%EOE%
+        %package submission is queued(: \.*libprj/1.0.26)?%d
+        %reference: .{12}%
+        %package submission is queued(: \.*prj/1.0.25)?%d
         %reference: .{12}%
         EOE
     }
