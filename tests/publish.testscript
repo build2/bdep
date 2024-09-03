@@ -31,9 +31,9 @@ g = [cmdline] git -C prj >! 2>!
 
 # Note that using the same package name and version for tests may result in
 # duplicate submissions. We will use unique version for each test,
-# incrementing the patch version for 1.0.X.
+# incrementing the patch version for *.*.X.
 #
-# Next version to use: 1.0.27
+# Next version to use: *.*.29
 #
 
 # Normally we disable the progress indication that complicates stderr output
@@ -127,6 +127,72 @@ g = [cmdline] git -C prj >! 2>!
       $* --force=snapshot 2>>~%EOE% != 0
         error: package prj version 1.0.15-a.0.19700101000000 is a snapshot
         EOE
+    }
+
+    : zero-major-version
+    :
+    {
+      : alpha
+      :
+      {
+        $clone_root_prj;
+        $init -C @cfg &prj-cfg/***;
+        sed -i -e 's/^(version:) .*$/\1 0.1.27/' prj/manifest;
+
+        # Suppress the --yes option.
+        #
+        test.arguments = $regex.apply($test.arguments, '^--yes$', '');
+
+        $* <<EOI 2>>~%EOE%
+          y
+          y
+          EOI
+          %.*
+          package prj 0.1.27 has 0 major version component and should be published to alpha section if this version is semver
+          publish to alpha as opposed to stable [y/n] publishing:
+          %.*
+            package: prj
+            version: 0.1.27
+            project: prj
+            section: alpha
+          %.*
+          continue? [y/n] submitting prj-0.1.27.tar.gz
+          %.*
+          %package submission is queued.+%
+          %reference: .{12}%
+          EOE
+      }
+
+      : stable
+      :
+      {
+        $clone_root_prj;
+        $init -C @cfg &prj-cfg/***;
+        sed -i -e 's/^(version:) .*$/\1 0.1.28/' prj/manifest;
+
+        # Suppress the --yes option.
+        #
+        test.arguments = $regex.apply($test.arguments, '^--yes$', '');
+
+        $* <<EOI 2>>~%EOE%
+          n
+          y
+          EOI
+          %.*
+          package prj 0.1.28 has 0 major version component and should be published to alpha section if this version is semver
+          publish to alpha as opposed to stable [y/n] publishing:
+          %.*
+            package: prj
+            version: 0.1.28
+            project: prj
+            section: stable
+          %.*
+          continue? [y/n] submitting prj-0.1.28.tar.gz
+          %.*
+          %package submission is queued.+%
+          %reference: .{12}%
+          EOE
+      }
     }
 
     : non-standard-version

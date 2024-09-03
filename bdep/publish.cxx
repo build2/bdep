@@ -209,12 +209,34 @@ namespace bdep
             dr << info << "use --force=snapshot to publish anyway";
         }
 
-        // Per semver we treat zero major versions as alpha.
-        //
-        s = o.section_specified ()        ? o.section ()   :
-            v.alpha () || v.major () == 0 ? "alpha"        :
-            v.beta ()                     ? "beta"         :
-                                            "stable"       ;
+        if (o.section_specified ())
+          s = o.section ();
+        else if (v.alpha ())
+          s = "alpha";
+        else if (v.beta ())
+          s = "beta";
+        else
+        {
+          // Per semver we treat zero major versions as alpha.
+          //
+          // Note, however, that a package may not subscribe to the semver
+          // semantics while using the three-component version. Thus, for the
+          // zero major version, unless this is a pre-release, we confirm with
+          // the user if the alpha section is appropriate for the package.
+          //
+          if (v.major () == 0)
+          {
+            text << "package " << n << ' ' << v << " has 0 major version "
+                 << "component and should be published to alpha section if "
+                 << "this version is semver";
+
+            s = yn_prompt ("publish to alpha as opposed to stable [y/n]")
+              ? "alpha"
+              : "stable";
+          }
+          else
+            s = "stable";
+        }
       }
       else
       {
