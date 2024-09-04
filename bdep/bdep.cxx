@@ -12,6 +12,7 @@
 #include <exception>   // set_terminate(), terminate_handler
 #include <type_traits> // enable_if, is_base_of
 
+#include <libbutl/fdstream.hxx>  // std*_fdmode()
 #include <libbutl/backtrace.hxx> // backtrace()
 
 #include <bdep/types.hxx>
@@ -407,6 +408,24 @@ try
   using namespace cli;
 
   default_terminate = set_terminate (custom_terminate);
+
+  // Note that the standard stream descriptors can potentially be in the
+  // non-blocking mode, which the C++ streams are not suited for and which are
+  // not fully supported by butl::iofdstreams. Using such descriptors may lead
+  // to various weird failures (see GH issue #417 for the reproducer). Thus,
+  // we just turn such descriptors into the blocking mode at the beginning of
+  // the program execution.
+  //
+  try
+  {
+    stdin_fdmode  (fdstream_mode::blocking);
+    stdout_fdmode (fdstream_mode::blocking);
+    stderr_fdmode (fdstream_mode::blocking);
+  }
+  catch (const io_error& e)
+  {
+    fail << "unable to turn standard streams into blocking mode: " << e;
+  }
 
   if (fdterm (stderr_fd ()))
   {
