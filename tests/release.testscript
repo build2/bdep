@@ -1122,6 +1122,101 @@ new += --vcs git,branch=master 2>-
 
   test.options += -q
 
+  : pkg-spec
+  :
+  {
+    +$clone_repos
+
+    test.arguments += --no-open --push --yes
+
+    : dir
+    :
+    {
+      $clone_repos;
+
+      # Release the single libprj package rather than the whole prj project.
+      #
+      test.arguments = $regex.apply($test.arguments, '^(-d|prj)$', '');
+
+      $* -d prj/libprj 2>>EOE;
+        warning: following project packages not being released: prj
+        EOE
+
+      $clone2;
+
+      cat prj2/libprj/manifest >>~%EOO%;
+        %.*
+        name: libprj
+        version: 0.1.0
+        %.*
+        EOO
+
+      cat prj2/prj/manifest >>~%EOO%
+        %.*
+        name: prj
+        version: 0.1.0-a.0.z
+        %.*
+        EOO
+    }
+
+    : name
+    :
+    {
+      $clone_repos;
+
+      # Release the single libprj package rather than the whole prj project.
+      #
+      $* libprj 2>>EOE;
+        warning: following project packages not being released: prj
+        EOE
+
+      $clone2;
+
+      cat prj2/libprj/manifest >>~%EOO%;
+        %.*
+        name: libprj
+        version: 0.1.0
+        %.*
+        EOO
+
+      cat prj2/prj/manifest >>~%EOO%
+        %.*
+        name: prj
+        version: 0.1.0-a.0.z
+        %.*
+        EOO
+    }
+
+    : no-pkg-prj-spec
+    :
+    {
+      $clone_repos;
+
+      # Release the whole project, but deduce the project directory from the
+      # current working directory which is a package directory.
+      #
+      test.arguments = $regex.apply($test.arguments, '^(-d|prj)$', '');
+
+      env -c prj/libprj -- $*;
+
+      $clone2;
+
+      cat prj2/libprj/manifest >>~%EOO%;
+        %.*
+        name: libprj
+        version: 0.1.0
+        %.*
+        EOO
+
+      cat prj2/prj/manifest >>~%EOO%
+        %.*
+        name: prj
+        version: 0.1.0
+        %.*
+        EOO
+    }
+  }
+
   : patch
   :
   {
@@ -1164,7 +1259,11 @@ new += --vcs git,branch=master 2>-
     echo '' >+ prj/prj/manifest;
     $gp add prj/manifest;
 
-    $release --revision --current-tag=update -q --yes --no-edit -d prj/prj;
+    $release --revision --current-tag=update -q --yes --no-edit -d prj/prj 2>>~%EOE%;
+      %.*
+      warning: following project packages not being released: libprj
+      %.*
+      EOE
 
     echo '' >+ prj/prj/manifest;
     $gp add prj/manifest;

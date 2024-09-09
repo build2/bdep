@@ -480,8 +480,14 @@ namespace bdep
   }
 
   int
-  cmd_release (const cmd_release_options& o, cli::scanner&)
+  cmd_release (const cmd_release_options& o, cli::scanner& args)
   {
+    // Save the package names.
+    //
+    strings ns;
+    while (args.more ())
+      ns.emplace_back (args.next ());
+
     // Detect options incompatibility going through the groups of mutually
     // exclusive options. Also make sure that options make sense for the
     // current mode (releasing, revising, etc.) by pre-setting an incompatible
@@ -739,27 +745,56 @@ namespace bdep
     //
     project prj;
     {
-      // We release all the packages in the project. We could have required a
-      // configuration and verified that they are all initialized, similar to
-      // publish. But seeing that we don't need the configuration (unlike
-      // publish), this feels like an unnecessary complication. We also don't
-      // pre-sync for the same reasons.
+      // If no project directory nor package directory/name is specified, then
+      // we release the entire project. Otherwise, we only release the
+      // specified packages.
+      //
+      // We could have required a configuration and verified that all the
+      // being released packages are initialized, similar to publish. But
+      // seeing that we don't need the configuration (unlike publish), this
+      // feels like an unnecessary complication. We also don't pre-sync for
+      // the same reasons.
       //
       // Seeing that we are tagging the entire repository, force the
       // collection of all the packages even if the current working directory
-      // is a package. But allow explicit package directory specification as
-      // the "I know what I am doing" mode (e.g., to sidestep the same version
-      // restriction).
+      // is a package. But allow explicit package directory/name specification
+      // as the "I know what I am doing" mode (e.g., to sidestep the same
+      // version restriction).
       //
       package_locations pls;
 
-      if (o.directory_specified ())
+      if (o.directory_specified () || !ns.empty ())
       {
         project_packages pp (
           find_project_packages (o.directory (),
-                                 false /* ignore_packages */,
-                                 true  /* load_packages   */));
+                                 false       /* ignore_packages */,
+                                 ns.empty () /* load_packages   */));
         prj.path = move (pp.project);
+
+        if (!ns.empty ())
+          pp.append (find_project_packages (prj.path, ns).first.packages);
+
+        // Issue a warning if some project packages are not being released.
+        //
+        for (package_location& pl: load_packages (prj.path))
+        {
+          if (find_if (pp.packages.begin (), pp.packages.end (),
+                       [&pl] (const package_location& l)
+                       {
+                         return l.path == pl.path;
+                       }) == pp.packages.end ())
+            pls.push_back (move (pl));
+        }
+
+        if (!pls.empty ())
+        {
+          diag_record dr (warn);
+          dr << "following project packages not being released:";
+
+          for (const package_location& pl: pls)
+            dr << ' ' << pl.name;
+        }
+
         pls = move (pp.packages);
       }
       else
