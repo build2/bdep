@@ -1887,9 +1887,23 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
            << "*.pc"                                                   << '\n';
       }
 
+      // In the future we could use the language specified for an empty
+      // project type to decide whether to add compile_commands.json to
+      // .gitignore (which only makes sense for the C and C++ languages).
+      //
+      bool cdb (true);
+      if (cdb)
+      {
+        if (!pkg || t != type::empty)
+          os <<                                                           '\n';
+        os << "# Compilation database."                                << '\n'
+           << "#"                                                      << '\n'
+           << "compile_commands.json"                                  << '\n';
+      }
+
       // Only print the newline if anything is printed.
       //
-      if (newline && (!pkg || t != type::empty))
+      if (newline && (!pkg || t != type::empty || cdb))
         os <<                                                            '\n';
     };
 
