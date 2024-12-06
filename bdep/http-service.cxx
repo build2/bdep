@@ -374,7 +374,7 @@ namespace bdep
             message = "HTTP status code " + to_string (rs.code);
 
             if (!rs.reason.empty ())
-              message += " (" + lcase (rs.reason) + ')';
+              message += " (" + make_lcase (rs.reason) + ')';
           }
 
           if (!location)

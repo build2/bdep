@@ -43,7 +43,9 @@ namespace bdep
   // <libbutl/utility.hxx>
   //
   using butl::ucase;
+  using butl::make_ucase;
   using butl::lcase;
+  using butl::make_lcase;
   using butl::icasecmp;
 
   using butl::alpha;
@@ -52,6 +54,7 @@ namespace bdep
   using butl::trim;
   using butl::next_word;
   using butl::sanitize_identifier;
+  using butl::make_sanitized_identifier;
 
   using butl::reverse_iterate;
 

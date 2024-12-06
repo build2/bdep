@@ -277,7 +277,7 @@ namespace bdep
       {
         // Uppercase the first letter.
         //
-        ucase (l, 0, 1);
+        make_ucase (l, 0, 1);
       }
 
       return l;
@@ -981,7 +981,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
   case lang::c:
   case lang::cxx:
     {
-      id = sanitize_identifier (const_cast<const string&> (s));
+      id = sanitize_identifier (s);
       break;
     }
   }
@@ -1483,10 +1483,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
     auto add_var = [&subs, &vars] (string name, string value)
     {
-      vars.push_back ("BDEP_NEW_"                              +
-                      ucase (const_cast<const string&> (name)) +
-                      '='                                      +
-                      value);
+      vars.push_back ("BDEP_NEW_" + ucase (name) + '=' + value);
 
       subs[move (name)] = move (value);
     };
@@ -2816,8 +2813,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
         // to minimize the potential macro name clash.
         //
         string mx (
-          sanitize_identifier (
-            ucase (const_cast<const string&> (!ip.empty () ? ip : n))));
+          sanitize_identifier (ucase (!ip.empty () ? ip : n)));
 
         // Strip the trailing underscore (produced from slash).
         //
