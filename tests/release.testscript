@@ -24,16 +24,26 @@ clone_root_rep = [cmdline] cp --no-cleanup -pr $~/prj.git ./ &prj.git/***
 # Prepare the local repository.
 #
 # Set the origin repository location as a relative path, so we can copy the
-# local/remote repository pair into the testscript scopes.
+# local/remote repository pair into the testscript scopes. Also disable hooks,
+# which can potentially be broken, not to interfere with the git commands
+# (commit, etc) which bdep-release calls internally.
+#
+# Note that it would be cleaner to add support for the --git-option option, so
+# that we wouldn't need to override the hooks and, for example, just pass
+# through the --no-verify option to git-commit. However, since we normally run
+# multiple different git commands during bdep run, we would also need to
+# support the qualified option values (see bpkg's --openssl-option for an
+# example). Feels a bit hairy for now, so maybe later.
 #
 gp  = [cmdline] $g -C prj
 log = [cmdline] $gp log '--pretty=format:"%d %s"'
 
 +$gp config user.name 'Test Script'
 +$gp config user.email 'testscript@example.com'
++$gp config core.hooksPath ''
 +$gp remote add origin ../prj.git
 +$gp add '*'
-+$gp commit -m 'Create' --no-verify
++$gp commit -m 'Create'
 +$gp push --set-upstream origin master
 
 clone_prj      = [cmdline] cp --no-cleanup -pr ../prj ./ &prj/***
@@ -1115,6 +1125,7 @@ new += --vcs git,branch=master 2>-
 
   +$gp config user.name 'Test Script'
   +$gp config user.email 'testscript@example.com'
+  +$gp config core.hooksPath ''
   +$gp remote add origin ../prj.git
   +$gp add '*'
   +$gp commit -m 'Create'
