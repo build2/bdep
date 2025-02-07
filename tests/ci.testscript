@@ -905,7 +905,7 @@ windows = ($cxx.target.class == 'windows')
 
     $g branch non-standard-version;
     $g checkout non-standard-version;
-    $g -c core.safecrlf=false commit -a -m 'Change version';
+    $g -c core.safecrlf=false commit -a -m 'Change version' --no-verify;
     $g push --set-upstream origin non-standard-version;
 
     $build 'configure:' prj/@prj-cfg/,forward &prj/build/bootstrap/*** 2>!;
@@ -953,7 +953,7 @@ windows = ($cxx.target.class == 'windows')
   +$g config user.email 'testscript@example.com'
   +$g remote add origin $~/prj.git
   +$g add '*'
-  +$g commit -m 'Create'
+  +$g commit -m 'Create' --no-verify
   +$g push --set-upstream origin master
 
   test.options += --no-progress

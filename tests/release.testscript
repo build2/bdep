@@ -24,13 +24,16 @@ clone_root_rep = [cmdline] cp --no-cleanup -pr $~/prj.git ./ &prj.git/***
 # Prepare the local repository.
 #
 # Set the origin repository location as a relative path, so we can copy the
-# local/remote repository pair into the testscript scopes.
+# local/remote repository pair into the testscript scopes. Also disable hooks,
+# which can potentially be broken, not to interfere with the git commands
+# (commit, etc) which bdep-release calls internally.
 #
 gp  = [cmdline] $g -C prj
 log = [cmdline] $gp log '--pretty=format:"%d %s"'
 
 +$gp config user.name 'Test Script'
 +$gp config user.email 'testscript@example.com'
++$gp config core.hooksPath ''
 +$gp remote add origin ../prj.git
 +$gp add '*'
 +$gp commit -m 'Create' --no-verify
@@ -1060,7 +1063,7 @@ new += --vcs git,branch=master 2>-
       % \(HEAD -> master, .*\) Create%
       EOO
 
-    $gp commit -a -m 'Release version';
+    $gp commit -a -m 'Release version' --no-verify;
 
     $* --tag;
     $* --open --no-commit;
@@ -1115,9 +1118,10 @@ new += --vcs git,branch=master 2>-
 
   +$gp config user.name 'Test Script'
   +$gp config user.email 'testscript@example.com'
+  +$gp config core.hooksPath ''
   +$gp remote add origin ../prj.git
   +$gp add '*'
-  +$gp commit -m 'Create'
+  +$gp commit -m 'Create' --no-verify
   +$gp push --set-upstream origin master
 
   test.options += -q
