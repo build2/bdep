@@ -12,9 +12,9 @@ deinit += -d prj
 : single-pkg-cfg
 :
 {
-  $new -C @cfg prj $config_cxx &prj/*** &prj-cfg/***;
+  $new -C @cfg prj $config_cxx &prj/*** &prj-cfg/***
 
-  $* -d prj 2>>~%EOE%;
+  $* -d prj 2>>~%EOE%
     %(mkdir|c\+\+|ld|ln|test) .+%{5}
     EOE
 
@@ -30,31 +30,31 @@ deinit += -d prj
 : Here we will also test recursively.
 :
 {
-  $new -t empty prj &prj/***;
+  $new -t empty prj &prj/***
 
-  $new --package pkg1 -d prj;
-  $new --package pkg2 -d prj;
+  $new --package pkg1 -d prj
+  $new --package pkg2 -d prj
 
-  $init -C @cfg1 &prj-cfg1/***;
-  $init -C @cfg2 &prj-cfg2/***;
+  $init -C @cfg1 &prj-cfg1/***
+  $init -C @cfg2 &prj-cfg2/***
 
-  $new -t lib libprj &libprj/***;
+  $new -t lib libprj &libprj/***
 
-  cat <<EOI >+prj/repositories.manifest;
+  cat <<EOI >+prj/repositories.manifest
     :
     role: prerequisite
     location: ../libprj
     type: dir
     EOI
 
-  cat <<EOI >+prj/pkg1/manifest;
+  cat <<EOI >+prj/pkg1/manifest
     depends: libprj
     EOI
 
   sed -i -e 's/^(#import .+)$/import libs += libprj%lib{prj}/' \
-      prj/pkg1/pkg1/buildfile;
+      prj/pkg1/pkg1/buildfile
 
-  cat <<EOI >=prj/pkg1/pkg1/pkg1.cxx;
+  cat <<EOI >=prj/pkg1/pkg1/pkg1.cxx
     #include <iostream>
 
     #include <libprj/prj.hxx>
@@ -73,11 +73,11 @@ deinit += -d prj
     }
     EOI
 
-  cat <<EOI >+prj/pkg2/manifest;
+  cat <<EOI >+prj/pkg2/manifest
     tags: c++
     EOI
 
-  $* -d prj/pkg2 2>>/~%EOE%;               # Default (cfg1).
+  $* -d prj/pkg2 2>>/~%EOE%               # Default (cfg1).
     %fetching dir:.+/libprj \(prerequisite of dir:.+/prj\)%
     synchronizing:
     %  new libprj.+ \(required by pkg1\)%
@@ -86,7 +86,7 @@ deinit += -d prj
     %(mkdir|c\+\+|ld|ln|test) .+%{5}
     EOE
 
-  $* @cfg2 -d prj/pkg2 2>>/~%EOE%;         # By name (cfg2).
+  $* @cfg2 -d prj/pkg2 2>>/~%EOE%         # By name (cfg2).
     %fetching dir:.+/libprj \(prerequisite of dir:.+/prj\)%
     synchronizing:
     %  new libprj.+ \(required by pkg1\)%

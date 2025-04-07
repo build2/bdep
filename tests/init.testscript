@@ -13,14 +13,14 @@ status += -d prj
 
 : create-cfg
 :
-{
+{{
   +$clone_prj
 
   deinit += -d prj
 
   : with-dependency
   :
-  {
+  {{
     +$clone_prj
 
     +cat <<EOI >+prj/manifest
@@ -30,9 +30,9 @@ status += -d prj
     : cfg-pkg-args
     :
     {
-      $clone_prj;
+      $clone_prj
 
-      $* -C @cfg $config_cxx 'config.cc.poptions=-DTEST' -- '?sys:libprj/*' 2>>/~"%EOE%" &prj-cfg/***;
+      $* -C @cfg $config_cxx 'config.cc.poptions=-DTEST' -- '?sys:libprj/*' 2>>/~"%EOE%" &prj-cfg/***
         initializing in project $~/prj/
         created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
         synchronizing:
@@ -41,21 +41,21 @@ status += -d prj
         EOE
 
       sed -n -e 's/^config.cc.poptions = (.+)$/\1/p' prj-cfg/build/config.build \
-        >'-DTEST';
+        >'-DTEST'
 
-      $status >'prj configured 0.1.0-a.0.19700101000000';
+      $status >'prj configured 0.1.0-a.0.19700101000000'
 
-      $build prj/ 2>>~%EOE%;
+      $build prj/ 2>>~%EOE%
         %(mkdir|c\+\+|ld|ln) .+%{4}
         EOE
 
-      prj/prj/prj 'testscript' >'Hello, testscript!'; # Make sure is forwarded.
+      prj/prj/prj 'testscript' >'Hello, testscript!' # Make sure is forwarded.
 
-      $build prj-cfg/prj/ 2>>/EOE;
+      $build prj-cfg/prj/ 2>>/EOE
         info: prj-cfg/dir{prj/} is up to date
         EOE
 
-      $build 'clean:' prj/ 2>>~%EOE%;
+      $build 'clean:' prj/ 2>>~%EOE%
         %(rm|rmdir) .+%{3}
         EOE
 
@@ -70,9 +70,9 @@ status += -d prj
     : cfg-pkg-args-sep
     :
     {
-      $clone_prj;
+      $clone_prj
 
-      $* -C @cfg -- $config_cxx 'config.cc.poptions=-DTEST' -- '?sys:libprj/*' 2>>/~"%EOE%" &prj-cfg/***;
+      $* -C @cfg -- $config_cxx 'config.cc.poptions=-DTEST' -- '?sys:libprj/*' 2>>/~"%EOE%" &prj-cfg/***
         initializing in project $~/prj/
         created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
         synchronizing:
@@ -81,7 +81,7 @@ status += -d prj
         EOE
 
       sed -n -e 's/^config.cc.poptions = (.+)$/\1/p' prj-cfg/build/config.build \
-        >'-DTEST';
+        >'-DTEST'
 
       $deinit 2>>/"EOE"
         deinitializing in project $~/prj/
@@ -94,17 +94,17 @@ status += -d prj
     : pkg-args
     :
     {
-      $clone_prj;
+      $clone_prj
 
       # Note that not passing the C++ configuration arguments (see above) for
       # the sake of testing, we may end up with the 'not built with default C++
       # compiler' error. To avoid this, we just make sure this is not a C++
       # project.
       #
-      echo ''            >=prj/build/root.build;
-      echo './: prj.cxx' >=prj/prj/buildfile;
+      echo ''            >=prj/build/root.build
+      echo './: prj.cxx' >=prj/prj/buildfile
 
-      $* -C @cfg -- -- '?sys:libprj/*' 2>>/~"%EOE%" &prj-cfg/***;
+      $* -C @cfg -- -- '?sys:libprj/*' 2>>/~"%EOE%" &prj-cfg/***
         initializing in project $~/prj/
         created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
         synchronizing:
@@ -119,14 +119,14 @@ status += -d prj
           drop libprj
         EOE
     }
-  }
+  }}
 
   : no-module
   :
   {
-    $clone_prj;
+    $clone_prj
 
-    $* -C @cfg 2>>~%EOE% != 0;
+    $* -C @cfg 2>>~%EOE% != 0
       %initializing in project .+%
       error: no build system module(s) specified for configuration to be created
         info: for example, for C/C++ configuration, specify 'cc'
@@ -134,7 +134,7 @@ status += -d prj
         info: for example: bdep init -C ... --
       EOE
 
-    $* -C @cfg -- 2>>/~"%EOE%" &prj-cfg/***;
+    $* -C @cfg -- 2>>/~"%EOE%" &prj-cfg/***
       initializing in project $~/prj/
       created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
       synchronizing:
@@ -147,25 +147,25 @@ status += -d prj
         drop prj
       EOE
   }
-}
+}}
 
 : add-cfg
 :
 {
-  $clone_prj;
+  $clone_prj
 
-  deinit += -d prj;
+  deinit += -d prj
 
-  cat <<EOI >+prj/manifest;
+  cat <<EOI >+prj/manifest
     depends: libprj
     EOI
 
   # Pre-create configurations.
   #
-  $new  -C prj-cfg1 --no-default          tmp $config_cxx 2>! &prj-cfg1/*** &tmp/***;
-  $init -C prj-cfg2 --config-type host -d tmp $config_cxx 2>! &prj-cfg2/***;
+  $new  -C prj-cfg1 --no-default          tmp $config_cxx 2>! &prj-cfg1/*** &tmp/***
+  $init -C prj-cfg2 --config-type host -d tmp $config_cxx 2>! &prj-cfg2/***
 
-  $* -A @cfg1 '?sys:libprj/*' 2>>/~"%EOE%";
+  $* -A @cfg1 '?sys:libprj/*' 2>>/~"%EOE%"
     initializing in project $~/prj/
     added configuration @cfg1 $~/prj-cfg1/ 1 target default,forwarded,auto-synchronized
     synchronizing:
@@ -173,7 +173,7 @@ status += -d prj
     %  new prj.+19700101000000%
     EOE
 
-  $* -A prj-cfg2 --no-default @cfg2 '?sys:libprj/*' 2>>/~"%EOE%";
+  $* -A prj-cfg2 --no-default @cfg2 '?sys:libprj/*' 2>>/~"%EOE%"
     initializing in project $~/prj/
     added configuration @cfg2 $~/prj-cfg2/ 2 host auto-synchronized
     synchronizing:
@@ -181,7 +181,7 @@ status += -d prj
     %  new prj.+19700101000000%
     EOE
 
-  $status --all >>EOO;
+  $status --all >>EOO
     in configuration @cfg1:
     prj configured 0.1.0-a.0.19700101000000
 
@@ -189,19 +189,19 @@ status += -d prj
     prj configured 0.1.0-a.0.19700101000000
     EOO
 
-  $build prj-cfg1/ 2>>~%EOE%;
+  $build prj-cfg1/ 2>>~%EOE%
     %(mkdir|c\+\+|ld) .+%{6}
     EOE
 
-  $build prj-cfg2/ 2>>~%EOE%;
+  $build prj-cfg2/ 2>>~%EOE%
     %(mkdir|c\+\+|ld) .+%{6}
     EOE
 
-  $build prj/ 2>>~%EOE%;
+  $build prj/ 2>>~%EOE%
     %(ln|info:) .+%{2}
     EOE
 
-  $build 'clean:' prj/ 2>>~%EOE%;
+  $build 'clean:' prj/ 2>>~%EOE%
     %(rm|rmdir) .+%{3}
     EOE
 
@@ -219,53 +219,53 @@ status += -d prj
 : project.
 :
 {
-  deinit += -d prj;
+  deinit += -d prj
 
   # Create (and build) the executable single-package project.
   #
-  cp --no-cleanup -pr ../prj ./ &prj/***;
+  cp --no-cleanup -pr ../prj ./ &prj/***
 
-  $* -C @cfg $config_cxx 2>>/~"%EOE%" &prj-cfg/***;
+  $* -C @cfg $config_cxx 2>>/~"%EOE%" &prj-cfg/***
     initializing in project $~/prj/
     created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
     synchronizing:
     %  new prj.+19700101000000%
     EOE
 
-  $status >'prj configured 0.1.0-a.0.19700101000000';
+  $status >'prj configured 0.1.0-a.0.19700101000000'
 
-  $build prj/ 2>>~%EOE%;
+  $build prj/ 2>>~%EOE%
     %(mkdir|c\+\+|ld|ln) .+%{4}
     EOE
 
   # Move the executable package into a separate directory.
   #
-  mkdir --no-cleanup prj/prj.pkg;
+  mkdir --no-cleanup prj/prj.pkg
 
   mv prj/prj prj/build prj/buildfile prj/manifest prj/README.md \
-     prj/.gitignore prj/prj.pkg/;
+     prj/.gitignore prj/prj.pkg/
 
-  mv prj/prj.pkg prj/prj;
+  mv prj/prj.pkg prj/prj
 
-  cat <<EOI >=prj/packages.manifest;
+  cat <<EOI >=prj/packages.manifest
     : 1
     location: prj/
     EOI
 
   # Add the library package.
   #
-  $new --package -t lib libprj -d prj 2>>/"EOE";
+  $new --package -t lib libprj -d prj 2>>/"EOE"
     created new library package libprj in $~/prj/libprj/
     EOE
 
   # While at it, make sure we fail if misspell the package directory.
   #
-  mkdir prj/libpr;
-  $init --all -d prj/libpr 2>>/~"%EOE%" != 0;
+  mkdir prj/libpr
+  $init --all -d prj/libpr 2>>/~"%EOE%" != 0
     error: prj/libpr/ is not a package or project directory
     EOE
 
-  $init --all -d prj/libprj 2>>/~"%EOE%";
+  $init --all -d prj/libprj 2>>/~"%EOE%"
     initializing in project $~/prj/
     synchronizing:
     %  upgrade prj.+19700101000000#1%
@@ -274,14 +274,14 @@ status += -d prj
 
   # Factor out some of the executable package functionality into the library.
   #
-  cat <<EOI >+prj/prj/manifest;
+  cat <<EOI >+prj/prj/manifest
     depends: libprj
     EOI
 
   sed -i -e 's/^(#import .+)$/import libs += libprj%lib{prj}/' \
-      prj/prj/prj/buildfile;
+      prj/prj/prj/buildfile
 
-  cat <<EOI >=prj/prj/prj/prj.cxx;
+  cat <<EOI >=prj/prj/prj/prj.cxx
     #include <iostream>
 
     #include <libprj/prj.hxx>
@@ -300,7 +300,7 @@ status += -d prj
     }
     EOI
 
-  $build prj-cfg/prj/ 2>>/~"%EOE%";
+  $build prj-cfg/prj/ 2>>/~"%EOE%"
     synchronizing $~/prj-cfg/:
     %  upgrade prj.+19700101000000#2%
     %\(mkdir|version|c\\+\\+|ld) .+%{6}
@@ -318,7 +318,7 @@ status += -d prj
 
 : deinit-deorphan
 :
-{
+{{
   +$clone_prj
 
   +cat <<EOI >+prj/manifest
@@ -337,20 +337,20 @@ status += -d prj
   : dependency-only
   :
   {
-    $clone_prj;
-    cp -rp ../libprj.git ./;
+    $clone_prj
+    cp -rp ../libprj.git ./
 
-    cat <<EOI >+prj/repositories.manifest;
+    cat <<EOI >+prj/repositories.manifest
       :
       role: prerequisite
       location: ../libprj.git#master
       EOI
 
-    $* $config_cxx -C @cfg &prj-cfg/*** 2>!;
+    $* $config_cxx -C @cfg &prj-cfg/*** 2>!
 
-    git clone libprj.git &libprj/*** 2>! >&2;
+    git clone libprj.git &libprj/*** 2>! >&2
 
-    $init -d libprj -A prj-cfg 2>>/~"%EOE%";
+    $init -d libprj -A prj-cfg 2>>/~"%EOE%"
       initializing in project $~/libprj/
       added configuration $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
       %fetching .+%
@@ -360,11 +360,11 @@ status += -d prj
       %  reconfigure prj.0.1.0-a.0.19700101000000%
       EOE
 
-    $build prj/ 2>>/~%EOE%;
+    $build prj/ 2>>/~%EOE%
       %(mkdir|c\+\+|ld|ln) .+%{4}
       EOE
 
-    $deinit -d libprj 2>>/~"%EOE%";
+    $deinit -d libprj 2>>/~"%EOE%"
       deinitializing in project $~/libprj/
       deinitializing in replacement mode due to existing dependents
       %fetching dir:.+/libprj%
@@ -379,12 +379,12 @@ status += -d prj
       %distributing libprj.0.1.0-a.0.+%
       EOE
 
-    $build prj/ 2>>/~%EOE%;
+    $build prj/ 2>>/~%EOE%
       %ln prj-cfg/prj/prj/exe\{prj\} -> prj/prj/%?
       info: prj-cfg/dir{prj/} is up to date
       EOE
 
-    $build 'clean:' prj/ 2>>~%EOE%;
+    $build 'clean:' prj/ 2>>~%EOE%
       %(rm|rmdir) .+%{3}
       EOE
 
@@ -403,28 +403,28 @@ status += -d prj
   : being deorphaned.
   :
   {
-    $clone_prj;
+    $clone_prj
 
-    $new -t empty -o libprj.git libprj &libprj.git/*** 2>!;
-    $new --package -t lib libprj -d libprj.git 2>!;
-    $new --package -t lib libprj-extras -d libprj.git 2>!;
+    $new -t empty -o libprj.git libprj &libprj.git/*** 2>!
+    $new --package -t lib libprj -d libprj.git 2>!
+    $new --package -t lib libprj-extras -d libprj.git 2>!
 
-    $g config user.name 'Test Script';
-    $g config user.email 'testscript@example.com';
-    $g add '*';
-    $g commit -m 'Create' --no-verify;
+    $g config user.name 'Test Script'
+    $g config user.email 'testscript@example.com'
+    $g add '*'
+    $g commit -m 'Create' --no-verify
 
-    cat <<EOI >+prj/repositories.manifest;
+    cat <<EOI >+prj/repositories.manifest
       :
       role: prerequisite
       location: ../libprj.git#master
       EOI
 
-    $* $config_cxx -C @cfg &prj-cfg/*** 2>!;
+    $* $config_cxx -C @cfg &prj-cfg/*** 2>!
 
-    git clone libprj.git &libprj/*** 2>! >&2;
+    git clone libprj.git &libprj/*** 2>! >&2
 
-    $init -d libprj -A prj-cfg 2>>/~"%EOE%";
+    $init -d libprj -A prj-cfg 2>>/~"%EOE%"
       initializing in project $~/libprj/
       added configuration $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
       initializing package libprj
@@ -437,11 +437,11 @@ status += -d prj
       %  reconfigure prj.0.1.0-a.0.19700101000000%
       EOE
 
-    $build prj/ 2>>/~%EOE%;
+    $build prj/ 2>>/~%EOE%
       %(mkdir|c\+\+|ld|ln) .+%{4}
       EOE
 
-    $deinit -d libprj 2>>/~"%EOE%";
+    $deinit -d libprj 2>>/~"%EOE%"
       deinitializing in project $~/libprj/
       deinitializing package libprj
       deinitializing package libprj-extras
@@ -459,12 +459,12 @@ status += -d prj
       %distributing libprj.0.1.0-a.0.+%
       EOE
 
-    $build prj/ 2>>/~%EOE%;
+    $build prj/ 2>>/~%EOE%
       %ln prj-cfg/prj/prj/exe\{prj\} -> prj/prj/%?
       info: prj-cfg/dir{prj/} is up to date
       EOE
 
-    $build 'clean:' prj/ 2>>~%EOE%;
+    $build 'clean:' prj/ 2>>~%EOE%
       %(rm|rmdir) .+%{3}
       EOE
 
@@ -479,25 +479,25 @@ status += -d prj
   : not-found
   :
   {
-    $clone_prj;
-    cp -rp ../libprj.git ./;
+    $clone_prj
+    cp -rp ../libprj.git ./
 
-    git clone libprj.git &libprj/*** 2>! >&2;
+    git clone libprj.git &libprj/*** 2>! >&2
 
-    $init $config_cxx -d libprj -C @cfg &libprj-cfg/*** 2>!;
+    $init $config_cxx -d libprj -C @cfg &libprj-cfg/*** 2>!
 
-    $* -A libprj-cfg 2>>/~"%EOE%";
+    $* -A libprj-cfg 2>>/~"%EOE%"
       initializing in project $~/prj/
       added configuration $~/libprj-cfg/ 1 target default,forwarded,auto-synchronized
       synchronizing:
       %  new prj.0.1.0-a.0.19700101000000%
       EOE
 
-    $build prj/ 2>>/~%EOE%;
+    $build prj/ 2>>/~%EOE%
       %(mkdir|c\+\+|ld|ln) .+%{4}
       EOE
 
-    $deinit -d libprj 2>>/~"%EOE%" != 0;
+    $deinit -d libprj 2>>/~"%EOE%" != 0
       deinitializing in project $~/libprj/
       deinitializing in replacement mode due to existing dependents
       %fetching dir:.+/libprj%
@@ -508,13 +508,13 @@ status += -d prj
     # While at it, test that adding the repository to the dependent'
     # repositories manifest fixes the issue.
     #
-    cat <<EOI >+prj/repositories.manifest;
+    cat <<EOI >+prj/repositories.manifest
       :
       role: prerequisite
       location: ../libprj.git#master
       EOI
 
-    $deinit -d libprj 2>>/~"%EOE%";
+    $deinit -d libprj 2>>/~"%EOE%"
       deinitializing in project $~/libprj/
       deinitializing in replacement mode due to existing dependents
       %fetching dir:.+/libprj%
@@ -530,12 +530,12 @@ status += -d prj
       %distributing libprj.0.1.0-a.0.+%
       EOE
 
-    $build prj/ 2>>/~%EOE%;
+    $build prj/ 2>>/~%EOE%
       %ln libprj-cfg/prj/prj/exe\{prj\} -> prj/prj/%?
       info: libprj-cfg/dir{prj/} is up to date
       EOE
 
-    $build 'clean:' prj/ 2>>~%EOE%;
+    $build 'clean:' prj/ 2>>~%EOE%
       %(rm|rmdir) .+%{3}
       EOE
 
@@ -552,36 +552,36 @@ status += -d prj
   : Regression test for GH issue #397.
   :
   {
-    $clone_prj;
+    $clone_prj
 
-    cat <<EOI >+prj/repositories.manifest;
+    cat <<EOI >+prj/repositories.manifest
       :
       role: prerequisite
       location: ../libprj.git#master
       EOI
 
-    $new -t empty -o libprj.git libprj &libprj.git/*** 2>!;
-    $new -t lib libprj --package -d libprj.git/ 2>!;
-    $new -t lib libprj-extra --package -d libprj.git/ 2>!;
+    $new -t empty -o libprj.git libprj &libprj.git/*** 2>!
+    $new -t lib libprj --package -d libprj.git/ 2>!
+    $new -t lib libprj-extra --package -d libprj.git/ 2>!
 
-    cat <<EOI >+libprj.git/libprj/manifest;
+    cat <<EOI >+libprj.git/libprj/manifest
       depends: libprj-extra
       EOI
 
-    $g config user.name 'Test Script';
-    $g config user.email 'testscript@example.com';
-    $g add '*';
-    $g commit -m 'Create' --no-verify;
+    $g config user.name 'Test Script'
+    $g config user.email 'testscript@example.com'
+    $g add '*'
+    $g commit -m 'Create' --no-verify
 
-    git clone libprj.git &libprj/*** >! 2>!;
+    git clone libprj.git &libprj/*** >! 2>!
 
-    $init -C cfg @cfg -d libprj -- cc &cfg/*** 2>!;
-    $init -A cfg @cfg -d prj 2>!;
+    $init -C cfg @cfg -d libprj -- cc &cfg/*** 2>!
+    $init -A cfg @cfg -d prj 2>!
 
-    touch libprj/TODO;
-    $sync -d libprj 2>!;
+    touch libprj/TODO
+    $sync -d libprj 2>!
 
-    $deinit -d libprj 2>>~%EOE%;
+    $deinit -d libprj 2>>~%EOE%
       %deinitializing in project .+libprj.%
       deinitializing package libprj
       deinitializing package libprj-extra
@@ -605,4 +605,4 @@ status += -d prj
         drop libprj-extra
       EOE
   }
-}
+}}

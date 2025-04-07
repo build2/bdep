@@ -15,13 +15,13 @@ deinit += -d prj
 : single-pkg-cfg
 :
 {
-  $new -C @cfg prj $config_cxx &prj/*** &prj-cfg/***;
+  $new -C @cfg prj $config_cxx &prj/*** &prj-cfg/***
 
-  $* -d prj 2>>~%EOE%;
+  $* -d prj 2>>~%EOE%
     %(mkdir|c\+\+|ld|ln) .+%{4}
     EOE
 
-  $clean -d prj 2>>~%EOE%;
+  $clean -d prj 2>>~%EOE%
     %(rm|rmdir) .+%{3}
     EOE
 
@@ -35,21 +35,21 @@ deinit += -d prj
 : multi-pkg-cfg
 :
 {
-  $new -t empty prj &prj/***;
+  $new -t empty prj &prj/***
 
-  $new --package pkg1 -d prj;
-  $new --package pkg2 -d prj;
+  $new --package pkg1 -d prj
+  $new --package pkg2 -d prj
 
-  $init -C @cfg1 &prj-cfg1/***;
-  $init -C @cfg2 &prj-cfg2/***;
+  $init -C @cfg1 &prj-cfg1/***
+  $init -C @cfg2 &prj-cfg2/***
 
   # Update.
   #
-  $* -d prj/pkg1 2>>~%EOE%;           # Default (cfg1).
+  $* -d prj/pkg1 2>>~%EOE%           # Default (cfg1).
     %(mkdir|c\+\+|ld|ln) .+%{4}
     EOE
 
-  $* @cfg2 -d prj/pkg1 2>>~%EOE%;     # By name (cfg2).
+  $* @cfg2 -d prj/pkg1 2>>~%EOE%     # By name (cfg2).
     %(mkdir|c\+\+|ld) .+%{3}
     EOE
 
@@ -57,7 +57,7 @@ deinit += -d prj
   #
   # ln prj-cfg1\pkg1\pkg1\exe{pkg1} -> prj\pkg1\pkg1\
   #
-  $* --all -d prj 2>>~%EOE%;          # All configs (and packages).
+  $* --all -d prj 2>>~%EOE%          # All configs (and packages).
     in configuration @cfg1:
     %(mkdir|c\+\+|ld|ln|info:) .+%{5,6}
 
@@ -67,15 +67,15 @@ deinit += -d prj
 
   # Clean.
   #
-  $clean -d prj/pkg1 2>>~%EOE%;       # Default (cfg1).
+  $clean -d prj/pkg1 2>>~%EOE%       # Default (cfg1).
     %(rm|rmdir) .+%{3}
     EOE
 
-  $clean @cfg2 -d prj/pkg1 2>>~%EOE%; # By name (cfg2).
+  $clean @cfg2 -d prj/pkg1 2>>~%EOE% # By name (cfg2).
     %(rm|rmdir) .+%{3}
     EOE
 
-  $clean --all -d prj 2>>~%EOE%;      # All configs (and packages).
+  $clean --all -d prj 2>>~%EOE%      # All configs (and packages).
     in configuration @cfg1:
     %(rm|rmdir|info:) .+%{4}
 
@@ -96,17 +96,17 @@ deinit += -d prj
 : multi-default-cfg
 :
 {
-  $new -t empty prj &prj/***;
+  $new -t empty prj &prj/***
 
-  $new --package pkg1 -d prj;
-  $new --package pkg2 -d prj;
+  $new --package pkg1 -d prj
+  $new --package pkg2 -d prj
 
-  $init -C @cfg1 -d prj/pkg1                    &prj-cfg1/***;
-  $init -C @cfg2 -d prj/pkg2 --config-type host &prj-cfg2/***;
+  $init -C @cfg1 -d prj/pkg1                    &prj-cfg1/***
+  $init -C @cfg2 -d prj/pkg2 --config-type host &prj-cfg2/***
 
   # Update.
   #
-  $* -d prj 2>>~%EOE%;
+  $* -d prj 2>>~%EOE%
     in configuration @cfg1:
     %(mkdir|c\+\+|ld|ln) .+pkg1.+%{4}
 
@@ -116,7 +116,7 @@ deinit += -d prj
 
   # Clean.
   #
-  $clean -d prj 2>>~%EOE%;
+  $clean -d prj 2>>~%EOE%
     in configuration @cfg1:
     %(rm|rmdir) .+pkg1.+%{3}
 
@@ -139,30 +139,30 @@ deinit += -d prj
 : pkg-by-name
 :
 {
-  $new -t empty prj &prj/***;
+  $new -t empty prj &prj/***
 
-  $new --package pkg1 -d prj;
-  $new --package pkg2 -d prj;
+  $new --package pkg1 -d prj
+  $new --package pkg2 -d prj
 
-  $init -C @cfg &prj-cfg/***;
+  $init -C @cfg &prj-cfg/***
 
-  $* pkg3 -d prj/ 2>>/"EOE" != 0;
+  $* pkg3 -d prj/ 2>>/"EOE" != 0
     error: no package pkg3 in project $~/prj/
     EOE
 
-  $* pkg1 -d prj/pkg2 2>>~%EOE%;
+  $* pkg1 -d prj/pkg2 2>>~%EOE%
     %(mkdir|c\+\+|ld|ln) .+%{8}
     EOE
 
   # @@ TMP Strangely, get re-symlinked on Windows (every time if run this
   #        command multiple times).
   #
-  $* pkg1 -d prj/ 2>>~%EOE%;
+  $* pkg1 -d prj/ 2>>~%EOE%
     %ln .+pkg1.+ -> .+pkg1.+%?
     %info: .+pkg1.+ is up to date%
     EOE
 
-  $deinit pkg3 -d prj 2>>/"EOE" != 0;
+  $deinit pkg3 -d prj 2>>/"EOE" != 0
     error: no package pkg3 in project $~/prj/
     EOE
 

@@ -13,13 +13,13 @@ deinit += -d prj
 : dependency
 :
 {
-  $clone_prj;
-  $init -C @cfg &prj-cfg/***;
+  $clone_prj
+  $init -C @cfg &prj-cfg/***
 
-  $new -t lib libbar &libbar/*** 2>!;
-  $new -t lib libfoo &libfoo/*** 2>!;
+  $new -t lib libbar &libbar/*** 2>!
+  $new -t lib libfoo &libfoo/*** 2>!
 
-  cat <<EOI >+prj/repositories.manifest;
+  cat <<EOI >+prj/repositories.manifest
     :
     role: prerequisite
     location: ../libfoo
@@ -30,17 +30,17 @@ deinit += -d prj
     type: dir
     EOI
 
-  cat <<EOI >+prj/manifest;
+  cat <<EOI >+prj/manifest
     depends: libfoo
     depends: libbar
     EOI
 
-  $* 2>>/~%EOE%;
+  $* 2>>/~%EOE%
     %fetching dir:.+/libbar \(complements dir:.+/prj\)%
     %fetching dir:.+/libfoo \(prerequisite of dir:.+/prj\)%
     EOE
 
-  $status libfoo libbar >>~%EOO%;
+  $status libfoo libbar >>~%EOO%
     %libfoo available \[.+\]%
     %libbar available .+%
     EOO

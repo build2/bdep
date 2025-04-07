@@ -13,13 +13,13 @@ config += -d prj 2>!
 
 : no-cfg
 :
-{
+{{
   : default
   :
   {
-    $clone_root_prj;
+    $clone_root_prj
 
-    $* 2>>/"EOE" != 0;
+    $* 2>>/"EOE" != 0
       error: no default configuration in project $~/prj/
         info: use \(@<cfg-name> | --config|-c <cfg-dir> | --all|-a\) to specify configuration explicitly
       EOE
@@ -33,29 +33,29 @@ config += -d prj 2>!
   : all
   :
   {
-    $clone_root_prj;
+    $clone_root_prj
 
-    $* -a 2>>EOE != 0;
+    $* -a 2>>EOE != 0
       error: no existing configurations
       EOE
 
     $* -a --stdout-format 'json' >'[]'
   }
-}
+}}
 
 : single-cfg
 :
-{
+{{
   : single-project
   :
   {
-    $clone_root_prj;
+    $clone_root_prj
 
-    $init -C @cfg &prj-cfg/***;
+    $init -C @cfg &prj-cfg/***
 
-    $* >'prj configured 0.1.0-a.0.19700101000000';
+    $* >'prj configured 0.1.0-a.0.19700101000000'
 
-    $* --stdout-format 'json' >>~%EOO%;
+    $* --stdout-format 'json' >>~%EOO%
       [
         {
           "configuration": {
@@ -82,15 +82,15 @@ config += -d prj 2>!
   : no-projects
   :
   {
-    $new -t empty prj &prj/***;
+    $new -t empty prj &prj/***
 
-    $config create @cfg -- &prj-cfg/***;
+    $config create @cfg -- &prj-cfg/***
 
-    $* 2>>~%EOE% != 0;
+    $* 2>>~%EOE% != 0
       %error: no packages in project .+%
       EOE
 
-    $* --stdout-format 'json' >>~%EOO%;
+    $* --stdout-format 'json' >>~%EOO%
     [
       {
         "configuration": {
@@ -102,7 +102,7 @@ config += -d prj 2>!
     ]
     EOO
 
-    $* libbar 2>>/"EOE" != 0;
+    $* libbar 2>>/"EOE" != 0
       error: no packages in project $~/prj/
       EOE
 
@@ -118,19 +118,19 @@ config += -d prj 2>!
     ]
     EOO
   }
-}
+}}
 
 : multi-cfg
 :
 {
-  $clone_prj;
+  $clone_prj
 
-  $init -C @cfg1 &prj-cfg1/***;
-  $init -C @cfg2 &prj-cfg2/***;
+  $init -C @cfg1 &prj-cfg1/***
+  $init -C @cfg2 &prj-cfg2/***
 
-  $* @cfg2 >'prj configured 0.1.0-a.0.19700101000000';
+  $* @cfg2 >'prj configured 0.1.0-a.0.19700101000000'
 
-  $* --all >>EOO;
+  $* --all >>EOO
     in configuration @cfg1:
     prj configured 0.1.0-a.0.19700101000000
 
@@ -138,7 +138,7 @@ config += -d prj 2>!
     prj configured 0.1.0-a.0.19700101000000
     EOO
 
-  $* --all --stdout-format 'json' >>~%EOO%;
+  $* --all --stdout-format 'json' >>~%EOO%
     [
       {
         "configuration": {
@@ -177,19 +177,19 @@ config += -d prj 2>!
 : multi-prj
 :
 {
-  $new -t empty prj &prj/***;
-  $new -d prj --package pkg1;
-  $new -d prj --package pkg2;
+  $new -t empty prj &prj/***
+  $new -d prj --package pkg1
+  $new -d prj --package pkg2
 
-  $init -d prj/pkg1 -C @cfg &prj-cfg/***;
+  $init -d prj/pkg1 -C @cfg &prj-cfg/***
 
   # Initialized package is specified.
   #
-  $* -d prj/pkg1 >>EOE;
+  $* -d prj/pkg1 >>EOE
     pkg1 configured 0.1.0-a.0.19700101000000
     EOE
 
-  $* -d prj/pkg1 --stdout-format 'json' >>~%EOO%;
+  $* -d prj/pkg1 --stdout-format 'json' >>~%EOO%
     [
       {
         "configuration": {
@@ -212,11 +212,11 @@ config += -d prj 2>!
 
   # Uninitialized package is specified.
   #
-  $* -d prj/pkg2 2>>EOE != 0;
+  $* -d prj/pkg2 2>>EOE != 0
     error: package pkg2 is not initialized in any default configuration(s)
     EOE
 
-  $* -d prj/pkg2 --stdout-format 'json' >>~%EOO%;
+  $* -d prj/pkg2 --stdout-format 'json' >>~%EOO%
     [
       {
         "configuration": {
@@ -236,7 +236,7 @@ config += -d prj 2>!
 
   # No package is specified.
   #
-  $* >>EOE;
+  $* >>EOE
     pkg1 configured 0.1.0-a.0.19700101000000
     EOE
 
@@ -269,37 +269,37 @@ config += -d prj 2>!
 : dependency
 :
 {
-  $clone_prj;
+  $clone_prj
 
-  $init -C @cfg &prj-cfg/***;
+  $init -C @cfg &prj-cfg/***
 
-  $new -t lib libprj &libprj/***;
+  $new -t lib libprj &libprj/***
 
-  cat <<EOI >+prj/repositories.manifest;
+  cat <<EOI >+prj/repositories.manifest
     :
     role: prerequisite
     location: ../libprj
     type: dir
     EOI
 
-  cat <<EOI >+prj/manifest;
+  cat <<EOI >+prj/manifest
     depends: libprj
     EOI
 
-  $* --recursive >>EOO 2>>/~%EOE%; # Note: implicitly fetches in cfg.
+  $* --recursive >>EOO 2>>/~%EOE% # Note: implicitly fetches in cfg.
     prj configured 0.1.0-a.0.19700101000000 available 0.1.0-a.0.19700101000000#1
     EOO
     %fetching dir:.+/libprj \(prerequisite of dir:.+/prj\)%
     EOE
 
-  $sync;
+  $sync
 
-  $* --recursive >>~%EOO%;
+  $* --recursive >>~%EOO%
     prj configured 0.1.0-a.0.19700101000000#1
     %  libprj configured 0.+%
     EOO
 
-  $* --recursive --stdout-format 'json' >>~%EOO%;
+  $* --recursive --stdout-format 'json' >>~%EOO%
     [
       {
         "configuration": {
@@ -327,35 +327,35 @@ config += -d prj 2>!
 : pkg-by-name
 :
 {
-  $new -t empty prj &prj/***;
+  $new -t empty prj &prj/***
 
-  $new --package pkg1 -d prj;
-  $new --package pkg2 -d prj;
+  $new --package pkg1 -d prj
+  $new --package pkg2 -d prj
 
-  $init -C @cfg $config_cxx -d prj/pkg1 &prj-cfg/***;
+  $init -C @cfg $config_cxx -d prj/pkg1 &prj-cfg/***
 
-  $new -t lib libprj &libprj/***;
+  $new -t lib libprj &libprj/***
 
-  cat <<EOI >+prj/repositories.manifest;
+  cat <<EOI >+prj/repositories.manifest
     :
     role: prerequisite
     location: ../libprj
     type: dir
     EOI
 
-  cat <<EOI >+prj/pkg1/manifest;
+  cat <<EOI >+prj/pkg1/manifest
     depends: libprj
     EOI
 
-  $sync;
+  $sync
 
   # Initialized package is specified.
   #
-  $* -d prj/pkg1 >>EOO;
+  $* -d prj/pkg1 >>EOO
     pkg1 configured 0.1.0-a.0.19700101000000#1
     EOO
 
-  $* pkg1 --stdout-format 'json' >>~%EOO%;
+  $* pkg1 --stdout-format 'json' >>~%EOO%
     [
       {
         "configuration": {
@@ -378,11 +378,11 @@ config += -d prj 2>!
 
   # Not initialized package is specified.
   #
-  $* pkg2 >>EOO;
+  $* pkg2 >>EOO
     pkg2 available 0.1.0-a.0.19700101000000
     EOO
 
-  $* pkg2 --stdout-format 'json' >>~%EOO%;
+  $* pkg2 --stdout-format 'json' >>~%EOO%
     [
       {
         "configuration": {
@@ -407,11 +407,11 @@ config += -d prj 2>!
 
   # Dependency package is specified.
   #
-  $* libprj >>EOO;
+  $* libprj >>EOO
     libprj configured 0.1.0-a.0.19700101000000
     EOO
 
-  $* libprj --stdout-format 'json' >>~%EOO%;
+  $* libprj --stdout-format 'json' >>~%EOO%
     [
       {
         "configuration": {
@@ -432,11 +432,11 @@ config += -d prj 2>!
 
   # Unknown dependency package is specified.
   #
-  $* libprj1 >>EOO;
+  $* libprj1 >>EOO
     libprj1 unknown
     EOO
 
-  $* libprj1 --stdout-format 'json' >>~%EOO%;
+  $* libprj1 --stdout-format 'json' >>~%EOO%
     [
       {
         "configuration": {
@@ -456,11 +456,11 @@ config += -d prj 2>!
 
   # No packages are specified.
   #
-  $* >>EOO;
+  $* >>EOO
     pkg1 configured 0.1.0-a.0.19700101000000#1
     EOO
 
-  $* --stdout-format 'json' >>~%EOO%;
+  $* --stdout-format 'json' >>~%EOO%
     [
       {
         "configuration": {
@@ -487,7 +487,7 @@ config += -d prj 2>!
 
   # Both initialized and dependency packages are specified.
   #
-  $* libprj pkg1 -d prj 2>>EOE != 0;
+  $* libprj pkg1 -d prj 2>>EOE != 0
     error: initialized package pkg1 specified with dependency package libprj
     EOE
 

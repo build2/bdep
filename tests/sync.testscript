@@ -14,25 +14,25 @@ deinit += -d prj
 : single-pkg-cfg
 :
 {
-  $new -C @cfg prj $config_cxx &prj/*** &prj-cfg/***;
+  $new -C @cfg prj $config_cxx &prj/*** &prj-cfg/***
 
-  $new -t lib libprj &libprj/***;
+  $new -t lib libprj &libprj/***
 
-  cat <<EOI >+prj/repositories.manifest;
+  cat <<EOI >+prj/repositories.manifest
     :
     role: prerequisite
     location: ../libprj
     type: dir
     EOI
 
-  cat <<EOI >+prj/manifest;
+  cat <<EOI >+prj/manifest
     depends: libprj
     EOI
 
   sed -i -e 's/^(#import .+)$/import libs += libprj%lib{prj}/' \
-      prj/prj/buildfile;
+      prj/prj/buildfile
 
-  cat <<EOI >=prj/prj/prj.cxx;
+  cat <<EOI >=prj/prj/prj.cxx
     #include <iostream>
 
     #include <libprj/prj.hxx>
@@ -51,23 +51,23 @@ deinit += -d prj
     }
     EOI
 
-  $* -d prj 2>>/~%EOE%;
+  $* -d prj 2>>/~%EOE%
     %fetching dir:.+/libprj \(prerequisite of dir:.+/prj\)%
     synchronizing:
     %  new libprj.+ \(required by prj\)%
     %  upgrade prj.+19700101000000#1%
     EOE
 
-  $status >>~%EOO%;
+  $status >>~%EOO%
     prj configured 0.1.0-a.0.19700101000000#1
     %  libprj configured 0.+%
     EOO
 
-  $build prj/ 2>>~%EOE%;
+  $build prj/ 2>>~%EOE%
     %(mkdir|version|c\+\+|ld|ln) .+%{8}
     EOE
 
-  $build 'clean:' prj/ 2>>~%EOE%;
+  $build 'clean:' prj/ 2>>~%EOE%
     %(rm|rmdir) .+%{3}
     EOE
 
@@ -82,33 +82,33 @@ deinit += -d prj
 : multi-pkg-cfg
 :
 {
-  $new -t empty prj &prj/***;
+  $new -t empty prj &prj/***
 
-  $new --package pkg1 -d prj;
-  $new --package pkg2 -d prj;
+  $new --package pkg1 -d prj
+  $new --package pkg2 -d prj
 
-  init += -d prj;
+  init += -d prj
 
-  $init -C @cfg1 $config_cxx &prj-cfg1/***;
-  $init -C @cfg2 $config_cxx &prj-cfg2/***;
+  $init -C @cfg1 $config_cxx &prj-cfg1/***
+  $init -C @cfg2 $config_cxx &prj-cfg2/***
 
-  $new -t lib libprj &libprj/***;
+  $new -t lib libprj &libprj/***
 
-  cat <<EOI >+prj/repositories.manifest;
+  cat <<EOI >+prj/repositories.manifest
     :
     role: prerequisite
     location: ../libprj
     type: dir
     EOI
 
-  cat <<EOI >+prj/pkg1/manifest;
+  cat <<EOI >+prj/pkg1/manifest
     depends: libprj
     EOI
 
   sed -i -e 's/^(#import .+)$/import libs += libprj%lib{prj}/' \
-      prj/pkg1/pkg1/buildfile;
+      prj/pkg1/pkg1/buildfile
 
-  cat <<EOI >=prj/pkg1/pkg1/pkg1.cxx;
+  cat <<EOI >=prj/pkg1/pkg1/pkg1.cxx
     #include <iostream>
 
     #include <libprj/prj.hxx>
@@ -127,13 +127,13 @@ deinit += -d prj
     }
     EOI
 
-  cat <<EOI >+prj/pkg2/manifest;
+  cat <<EOI >+prj/pkg2/manifest
     tags: c++
     EOI
 
   # Sync the default (cfg1) configuration (via the package directory).
   #
-  $* -d prj/pkg2 2>>/~%EOE%;
+  $* -d prj/pkg2 2>>/~%EOE%
     %fetching dir:.+/libprj \(prerequisite of dir:.+/prj\)%
     synchronizing:
     %  new libprj.+ \(required by pkg1\)%
@@ -141,7 +141,7 @@ deinit += -d prj
     %  upgrade pkg2.+19700101000000#1%
     EOE
 
-  $status >>~%EOO% 2>>/~%EOE%; # Note: implicitly fetches into cfg2.
+  $status >>~%EOO% 2>>/~%EOE% # Note: implicitly fetches into cfg2.
     in configuration @cfg1:
     pkg1 configured 0.1.0-a.0.19700101000000#1
     %  libprj configured 0.+%
@@ -156,7 +156,7 @@ deinit += -d prj
 
   # Sync all configurations (via the project directory).
   #
-  $* --all -d prj 2>>~%EOE%;
+  $* --all -d prj 2>>~%EOE%
     in configuration @cfg1:
 
     in configuration @cfg2:
@@ -166,7 +166,7 @@ deinit += -d prj
       upgrade pkg2/0.1.0-a.0.19700101000000#1
     EOE
 
-  $status >>~%EOE%;
+  $status >>~%EOE%
     in configuration @cfg1:
     pkg1 configured 0.1.0-a.0.19700101000000#1
     %  libprj configured 0.+%
@@ -178,19 +178,19 @@ deinit += -d prj
     pkg2 configured 0.1.0-a.0.19700101000000#1
     EOE
 
-  $build prj/pkg1/ 2>>~%EOE%;
+  $build prj/pkg1/ 2>>~%EOE%
     %(mkdir|version|c\+\+|ld|ln) .+%{8}
     EOE
 
-  $build prj/pkg2/ 2>>~%EOE%;
+  $build prj/pkg2/ 2>>~%EOE%
     %(mkdir|c\+\+|ld|ln) .+%{4}
     EOE
 
-  $build 'clean:' prj/pkg1/ 2>>~%EOE%;
+  $build 'clean:' prj/pkg1/ 2>>~%EOE%
     %(rm|rmdir) .+%{3}
     EOE
 
-  $build 'clean:' prj/pkg2/ 2>>~%EOE%;
+  $build 'clean:' prj/pkg2/ 2>>~%EOE%
     %(rm|rmdir) .+%{3}
     EOE
 
@@ -208,33 +208,33 @@ deinit += -d prj
 : pkg-by-name
 :
 {
-  $new -t empty prj &prj/***;
+  $new -t empty prj &prj/***
 
-  $new --package pkg1 -d prj;
-  $new --package pkg2 -d prj;
+  $new --package pkg1 -d prj
+  $new --package pkg2 -d prj
 
-  init += -d prj;
+  init += -d prj
 
-  $init -C @cfg $config_cxx &prj-cfg/***;
+  $init -C @cfg $config_cxx &prj-cfg/***
 
-  $new -t lib libprj &libprj/***;
+  $new -t lib libprj &libprj/***
 
-  cat <<EOI >+prj/repositories.manifest;
+  cat <<EOI >+prj/repositories.manifest
     :
     role: prerequisite
     location: ../libprj
     type: dir
     EOI
 
-  cat <<EOI >+prj/pkg1/manifest;
+  cat <<EOI >+prj/pkg1/manifest
     depends: libprj
     EOI
 
-  cat <<EOI >+prj/pkg2/manifest;
+  cat <<EOI >+prj/pkg2/manifest
     tags: c++
     EOI
 
-  $* pkg1 -d prj/pkg2 ?libprj 2>>~%EOE%;
+  $* pkg1 -d prj/pkg2 ?libprj 2>>~%EOE%
     %.+
     synchronizing:
       new libprj/0.1.0-a.0.19700101000000 (required by pkg1)
@@ -242,16 +242,16 @@ deinit += -d prj
       upgrade pkg2/0.1.0-a.0.19700101000000#1
     EOE
 
-  sed -i -e 's/^(version:).+$/\1 1.0.0/' libprj/manifest;
+  sed -i -e 's/^(version:).+$/\1 1.0.0/' libprj/manifest
 
-  $* libprj -f -d prj 2>>~%EOE%;
+  $* libprj -f -d prj 2>>~%EOE%
     %.+
     synchronizing:
       upgrade libprj/1.0.0
       reconfigure pkg1/0.1.0-a.0.19700101000000#1
     EOE
 
-  $* libprj pkg1 -d prj 2>>EOE != 0;
+  $* libprj pkg1 -d prj 2>>EOE != 0
     error: initialized package pkg1 specified with dependency package libprj
     EOE
 
@@ -269,9 +269,9 @@ deinit += -d prj
 : config-vars
 :
 {
-  $new prj &prj/***;
+  $new prj &prj/***
 
-  cat <<EOI >+prj/build/root.build;
+  cat <<EOI >+prj/build/root.build
     config [bool] config.prj.develop ?= false
     config [bool] config.prj.extra ?= true
 
@@ -279,7 +279,7 @@ deinit += -d prj
     text "extra=$config.prj.extra"
     EOI
 
-  $init -d prj -C @cfg $config_cxx &prj-cfg/*** 2>>~/EOE/;
+  $init -d prj -C @cfg $config_cxx &prj-cfg/*** 2>>~/EOE/
     /.*/+
     /.*: develop=true/
     /.*: extra=true/
@@ -287,7 +287,7 @@ deinit += -d prj
 
   # Reconfigure.
   #
-  $* -d prj config.prj.develop=false config.prj.extra=false 2>>~/EOE/;
+  $* -d prj config.prj.develop=false config.prj.extra=false 2>>~/EOE/
     /.*/+
     /.*: develop=false/
     /.*: extra=false/
@@ -295,11 +295,11 @@ deinit += -d prj
 
   # Make sure the configuration is by default preserved on reconfiguration.
   #
-  cat <<EOI >+prj/manifest;
+  cat <<EOI >+prj/manifest
     tags: c++
     EOI
 
-  $* -d prj config.prj.develop=false config.prj.extra=false 2>>~/EOE/;
+  $* -d prj config.prj.develop=false config.prj.extra=false 2>>~/EOE/
     /.*/+
     /.*: develop=false/
     /.*: extra=false/
@@ -307,7 +307,7 @@ deinit += -d prj
 
   # Make sure --disfigure causes a from-scratch reconfiguration.
   #
-  $* -d prj --disfigure config.prj.extra=false 2>>~/EOE/;
+  $* -d prj --disfigure config.prj.extra=false 2>>~/EOE/
     /.*/+
     /.*: develop=true/
     /.*: extra=false/
@@ -324,7 +324,7 @@ deinit += -d prj
 
 : dependency-config
 :
-{
+{{
   +$new -t lib libfoo &libfoo/***
   +$new -t lib libfix &libfix/***
   +$new        bar    &bar/***
@@ -365,14 +365,14 @@ deinit += -d prj
 
   : create
   {
-    cp -rp ../libfoo ./;
-    cp -rp ../libfix ./;
-    cp -rp ../bar    ./;
+    cp -rp ../libfoo ./
+    cp -rp ../libfix ./
+    cp -rp ../bar    ./
 
-    $init -d libfoo -C            @cfg --no-sync $config_cxx &libfoo-cfg/***;
-    $init -d libfix -A libfoo-cfg @cfg --no-sync;
+    $init -d libfoo -C            @cfg --no-sync $config_cxx &libfoo-cfg/***
+    $init -d libfix -A libfoo-cfg @cfg --no-sync
 
-    $* -d libfoo 2>>~%EOE% != 0;
+    $* -d libfoo 2>>~%EOE% != 0
       %fetching dir:.+bar \(prerequisite of dir:.+libfoo\)%
       error: unable to find configuration of host type for build-time dependency
         info: run sync command explicitly
@@ -391,20 +391,20 @@ deinit += -d prj
   : find
   :
   {
-    cp -rp ../libfoo ./;
-    cp -rp ../libfix ./;
-    cp -rp ../bar    ./;
+    cp -rp ../libfoo ./
+    cp -rp ../libfix ./
+    cp -rp ../bar    ./
 
-    $config create -d libfoo                    @cfg  libfoo-cfg -- &libfoo-cfg/***;
-    $config create -d libfoo --config-type host @host host       -- &host/***;
+    $config create -d libfoo                    @cfg  libfoo-cfg -- &libfoo-cfg/***
+    $config create -d libfoo --config-type host @host host       -- &host/***
 
-    $config link -d libfoo @cfg @host;
+    $config link -d libfoo @cfg @host
 
     # Convert specific warnings to infos as we expect them to appear. This, in
     # particular, prevents bbot workers to set task result status to warning.
     #
     $init -d libfix -A libfoo-cfg @cfg --no-sync 2>&1 | \
-    sed -e 's/warning: (added configuration @cfg already linked .*)/info: \1/' >&2 2>!;
+    sed -e 's/warning: (added configuration @cfg already linked .*)/info: \1/' >&2 2>!
 
     # While at it, test synchronizing via the init command.
     #
@@ -424,43 +424,43 @@ deinit += -d prj
   : build-time dependency configurations.
   :
   {
-    cp -rp ../libfoo ./;
-    cp -rp ../libfix ./;
-    cp -rp ../bar    ./;
+    cp -rp ../libfoo ./
+    cp -rp ../libfix ./
+    cp -rp ../bar    ./
 
-    cat <<EOI >+bar/manifest;
+    cat <<EOI >+bar/manifest
       depends: * libbuild2-baz
       EOI
 
-    $config create -d libfoo @cfg libfoo-cfg -- &libfoo-cfg/***;
+    $config create -d libfoo @cfg libfoo-cfg -- &libfoo-cfg/***
 
     # Convert specific errors to infos as we expect them to appear. Not doing
     # so, makes bbot logs quite confusing.
     #
     $init -d libfoo --create-host-config --create-build2-config @cfg &libfoo-host/*** &libfoo-build2/*** 2>&1 != 0 | \
-    sed -e 's/error: (unknown dependency libbuild2-baz .*)/info: \1/' >&2 2>!;
+    sed -e 's/error: (unknown dependency libbuild2-baz .*)/info: \1/' >&2 2>!
 
     $config list -d libfoo >>~%EOO%
       %(@cfg|@host|@build2).+%{3}
       EOO
   }
-}
+}}
 
 : failure-preserve-user-config
 :
 {
-  $new -t empty -C @cfg prj $config_cxx &prj/*** &prj-cfg/***;
+  $new -t empty -C @cfg prj $config_cxx &prj/*** &prj-cfg/***
 
-  $new --package           pkg -d prj;
-  $new --package -t lib libpkg -d prj;
+  $new --package           pkg -d prj
+  $new --package -t lib libpkg -d prj
 
-  echo 'depends: libpkg' >+prj/pkg/manifest;
-  sed -i -e 's/^#import.+$/import libs += libpkg%lib{pkg}/' prj/pkg/pkg/buildfile;
+  echo 'depends: libpkg' >+prj/pkg/manifest
+  sed -i -e 's/^#import.+$/import libs += libpkg%lib{pkg}/' prj/pkg/pkg/buildfile
 
-  echo 'config [bool] config.pkg.feature ?= false' >+prj/pkg/build/root.build;
-  echo 'config [bool] config.libpkg.feature ?= false' >+prj/libpkg/build/root.build;
+  echo 'config [bool] config.pkg.feature ?= false' >+prj/pkg/build/root.build
+  echo 'config [bool] config.libpkg.feature ?= false' >+prj/libpkg/build/root.build
 
-  $init -d prj/ @cfg config.pkg.feature=true config.libpkg.feature=true 2>>~%EOE%;
+  $init -d prj/ @cfg config.pkg.feature=true config.libpkg.feature=true 2>>~%EOE%
     %initializing in project .+failure-preserve-user-config.+%
     initializing package pkg
     initializing package libpkg
@@ -473,24 +473,24 @@ deinit += -d prj
     EOE
 
   sed -n -e 's/config.pkg.feature = (.+)/\1/p' \
-      prj-cfg/pkg/build/config.build >'true';
+      prj-cfg/pkg/build/config.build >'true'
 
   sed -n -e 's/src_root = (.+)/\1/p' \
-      prj-cfg/pkg/build/bootstrap/src-root.build >/~"%.+/prj/pkg/'?%";
+      prj-cfg/pkg/build/bootstrap/src-root.build >/~"%.+/prj/pkg/'?%"
 
   sed -n -e 's/config.libpkg.feature = (.+)/\1/p' \
-      prj-cfg/libpkg/build/config.build >'true';
+      prj-cfg/libpkg/build/config.build >'true'
 
   sed -n -e 's/src_root = (.+)/\1/p' \
-      prj-cfg/libpkg/build/bootstrap/src-root.build >/~"%.+/prj/libpkg/'?%";
+      prj-cfg/libpkg/build/bootstrap/src-root.build >/~"%.+/prj/libpkg/'?%"
 
   sed -n -e 's/src_root = (.+)/\1/p' \
-      prj-cfg/libpkg/tests/build/bootstrap/src-root.build >/~"%.+/prj/libpkg/tests/'?%";
+      prj-cfg/libpkg/tests/build/bootstrap/src-root.build >/~"%.+/prj/libpkg/tests/'?%"
 
-  mkdir --no-cleanup prj/libpkg/stray;
-  echo '' >+prj/libpkg/manifest;
+  mkdir --no-cleanup prj/libpkg/stray
+  echo '' >+prj/libpkg/manifest
 
-  $build prj/pkg/ 2>>~%EOE% != 0;
+  $build prj/pkg/ 2>>~%EOE% != 0
     %synchronizing .*prj-cfg.:%
       upgrade libpkg/0.1.0-a.0.19700101000000#1
         config.libpkg.feature=true (user configuration)
@@ -502,23 +502,23 @@ deinit += -d prj
     EOE
 
   sed -n -e 's/config.pkg.feature = (.+)/\1/p' \
-      prj-cfg/pkg/build/config.build >'true';
+      prj-cfg/pkg/build/config.build >'true'
 
   sed -n -e 's/src_root = (.+)/\1/p' \
-      prj-cfg/pkg/build/bootstrap/src-root.build >/~"%.+/prj/pkg/'?%";
+      prj-cfg/pkg/build/bootstrap/src-root.build >/~"%.+/prj/pkg/'?%"
 
   sed -n -e 's/config.libpkg.feature = (.+)/\1/p' \
-      prj-cfg/libpkg/build/config.build >'true';
+      prj-cfg/libpkg/build/config.build >'true'
 
   sed -n -e 's/src_root = (.+)/\1/p' \
-      prj-cfg/libpkg/build/bootstrap/src-root.build >/~"%.+/prj/libpkg/'?%";
+      prj-cfg/libpkg/build/bootstrap/src-root.build >/~"%.+/prj/libpkg/'?%"
 
   sed -n -e 's/src_root = (.+)/\1/p' \
-      prj-cfg/libpkg/tests/build/bootstrap/src-root.build >/~"%.+/prj/libpkg/tests/'?%";
+      prj-cfg/libpkg/tests/build/bootstrap/src-root.build >/~"%.+/prj/libpkg/tests/'?%"
 
-  rmdir prj/libpkg/stray;
+  rmdir prj/libpkg/stray
 
-  $build prj/pkg/ 2>>~%EOE%;
+  $build prj/pkg/ 2>>~%EOE%
     %synchronizing .*prj-cfg.:%
       update libpkg/0.1.0-a.0.19700101000000#1
       update pkg/0.1.0-a.0.19700101000000
@@ -526,19 +526,19 @@ deinit += -d prj
     EOE
 
   sed -n -e 's/config.pkg.feature = (.+)/\1/p' \
-      prj-cfg/pkg/build/config.build >'true';
+      prj-cfg/pkg/build/config.build >'true'
 
   sed -n -e 's/src_root = (.+)/\1/p' \
-      prj-cfg/pkg/build/bootstrap/src-root.build >/~"%.+/prj/pkg/'?%";
+      prj-cfg/pkg/build/bootstrap/src-root.build >/~"%.+/prj/pkg/'?%"
 
   sed -n -e 's/config.libpkg.feature = (.+)/\1/p' \
-      prj-cfg/libpkg/build/config.build >'true';
+      prj-cfg/libpkg/build/config.build >'true'
 
   sed -n -e 's/src_root = (.+)/\1/p' \
-      prj-cfg/libpkg/build/bootstrap/src-root.build >/~"%.+/prj/libpkg/'?%";
+      prj-cfg/libpkg/build/bootstrap/src-root.build >/~"%.+/prj/libpkg/'?%"
 
   sed -n -e 's/src_root = (.+)/\1/p' \
-      prj-cfg/libpkg/tests/build/bootstrap/src-root.build >/~"%.+/prj/libpkg/tests/'?%";
+      prj-cfg/libpkg/tests/build/bootstrap/src-root.build >/~"%.+/prj/libpkg/tests/'?%"
 
   $deinit 2>>/"EOE"
     deinitializing in project $~/prj/

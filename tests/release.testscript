@@ -9,7 +9,6 @@
 +if! ($git_version_major >  2 || \
       $git_version_major == 2 && $git_version_minor >= 11)
   exit
-end
 
 g = [cmdline] git 2>! >&2
 
@@ -68,29 +67,29 @@ new += --vcs git,branch=master 2>-
 
 : single-pkg
 :
-{
+{{
   : release
   :
-  {
+  {{
     test.arguments += --yes
 
     : version
     :
-    {
+    {{
       test.arguments += --push
 
       : patch
       :
       {
-        $clone_root_repos;
+        $clone_root_repos
 
-        $* 2>>~%EOE%;
+        $* 2>>~%EOE%
           %.+
           pushing branch master, tag v0.1.0
           EOE
 
-        $clone2;
-        $log2 >>:~%EOO%;
+        $clone2
+        $log2 >>:~%EOO%
           % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
            (tag: v0.1.0) Release version 0.1.0
            Create
@@ -108,14 +107,14 @@ new += --vcs git,branch=master 2>-
       : alpha
       :
       {
-        $clone_root_repos;
+        $clone_root_repos
 
-        $* --alpha 2>>~%EOE%;
+        $* --alpha 2>>~%EOE%
           %.+
           pushing branch master, tag v0.1.0-a.1
           EOE
 
-        $clone2;
+        $clone2
         $log2 >>:~%EOO%
           % \(HEAD -> master, \.*\) Change version to 0.1.0-a.1.z%d
            (tag: v0.1.0-a.1) Release version 0.1.0-a.1
@@ -126,14 +125,14 @@ new += --vcs git,branch=master 2>-
       : beta
       :
       {
-        $clone_root_repos;
+        $clone_root_repos
 
-        $* --beta 2>>~%EOE%;
+        $* --beta 2>>~%EOE%
           %.+
           pushing branch master, tag v0.1.0-b.1
           EOE
 
-        $clone2;
+        $clone2
         $log2 >>:~%EOO%
           % \(HEAD -> master, \.*\) Change version to 0.1.0-b.1.z%d
            (tag: v0.1.0-b.1) Release version 0.1.0-b.1
@@ -144,14 +143,14 @@ new += --vcs git,branch=master 2>-
       : minor
       :
       {
-        $clone_root_repos;
+        $clone_root_repos
 
-        $* --minor 2>>~%EOE%;
+        $* --minor 2>>~%EOE%
           %.+
           pushing branch master, tag v0.2.0
           EOE
 
-        $clone2;
+        $clone2
         $log2 >>:~%EOO%
           % \(HEAD -> master, \.*\) Change version to 0.3.0-a.0.z%d
            (tag: v0.2.0) Release version 0.2.0
@@ -162,52 +161,52 @@ new += --vcs git,branch=master 2>-
       : major
       :
       {
-        $clone_root_repos;
+        $clone_root_repos
 
-        $* --major 2>>~%EOE%;
+        $* --major 2>>~%EOE%
           %.+
           pushing branch master, tag v1.0.0
           EOE
 
-        $clone2;
+        $clone2
         $log2 >>:~%EOO%
           % \(HEAD -> master, \.*\) Change version to 1.1.0-a.0.z%d
            (tag: v1.0.0) Release version 1.0.0
            Create
           EOO
       }
-    }
+    }}
 
     : open
     :
-    {
+    {{
       test.arguments += --push
 
       : beta
       :
       {
-        $clone_root_repos;
+        $clone_root_repos
 
-        $* --open-beta 2>'error: --open-beta specified for final current version 0.1.0' != 0;
+        $* --open-beta 2>'error: --open-beta specified for final current version 0.1.0' != 0
 
-        $* --alpha --open-beta 2>>~%EOE%;
+        $* --alpha --open-beta 2>>~%EOE%
           %.+
           pushing branch master, tag v0.1.0-a.1
           EOE
 
-        $clone2;
-        $log2 >>:~%EOO%;
+        $clone2
+        $log2 >>:~%EOO%
           % \(HEAD -> master, \.*\) Change version to 0.1.0-b.0.z%d
            (tag: v0.1.0-a.1) Release version 0.1.0-a.1
            Create
           EOO
 
-        $* --beta --open-beta 2>>~%EOE%;
+        $* --beta --open-beta 2>>~%EOE%
           %.+
           pushing branch master, tag v0.1.0-b.1
           EOE
 
-        $pull2;
+        $pull2
         $log2 >>:~%EOO%
           % \(HEAD -> master, \.*\) Change version to 0.1.0-b.1.z%d
            (tag: v0.1.0-b.1) Release version 0.1.0-b.1
@@ -220,15 +219,15 @@ new += --vcs git,branch=master 2>-
       : patch
       :
       {
-        $clone_root_repos;
+        $clone_root_repos
 
-        $* --open-patch 2>>~%EOE%;
+        $* --open-patch 2>>~%EOE%
           %.+
           pushing branch master, tag v0.1.0
           EOE
 
-        $clone2;
-        $log2 >>:~%EOO%;
+        $clone2
+        $log2 >>:~%EOO%
           % \(HEAD -> master, \.*\) Change version to 0.1.1-a.0.z%d
            (tag: v0.1.0) Release version 0.1.0
            Create
@@ -236,12 +235,12 @@ new += --vcs git,branch=master 2>-
 
         # Note: --open-patch is implied for bugfix release series.
         #
-        $* 2>>~%EOE%;
+        $* 2>>~%EOE%
           %.+
           pushing branch master, tag v0.1.1
           EOE
 
-        $pull2;
+        $pull2
         $log2 >>:~%EOO%
           % \(HEAD -> master, \.*\) Change version to 0.1.2-a.0.z%d
            (tag: v0.1.1) Release version 0.1.1
@@ -254,27 +253,27 @@ new += --vcs git,branch=master 2>-
       : minor
       :
       {
-        $clone_root_repos;
+        $clone_root_repos
 
-        $* --alpha --open-minor 2>'error: --open-minor specified for alpha current version 0.1.0-a.1' != 0;
-        $* --beta  --open-minor 2>'error: --open-minor specified for beta current version 0.1.0-b.1' != 0;
+        $* --alpha --open-minor 2>'error: --open-minor specified for alpha current version 0.1.0-a.1' != 0
+        $* --beta  --open-minor 2>'error: --open-minor specified for beta current version 0.1.0-b.1' != 0
 
-        $* --open-patch 2>>~%EOE%;
+        $* --open-patch 2>>~%EOE%
           %.+
           pushing branch master, tag v0.1.0
           EOE
 
-        $* 2>>~%EOE%;
+        $* 2>>~%EOE%
           %.+
           pushing branch master, tag v0.1.1
           EOE
 
-        $* --open-minor 2>>~%EOE%;
+        $* --open-minor 2>>~%EOE%
           %.+
           pushing branch master, tag v0.1.2
           EOE
 
-        $clone2;
+        $clone2
         $log2 >>:~%EOO%
           % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
            (tag: v0.1.2) Release version 0.1.2
@@ -289,14 +288,14 @@ new += --vcs git,branch=master 2>-
       : major
       :
       {
-        $clone_root_repos;
+        $clone_root_repos
 
-        $* --open-major 2>>~%EOE%;
+        $* --open-major 2>>~%EOE%
           %.+
           pushing branch master, tag v0.1.0
           EOE
 
-        $clone2;
+        $clone2
         $log2 >>:~%EOO%
           % \(HEAD -> master, \.*\) Change version to 1.0.0-a.0.z%d
            (tag: v0.1.0) Release version 0.1.0
@@ -307,29 +306,29 @@ new += --vcs git,branch=master 2>-
       : base
       :
       {
-        $clone_root_repos;
+        $clone_root_repos
 
-        $* --open-base 1.0 2>>EOE != 0;
+        $* --open-base 1.0 2>>EOE != 0
           error: invalid base version '1.0': '.' expected after minor version
           EOE
 
-        $* --open-base 1.0.0-a.1 2>>EOE != 0;
+        $* --open-base 1.0.0-a.1 2>>EOE != 0
           error: invalid base version '1.0.0-a.1': pre-release
           EOE
 
-        $* --open-base 1.2.3 2>>~%EOE%;
+        $* --open-base 1.2.3 2>>~%EOE%
           %.+
           pushing branch master, tag v0.1.0
           EOE
 
-        $clone2;
-        $log2 >>:~%EOO%;
+        $clone2
+        $log2 >>:~%EOO%
           % \(HEAD -> master, \.*\) Change version to 1.2.3-a.0.z%d
            (tag: v0.1.0) Release version 0.1.0
            Create
           EOO
 
-        $* --open-base 1.2.2 2>>EOE != 0;
+        $* --open-base 1.2.2 2>>EOE != 0
           error: base version 1.2.2 is less than or equal to current version 1.2.3
           EOE
 
@@ -337,35 +336,35 @@ new += --vcs git,branch=master 2>-
           error: base version 1.2.3 is less than or equal to current version 1.2.3
           EOE
       }
-    }
+    }}
 
     : no
     :
-    {
+    {{
       test.arguments += --push
 
       : open
       :
       {
-        $clone_root_repos;
+        $clone_root_repos
 
-        $* --no-open 2>>~%EOE%;
+        $* --no-open 2>>~%EOE%
           %.+
           pushing branch master, tag v0.1.0
           EOE
 
-        $clone2;
-        $log2 >>:~%EOO%;
+        $clone2
+        $log2 >>:~%EOO%
           % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0%d
            Create
           EOO
 
-        $* --open 2>>~%EOE%;
+        $* --open 2>>~%EOE%
           %.+
           pushing branch master
           EOE
 
-        $pull2;
+        $pull2
         $log2 >>:~%EOO%
           % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
            (tag: v0.1.0) Release version 0.1.0
@@ -376,21 +375,21 @@ new += --vcs git,branch=master 2>-
       : tag
       :
       {
-        $clone_root_repos;
+        $clone_root_repos
 
-        $* --no-tag 2>>~%EOE%;
+        $* --no-tag 2>>~%EOE%
           %.+
           pushing branch master
           EOE
 
-        $clone2;
-        $log2 >>:~%EOO%;
+        $clone2
+        $log2 >>:~%EOO%
           % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
            Release version 0.1.0
            Create
           EOO
 
-        $* --tag 2>>EOE != 0;
+        $* --tag 2>>EOE != 0
           error: current version 0.2.0-a.0.z is a snapshot
             info: use --force=snapshot to tag anyway
           EOE
@@ -398,15 +397,15 @@ new += --vcs git,branch=master 2>-
         # While at it, verify that the --current-tag is forbidden for a
         # non-revision release.
         #
-        $* --tag --force=snapshot --current-tag=update 2>>EOE != 0;
+        $* --tag --force=snapshot --current-tag=update 2>>EOE != 0
           error: --current-tag specified for non-revision current version 0.2.0-a.0.z
           EOE
 
-        $* --tag --force=snapshot 2>>~%EOE%;
+        $* --tag --force=snapshot 2>>~%EOE%
           %pushing tag v0.2.0-a.0.\.+%d
           EOE
 
-        $pull2;
+        $pull2
         $log2 >>:~%EOO%
           % \(HEAD -> master, tag: v0.2.0-a.0.\.*.\.*\) Change version to 0.2.0-a.0.z%d
            Release version 0.1.0
@@ -417,35 +416,35 @@ new += --vcs git,branch=master 2>-
       : tag-open
       :
       {
-        $clone_root_repos;
+        $clone_root_repos
 
-        $* --no-tag --no-open 2>>~%EOE%;
+        $* --no-tag --no-open 2>>~%EOE%
           %.+
           pushing branch master
           EOE
 
-        $clone2;
-        $log2 >>:~%EOO%;
+        $clone2
+        $log2 >>:~%EOO%
           % \(HEAD -> master, \.*\) Release version 0.1.0%d
            Create
           EOO
 
-        $* --tag 2>>EOE;
+        $* --tag 2>>EOE
           pushing tag v0.1.0
           EOE
 
-        $pull2;
-        $log2 >>:~%EOO%;
+        $pull2
+        $log2 >>:~%EOO%
           % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0%d
            Create
           EOO
 
-        $* --open 2>>~%EOE%;
+        $* --open 2>>~%EOE%
           %.+
           pushing branch master
           EOE
 
-        $pull2;
+        $pull2
         $log2 >>:~%EOO%
           % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
            (tag: v0.1.0) Release version 0.1.0
@@ -456,39 +455,39 @@ new += --vcs git,branch=master 2>-
       : commit
       :
       {
-        $clone_root_repos;
+        $clone_root_repos
 
         $* --no-commit 2>'error: both --push and --no-commit specified' != 0
       }
-    }
+    }}
 
     : validate-manifest
-    {
+    {{
       test.options += -q
       test.arguments += --push
 
       : file-value
       :
       {
-        $clone_root_repos;
+        $clone_root_repos
 
-        rm prj/README.md;
-        $gp commit -a -m 'Remove description';
+        rm prj/README.md
+        $gp commit -a -m 'Remove description'
 
-        $* 2>>~%EOE% != 0;
+        $* 2>>~%EOE% != 0
           %error: unable to read .+README\.md referenced by description-file manifest value in .+manifest: .+%
           EOE
 
-        touch prj/README.md;
-        $gp add README.md;
-        $gp commit -m 'Add README.md file';
+        touch prj/README.md
+        $gp add README.md
+        $gp commit -m 'Add README.md file'
 
-        $* 2>>~%EOE% != 0;
+        $* 2>>~%EOE% != 0
           %error: description-file manifest value in .+manifest references empty file .+README.md%
           EOE
 
-        echo '.' >= prj/README.md;
-        $gp commit -a -m 'Fill README.md file';
+        echo '.' >= prj/README.md
+        $gp commit -a -m 'Fill README.md file'
 
         $*
       }
@@ -496,49 +495,49 @@ new += --vcs git,branch=master 2>-
       : unknown-value
       :
       {
-        $clone_root_repos;
+        $clone_root_repos
 
-        echo 'some-file: README' >+ prj/manifest;
-        $gp commit -a -m 'Add file';
+        echo 'some-file: README' >+ prj/manifest
+        $gp commit -a -m 'Add file'
 
         $* 2>>~%EOE% != 0
           %error: invalid package manifest: .+manifest:.+:1: unknown name 'some-file' in package manifest%
           EOE
       }
-    }
+    }}
 
     : unstaged
     :
     {
-      $clone_root_repos;
-      echo '' >+ prj/manifest;
+      $clone_root_repos
+      echo '' >+ prj/manifest
 
-      $* 2>>EOE != 0;
+      $* 2>>EOE != 0
         error: project directory has unstaged changes
           info: run 'git status' for details
           info: use 'git add' to add the changes to this commit
           info: use 'git stash' to temporarily hide the changes
         EOE
 
-      $* --no-commit;
+      $* --no-commit
 
-      $gp commit -a -m 'Release version';
+      $gp commit -a -m 'Release version'
 
-      $* --tag --push 2>>EOE;
+      $* --tag --push 2>>EOE
         pushing branch master, tag v0.1.0
         EOE
 
-      $clone2;
+      $clone2
       $log2 >>:~%EOO%
         % \(HEAD -> master, tag: v0.1.0, \.*\) Release version%d
          Create
         EOO
     }
-  }
+  }}
 
   : revision
   :
-  {
+  {{
     test.options += -q
 
     +$clone_root_repos
@@ -548,7 +547,7 @@ new += --vcs git,branch=master 2>-
 
     : current-tag
     :
-    {
+    {{
       +$clone_repos
 
       +echo '' >+ prj/manifest
@@ -559,10 +558,10 @@ new += --vcs git,branch=master 2>-
       : update
       :
       {
-        $clone_repos;
-        sp=' ';
+        $clone_repos
+        sp=' '
 
-        $* --current-tag=update <'y' 2>>~%EOE%;
+        $* --current-tag=update <'y' 2>>~%EOE%
           revising:
             package: prj
             current: 0.1.0
@@ -573,26 +572,26 @@ new += --vcs git,branch=master 2>-
           %continue\? \[y/n\] Updated tag 'v0.1.0' \.+%d
           EOE
 
-        test.arguments += --yes;
+        test.arguments += --yes
 
-        $log >>:~%EOO%;
+        $log >>:~%EOO%
           % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0\+1%d
            Release version 0.1.0
            Create
           EOO
 
-        $clone2;
-        $log2 >>:~%EOO%;
+        $clone2
+        $log2 >>:~%EOO%
           % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0\+1%d
            Release version 0.1.0
            Create
           EOO
 
-        $* --current-tag=update --force=unchanged 2>>~%EOE%;
+        $* --current-tag=update --force=unchanged 2>>~%EOE%
           %Updated tag 'v0.1.0' \.+%d
           EOE
 
-        $log >>:~%EOO%;
+        $log >>:~%EOO%
           % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0\+2%d
            Release version 0.1.0+1
            Release version 0.1.0
@@ -604,7 +603,7 @@ new += --vcs git,branch=master 2>-
         # Note that starting git 2.20.0 --force is also required (see git
         # release notes for details).
         #
-        $pull2 --tags --force;
+        $pull2 --tags --force
         $log2 >>:~%EOO%
           % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0\+2%d
            Release version 0.1.0+1
@@ -616,9 +615,9 @@ new += --vcs git,branch=master 2>-
       : remove
       :
       {
-        $clone_repos;
+        $clone_repos
 
-        $* --current-tag=remove <'y' 2>>~%EOE%;
+        $* --current-tag=remove <'y' 2>>~%EOE%
           revising:
             package: prj
             current: 0.1.0
@@ -629,26 +628,26 @@ new += --vcs git,branch=master 2>-
           %continue\? \[y/n\] Deleted tag 'v0.1.0' \.+%d
           EOE
 
-        test.arguments += --yes;
+        test.arguments += --yes
 
-        $log >>:~%EOO%;
+        $log >>:~%EOO%
           % \(HEAD -> master, tag: v0.1.0\+1, \.*\) Release version 0.1.0\+1%d
            Release version 0.1.0
            Create
           EOO
 
-        $* --current-tag=remove --force=unchanged 2>>~%EOE%;
+        $* --current-tag=remove --force=unchanged 2>>~%EOE%
           %Deleted tag 'v0.1.0\+1' \.+%d
           EOE
 
-        $log >>:~%EOO%;
+        $log >>:~%EOO%
           % \(HEAD -> master, tag: v0.1.0\+2, \.*\) Release version 0.1.0\+2%d
            Release version 0.1.0+1
            Release version 0.1.0
            Create
           EOO
 
-        $clone2;
+        $clone2
         $log2 >>:~%EOO%
           % \(HEAD -> master, tag: v0.1.0\+2, \.*\) Release version 0.1.0\+2%d
            Release version 0.1.0+1
@@ -660,10 +659,10 @@ new += --vcs git,branch=master 2>-
       : keep
       :
       {
-        $clone_repos;
-        sp = ' ';
+        $clone_repos
+        sp = ' '
 
-        $* --current-tag=keep <'y' 2>>:"EOE";
+        $* --current-tag=keep <'y' 2>>:"EOE"
           revising:
             package: prj
             current: 0.1.0
@@ -674,24 +673,24 @@ new += --vcs git,branch=master 2>-
           continue? [y/n]$sp
           EOE
 
-        test.arguments += --yes;
+        test.arguments += --yes
 
-        $log >>:~%EOO%;
+        $log >>:~%EOO%
           % \(HEAD -> master, tag: v0.1.0\+1, \.*\) Release version 0.1.0\+1%d
            (tag: v0.1.0) Release version 0.1.0
            Create
           EOO
 
-        $* --current-tag=keep --force=unchanged;
+        $* --current-tag=keep --force=unchanged
 
-        $log >>:~%EOO%;
+        $log >>:~%EOO%
           % \(HEAD -> master, tag: v0.1.0\+2, \.*\) Release version 0.1.0\+2%d
            (tag: v0.1.0+1) Release version 0.1.0+1
            (tag: v0.1.0) Release version 0.1.0
            Create
           EOO
 
-        $clone2;
+        $clone2
         $log2 >>:~%EOO%
           % \(HEAD -> master, tag: v0.1.0\+2, \.*\) Release version 0.1.0\+2%d
            (tag: v0.1.0+1) Release version 0.1.0+1
@@ -699,11 +698,11 @@ new += --vcs git,branch=master 2>-
            Create
           EOO
       }
-    }
+    }}
 
     : tag
     :
-    {
+    {{
       +$clone_repos
 
       test.arguments += --push --no-edit --force=unchanged --yes
@@ -722,19 +721,19 @@ new += --vcs git,branch=master 2>-
       : update
       :
       {
-        $clone_repos;
+        $clone_repos
 
-        $tag --current-tag=update 2>>~%EOE%;
+        $tag --current-tag=update 2>>~%EOE%
           %Updated tag 'v0.1.0' \.+%d
           EOE
 
-        $log >>:~%EOO%;
+        $log >>:~%EOO%
           % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0\+1%d
            Release version 0.1.0
            Create
           EOO
 
-        $clone2;
+        $clone2
         $log2 >>:~%EOO%
           % \(HEAD -> master, tag: v0.1.0, \.*\) Release version 0.1.0\+1%d
            Release version 0.1.0
@@ -745,19 +744,19 @@ new += --vcs git,branch=master 2>-
       : remove
       :
       {
-        $clone_repos;
+        $clone_repos
 
-        $tag --current-tag=remove 2>>~%EOE%;
+        $tag --current-tag=remove 2>>~%EOE%
           %Deleted tag 'v0.1.0' \.+%d
           EOE
 
-        $log >>:~%EOO%;
+        $log >>:~%EOO%
           % \(HEAD -> master, tag: v0.1.0\+1, \.*\) Release version 0.1.0\+1%d
            Release version 0.1.0
            Create
           EOO
 
-        $clone2;
+        $clone2
         $log2 >>:~%EOO%
           % \(HEAD -> master, tag: v0.1.0\+1, \.*\) Release version 0.1.0\+1%d
            Release version 0.1.0
@@ -768,28 +767,28 @@ new += --vcs git,branch=master 2>-
       : keep
       :
       {
-        $clone_repos;
+        $clone_repos
 
-        $tag --current-tag=keep;
+        $tag --current-tag=keep
 
-        $log >>:~%EOO%;
+        $log >>:~%EOO%
           % \(HEAD -> master, tag: v0.1.0\+1, \.*\) Release version 0.1.0\+1%d
            (tag: v0.1.0) Release version 0.1.0
            Create
           EOO
 
-        $clone2;
+        $clone2
         $log2 >>:~%EOO%
           % \(HEAD -> master, tag: v0.1.0\+1, \.*\) Release version 0.1.0\+1%d
            (tag: v0.1.0) Release version 0.1.0
            Create
           EOO
       }
-    }
+    }}
 
     : changes-staged
     :
-    {
+    {{
       test.arguments += --push --no-edit --yes
 
       +$clone_repos
@@ -800,11 +799,11 @@ new += --vcs git,branch=master 2>-
       : normal
       :
       {
-        $clone_repos;
+        $clone_repos
 
-        $*;
+        $*
 
-        $clone2;
+        $clone2
         $log2 >>:~%EOO%
           % \(HEAD -> master, tag: v0.1.0\+1, \.*\) Release version 0.1.0\+1%d
            (tag: v0.1.0) Release version 0.1.0
@@ -815,14 +814,14 @@ new += --vcs git,branch=master 2>-
       : stub
       :
       {
-        $clone_root_repos;
+        $clone_root_repos
 
-        sed -i -e 's/^(version:) .*$/\1 0/' prj/manifest;
-        $gp add manifest;
+        sed -i -e 's/^(version:) .*$/\1 0/' prj/manifest
+        $gp add manifest
 
-        $* --revision;
+        $* --revision
 
-        $clone2;
+        $clone2
         $log2 >>:~%EOO%
           % \(HEAD -> master, tag: v0\+1, \.*\) Release version 0\+1%d
            Create
@@ -832,44 +831,44 @@ new += --vcs git,branch=master 2>-
       : no-tag
       :
       {
-        $clone_repos;
+        $clone_repos
 
-        $* --no-tag;
+        $* --no-tag
 
-        $clone2;
-        $log2 >>:~%EOO%;
+        $clone2
+        $log2 >>:~%EOO%
           % \(HEAD -> master, \.*\) Release version 0.1.0\+1%d
            (tag: v0.1.0) Release version 0.1.0
            Create
           EOO
 
-        $release --tag --push --yes -d prj;
+        $release --tag --push --yes -d prj
 
-        $pull2 --tags --force; # Updates the existing local tag (see above).
+        $pull2 --tags --force # Updates the existing local tag (see above).
         $log2 >>:~%EOO%
           % \(HEAD -> master, tag: v0.1.0\+1, \.*\) Release version 0.1.0\+1%d
            (tag: v0.1.0) Release version 0.1.0
            Create
           EOO
       }
-    }
+    }}
 
     : no-changes-staged
     :
     {
       test.arguments += --push --yes
 
-      $clone_repos;
+      $clone_repos
 
-      $* 2>>~%EOE% != 0;
+      $* 2>>~%EOE% != 0
         error: project directory has no staged changes
           info: revision increment must be committed together with associated changes
           info: use --force=unchanged to release anyway
         EOE
 
-      $* --force=unchanged;
+      $* --force=unchanged
 
-      $clone2;
+      $clone2
       $log2 >>:~%EOO%
         % \(HEAD -> master, tag: v0.1.0\+1, \.*\) Release version 0.1.0\+1%d
          (tag: v0.1.0) Release version 0.1.0
@@ -880,25 +879,25 @@ new += --vcs git,branch=master 2>-
     : unstaged
     :
     {
-      test.arguments += --yes;
+      test.arguments += --yes
 
-      $clone_repos;
+      $clone_repos
 
-      echo '' >+ prj/manifest;
+      echo '' >+ prj/manifest
 
-      $* 2>>EOE != 0;
+      $* 2>>EOE != 0
         error: project directory has unstaged changes
           info: run 'git status' for details
           info: use 'git add' to add the changes to this commit
           info: use 'git stash' to temporarily hide the changes
         EOE
 
-      $* --no-commit;
+      $* --no-commit
 
-      $gp commit -a -m 'Release revision';
-      $release --tag --push --yes -d prj;
+      $gp commit -a -m 'Release revision'
+      $release --tag --push --yes -d prj
 
-      $clone2;
+      $clone2
       $log2 >>:~%EOO%
         % \(HEAD -> master, tag: v0.1.0\+1, \.*\) Release revision%d
          (tag: v0.1.0) Release version 0.1.0
@@ -908,7 +907,7 @@ new += --vcs git,branch=master 2>-
 
     : amend
     :
-    {
+    {{
       test.arguments += --push --amend --no-edit --yes
 
       +$clone_repos
@@ -926,12 +925,12 @@ new += --vcs git,branch=master 2>-
       : no-squash
       :
       {
-        $clone_repos;
+        $clone_repos
 
-        $*;
+        $*
 
-        $clone2;
-        $log2 >>:~%EOO%;
+        $clone2
+        $log2 >>:~%EOO%
           % \(HEAD -> master, tag: v0.1.0\+1, \.*\) Release version 0.1.0\+1%d
            Fix repositories.manifest
            (tag: v0.1.0) Release version 0.1.0
@@ -956,12 +955,12 @@ new += --vcs git,branch=master 2>-
       : squash
       :
       {
-        $clone_repos;
+        $clone_repos
 
-        $* --squash 2;
+        $* --squash 2
 
-        $clone2;
-        $log2 >>:~%EOO%;
+        $clone2
+        $log2 >>:~%EOO%
           % \(HEAD -> master, tag: v0.1.0\+1, \.*\) Release version 0.1.0\+1%d
            (tag: v0.1.0) Release version 0.1.0
            Create
@@ -985,14 +984,14 @@ new += --vcs git,branch=master 2>-
       : no-changes-staged
       :
       {
-        $clone_repos;
+        $clone_repos
 
-        $gp commit -a -m 'Change manifest' --no-verify;
+        $gp commit -a -m 'Change manifest' --no-verify
 
-        $*;
+        $*
 
-        $clone2;
-        $log2 >>:~%EOO%;
+        $clone2
+        $log2 >>:~%EOO%
           % \(HEAD -> master, tag: v0.1.0\+1, \.*\) Release version 0.1.0\+1%d
            Fix buildfile
            Fix repositories.manifest
@@ -1017,68 +1016,68 @@ new += --vcs git,branch=master 2>-
           Create
           EOO
       }
-    }
-  }
+    }}
+  }}
 
   : open
   :
-  {
+  {{
     test.options   += -q
     test.arguments += --yes
 
     : unstaged
     :
     {
-      $clone_root_repos;
+      $clone_root_repos
 
-      $* --no-open;
+      $* --no-open
 
-      echo '' >+ prj/manifest;
+      echo '' >+ prj/manifest
 
-      $* --open 2>>EOE != 0;
+      $* --open 2>>EOE != 0
         error: project directory has unstaged changes
           info: run 'git status' for details
           info: use 'git add' to add the changes to this commit
           info: use 'git stash' to temporarily hide the changes
         EOE
 
-      $* --open --no-commit;
+      $* --open --no-commit
 
-      $gp commit -a -m 'Open dev cycle';
-      $gp push origin HEAD --tags;
+      $gp commit -a -m 'Open dev cycle'
+      $gp push origin HEAD --tags
 
-      $clone2;
+      $clone2
       $log2 >>:~%EOO%
         % \(HEAD -> master, \.*\) Open dev cycle%d
          (tag: v0.1.0) Release version 0.1.0
          Create
         EOO
     }
-  }
+  }}
 
   : no-commit
   :
   {
     test.arguments += --yes
 
-    $clone_root_repos;
+    $clone_root_repos
 
-    $* --no-commit;
+    $* --no-commit
 
-    $clone2;
-    $log2 >>:~%EOO%;
+    $clone2
+    $log2 >>:~%EOO%
       % \(HEAD -> master, .*\) Create%
       EOO
 
-    $gp commit -a -m 'Release version';
+    $gp commit -a -m 'Release version'
 
-    $* --tag;
-    $* --open --no-commit;
+    $* --tag
+    $* --open --no-commit
 
-    $gp commit -a -m 'Change version';
-    $gp push origin HEAD --tags;
+    $gp commit -a -m 'Change version'
+    $gp push origin HEAD --tags
 
-    $pull2;
+    $pull2
     $log2 >>:~%EOO%
       % \(HEAD -> master, .*\) Change version%
        (tag: v0.1.0) Release version
@@ -1091,27 +1090,27 @@ new += --vcs git,branch=master 2>-
   {
     test.arguments += --yes
 
-    $clone_root_repos;
+    $clone_root_repos
 
-    $* --push --no-progress 2>>~%EOE%;
+    $* --push --no-progress 2>>~%EOE%
       %\.+ Release version 0.1.0%d
        1 file changed, 1 insertion(+), 1 deletion(-)
       %\.+ Change version to 0.2.0-a.0.z%d
        1 file changed, 1 insertion(+), 1 deletion(-)
       EOE
 
-    $clone2;
+    $clone2
     $log2 >>:~%EOO%
       % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
        (tag: v0.1.0) Release version 0.1.0
        Create
       EOO
   }
-}
+}}
 
 : multi-pkg
 :
-{
+{{
   # Create the remote repository.
   #
   +mkdir --no-cleanup prj.git
@@ -1135,7 +1134,7 @@ new += --vcs git,branch=master 2>-
 
   : pkg-spec
   :
-  {
+  {{
     +$clone_repos
 
     test.arguments += --no-open --push --yes
@@ -1143,19 +1142,19 @@ new += --vcs git,branch=master 2>-
     : dir
     :
     {
-      $clone_repos;
+      $clone_repos
 
       # Release the single libprj package rather than the whole prj project.
       #
-      test.arguments = $regex.apply($test.arguments, '^(-d|prj)$', '');
+      test.arguments = $regex.apply($test.arguments, '^(-d|prj)$', '')
 
-      $* -d prj/libprj 2>>EOE;
+      $* -d prj/libprj 2>>EOE
         warning: following project packages not being released: prj
         EOE
 
-      $clone2;
+      $clone2
 
-      cat prj2/libprj/manifest >>~%EOO%;
+      cat prj2/libprj/manifest >>~%EOO%
         %.*
         name: libprj
         version: 0.1.0
@@ -1173,17 +1172,17 @@ new += --vcs git,branch=master 2>-
     : name
     :
     {
-      $clone_repos;
+      $clone_repos
 
       # Release the single libprj package rather than the whole prj project.
       #
-      $* libprj 2>>EOE;
+      $* libprj 2>>EOE
         warning: following project packages not being released: prj
         EOE
 
-      $clone2;
+      $clone2
 
-      cat prj2/libprj/manifest >>~%EOO%;
+      cat prj2/libprj/manifest >>~%EOO%
         %.*
         name: libprj
         version: 0.1.0
@@ -1201,18 +1200,18 @@ new += --vcs git,branch=master 2>-
     : no-pkg-prj-spec
     :
     {
-      $clone_repos;
+      $clone_repos
 
       # Release the whole project, but deduce the project directory from the
       # current working directory which is a package directory.
       #
-      test.arguments = $regex.apply($test.arguments, '^(-d|prj)$', '');
+      test.arguments = $regex.apply($test.arguments, '^(-d|prj)$', '')
 
-      env -c prj/libprj -- $*;
+      env -c prj/libprj -- $*
 
-      $clone2;
+      $clone2
 
-      cat prj2/libprj/manifest >>~%EOO%;
+      cat prj2/libprj/manifest >>~%EOO%
         %.*
         name: libprj
         version: 0.1.0
@@ -1226,23 +1225,23 @@ new += --vcs git,branch=master 2>-
         %.*
         EOO
     }
-  }
+  }}
 
   : patch
   :
   {
-    $clone_repos;
+    $clone_repos
 
-    $* --push --yes;
+    $* --push --yes
 
-    $clone2;
-    $log2 >>:~%EOO%;
+    $clone2
+    $log2 >>:~%EOO%
       % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
        (tag: v0.1.0) Release version 0.1.0
        Create
       EOO
 
-    cat prj2/prj/manifest >>~%EOO%;
+    cat prj2/prj/manifest >>~%EOO%
       %.*
       name: prj
       version: 0.2.0-a.0.z
@@ -1264,37 +1263,37 @@ new += --vcs git,branch=master 2>-
   {
     test.arguments += --push --yes
 
-    $clone_repos;
-    $* --no-open;
+    $clone_repos
+    $* --no-open
 
-    echo '' >+ prj/prj/manifest;
-    $gp add prj/manifest;
+    echo '' >+ prj/prj/manifest
+    $gp add prj/manifest
 
-    $release --revision --current-tag=update -q --yes --no-edit -d prj/prj 2>>~%EOE%;
+    $release --revision --current-tag=update -q --yes --no-edit -d prj/prj 2>>~%EOE%
       %.*
       warning: following project packages not being released: libprj
       %.*
       EOE
 
-    echo '' >+ prj/prj/manifest;
-    $gp add prj/manifest;
+    echo '' >+ prj/prj/manifest
+    $gp add prj/manifest
 
-    echo '' >+ prj/libprj/manifest;
-    $gp add libprj/manifest;
+    echo '' >+ prj/libprj/manifest
+    $gp add libprj/manifest
 
-    $* --revision --no-edit 2>>EOE != 0;
+    $* --revision --no-edit 2>>EOE != 0
       error: different current package versions
         info: package prj version 0.1.0+1
         info: package libprj version 0.1.0
       EOE
 
-    $* --revision --current-tag=update --no-edit 2>>~%EOE%;
+    $* --revision --current-tag=update --no-edit 2>>~%EOE%
       %Updated tag 'v0.1.0' \.+%d
       EOE
 
     # Note that the 0.1.0+1 release is not tagged as it wasn't pushed.
     #
-    $clone2;
+    $clone2
     $log2 >>:~%EOO%
       % \(HEAD -> master, tag: v0.1.0, \.*\) Release versions prj/0.1.0\+2, libprj/0.1.0\+1%d
        Release version 0.1.0+1
@@ -1305,16 +1304,16 @@ new += --vcs git,branch=master 2>-
 
   : prompt
   :
-  {
+  {{
     +$clone_repos
     sp = ' '
 
     : default
     :
     {
-      $clone_repos;
+      $clone_repos
 
-      $* <'y' 2>>:"EOE";
+      $* <'y' 2>>:"EOE"
         releasing:
           package: prj
           current: 0.1.0-a.0.z
@@ -1332,7 +1331,7 @@ new += --vcs git,branch=master 2>-
         continue? [y/n]$sp
         EOE
 
-      $clone2;
+      $clone2
       $log2 >>:~%EOO%
         % \(HEAD -> master, \.*\) Create%d
         EOO
@@ -1341,9 +1340,9 @@ new += --vcs git,branch=master 2>-
     : push
     :
     {
-      $clone_repos;
+      $clone_repos
 
-      $* --push  <'y' 2>>:"EOE";
+      $* --push  <'y' 2>>:"EOE"
         releasing:
           package: prj
           current: 0.1.0-a.0.z
@@ -1361,7 +1360,7 @@ new += --vcs git,branch=master 2>-
         continue? [y/n]$sp
         EOE
 
-      $clone2;
+      $clone2
       $log2 >>:~%EOO%
         % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
          (tag: v0.1.0) Release version 0.1.0
@@ -1374,9 +1373,9 @@ new += --vcs git,branch=master 2>-
     {
       test.arguments += --show-push
 
-      $clone_repos;
+      $clone_repos
 
-      $* <'y' 2>>:"EOE" >>~%EOO%;
+      $* <'y' 2>>:"EOE" >>~%EOO%
         releasing:
           package: prj
           current: 0.1.0-a.0.z
@@ -1396,53 +1395,53 @@ new += --vcs git,branch=master 2>-
         %git -C "?\.+prj"? push origin master refs/tags/v0.1.0%d
         EOO
 
-      $gp push origin master refs/tags/v0.1.0;
+      $gp push origin master refs/tags/v0.1.0
 
-      $clone2;
-      $log2 >>:~%EOO%;
+      $clone2
+      $log2 >>:~%EOO%
         % \(HEAD -> master, \.*\) Change version to 0.2.0-a.0.z%d
          (tag: v0.1.0) Release version 0.1.0
          Create
         EOO
 
-      $* --no-tag --no-open --yes >>~%EOO%;
+      $* --no-tag --no-open --yes >>~%EOO%
         %git -C "?.+prj"? push origin master%
         EOO
 
-      $gp push origin master;
+      $gp push origin master
 
-      $pull2 --tags --force; # Updates the existing local tag (see above).
-      $log2 >>:~%EOO%;
+      $pull2 --tags --force # Updates the existing local tag (see above).
+      $log2 >>:~%EOO%
         % \(HEAD -> master, \.*\) Release version 0.2.0%d
          Change version to 0.2.0-a.0.z
          (tag: v0.1.0) Release version 0.1.0
          Create
         EOO
 
-      $* --tag --yes >>~%EOO%;
+      $* --tag --yes >>~%EOO%
         %git -C "?\.+prj"? push origin refs/tags/v0.2.0%d
         EOO
 
-      $gp push origin refs/tags/v0.2.0;
+      $gp push origin refs/tags/v0.2.0
 
-      $pull2 --tags --force; # Updates the existing local tag (see above).
-      $log2 >>:~%EOO%;
+      $pull2 --tags --force # Updates the existing local tag (see above).
+      $log2 >>:~%EOO%
         % \(HEAD -> master, tag: v0.2.0, \.*\) Release version 0.2.0%d
          Change version to 0.2.0-a.0.z
          (tag: v0.1.0) Release version 0.1.0
          Create
         EOO
 
-      $* --revision --current-tag=remove --force=unchanged --yes >>~%EOO% 2>>~%EOE%;
+      $* --revision --current-tag=remove --force=unchanged --yes >>~%EOO% 2>>~%EOE%
         %git -C "?\.+prj"? push origin master refs/tags/v0.2.0\+1 :refs/tags/v0.2.0%d
         EOO
         %Deleted tag 'v0.2.0' \.+%d
         EOE
 
-      $gp push origin master refs/tags/v0.2.0+1 ':refs/tags/v0.2.0';
+      $gp push origin master refs/tags/v0.2.0+1 ':refs/tags/v0.2.0'
 
-      $fetch2 --prune origin '+refs/tags/*:refs/tags/*';
-      $pull2 --tags;
+      $fetch2 --prune origin '+refs/tags/*:refs/tags/*'
+      $pull2 --tags
       $log2 >>:~%EOO%
         % \(HEAD -> master, tag: v0.2.0\+1, \.*\) Release version 0.2.0\+1%d
          Release version 0.2.0
@@ -1455,7 +1454,7 @@ new += --vcs git,branch=master 2>-
     : no-tag
     :
     {
-      $clone_repos;
+      $clone_repos
 
       $* <'y' --no-tag 2>>:"EOE"
         releasing:
@@ -1479,7 +1478,7 @@ new += --vcs git,branch=master 2>-
     : no-open
     :
     {
-      $clone_repos;
+      $clone_repos
 
       $* <'y' --no-open 2>>:"EOE"
         releasing:
@@ -1497,28 +1496,28 @@ new += --vcs git,branch=master 2>-
         continue? [y/n]$sp
         EOE
     }
-  }
-}
+  }}
+}}
 
 : options-incompatibility
 :
 {
-  $clone_prj;
+  $clone_prj
 
-  $* --revision --open                      2>'error: both --revision and --open specified'       != 0;
-  $* --revision --alpha                     2>'error: both --revision and --alpha specified'      != 0;
-  $* --revision --no-open                   2>'error: both --revision and --no-open specified'    != 0;
-  $* --revision --open-beta                 2>'error: both --revision and --open-beta specified'  != 0;
-  $* --open     --no-tag                    2>'error: both --open and --no-tag specified'         != 0;
-  $* --tag      --no-commit                 2>'error: both --tag and --no-commit specified'       != 0;
-  $* --push     --no-commit                 2>'error: both --push and --no-commit specified'      != 0;
-  $* --push     --show-push                 2>'error: both --push and --show-push specified'      != 0;
-  $* --edit     --no-commit                 2>'error: both --no-commit and --edit specified'      != 0;
-  $* --current-tag=keep                     2>'error: --current-tag requires --revision or --tag' != 0;
-  $* --revision --current-tag keep --no-tag 2>'error: both --current-tag and --no-tag specified'  != 0;
-  $* --open-base 1.2.3 --open-beta          2>'error: both --open-beta and --open-base specified' != 0;
-  $* --amend                                2>'error: --amend requires --revision'                != 0;
-  $* --squash 1                             2>'error: --squash requires --amend'                  != 0;
-  $* --revision --amend --squash 0          2>'error: invalid --squash value: 0'                  != 0;
+  $* --revision --open                      2>'error: both --revision and --open specified'       != 0
+  $* --revision --alpha                     2>'error: both --revision and --alpha specified'      != 0
+  $* --revision --no-open                   2>'error: both --revision and --no-open specified'    != 0
+  $* --revision --open-beta                 2>'error: both --revision and --open-beta specified'  != 0
+  $* --open     --no-tag                    2>'error: both --open and --no-tag specified'         != 0
+  $* --tag      --no-commit                 2>'error: both --tag and --no-commit specified'       != 0
+  $* --push     --no-commit                 2>'error: both --push and --no-commit specified'      != 0
+  $* --push     --show-push                 2>'error: both --push and --show-push specified'      != 0
+  $* --edit     --no-commit                 2>'error: both --no-commit and --edit specified'      != 0
+  $* --current-tag=keep                     2>'error: --current-tag requires --revision or --tag' != 0
+  $* --revision --current-tag keep --no-tag 2>'error: both --current-tag and --no-tag specified'  != 0
+  $* --open-base 1.2.3 --open-beta          2>'error: both --open-beta and --open-base specified' != 0
+  $* --amend                                2>'error: --amend requires --revision'                != 0
+  $* --squash 1                             2>'error: --squash requires --amend'                  != 0
+  $* --revision --amend --squash 0          2>'error: invalid --squash value: 0'                  != 0
   $* --revision --amend --no-commit         2>'error: both --amend and --no-commit specified'     != 0
 }

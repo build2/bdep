@@ -20,7 +20,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
 
 : no-cfg
 :
-{
+{{
   # Disable amalgamation support in the created projects.
   #
   test.arguments += --no-amalgamation
@@ -28,18 +28,18 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : exe
   :
   {
-    $* -t exe -l c++ prj-foo 2>>/"EOE" &prj-foo/***;
+    $* -t exe -l c++ prj-foo 2>>/"EOE" &prj-foo/***
       created new executable project prj-foo in $~/prj-foo/
       EOE
 
-    sed -n -e 's/^(type: .+)$/\1/p'     prj-foo/manifest >:'';
-    sed -n -e 's/^language: (.+)$/\1/p' prj-foo/manifest >'c++';
+    sed -n -e 's/^(type: .+)$/\1/p'     prj-foo/manifest >:''
+    sed -n -e 's/^language: (.+)$/\1/p' prj-foo/manifest >'c++'
 
-    $b prj-foo/ $config_cxx 2>>~%EOE%;
+    $b prj-foo/ $config_cxx 2>>~%EOE%
       %(c\+\+|ld) .+%{2}
       EOE
 
-    $t prj-foo/ $config_cxx 2>>~%EOE%;
+    $t prj-foo/ $config_cxx 2>>~%EOE%
       %test .+%
       EOE
 
@@ -53,12 +53,12 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : exe-lib-prefix
   :
   {
-    $* -t exe -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***;
+    $* -t exe -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***
       warning: executable name starts with 'lib'
       created new executable project libprj-foo in $~/libprj-foo/
       EOE
 
-    sed -n -e 's/^type: (.+)$/\1/p' libprj-foo/manifest >'exe';
+    sed -n -e 's/^type: (.+)$/\1/p' libprj-foo/manifest >'exe'
 
     $b libprj-foo/ $config_cxx 2>>~%EOE%
       %(c\+\+|ld) .+%{2}
@@ -76,11 +76,11 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : exe-c++-suffix
   :
   {
-    $* -t exe -l c++ foo.c++ 2>>/"EOE" &foo.c++/***;
+    $* -t exe -l c++ foo.c++ 2>>/"EOE" &foo.c++/***
       created new executable project foo.c++ in $~/foo.c++/
       EOE
 
-    sed -n -e 's/^(language: .+)$/\1/p' foo.c++/manifest >:'';
+    sed -n -e 's/^(language: .+)$/\1/p' foo.c++/manifest >:''
 
     $b foo.c++/ $config_cxx 2>>~%EOE%
       %(c\+\+|ld) .+%{2}
@@ -90,18 +90,18 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : exe-c++-c
   :
   {
-    $* -t exe -l c++,c foo 2>>/"EOE" &foo/***;
+    $* -t exe -l c++,c foo 2>>/"EOE" &foo/***
       created new executable project foo in $~/foo/
       EOE
 
-    sed -n -e 's/^language: (.+)$/\1/p' foo/manifest >>EOO;
+    sed -n -e 's/^language: (.+)$/\1/p' foo/manifest >>EOO
       c++
       c
       EOO
 
-    touch foo/foo/bar.h;
+    touch foo/foo/bar.h
 
-    cat <<EOI >=foo/foo/bar.c;
+    cat <<EOI >=foo/foo/bar.c
       #include <foo/bar.h>
       int bar;
       EOI
@@ -114,17 +114,17 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib
   :
   {
-    $* -t lib -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***;
+    $* -t lib -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***
       created new library project libprj-foo in $~/libprj-foo/
       EOE
 
-    sed -n -e 's/^(type: .+)$/\1/p' libprj-foo/manifest >:'';
+    sed -n -e 's/^(type: .+)$/\1/p' libprj-foo/manifest >:''
 
-    $b libprj-foo/ $config_cxx 2>>~%EOE%;
+    $b libprj-foo/ $config_cxx 2>>~%EOE%
       %(version|c\+\+|ar|ld) .+%{7}
       EOE
 
-    $t libprj-foo/ $config_cxx 2>>~%EOE%;
+    $t libprj-foo/ $config_cxx 2>>~%EOE%
       %test .+%
       EOE
 
@@ -138,12 +138,12 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-no-lib-prefix
   :
   {
-    $* -t lib -l c++ prj-foo 2>>/"EOE" &prj-foo/***;
+    $* -t lib -l c++ prj-foo 2>>/"EOE" &prj-foo/***
       warning: library name does not start with 'lib'
       created new library project prj-foo in $~/prj-foo/
       EOE
 
-    sed -n -e 's/^type: (.+)$/\1/p' prj-foo/manifest >'lib';
+    sed -n -e 's/^type: (.+)$/\1/p' prj-foo/manifest >'lib'
 
     $b prj-foo/ $config_cxx 2>>~%EOE%
       %(version|c\+\+|ar|ld) .+%{7}
@@ -161,20 +161,20 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-c++-c
   :
   {
-    $* -t lib -l c++,c libfoo 2>>/"EOE" &libfoo/***;
+    $* -t lib -l c++,c libfoo 2>>/"EOE" &libfoo/***
       created new library project libfoo in $~/libfoo/
       EOE
 
-    touch libfoo/libfoo/bar.h;
+    touch libfoo/libfoo/bar.h
 
-    cat <<EOI >=libfoo/libfoo/bar.c;
+    cat <<EOI >=libfoo/libfoo/bar.c
       #include <libfoo/bar.h>
       int bar;
       EOI
 
-    touch libfoo/tests/basics/fox.h;
+    touch libfoo/tests/basics/fox.h
 
-    cat <<EOI >=libfoo/tests/basics/fox.c;
+    cat <<EOI >=libfoo/tests/basics/fox.c
       #include <libfoo/bar.h>
       #include "fox.h"
       EOI
@@ -187,7 +187,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : bare
   :
   {
-    $* -t bare prj 2>>/"EOE" &prj/***;
+    $* -t bare prj 2>>/"EOE" &prj/***
       created new bare project prj in $~/prj/
       EOE
 
@@ -197,7 +197,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : exe-prefix
   :
   {
-    $* -t exe,prefix=src -l c++ prj-foo 2>>/"EOE" &prj-foo/***;
+    $* -t exe,prefix=src -l c++ prj-foo 2>>/"EOE" &prj-foo/***
       created new executable project prj-foo in $~/prj-foo/
       EOE
 
@@ -209,16 +209,16 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : exe-prefix-buildfile-in-prefix
   :
   {
-    $* -t exe,prefix=src,subdir=prj/foo,buildfile-in-prefix -l c++ prj-foo 2>>/"EOE" &prj-foo/***;
+    $* -t exe,prefix=src,subdir=prj/foo,buildfile-in-prefix -l c++ prj-foo 2>>/"EOE" &prj-foo/***
       created new executable project prj-foo in $~/prj-foo/
       EOE
 
-    $b prj-foo/ $config_cxx 2>>/~%EOE%;
+    $b prj-foo/ $config_cxx 2>>/~%EOE%
       c++ prj-foo/src/prj/foo/cxx{prj-foo} -> prj-foo/src/prj/foo/obje{prj-foo}
       ld prj-foo/src/exe{prj-foo}
       EOE
 
-    $t prj-foo/ $config_cxx 2>>~%EOE%;
+    $t prj-foo/ $config_cxx 2>>~%EOE%
       %test .+%
       EOE
 
@@ -240,7 +240,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-prefix
   :
   {
-    $* -t lib,prefix=src -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***;
+    $* -t lib,prefix=src -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***
       created new library project libprj-foo in $~/libprj-foo/
       EOE
 
@@ -252,11 +252,11 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-prefix-buildfile-in-prefix
   :
   {
-    $* -t lib,prefix=src,buildfile-in-prefix -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***;
+    $* -t lib,prefix=src,buildfile-in-prefix -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***
       created new library project libprj-foo in $~/libprj-foo/
       EOE
 
-    $b libprj-foo/ $config_cxx 2>>/~%EOE%;
+    $b libprj-foo/ $config_cxx 2>>/~%EOE%
       %.*
       version libprj-foo/src/libprj-foo/in{version} -> libprj-foo/src/libprj-foo/hxx{version}
       %.*
@@ -266,7 +266,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
       %.*
       EOE
 
-    $t libprj-foo/ $config_cxx 2>>~%EOE%;
+    $t libprj-foo/ $config_cxx 2>>~%EOE%
       %test .+%
       EOE
 
@@ -296,11 +296,11 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-split
   :
   {
-    $* -t lib,split -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***;
+    $* -t lib,split -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***
       created new library project libprj-foo in $~/libprj-foo/
       EOE
 
-    $b libprj-foo/ $config_cxx 2>>/~%EOE%;
+    $b libprj-foo/ $config_cxx 2>>/~%EOE%
       %.*
       version libprj-foo/include/libprj-foo/in{version} -> libprj-foo/include/libprj-foo/hxx{version}
       %.*
@@ -310,7 +310,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
       %.*
       EOE
 
-    $t libprj-foo/ $config_cxx 2>>~%EOE%;
+    $t libprj-foo/ $config_cxx 2>>~%EOE%
       %test .+%
       EOE
 
@@ -332,11 +332,11 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-split-buildfile-in-prefix
   :
   {
-    $* -t lib,split,buildfile-in-prefix -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***;
+    $* -t lib,split,buildfile-in-prefix -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***
       created new library project libprj-foo in $~/libprj-foo/
       EOE
 
-    $b libprj-foo/ $config_cxx 2>>/~%EOE%;
+    $b libprj-foo/ $config_cxx 2>>/~%EOE%
       %.*
       version libprj-foo/include/libprj-foo/in{version} -> libprj-foo/include/libprj-foo/hxx{version}
       %.*
@@ -346,7 +346,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
       %.*
       EOE
 
-    $t libprj-foo/ $config_cxx 2>>~%EOE%;
+    $t libprj-foo/ $config_cxx 2>>~%EOE%
       %test .+%
       EOE
 
@@ -368,22 +368,22 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-split-c
   :
   {
-    $* -t lib,split -l c++,c libfoo 2>>/"EOE" &libfoo/***;
+    $* -t lib,split -l c++,c libfoo 2>>/"EOE" &libfoo/***
       created new library project libfoo in $~/libfoo/
       EOE
 
-    touch libfoo/include/libfoo/bar.h;
-    touch libfoo/src/libfoo/baz.h;
+    touch libfoo/include/libfoo/bar.h
+    touch libfoo/src/libfoo/baz.h
 
-    cat <<EOI >=libfoo/src/libfoo/bar.c;
+    cat <<EOI >=libfoo/src/libfoo/bar.c
       #include <libfoo/bar.h>
       #include "baz.h"
       int bar;
       EOI
 
-    touch libfoo/tests/basics/fox.h;
+    touch libfoo/tests/basics/fox.h
 
-    cat <<EOI >=libfoo/tests/basics/fox.c;
+    cat <<EOI >=libfoo/tests/basics/fox.c
       #include <libfoo/bar.h>
       #include "fox.h"
       EOI
@@ -396,17 +396,17 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-split-binless
   :
   {
-    $* -t lib,split,binless -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***;
+    $* -t lib,split,binless -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***
       created new library project libprj-foo in $~/libprj-foo/
       EOE
 
-    $b libprj-foo/ $config_cxx 2>>/~%EOE%;
+    $b libprj-foo/ $config_cxx 2>>/~%EOE%
       version libprj-foo/include/libprj-foo/in{version} -> libprj-foo/include/libprj-foo/hxx{version}
       c++ libprj-foo/tests/basics/cxx{driver} -> libprj-foo/tests/basics/obje{driver}
       ld libprj-foo/tests/basics/exe{driver}
       EOE
 
-    $t libprj-foo/ $config_cxx 2>>~%EOE%;
+    $t libprj-foo/ $config_cxx 2>>~%EOE%
       %test .+%
       EOE
 
@@ -428,17 +428,17 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-split-binless-buildfile-in-prefix
   :
   {
-    $* -t lib,split,binless,buildfile-in-prefix -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***;
+    $* -t lib,split,binless,buildfile-in-prefix -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***
       created new library project libprj-foo in $~/libprj-foo/
       EOE
 
-    $b libprj-foo/ $config_cxx 2>>/~%EOE%;
+    $b libprj-foo/ $config_cxx 2>>/~%EOE%
       version libprj-foo/include/libprj-foo/in{version} -> libprj-foo/include/libprj-foo/hxx{version}
       c++ libprj-foo/tests/basics/cxx{driver} -> libprj-foo/tests/basics/obje{driver}
       ld libprj-foo/tests/basics/exe{driver}
       EOE
 
-    $t libprj-foo/ $config_cxx 2>>~%EOE%;
+    $t libprj-foo/ $config_cxx 2>>~%EOE%
       %test .+%
       EOE
 
@@ -460,14 +460,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-split-binless-c
   :
   {
-    $* -t lib,split,binless -l c++,c libfoo 2>>/"EOE" &libfoo/***;
+    $* -t lib,split,binless -l c++,c libfoo 2>>/"EOE" &libfoo/***
       created new library project libfoo in $~/libfoo/
       EOE
 
-    touch libfoo/include/libfoo/bar.h;
-    touch libfoo/tests/basics/fox.h;
+    touch libfoo/include/libfoo/bar.h
+    touch libfoo/tests/basics/fox.h
 
-    cat <<EOI >=libfoo/tests/basics/fox.c;
+    cat <<EOI >=libfoo/tests/basics/fox.c
       #include <libfoo/bar.h>
       #include "fox.h"
       EOI
@@ -480,11 +480,11 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-split-binless-unit-tests
   :
   {
-    $* -t lib,split,binless,unit-tests -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***;
+    $* -t lib,split,binless,unit-tests -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***
       created new library project libprj-foo in $~/libprj-foo/
       EOE
 
-    $b libprj-foo/ $config_cxx 2>>/~%EOE%;
+    $b libprj-foo/ $config_cxx 2>>/~%EOE%
       %.*
       version libprj-foo/include/libprj-foo/in{version} -> libprj-foo/include/libprj-foo/hxx{version}
       %.*
@@ -494,7 +494,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
       %.*
       EOE
 
-    $t libprj-foo/ $config_cxx 2>>~%EOE%;
+    $t libprj-foo/ $config_cxx 2>>~%EOE%
       %test .+%{2}
       EOE
 
@@ -516,11 +516,11 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-split-binless-unit-tests-buildfile-in-prefix
   :
   {
-    $* -t lib,split,binless,unit-tests,buildfile-in-prefix -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***;
+    $* -t lib,split,binless,unit-tests,buildfile-in-prefix -l c++ libprj-foo 2>>/"EOE" &libprj-foo/***
       created new library project libprj-foo in $~/libprj-foo/
       EOE
 
-    $b libprj-foo/ $config_cxx 2>>/~%EOE%;
+    $b libprj-foo/ $config_cxx 2>>/~%EOE%
       %.*
       version libprj-foo/include/libprj-foo/in{version} -> libprj-foo/include/libprj-foo/hxx{version}
       %.*
@@ -530,7 +530,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
       %.*
       EOE
 
-    $t libprj-foo/ $config_cxx 2>>~%EOE%;
+    $t libprj-foo/ $config_cxx 2>>~%EOE%
       %test .+%{2}
       EOE
 
@@ -552,7 +552,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : exe-unit-tests
   :
   {
-    $* -t exe,unit-tests -l c++ foo 2>>/"EOE" &foo/***;
+    $* -t exe,unit-tests -l c++ foo 2>>/"EOE" &foo/***
       created new executable project foo in $~/foo/
       EOE
 
@@ -564,7 +564,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : exe-unit-tests-buildfile-in-prefix
   :
   {
-    $* -t exe,prefix=src/bar,subdir=prj,unit-tests,buildfile-in-prefix -l c++ foo 2>>/"EOE" &foo/***;
+    $* -t exe,prefix=src/bar,subdir=prj,unit-tests,buildfile-in-prefix -l c++ foo 2>>/"EOE" &foo/***
       created new executable project foo in $~/foo/
       EOE
 
@@ -576,18 +576,18 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : exe-unit-tests-c
   :
   {
-    $* -t exe,unit-tests -l c++,c foo 2>>/"EOE" &foo/***;
+    $* -t exe,unit-tests -l c++,c foo 2>>/"EOE" &foo/***
       created new executable project foo in $~/foo/
       EOE
 
-    touch foo/foo/bar.h;
+    touch foo/foo/bar.h
 
-    cat <<EOI >=foo/foo/bar.c;
+    cat <<EOI >=foo/foo/bar.c
       #include <foo/bar.h>
       int bar;
       EOI
 
-    cat <<EOI >=foo/foo/bar.test.c;
+    cat <<EOI >=foo/foo/bar.test.c
       #include <foo/bar.h>
 
       int main ()
@@ -604,7 +604,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-unit-tests
   :
   {
-    $* -t lib,unit-tests -l c++ libfoo 2>>/"EOE" &libfoo/***;
+    $* -t lib,unit-tests -l c++ libfoo 2>>/"EOE" &libfoo/***
       created new library project libfoo in $~/libfoo/
       EOE
 
@@ -616,7 +616,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-unit-tests-buildfile-in-prefix
   :
   {
-    $* -t lib,prefix=src,unit-tests,buildfile-in-prefix -l c++ libfoo 2>>/"EOE" &libfoo/***;
+    $* -t lib,prefix=src,unit-tests,buildfile-in-prefix -l c++ libfoo 2>>/"EOE" &libfoo/***
       created new library project libfoo in $~/libfoo/
       EOE
 
@@ -628,18 +628,18 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-unit-tests-c
   :
   {
-    $* -t lib,unit-tests -l c++,c libfoo 2>>/"EOE" &libfoo/***;
+    $* -t lib,unit-tests -l c++,c libfoo 2>>/"EOE" &libfoo/***
       created new library project libfoo in $~/libfoo/
       EOE
 
-    touch libfoo/libfoo/bar.h;
+    touch libfoo/libfoo/bar.h
 
-    cat <<EOI >=libfoo/libfoo/bar.c;
+    cat <<EOI >=libfoo/libfoo/bar.c
       #include <libfoo/bar.h>
       int bar;
       EOI
 
-    cat <<EOI >=libfoo/libfoo/bar.test.c;
+    cat <<EOI >=libfoo/libfoo/bar.test.c
       #include <libfoo/bar.h>
 
       int main ()
@@ -656,7 +656,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : exe-alt-naming
   :
   {
-    $* -t exe,alt-naming,unit-tests -l c++ foo 2>>/"EOE" &foo/***;
+    $* -t exe,alt-naming,unit-tests -l c++ foo 2>>/"EOE" &foo/***
       created new executable project foo in $~/foo/
       EOE
 
@@ -668,7 +668,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-alt-naming
   :
   {
-    $* -t lib,alt-naming,unit-tests -l c++ libfoo 2>>/"EOE" &libfoo/***;
+    $* -t lib,alt-naming,unit-tests -l c++ libfoo 2>>/"EOE" &libfoo/***
       created new library project libfoo in $~/libfoo/
       EOE
 
@@ -679,23 +679,23 @@ i = [cmdline] $build install: config.install.root=./install &install/***
 
   : exe-readme
   :
-  {
+  {{
     : add
     :
     {
-      $* foo 2>>/"EOE" &foo/***;
+      $* foo 2>>/"EOE" &foo/***
         created new executable project foo in $~/foo/
         EOE
 
-      test -f foo/README.md;
+      test -f foo/README.md
 
-      cat foo/manifest >>~%EOE%;
+      cat foo/manifest >>~%EOE%
         %.+
         description-file: README.md
         %.+
         EOE
 
-      cat foo/buildfile >>~%EOE%;
+      cat foo/buildfile >>~%EOE%
         %.*
         %.+ doc\{README.md\}.*%
         %.*
@@ -709,22 +709,22 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : omit
     :
     {
-      $* -t exe,no-readme foo 2>>/"EOE" &foo/***;
+      $* -t exe,no-readme foo 2>>/"EOE" &foo/***
         created new executable project foo in $~/foo/
         EOE
 
-      test -f foo/README.md == 1;
+      test -f foo/README.md == 1
 
       $b foo/ $config_cxx 2>>~%EOE%
         %(c\+\+|ld) .+%{2}
         EOE
     }
-  }
+  }}
 
   : lib-no-version
   :
   {
-    $* -t lib,unit-tests,no-version -l c++ libfoo 2>>/"EOE" &libfoo/***;
+    $* -t lib,unit-tests,no-version -l c++ libfoo 2>>/"EOE" &libfoo/***
       created new library project libfoo in $~/libfoo/
       EOE
 
@@ -736,7 +736,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-no-version-buildfile-in-prefix
   :
   {
-    $* -t lib,prefix=src,unit-tests,no-version,buildfile-in-prefix -l c++ libfoo 2>>/"EOE" &libfoo/***;
+    $* -t lib,prefix=src,unit-tests,no-version,buildfile-in-prefix -l c++ libfoo 2>>/"EOE" &libfoo/***
       created new library project libfoo in $~/libfoo/
       EOE
 
@@ -748,17 +748,17 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-binless
   :
   {
-    $* -t lib,binless -l c++ libfoo 2>>/"EOE" &libfoo/***;
+    $* -t lib,binless -l c++ libfoo 2>>/"EOE" &libfoo/***
       created new library project libfoo in $~/libfoo/
       EOE
 
-    $b libfoo/ $config_cxx 2>>/~%EOE%;
+    $b libfoo/ $config_cxx 2>>/~%EOE%
       version libfoo/libfoo/in{version} -> libfoo/libfoo/hxx{version}
       c++ libfoo/tests/basics/cxx{driver} -> libfoo/tests/basics/obje{driver}
       ld libfoo/tests/basics/exe{driver}
       EOE
 
-    $t libfoo/ $config_cxx 2>>~%EOE%;
+    $t libfoo/ $config_cxx 2>>~%EOE%
       %test .+%
       EOE
 
@@ -780,17 +780,17 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-binless-buildfile-in-prefix
   :
   {
-    $* -t lib,prefix=src,binless,buildfile-in-prefix -l c++ libfoo 2>>/"EOE" &libfoo/***;
+    $* -t lib,prefix=src,binless,buildfile-in-prefix -l c++ libfoo 2>>/"EOE" &libfoo/***
       created new library project libfoo in $~/libfoo/
       EOE
 
-    $b libfoo/ $config_cxx 2>>/~%EOE%;
+    $b libfoo/ $config_cxx 2>>/~%EOE%
       version libfoo/src/libfoo/in{version} -> libfoo/src/libfoo/hxx{version}
       c++ libfoo/tests/basics/cxx{driver} -> libfoo/tests/basics/obje{driver}
       ld libfoo/tests/basics/exe{driver}
       EOE
 
-    $t libfoo/ $config_cxx 2>>~%EOE%;
+    $t libfoo/ $config_cxx 2>>~%EOE%
       %test .+%
       EOE
 
@@ -812,11 +812,11 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-binless-unit-tests
   :
   {
-    $* -t lib,unit-tests,binless -l c++ libfoo 2>>/"EOE" &libfoo/***;
+    $* -t lib,unit-tests,binless -l c++ libfoo 2>>/"EOE" &libfoo/***
       created new library project libfoo in $~/libfoo/
       EOE
 
-    $b libfoo/ $config_cxx 2>>/~%EOE%;
+    $b libfoo/ $config_cxx 2>>/~%EOE%
       %.*
       version libfoo/libfoo/in{version} -> libfoo/libfoo/hxx{version}
       %.*
@@ -826,7 +826,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
       %.*
       EOE
 
-    $t libfoo/ $config_cxx 2>>~%EOE%;
+    $t libfoo/ $config_cxx 2>>~%EOE%
       %test .+%{2}
       EOE
 
@@ -848,11 +848,11 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-binless-unit-tests-buildfile-in-prefix
   :
   {
-    $* -t lib,prefix=src,unit-tests,binless -l c++ libfoo 2>>/"EOE" &libfoo/***;
+    $* -t lib,prefix=src,unit-tests,binless -l c++ libfoo 2>>/"EOE" &libfoo/***
       created new library project libfoo in $~/libfoo/
       EOE
 
-    $b libfoo/ $config_cxx 2>>/~%EOE%;
+    $b libfoo/ $config_cxx 2>>/~%EOE%
       %.*
       version libfoo/src/libfoo/in{version} -> libfoo/src/libfoo/hxx{version}
       %.*
@@ -862,7 +862,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
       %.*
       EOE
 
-    $t libfoo/ $config_cxx 2>>~%EOE%;
+    $t libfoo/ $config_cxx 2>>~%EOE%
       %test .+%{2}
       EOE
 
@@ -884,7 +884,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-alt-subdir
   :
   {
-    $* -l c++ -t lib,subdir=libprj/foo libprj-foo 2>>/"EOE" &libprj-foo/***;
+    $* -l c++ -t lib,subdir=libprj/foo libprj-foo 2>>/"EOE" &libprj-foo/***
       created new library project libprj-foo in $~/libprj-foo/
       EOE
 
@@ -896,7 +896,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-alt-subdir-buildfile-in-prefix
   :
   {
-    $* -l c++ -t lib,prefix-include=include,prefix-source=src/foo/bar,subdir=libprj/foo libprj-foo 2>>/"EOE" &libprj-foo/***;
+    $* -l c++ -t lib,prefix-include=include,prefix-source=src/foo/bar,subdir=libprj/foo libprj-foo 2>>/"EOE" &libprj-foo/***
       created new library project libprj-foo in $~/libprj-foo/
       EOE
 
@@ -908,7 +908,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-no-symexport
   :
   {
-    $* -t lib,no-symexport -l c++ libfoo 2>>/"EOE" &libfoo/***;
+    $* -t lib,no-symexport -l c++ libfoo 2>>/"EOE" &libfoo/***
       created new library project libfoo in $~/libfoo/
       EOE
 
@@ -920,158 +920,149 @@ i = [cmdline] $build install: config.install.root=./install &install/***
       $b 'clean:' libfoo/ 2>>~%EOE%
         %info: .+ is clean%
         EOE
-    end
   }
 
   : lib-auto-symexport
   :
-  {
+  {{
     : basics
     :
     {
-      $* -t lib,auto-symexport -l c++ libfoo 2>>/"EOE" &libfoo/***;
+      $* -t lib,auto-symexport -l c++ libfoo 2>>/"EOE" &libfoo/***
         created new library project libfoo in $~/libfoo/
         EOE
 
-      $b libfoo/ $config_cxx 2>>~%EOE%;
+      $b libfoo/ $config_cxx 2>>~%EOE%
         %(version|c\+\+|ar|ld|def) .+%{9,10}
         EOE
 
       if ($cxx.target.system == 'win32-msvc')
         test -f libfoo/libfoo/foo.def
-      end
     }
 
     : basics-buildfile-in-prefix
     :
     {
-      $* -t lib,prefix=src,auto-symexport,buildfile-in-prefix -l c++ libfoo 2>>/"EOE" &libfoo/***;
+      $* -t lib,prefix=src,auto-symexport,buildfile-in-prefix -l c++ libfoo 2>>/"EOE" &libfoo/***
         created new library project libfoo in $~/libfoo/
         EOE
 
-      $b libfoo/ $config_cxx 2>>~%EOE%;
+      $b libfoo/ $config_cxx 2>>~%EOE%
         %(version|c\+\+|ar|ld|def) .+%{9,10}
         EOE
 
       if ($cxx.target.system == 'win32-msvc')
         test -f libfoo/src/foo.def
-      end
     }
 
     : unit-tests
     :
     {
-      $* -t lib,auto-symexport,unit-tests -l c++ libfoo 2>>/"EOE" &libfoo/***;
+      $* -t lib,auto-symexport,unit-tests -l c++ libfoo 2>>/"EOE" &libfoo/***
         created new library project libfoo in $~/libfoo/
         EOE
 
-      $b libfoo/ $config_cxx 2>>~%EOE%;
+      $b libfoo/ $config_cxx 2>>~%EOE%
         %(version|c\+\+|ar|ld|def) .+%{11,12}
         EOE
 
       if ($cxx.target.system == 'win32-msvc')
         test -f libfoo/libfoo/foo.def
-      end
     }
 
     : unit-tests-buildfile-in-prefix
     :
     {
-      $* -t lib,prefix=src,auto-symexport,unit-tests,buildfile-in-prefix -l c++ libfoo 2>>/"EOE" &libfoo/***;
+      $* -t lib,prefix=src,auto-symexport,unit-tests,buildfile-in-prefix -l c++ libfoo 2>>/"EOE" &libfoo/***
         created new library project libfoo in $~/libfoo/
         EOE
 
-      $b libfoo/ $config_cxx 2>>~%EOE%;
+      $b libfoo/ $config_cxx 2>>~%EOE%
         %(version|c\+\+|ar|ld|def) .+%{11,12}
         EOE
 
       if ($cxx.target.system == 'win32-msvc')
         test -f libfoo/src/foo.def
-      end
     }
 
     : split
     :
     {
-      $* -t lib,auto-symexport,split -l c++ libfoo 2>>/"EOE" &libfoo/***;
+      $* -t lib,auto-symexport,split -l c++ libfoo 2>>/"EOE" &libfoo/***
         created new library project libfoo in $~/libfoo/
         EOE
 
-      $b libfoo/ $config_cxx 2>>~%EOE%;
+      $b libfoo/ $config_cxx 2>>~%EOE%
         %(version|c\+\+|ar|ld|def) .+%{9,10}
         EOE
 
       if ($cxx.target.system == 'win32-msvc')
         test -f libfoo/src/libfoo/foo.def
-      end
     }
 
     : split-buildfile-in-prefix
     :
     {
-      $* -t lib,auto-symexport,split,buildfile-in-prefix -l c++ libfoo 2>>/"EOE" &libfoo/***;
+      $* -t lib,auto-symexport,split,buildfile-in-prefix -l c++ libfoo 2>>/"EOE" &libfoo/***
         created new library project libfoo in $~/libfoo/
         EOE
 
-      $b libfoo/ $config_cxx 2>>~%EOE%;
+      $b libfoo/ $config_cxx 2>>~%EOE%
         %(version|c\+\+|ar|ld|def) .+%{9,10}
         EOE
 
       if ($cxx.target.system == 'win32-msvc')
         test -f libfoo/src/foo.def
-      end
     }
 
     : unit-tests-split
     :
     {
-      $* -t lib,auto-symexport,unit-tests,split -l c++ libfoo 2>>/"EOE" &libfoo/***;
+      $* -t lib,auto-symexport,unit-tests,split -l c++ libfoo 2>>/"EOE" &libfoo/***
         created new library project libfoo in $~/libfoo/
         EOE
 
-      $b libfoo/ $config_cxx 2>>~%EOE%;
+      $b libfoo/ $config_cxx 2>>~%EOE%
         %(version|c\+\+|ar|ld|def) .+%{11,12}
         EOE
 
       if ($cxx.target.system == 'win32-msvc')
         test -f libfoo/src/libfoo/foo.def
-      end
     }
 
     : unit-tests-split-buildfile-in-prefix
     :
     {
-      $* -t lib,auto-symexport,unit-tests,split,buildfile-in-prefix -l c++ libfoo 2>>/"EOE" &libfoo/***;
+      $* -t lib,auto-symexport,unit-tests,split,buildfile-in-prefix -l c++ libfoo 2>>/"EOE" &libfoo/***
         created new library project libfoo in $~/libfoo/
         EOE
 
-      $b libfoo/ $config_cxx 2>>~%EOE%;
+      $b libfoo/ $config_cxx 2>>~%EOE%
         %(version|c\+\+|ar|ld|def) .+%{11,12}
         EOE
 
       if ($cxx.target.system == 'win32-msvc')
         test -f libfoo/src/foo.def
-      end
     }
-  }
+  }}
 
   : split
-  {
+  {{
     : buildfile
     :
-    {
+    {{
       : no-src-dir-split
       :
       {
-        $* -t lib,prefix-source=src,prefix-include=src/libhello,no-subdir-include,buildfile-in-prefix,no-version libhello 2>>/"EOE" &libhello/***;
+        $* -t lib,prefix-source=src,prefix-include=src/libhello,no-subdir-include,buildfile-in-prefix,no-version libhello 2>>/"EOE" &libhello/***
           info: --type|-t,buildfile-in-prefix ignored for include prefix because either prefix or subdirectory is absent
           created new library project libhello in $~/libhello/
           EOE
 
-        test -f libhello/src/buildfile;
-        test -f libhello/src/libhello/buildfile;
+        test -f libhello/src/buildfile
+        test -f libhello/src/libhello/buildfile
 
-        $b libhello/ $config_cxx 2>>/~%EOE%;
+        $b libhello/ $config_cxx 2>>/~%EOE%
           %.*
           c++ libhello/src/libhello/cxx{hello} -> libhello/src/libhello/objs{hello}
           %.*
@@ -1079,7 +1070,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
           %.*
           EOE
 
-        $t libhello/ $config_cxx 2>>~%EOE%;
+        $t libhello/ $config_cxx 2>>~%EOE%
           %test .+%
           EOE
 
@@ -1091,7 +1082,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
       }
 
       : failure
-      {
+      {{
         : src-is-root
         :
         {
@@ -1112,7 +1103,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
 
         : src-subdir-of-hdr
         :
-        {
+        {{
           : binless
           :
           {
@@ -1132,11 +1123,11 @@ i = [cmdline] $build install: config.install.root=./install &install/***
                 info: source buildfile directory: $~/libhello/src/foo/
               EOE
           }
-        }
+        }}
 
         : hdr-subdir-of-src
         :
-        {
+        {{
           : binless
           :
           {
@@ -1146,30 +1137,30 @@ i = [cmdline] $build install: config.install.root=./install &install/***
                 info: header buildfile directory: $~/libhello/src/foo/
               EOE
           }
-        }
-      }
-    }
+        }}
+      }}
+    }}
 
     : source
-    {
+    {{
       : no-buildfile-split
       :
-      {
+      {{
         : hdr-inside-src
         :
-        {
+        {{
           : binless
           :
           {
-            $* -t lib,prefix=src,binless,no-subdir-source,unit-tests,buildfile-in-prefix libhello 2>>/"EOE" &libhello/***;
+            $* -t lib,prefix=src,binless,no-subdir-source,unit-tests,buildfile-in-prefix libhello 2>>/"EOE" &libhello/***
               info: --type|-t,buildfile-in-prefix ignored for source prefix because either prefix or subdirectory is absent
               created new library project libhello in $~/libhello/
               EOE
 
-            test -f libhello/src/buildfile;
-            test -f libhello/src/libhello/buildfile == 1;
+            test -f libhello/src/buildfile
+            test -f libhello/src/libhello/buildfile == 1
 
-            $b libhello/ $config_cxx 2>>/~%EOE%;
+            $b libhello/ $config_cxx 2>>/~%EOE%
               %.*
               version libhello/src/libhello/in{version} -> libhello/src/libhello/hxx{version}
               %.*
@@ -1179,7 +1170,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
               %.*
               EOE
 
-            $t libhello/ $config_cxx 2>>~%EOE%;
+            $t libhello/ $config_cxx 2>>~%EOE%
               %test .+%{2}
               EOE
 
@@ -1201,15 +1192,15 @@ i = [cmdline] $build install: config.install.root=./install &install/***
           : binful
           :
           {
-            $* -t lib,prefix=src,no-subdir-source,unit-tests,buildfile-in-prefix libhello 2>>/"EOE" &libhello/***;
+            $* -t lib,prefix=src,no-subdir-source,unit-tests,buildfile-in-prefix libhello 2>>/"EOE" &libhello/***
               info: --type|-t,buildfile-in-prefix ignored for source prefix because either prefix or subdirectory is absent
               created new library project libhello in $~/libhello/
               EOE
 
-            test -f libhello/src/buildfile;
-            test -f libhello/src/libhello/buildfile == 1;
+            test -f libhello/src/buildfile
+            test -f libhello/src/libhello/buildfile == 1
 
-            $b libhello/ $config_cxx 2>>/~%EOE%;
+            $b libhello/ $config_cxx 2>>/~%EOE%
               %.*
               version libhello/src/libhello/in{version} -> libhello/src/libhello/hxx{version}
               %.*
@@ -1219,7 +1210,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
               %.*
               EOE
 
-            $t libhello/ $config_cxx 2>>~%EOE%;
+            $t libhello/ $config_cxx 2>>~%EOE%
               %test .+%{2}
               EOE
 
@@ -1237,23 +1228,23 @@ i = [cmdline] $build install: config.install.root=./install &install/***
               %.*
               EOE
           }
-        }
+        }}
 
         : src-inside-hdr
         :
-        {
+        {{
           : binless
           :
           {
-            $* -t lib,prefix=src,binless,no-subdir-include,unit-tests,buildfile-in-prefix,no-version libhello 2>>/"EOE" &libhello/***;
+            $* -t lib,prefix=src,binless,no-subdir-include,unit-tests,buildfile-in-prefix,no-version libhello 2>>/"EOE" &libhello/***
               info: --type|-t,buildfile-in-prefix ignored for include prefix because either prefix or subdirectory is absent
               created new library project libhello in $~/libhello/
               EOE
 
-            test -f libhello/src/buildfile;
-            test -f libhello/src/libhello/buildfile == 1;
+            test -f libhello/src/buildfile
+            test -f libhello/src/libhello/buildfile == 1
 
-            $b libhello/ $config_cxx 2>>/~%EOE%;
+            $b libhello/ $config_cxx 2>>/~%EOE%
               %.*
               c++ libhello/src/libhello/cxx{hello.test} -> libhello/src/libhello/obje{hello.test}
               %.*
@@ -1261,7 +1252,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
               %.*
               EOE
 
-            $t libhello/ $config_cxx 2>>~%EOE%;
+            $t libhello/ $config_cxx 2>>~%EOE%
               %test .+%{2}
               EOE
 
@@ -1275,15 +1266,15 @@ i = [cmdline] $build install: config.install.root=./install &install/***
           : binful
           :
           {
-            $* -t lib,prefix=src,no-subdir-include,unit-tests,buildfile-in-prefix,no-version libhello 2>>/"EOE" &libhello/***;
+            $* -t lib,prefix=src,no-subdir-include,unit-tests,buildfile-in-prefix,no-version libhello 2>>/"EOE" &libhello/***
               info: --type|-t,buildfile-in-prefix ignored for include prefix because either prefix or subdirectory is absent
               created new library project libhello in $~/libhello/
               EOE
 
-            test -f libhello/src/buildfile;
-            test -f libhello/src/libhello/buildfile == 1;
+            test -f libhello/src/buildfile
+            test -f libhello/src/libhello/buildfile == 1
 
-            $b libhello/ $config_cxx 2>>/~%EOE%;
+            $b libhello/ $config_cxx 2>>/~%EOE%
               %.*
               c++ libhello/src/libhello/cxx{hello} -> libhello/src/libhello/objs{hello}
               %.*
@@ -1291,7 +1282,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
               %.*
               EOE
 
-            $t libhello/ $config_cxx 2>>~%EOE%;
+            $t libhello/ $config_cxx 2>>~%EOE%
               %test .+%{2}
               EOE
 
@@ -1301,12 +1292,12 @@ i = [cmdline] $build install: config.install.root=./install &install/***
               %.*
               EOE
           }
-        }
-      }
+        }}
+      }}
 
       : failure
       :
-      {
+      {{
         : src-is-root
         :
         {
@@ -1322,20 +1313,20 @@ i = [cmdline] $build install: config.install.root=./install &install/***
             error: split header directory is project/package root
             EOE
         }
-      }
-    }
-  }
+      }}
+    }}
+  }}
 
   # C versions of the above.
   #
   : exe-c
   :
   {
-    $* -t exe -l c prj-foo 2>>/"EOE" &prj-foo/***;
+    $* -t exe -l c prj-foo 2>>/"EOE" &prj-foo/***
       created new executable project prj-foo in $~/prj-foo/
       EOE
 
-    sed -n -e 's/^language: (.+)$/\1/p' prj-foo/manifest >'c';
+    sed -n -e 's/^language: (.+)$/\1/p' prj-foo/manifest >'c'
 
     $b prj-foo/ $config_c 2>>~%EOE%
       %(c|ld) .+%{2}
@@ -1345,11 +1336,11 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : exe-c-suffix
   :
   {
-    $* -t exe -l c foo.c 2>>/"EOE" &foo.c/***;
+    $* -t exe -l c foo.c 2>>/"EOE" &foo.c/***
       created new executable project foo.c in $~/foo.c/
       EOE
 
-    sed -n -e 's/^(language: .+)$/\1/p' foo.c/manifest >:'';
+    sed -n -e 's/^(language: .+)$/\1/p' foo.c/manifest >:''
 
     $b foo.c/ $config_c 2>>~%EOE%
       %(c|ld) .+%{2}
@@ -1359,18 +1350,18 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : exe-c-c++
   :
   {
-    $* -t exe -l c,c++ foo 2>>/"EOE" &foo/***;
+    $* -t exe -l c,c++ foo 2>>/"EOE" &foo/***
       created new executable project foo in $~/foo/
       EOE
 
-    sed -n -e 's/^language: (.+)$/\1/p' foo/manifest >>EOO;
+    sed -n -e 's/^language: (.+)$/\1/p' foo/manifest >>EOO
       c
       c++
       EOO
 
-    touch foo/foo/bar.hxx;
+    touch foo/foo/bar.hxx
 
-    cat <<EOI >=foo/foo/bar.cxx;
+    cat <<EOI >=foo/foo/bar.cxx
       #include <foo/bar.hxx>
       int bar;
       EOI
@@ -1383,7 +1374,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : exe-c-prefix
   :
   {
-    $* -t exe,prefix=src -l c prj-foo 2>>/"EOE" &prj-foo/***;
+    $* -t exe,prefix=src -l c prj-foo 2>>/"EOE" &prj-foo/***
       created new executable project prj-foo in $~/prj-foo/
       EOE
 
@@ -1395,7 +1386,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : exe-c-unit-tests
   :
   {
-    $* -t exe,unit-tests -l c foo 2>>/"EOE" &foo/***;
+    $* -t exe,unit-tests -l c foo 2>>/"EOE" &foo/***
       created new executable project foo in $~/foo/
       EOE
 
@@ -1407,18 +1398,18 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : exe-c-unit-tests-c++
   :
   {
-    $* -t exe,unit-tests -l c,c++ foo 2>>/"EOE" &foo/***;
+    $* -t exe,unit-tests -l c,c++ foo 2>>/"EOE" &foo/***
       created new executable project foo in $~/foo/
       EOE
 
-    touch foo/foo/bar.hxx;
+    touch foo/foo/bar.hxx
 
-    cat <<EOI >=foo/foo/bar.cxx;
+    cat <<EOI >=foo/foo/bar.cxx
       #include <foo/bar.hxx>
       int bar;
       EOI
 
-    cat <<EOI >=foo/foo/bar.test.cxx;
+    cat <<EOI >=foo/foo/bar.test.cxx
       #include <foo/bar.hxx>
 
       int main ()
@@ -1434,7 +1425,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-c
   :
   {
-    $* -t lib -l c libprj-foo 2>>/"EOE" &libprj-foo/***;
+    $* -t lib -l c libprj-foo 2>>/"EOE" &libprj-foo/***
       created new library project libprj-foo in $~/libprj-foo/
       EOE
 
@@ -1448,20 +1439,20 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   {
     # While at it, also test the hxx/cxx sub-options.
     #
-    $* -t lib -l c,c++,hxx=hpp,cxx=cpp libfoo 2>>/"EOE" &libfoo/***;
+    $* -t lib -l c,c++,hxx=hpp,cxx=cpp libfoo 2>>/"EOE" &libfoo/***
       created new library project libfoo in $~/libfoo/
       EOE
 
-    touch libfoo/libfoo/bar.hpp;
+    touch libfoo/libfoo/bar.hpp
 
-    cat <<EOI >=libfoo/libfoo/bar.cpp;
+    cat <<EOI >=libfoo/libfoo/bar.cpp
       #include <libfoo/bar.hpp>
       int bar;
       EOI
 
-    touch libfoo/tests/basics/fox.hpp;
+    touch libfoo/tests/basics/fox.hpp
 
-    cat <<EOI >=libfoo/tests/basics/fox.cpp;
+    cat <<EOI >=libfoo/tests/basics/fox.cpp
       #include <libfoo/bar.hpp>
       #include "fox.hpp"
       EOI
@@ -1474,7 +1465,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-c-binless
   :
   {
-    $* -t lib,binless -l c libprj-foo 2>>/"EOE" &libprj-foo/***;
+    $* -t lib,binless -l c libprj-foo 2>>/"EOE" &libprj-foo/***
       created new library project libprj-foo in $~/libprj-foo/
       EOE
 
@@ -1486,7 +1477,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-c-prefix
   :
   {
-    $* -t lib,prefix=src -l c libprj-foo 2>>/"EOE" &libprj-foo/***;
+    $* -t lib,prefix=src -l c libprj-foo 2>>/"EOE" &libprj-foo/***
       created new library project libprj-foo in $~/libprj-foo/
       EOE
 
@@ -1498,7 +1489,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-c-split
   :
   {
-    $* -t lib,split -l c libprj-foo 2>>/"EOE" &libprj-foo/***;
+    $* -t lib,split -l c libprj-foo 2>>/"EOE" &libprj-foo/***
       created new library project libprj-foo in $~/libprj-foo/
       EOE
 
@@ -1510,22 +1501,22 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-c-split-c++
   :
   {
-    $* -t lib,split -l c,c++ libfoo 2>>/"EOE" &libfoo/***;
+    $* -t lib,split -l c,c++ libfoo 2>>/"EOE" &libfoo/***
       created new library project libfoo in $~/libfoo/
       EOE
 
-    touch libfoo/include/libfoo/bar.hxx;
-    touch libfoo/src/libfoo/baz.hxx;
+    touch libfoo/include/libfoo/bar.hxx
+    touch libfoo/src/libfoo/baz.hxx
 
-    cat <<EOI >=libfoo/src/libfoo/bar.cxx;
+    cat <<EOI >=libfoo/src/libfoo/bar.cxx
       #include <libfoo/bar.hxx>
       #include "baz.hxx"
       int bar;
       EOI
 
-    touch libfoo/tests/basics/fox.hxx;
+    touch libfoo/tests/basics/fox.hxx
 
-    cat <<EOI >=libfoo/tests/basics/fox.cxx;
+    cat <<EOI >=libfoo/tests/basics/fox.cxx
       #include <libfoo/bar.hxx>
       #include "fox.hxx"
       EOI
@@ -1538,7 +1529,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-c-split-binless
   :
   {
-    $* -t lib,split,binless -l c libprj-foo 2>>/"EOE" &libprj-foo/***;
+    $* -t lib,split,binless -l c libprj-foo 2>>/"EOE" &libprj-foo/***
       created new library project libprj-foo in $~/libprj-foo/
       EOE
 
@@ -1550,14 +1541,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-c-split-binless-c++
   :
   {
-    $* -t lib,split,binless -l c,c++ libfoo 2>>/"EOE" &libfoo/***;
+    $* -t lib,split,binless -l c,c++ libfoo 2>>/"EOE" &libfoo/***
       created new library project libfoo in $~/libfoo/
       EOE
 
-    touch libfoo/include/libfoo/bar.hxx;
-    touch libfoo/tests/basics/fox.hxx;
+    touch libfoo/include/libfoo/bar.hxx
+    touch libfoo/tests/basics/fox.hxx
 
-    cat <<EOI >=libfoo/tests/basics/fox.cxx;
+    cat <<EOI >=libfoo/tests/basics/fox.cxx
       #include <libfoo/bar.hxx>
       #include "fox.hxx"
       EOI
@@ -1570,7 +1561,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-c-split-binless-unit-tests
   :
   {
-    $* -t lib,split,binless,unit-tests -l c libfoo 2>>/"EOE" &libfoo/***;
+    $* -t lib,split,binless,unit-tests -l c libfoo 2>>/"EOE" &libfoo/***
       created new library project libfoo in $~/libfoo/
       EOE
 
@@ -1582,7 +1573,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-c-unit-tests
   :
   {
-    $* -t lib,unit-tests -l c libfoo 2>>/"EOE" &libfoo/***;
+    $* -t lib,unit-tests -l c libfoo 2>>/"EOE" &libfoo/***
       created new library project libfoo in $~/libfoo/
       EOE
 
@@ -1594,18 +1585,18 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-c-unit-tests-c++
   :
   {
-    $* -t lib,unit-tests -l c,c++ libfoo 2>>/"EOE" &libfoo/***;
+    $* -t lib,unit-tests -l c,c++ libfoo 2>>/"EOE" &libfoo/***
       created new library project libfoo in $~/libfoo/
       EOE
 
-    touch libfoo/libfoo/bar.hxx;
+    touch libfoo/libfoo/bar.hxx
 
-    cat <<EOI >=libfoo/libfoo/bar.cxx;
+    cat <<EOI >=libfoo/libfoo/bar.cxx
       #include <libfoo/bar.hxx>
       int bar;
       EOI
 
-    cat <<EOI >=libfoo/libfoo/bar.test.cxx;
+    cat <<EOI >=libfoo/libfoo/bar.test.cxx
       #include <libfoo/bar.hxx>
 
       int main ()
@@ -1621,7 +1612,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-c-binless-unit-tests
   :
   {
-    $* -t lib,binless,unit-tests -l c libfoo 2>>/"EOE" &libfoo/***;
+    $* -t lib,binless,unit-tests -l c libfoo 2>>/"EOE" &libfoo/***
       created new library project libfoo in $~/libfoo/
       EOE
 
@@ -1633,7 +1624,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
   : lib-c-no-symexport
   :
   {
-    $* -t lib,no-symexport -l c libfoo 2>>/"EOE" &libfoo/***;
+    $* -t lib,no-symexport -l c libfoo 2>>/"EOE" &libfoo/***
       created new library project libfoo in $~/libfoo/
       EOE
 
@@ -1645,32 +1636,30 @@ i = [cmdline] $build install: config.install.root=./install &install/***
       $b 'clean:' libfoo/ 2>>~%EOE%
         %info: .+ is clean%
         EOE
-    end
   }
 
   : lib-c-auto-symexport
   :
-  {
+  {{
     : basics
     :
     {
-      $* -t lib,auto-symexport -l c libfoo 2>>/"EOE" &libfoo/***;
+      $* -t lib,auto-symexport -l c libfoo 2>>/"EOE" &libfoo/***
         created new library project libfoo in $~/libfoo/
         EOE
 
-      $b libfoo/ $config_c 2>>~%EOE%;
+      $b libfoo/ $config_c 2>>~%EOE%
         %(version|c|ar|ld|def) .+%{9,10}
         EOE
 
       if ($c.target.system == 'win32-msvc')
         test -f libfoo/libfoo/foo.def
-      end
     }
 
     : unit-tests
     :
     {
-      $* -t lib,auto-symexport,unit-tests -l c libfoo 2>>/"EOE" &libfoo/***;
+      $* -t lib,auto-symexport,unit-tests -l c libfoo 2>>/"EOE" &libfoo/***
         created new library project libfoo in $~/libfoo/
         EOE
 
@@ -1682,7 +1671,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : split
     :
     {
-      $* -t lib,auto-symexport,split -l c libfoo 2>>/"EOE" &libfoo/***;
+      $* -t lib,auto-symexport,split -l c libfoo 2>>/"EOE" &libfoo/***
         created new library project libfoo in $~/libfoo/
         EOE
 
@@ -1694,7 +1683,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : unit-tests-split
     :
     {
-      $* -t lib,auto-symexport,unit-tests,split -l c libfoo 2>>/"EOE" &libfoo/***;
+      $* -t lib,auto-symexport,unit-tests,split -l c libfoo 2>>/"EOE" &libfoo/***
         created new library project libfoo in $~/libfoo/
         EOE
 
@@ -1702,13 +1691,13 @@ i = [cmdline] $build install: config.install.root=./install &install/***
         %(version|c|ar|ld|def) .+%{11,12}
         EOE
     }
-  }
+  }}
 
   # Test create-from-existing functionality.
   #
   : exist
   :
-  {
+  {{
     : basics
     :
     mkdir libfoo &!libfoo/;
@@ -1734,25 +1723,25 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     test -f libfoo/.gitignore;
     sed -n -e 's/^summary: (.+)$/\1/p'      libfoo/manifest >'Cool foo';
     sed -n -e 's/^license: ([^ ]+).*$/\1/p' libfoo/manifest >'Apache-2.0'
-  }
+  }}
 
   : pkg
   :
-  {
+  {{
     : add
     :
     : Test creating a library as a separate package in the project.
     :
     {
-      $* -t empty prj 2>>/"EOE" &prj/***;
+      $* -t empty prj 2>>/"EOE" &prj/***
         created new empty project prj in $~/prj/
         EOE
 
       # While at it, test that README.md is created.
       #
-      test -f prj/README.md;
+      test -f prj/README.md
 
-      $* --package -t lib libprj -d prj 2>>/"EOE";
+      $* --package -t lib libprj -d prj 2>>/"EOE"
         created new library package libprj in $~/prj/libprj/
         EOE
 
@@ -1766,11 +1755,11 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : As above but also specify the source subdirectory prefix.
     :
     {
-      $* -t empty prj 2>>/"EOE" &prj/***;
+      $* -t empty prj 2>>/"EOE" &prj/***
         created new empty project prj in $~/prj/
         EOE
 
-      $* --package -t lib,prefix=libs/src libprj -d prj 2>>/"EOE";
+      $* --package -t lib,prefix=libs/src libprj -d prj 2>>/"EOE"
         created new library package libprj in $~/prj/libprj/
         EOE
 
@@ -1784,11 +1773,11 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : As the above 'add' test above but perform the split.
     :
     {
-      $* -t empty prj 2>>/"EOE" &prj/***;
+      $* -t empty prj 2>>/"EOE" &prj/***
         created new empty project prj in $~/prj/
         EOE
 
-      $* --package -t lib,split libprj -d prj 2>>/"EOE";
+      $* --package -t lib,split libprj -d prj 2>>/"EOE"
         created new library package libprj in $~/prj/libprj/
         EOE
 
@@ -1802,11 +1791,11 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : As above but also binless.
     :
     {
-      $* -t empty prj 2>>/"EOE" &prj/***;
+      $* -t empty prj 2>>/"EOE" &prj/***
         created new empty project prj in $~/prj/
         EOE
 
-      $* --package -t lib,split,binless libprj -d prj 2>>/"EOE";
+      $* --package -t lib,split,binless libprj -d prj 2>>/"EOE"
         created new library package libprj in $~/prj/libprj/
         EOE
 
@@ -1820,11 +1809,11 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : As above but also with unit-tests.
     :
     {
-      $* -t empty prj 2>>/"EOE" &prj/***;
+      $* -t empty prj 2>>/"EOE" &prj/***
         created new empty project prj in $~/prj/
         EOE
 
-      $* --package -t lib,split,binless,unit-tests libprj -d prj 2>>/"EOE";
+      $* --package -t lib,split,binless,unit-tests libprj -d prj 2>>/"EOE"
         created new library package libprj in $~/prj/libprj/
         EOE
 
@@ -1837,7 +1826,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     :
     : Test that the package/project name is validated.
     :
-    {
+    {{
       : package
       :
       $* x 2>'error: invalid package name: length is less than two characters' != 0
@@ -1859,28 +1848,28 @@ i = [cmdline] $build install: config.install.root=./install &install/***
           info: leaving the 'project' manifest value empty
         created new executable package pkg in $~/x/pkg/
         EOE
-    }
-  }
+    }}
+  }}
 
   : source
   :
-  {
+  {{
     : lib
     :
     : Test adding a library source subdirectory to an executable project.
     :
     {
-      $* -t exe prj 2>>/"EOE" &prj/***;
+      $* -t exe prj 2>>/"EOE" &prj/***
         created new executable project prj in $~/prj/
         EOE
 
-      $* --source -t lib libprj -d prj 2>>/"EOE";
+      $* --source -t lib libprj -d prj 2>>/"EOE"
         created new library source subdirectory libprj in $~/prj/libprj/
         EOE
 
       # While at it, test that README.md is not created.
       #
-      test -f prj/libprj/README.md == 1;
+      test -f prj/libprj/README.md == 1
 
       $b prj/ $config_cxx 2>>~%EOE%
         %(c\+\+|ar|ld) .+%{6}
@@ -1892,11 +1881,11 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : As above but also specify the source subdirectory prefix.
     :
     {
-      $* -t exe prj 2>>/"EOE" &prj/***;
+      $* -t exe prj 2>>/"EOE" &prj/***
         created new executable project prj in $~/prj/
         EOE
 
-      $* --source -t lib,prefix=libs/src libprj -d prj 2>>/"EOE";
+      $* --source -t lib,prefix=libs/src libprj -d prj 2>>/"EOE"
         created new library source subdirectory libprj in $~/prj/libs/src/libprj/
         EOE
 
@@ -1910,11 +1899,11 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : As the above 'lib' test above but perform the split.
     :
     {
-      $* -t exe prj 2>>/"EOE" &prj/***;
+      $* -t exe prj 2>>/"EOE" &prj/***
         created new executable project prj in $~/prj/
         EOE
 
-      $* --source -t lib,split libprj -d prj 2>>/"EOE";
+      $* --source -t lib,split libprj -d prj 2>>/"EOE"
         created new library source subdirectory libprj in
           $~/prj/include/libprj/
           $~/prj/src/libprj/
@@ -1930,11 +1919,11 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : As above but also binless.
     :
     {
-      $* -t exe prj 2>>/"EOE" &prj/***;
+      $* -t exe prj 2>>/"EOE" &prj/***
         created new executable project prj in $~/prj/
         EOE
 
-      $* --source -t lib,split,binless libprj -d prj 2>>/"EOE";
+      $* --source -t lib,split,binless libprj -d prj 2>>/"EOE"
         created new library source subdirectory libprj in $~/prj/include/libprj/
         EOE
 
@@ -1948,11 +1937,11 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : As above but also with unit-tests.
     :
     {
-      $* -t exe prj 2>>/"EOE" &prj/***;
+      $* -t exe prj 2>>/"EOE" &prj/***
         created new executable project prj in $~/prj/
         EOE
 
-      $* --source -t lib,split,binless,unit-tests libprj -d prj 2>>/"EOE";
+      $* --source -t lib,split,binless,unit-tests libprj -d prj 2>>/"EOE"
         created new library source subdirectory libprj in
           $~/prj/include/libprj/
           $~/prj/src/libprj/
@@ -1968,15 +1957,15 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : Test filling a bare project with source subdirectories.
     :
     {
-      $* -t bare prj 2>>/"EOE" &prj/***;
+      $* -t bare prj 2>>/"EOE" &prj/***
         created new bare project prj in $~/prj/
         EOE
 
-      $* --source -t lib libprj -d prj 2>>/"EOE";
+      $* --source -t lib libprj -d prj 2>>/"EOE"
         created new library source subdirectory libprj in $~/prj/libprj/
         EOE
 
-      $* --source -t exe prj -d prj 2>>/"EOE";
+      $* --source -t exe prj -d prj 2>>/"EOE"
         created new executable source subdirectory prj in $~/prj/prj/
         EOE
 
@@ -1990,11 +1979,11 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : Test adding a source subdirectories to a subdirectory.
     :
     {
-      $* -t bare prj 2>>/"EOE" &prj/***;
+      $* -t bare prj 2>>/"EOE" &prj/***
         created new bare project prj in $~/prj/
         EOE
 
-      $* --source -t lib,unit-tests prj -d prj -o prj/core/prj 2>>/"EOE";
+      $* --source -t lib,unit-tests prj -d prj -o prj/core/prj 2>>/"EOE"
         created new library source subdirectory prj in $~/prj/core/prj/
         EOE
 
@@ -2002,20 +1991,20 @@ i = [cmdline] $build install: config.install.root=./install &install/***
         %(c\+\+|ar|ld) .+%{8}
         EOE
     }
-  }
+  }}
 
   : extensions
   :
-  {
+  {{
     : default
     :
     {
-      $* -t lib -l c++ libprj 2>>/"EOE" &libprj/***;
+      $* -t lib -l c++ libprj 2>>/"EOE" &libprj/***
         created new library project libprj in $~/libprj/
         EOE
 
-      test -f libprj/libprj/prj.cxx;
-      test -f libprj/libprj/prj.hxx;
+      test -f libprj/libprj/prj.cxx
+      test -f libprj/libprj/prj.hxx
 
       $b libprj/ $config_cxx 2>>~%EOE%
         %(version|c\+\+|ar|ld) .+%{7}
@@ -2025,12 +2014,12 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : cpp
     :
     {
-      $* -t lib -l c++,cpp libprj 2>>/"EOE" &libprj/***;
+      $* -t lib -l c++,cpp libprj 2>>/"EOE" &libprj/***
         created new library project libprj in $~/libprj/
         EOE
 
-      test -f libprj/libprj/prj.cpp;
-      test -f libprj/libprj/prj.hpp;
+      test -f libprj/libprj/prj.cpp
+      test -f libprj/libprj/prj.hpp
 
       $b libprj/ $config_cxx 2>>~%EOE%
         %(version|c\+\+|ar|ld) .+%{7}
@@ -2040,12 +2029,12 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : extension-c++
     :
     {
-      $* -t lib -l c++,extension=?++ libprj 2>>/"EOE" &libprj/***;
+      $* -t lib -l c++,extension=?++ libprj 2>>/"EOE" &libprj/***
         created new library project libprj in $~/libprj/
         EOE
 
-      test -f libprj/libprj/prj.c++;
-      test -f libprj/libprj/prj.h++;
+      test -f libprj/libprj/prj.c++
+      test -f libprj/libprj/prj.h++
 
       $b libprj/ $config_cxx 2>>~%EOE%
         %(version|c\+\+|ar|ld) .+%{7}
@@ -2055,12 +2044,12 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : extension-cc
     :
     {
-      $* -t lib -l c++,extension=?? libprj 2>>/"EOE" &libprj/***;
+      $* -t lib -l c++,extension=?? libprj 2>>/"EOE" &libprj/***
         created new library project libprj in $~/libprj/
         EOE
 
-      test -f libprj/libprj/prj.cc;
-      test -f libprj/libprj/prj.hh;
+      test -f libprj/libprj/prj.cc
+      test -f libprj/libprj/prj.hh
 
       $b libprj/ $config_cxx 2>>~%EOE%
         %(version|c\+\+|ar|ld) .+%{7}
@@ -2070,12 +2059,12 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : cxx-hxx
     :
     {
-      $* -t lib -l c++,cxx=c,hxx=h libprj 2>>/"EOE" &libprj/***;
+      $* -t lib -l c++,cxx=c,hxx=h libprj 2>>/"EOE" &libprj/***
         created new library project libprj in $~/libprj/
         EOE
 
-      test -f libprj/libprj/prj.c;
-      test -f libprj/libprj/prj.h;
+      test -f libprj/libprj/prj.c
+      test -f libprj/libprj/prj.h
 
       $b libprj/ $config_cxx 2>>~%EOE%
         %(version|c\+\+|ar|ld) .+%{7}
@@ -2085,12 +2074,12 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : empty-hxx
     :
     {
-      $* -t lib -l c++,hxx= libprj 2>>/"EOE" &libprj/***;
+      $* -t lib -l c++,hxx= libprj 2>>/"EOE" &libprj/***
         created new library project libprj in $~/libprj/
         EOE
 
-      test -f libprj/libprj/prj.cxx;
-      test -f libprj/libprj/prj;
+      test -f libprj/libprj/prj.cxx
+      test -f libprj/libprj/prj
 
       $b libprj/ $config_cxx 2>>~%EOE%
         %(version|c\+\+|ar|ld) .+%{7}
@@ -2100,17 +2089,17 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : ixx
     :
     {
-      $* -t lib -l c++,ixx=ixx libprj 2>>/"EOE" &libprj/***;
+      $* -t lib -l c++,ixx=ixx libprj 2>>/"EOE" &libprj/***
         created new library project libprj in $~/libprj/
         EOE
 
-      cat libprj/build/root.build >>~%EOO%;
+      cat libprj/build/root.build >>~%EOO%
         %.+
         ixx{*}: extension = ixx
         %.+
         EOO
 
-      cat libprj/libprj/buildfile >>~%EOO%;
+      cat libprj/libprj/buildfile >>~%EOO%
         %.+
         %.*\{hxx ixx cxx\}.*%
         %.+
@@ -2126,12 +2115,12 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : leading-dot
     :
     {
-      $* -t lib -l c++,cxx=.cpp libprj 2>>/"EOE" &libprj/***;
+      $* -t lib -l c++,cxx=.cpp libprj 2>>/"EOE" &libprj/***
         created new library project libprj in $~/libprj/
         EOE
 
-      test -f libprj/libprj/prj.cpp;
-      test -f libprj/libprj/prj.hxx;
+      test -f libprj/libprj/prj.cpp
+      test -f libprj/libprj/prj.hxx
 
       $b libprj/ $config_cxx 2>>~%EOE%
         %(version|c\+\+|ar|ld) .+%{7}
@@ -2140,12 +2129,12 @@ i = [cmdline] $build install: config.install.root=./install &install/***
 
     : merge
     {
-      $* -t lib -l c++,cxx=cpp -l c -l c++,hxx=hpp libprj 2>>/"EOE" &libprj/***;
+      $* -t lib -l c++,cxx=cpp -l c -l c++,hxx=hpp libprj 2>>/"EOE" &libprj/***
         created new library project libprj in $~/libprj/
         EOE
 
-      test -f libprj/libprj/prj.cpp;
-      test -f libprj/libprj/prj.hpp;
+      test -f libprj/libprj/prj.cpp
+      test -f libprj/libprj/prj.hpp
 
       $b libprj/ $config_cxx 2>>~%EOE%
         %(version|c\+\+|ar|ld) .+%{7}
@@ -2154,7 +2143,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
 
     : errors
     :
-    {
+    {{
       : missing-value
       :
       $* -t lib -l c++,cxx libprj 2>>EOE != 0
@@ -2190,12 +2179,12 @@ i = [cmdline] $build install: config.install.root=./install &install/***
       $* -t lib -l c++,cpp,extension=?pp libprj 2>>EOE != 0
         error: 'extension' and 'cpp' are mutually exclusive c++ options
         EOE
-    }
-  }
+    }}
+  }}
 
   : options-file
   :
-  {
+  {{
     +cat <<EOI >=options
       --type exe,no-tests,unit-tests
       --type lib,no-version
@@ -2209,18 +2198,18 @@ i = [cmdline] $build install: config.install.root=./install &install/***
 
     : type
     :
-    {
+    {{
       : exe
       :
       {
-        $* -t exe prj 2>>/"EOE" &prj/***;
+        $* -t exe prj 2>>/"EOE" &prj/***
           created new executable project prj in $~/prj/
           EOE
 
-        test -f prj/buildfile;
-        test -f prj/prj/testscript == 1;
+        test -f prj/buildfile
+        test -f prj/prj/testscript == 1
 
-        cat prj/prj/buildfile >>~%EOO%;
+        cat prj/prj/buildfile >>~%EOO%
           %.+
           %for t: c\{\*\*.test...\}%d
           %.+
@@ -2234,12 +2223,12 @@ i = [cmdline] $build install: config.install.root=./install &install/***
       : lib
       :
       {
-        $* -t lib libprj 2>>/"EOE" &libprj/***;
+        $* -t lib libprj 2>>/"EOE" &libprj/***
           created new library project libprj in $~/libprj/
           EOE
 
-        test -f libprj/buildfile;
-        test -f libprj/libprj/version.h.in == 1;
+        test -f libprj/buildfile
+        test -f libprj/libprj/version.h.in == 1
 
         $b libprj/ $config_c 2>>~%EOE%
           %(c|ar|ld) .+%{6}
@@ -2249,12 +2238,12 @@ i = [cmdline] $build install: config.install.root=./install &install/***
       : bare
       :
       {
-        $* -t bare libprj 2>>/"EOE" &libprj/***;
+        $* -t bare libprj 2>>/"EOE" &libprj/***
           created new bare project libprj in $~/libprj/
           EOE
 
-        test -f libprj/build2file;
-        test -d libprj/libprj == 1;
+        test -f libprj/build2file
+        test -d libprj/libprj == 1
 
         $b libprj/ $config_c 2>>~%EOE%
           %info: .+ is up to date%
@@ -2268,22 +2257,22 @@ i = [cmdline] $build install: config.install.root=./install &install/***
           created new empty project libprj in $~/libprj/
           EOE
       }
-    }
+    }}
 
     : lang
     :
-    {
+    {{
       test.arguments += -t lib
 
       : c++
       :
       {
-        $* -l c++,hxx= libprj 2>>/"EOE" &libprj/***;
+        $* -l c++,hxx= libprj 2>>/"EOE" &libprj/***
           created new library project libprj in $~/libprj/
           EOE
 
-        test -f libprj/libprj/prj;
-        test -f libprj/libprj/prj.cpp;
+        test -f libprj/libprj/prj
+        test -f libprj/libprj/prj.cpp
 
         $b libprj/ $config_cxx 2>>~%EOE%
           %(c\+\+|ar|ld) .+%{6}
@@ -2293,57 +2282,57 @@ i = [cmdline] $build install: config.install.root=./install &install/***
       : c
       :
       {
-        $* -l c libprj 2>>/"EOE" &libprj/***;
+        $* -l c libprj 2>>/"EOE" &libprj/***
           created new library project libprj in $~/libprj/
           EOE
 
-        test -f libprj/libprj/prj.h;
-        test -f libprj/libprj/prj.c;
+        test -f libprj/libprj/prj.h
+        test -f libprj/libprj/prj.c
 
         $b libprj/ $config_c 2>>~%EOE%
           %(c|ar|ld) .+%{6}
           EOE
       }
-    }
+    }}
 
     : vcs
     :
-    {
+    {{
       : git
       :
       {
-        $* -s git prj 2>>/"EOE" &prj/***;
+        $* -s git prj 2>>/"EOE" &prj/***
           created new bare project prj in $~/prj/
           EOE
 
         test -d prj/.git
       }
-    }
-  }
+    }}
+  }}
 
   : default-options-files
   :
-  {
+  {{
     : remote-hooks
     :
     {
-      $* -t empty prj 2>! &prj/***;
+      $* -t empty prj 2>! &prj/***
 
-      mkdir prj/.build2;
+      mkdir prj/.build2
 
-      cat <<EOI >=prj/.build2/bdep-new-package.options;
+      cat <<EOI >=prj/.build2/bdep-new-package.options
         --pre-hook  "mv .gitignore .gitignore.bak"
         --post-hook "cat .gitignore.bak >>.gitignore"
         --post-hook "rm .gitignore.bak"
         EOI
 
-      mkdir --no-cleanup prj/libprj;
+      mkdir --no-cleanup prj/libprj
 
-      cat <<EOI >=prj/libprj/.gitignore;
+      cat <<EOI >=prj/libprj/.gitignore
         CMakeCache.txt
         EOI
 
-      $* --package -t lib -d prj libprj <'y' 2>>/~%EOE%;
+      $* --package -t lib -d prj libprj <'y' 2>>/~%EOE%
         %remote hook commands in .+/.build2/bdep-new-package.options:%
           pre:  mv .gitignore .gitignore.bak
           post: cat .gitignore.bak >>.gitignore
@@ -2351,7 +2340,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
         %execute\? \[y.n\] created new library package libprj in .+/prj/libprj/%
         EOE
 
-      cat prj/libprj/.gitignore >>~%EOO%;
+      cat prj/libprj/.gitignore >>~%EOO%
         # Compiler/linker output.
         #
         %.+
@@ -2366,13 +2355,13 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : disallow-options
     :
     {
-      mkdir .build2;
+      mkdir .build2
 
-      cat <<EOI >=.build2/bdep-new.options;
+      cat <<EOI >=.build2/bdep-new.options
         --package
         EOI
 
-      $* prj 2>>/~%EOE%d != 0;
+      $* prj 2>>/~%EOE%d != 0
         %\.+/.build2/bdep-new.options: error: --package in default options file%
         EOE
 
@@ -2382,11 +2371,11 @@ i = [cmdline] $build install: config.install.root=./install &install/***
           created new executable project prj in $~/prj/
           EOE
     }
-  }
+  }}
 
   : post-hook
   :
-  {
+  {{
     : success
     :
     {
@@ -2394,14 +2383,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
          --post-hook "echo .idea/ >>.gitignore"         \
          --post-hook "echo @mode@ @name@ @base@ @stem@" \
          --post-hook "echo @type@ @lang@ @vcs@ @root@"  \
-         >>/"EOO" 2>>/"EOE" &prj/***;
+         >>/"EOO" 2>>/"EOE" &prj/***
         project prj prj prj
         empty c++ git $~/prj
         EOO
         created new empty project prj in $~/prj/
         EOE
 
-      cat prj/.gitignore >>~%EOO%;
+      cat prj/.gitignore >>~%EOO%
         %.+
         .idea/
         EOO
@@ -2409,24 +2398,24 @@ i = [cmdline] $build install: config.install.root=./install &install/***
       $* --package prj -d prj                                  \
          --post-hook "echo @@@@TODO >>NEWS"                    \
          --post-hook "echo @mode@ @name@ @base@ @stem@ @root@" \
-         >>/"EOO" 2>>/"EOE" &prj/prj/***;
+         >>/"EOO" 2>>/"EOE" &prj/prj/***
         package prj prj prj $~/prj
         EOO
         created new executable package prj in $~/prj/prj/
         EOE
 
-      cat prj/prj/NEWS >'@@TODO';
+      cat prj/prj/NEWS >'@@TODO'
 
       $* --package -t lib libprj.bash -d prj                               \
          --post-hook "echo @@@@TODO >>NEWS"                                \
          --post-hook "echo @mode@ @name@ @base@ @stem@ @root@ @pfx@ @sub@" \
-         >>/"EOO" 2>>/"EOE" &prj/prj/***;
+         >>/"EOO" 2>>/"EOE" &prj/prj/***
         package libprj.bash libprj prj $~/prj  libprj
         EOO
         created new library package libprj.bash in $~/prj/libprj.bash/
         EOE
 
-      cat prj/libprj.bash/NEWS >'@@TODO';
+      cat prj/libprj.bash/NEWS >'@@TODO'
 
       if $posix
         cat <<EOI >=hook
@@ -2444,12 +2433,11 @@ i = [cmdline] $build install: config.install.root=./install &install/***
           EOO
           created new library source subdirectory libprj in $~/prj/prj/src/libprj/
           EOE
-      end
     }
 
     : failure
     :
-    {
+    {{
       : substitution
       :
       $* prj --post-hook 'echo foo >>@bar@' 2>>EOE &prj/*** != 0
@@ -2467,24 +2455,24 @@ i = [cmdline] $build install: config.install.root=./install &install/***
       $* prj --post-hook '""' 2>>~%EOE% &prj/*** != 0
         %error: unable to execute post hook '""': .+%
         EOE
-    }
-  }
+    }}
+  }}
 
   : pre-hook
   :
-  {
+  {{
     : success
     :
     {
-      mkdir --no-cleanup prj &prj/***;
+      mkdir --no-cleanup prj &prj/***
 
-      cat <<EOI >=prj/.gitignore;
+      cat <<EOI >=prj/.gitignore
         CMakeCache.txt
         EOI
 
       $* prj --pre-hook  "mv .gitignore .gitignore.bak"    \
              --post-hook "cat .gitignore.bak >>.gitignore" \
-             --post-hook "rm .gitignore.bak" 2>>/"EOE";
+             --post-hook "rm .gitignore.bak" 2>>/"EOE"
         created new executable project prj in $~/prj/
         EOE
 
@@ -2497,33 +2485,33 @@ i = [cmdline] $build install: config.install.root=./install &install/***
 
     : failure
     :
-    {
+    {{
       : substitution
       :
       $* prj --pre-hook 'echo foo >>@bar@' 2>>EOE &prj/*** != 0
         error: invalid pre hook 'echo foo >>@bar@': unknown substitution variable 'bar'
         EOE
-    }
-  }
+    }}
+  }}
 
   : flat-layouts
   :
   : Here we test layouts where the source directory is the project/package
   : root. Note that such layouts use non-recursive wildcards in buildfiles.
   :
-  {
+  {{
     : exe
     :
-    {
+    {{
       : basics
       :
       {
-        $* -l c++ -t exe,no-subdir hello 2>>/"EOE" &hello/***;
+        $* -l c++ -t exe,no-subdir hello 2>>/"EOE" &hello/***
           created new executable project hello in $~/hello/
           EOE
 
-        mkdir hello/tests;
-        touch hello/tests/hello.test.cxx;
+        mkdir hello/tests
+        touch hello/tests/hello.test.cxx
 
         $b hello/ $config_cxx 2>>~%EOE%
           %(c\+\+|ld) .+%{2}
@@ -2533,31 +2521,31 @@ i = [cmdline] $build install: config.install.root=./install &install/***
       : unit-tests
       :
       {
-        $* -l c++ -t exe,no-subdir,unit-tests hello 2>>/"EOE" &hello/***;
+        $* -l c++ -t exe,no-subdir,unit-tests hello 2>>/"EOE" &hello/***
           created new executable project hello in $~/hello/
           EOE
 
-        mkdir hello/tests;
-        touch hello/tests/hello.test.cxx;
+        mkdir hello/tests
+        touch hello/tests/hello.test.cxx
 
         $b hello/ $config_cxx 2>>~%EOE%
           %(c\+\+|ld|ar) .+%{5}
           EOE
       }
-    }
+    }}
 
     : lib
     :
-    {
+    {{
       : basics
       :
       {
-        $* -l c++ -t lib,no-subdir,no-version,no-tests libhello 2>>/"EOE" &libhello/***;
+        $* -l c++ -t lib,no-subdir,no-version,no-tests libhello 2>>/"EOE" &libhello/***
           created new library project libhello in $~/libhello/
           EOE
 
-        mkdir libhello/tests;
-        touch libhello/tests/hello.test.cxx;
+        mkdir libhello/tests
+        touch libhello/tests/hello.test.cxx
 
         $b libhello/ $config_cxx 2>>~%EOE%
           %(c\+\+|ld|ar) .+%{4}
@@ -2566,16 +2554,16 @@ i = [cmdline] $build install: config.install.root=./install &install/***
 
       : unit-tests
       :
-      {
+      {{
         : binful
         :
         {
-          $* -l c++ -t lib,no-subdir,no-version,no-tests,unit-tests libhello 2>>/"EOE" &libhello/***;
+          $* -l c++ -t lib,no-subdir,no-version,no-tests,unit-tests libhello 2>>/"EOE" &libhello/***
             created new library project libhello in $~/libhello/
             EOE
 
-          mkdir libhello/tests;
-          touch libhello/tests/hello.test.cxx;
+          mkdir libhello/tests
+          touch libhello/tests/hello.test.cxx
 
           $b libhello/ $config_cxx 2>>~%EOE%
             %(c\+\+|ld|ar) .+%{8}
@@ -2585,34 +2573,34 @@ i = [cmdline] $build install: config.install.root=./install &install/***
         : binless
         :
         {
-          $* -l c++ -t lib,no-subdir,no-version,no-tests,unit-tests,binless libhello 2>>/"EOE" &libhello/***;
+          $* -l c++ -t lib,no-subdir,no-version,no-tests,unit-tests,binless libhello 2>>/"EOE" &libhello/***
             created new library project libhello in $~/libhello/
             EOE
 
-          mkdir libhello/tests;
-          touch libhello/tests/hello.test.cxx;
+          mkdir libhello/tests
+          touch libhello/tests/hello.test.cxx
 
           $b libhello/ $config_cxx 2>>~%EOE%
             %(c\+\+|ld) .+%{2}
             EOE
         }
-      }
-    }
-  }
+      }}
+    }}
+  }}
 
   : common-source-layouts
   :
   : Here we smoke test the common source code layouts listed in bdep-new(1).
   :
-  {
+  {{
     : subdir
     :
     {
-      $* -l c++ -t lib,subdir=hello libhello 2>>/"EOE" &libhello/***;
+      $* -l c++ -t lib,subdir=hello libhello 2>>/"EOE" &libhello/***
         created new library project libhello in $~/libhello/
         EOE
 
-      $b libhello/ $config_cxx 2>>/~%EOE%;
+      $b libhello/ $config_cxx 2>>/~%EOE%
         %.*
         version libhello/hello/in{version} -> libhello/hello/hxx{version}
         %.*
@@ -2622,7 +2610,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
         %.*
         EOE
 
-      $t libhello/ $config_cxx 2>>~%EOE%;
+      $t libhello/ $config_cxx 2>>~%EOE%
         %test .+%
         EOE
 
@@ -2644,11 +2632,11 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : combined-prefix
     :
     {
-      $* -l c++ -t exe,prefix=src hello 2>>/"EOE" &hello/***;
+      $* -l c++ -t exe,prefix=src hello 2>>/"EOE" &hello/***
         created new executable project hello in $~/hello/
         EOE
 
-      $b hello/ $config_cxx 2>>~%EOE%;
+      $b hello/ $config_cxx 2>>~%EOE%
         %(c\+\+|ld) .+%{2}
         EOE
 
@@ -2660,14 +2648,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : include-prefix
     :
     {
-      $* -l c++ -t lib,prefix-include=include libhello 2>>/"EOE" &libhello/***;
+      $* -l c++ -t lib,prefix-include=include libhello 2>>/"EOE" &libhello/***
         created new library project libhello in $~/libhello/
         EOE
 
-      test -f libhello/include/libhello/buildfile;
-      test -f libhello/libhello/buildfile;
+      test -f libhello/include/libhello/buildfile
+      test -f libhello/libhello/buildfile
 
-      $b libhello/ $config_cxx 2>>/~%EOE%;
+      $b libhello/ $config_cxx 2>>/~%EOE%
         %.*
         version libhello/include/libhello/in{version} -> libhello/include/libhello/hxx{version}
         %.*
@@ -2677,7 +2665,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
         %.*
         EOE
 
-      $t libhello/ $config_cxx 2>>~%EOE%;
+      $t libhello/ $config_cxx 2>>~%EOE%
         %test .+%
         EOE
 
@@ -2699,14 +2687,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : split
     :
     {
-      $* -l c++ -t lib,split libhello 2>>/"EOE" &libhello/***;
+      $* -l c++ -t lib,split libhello 2>>/"EOE" &libhello/***
         created new library project libhello in $~/libhello/
         EOE
 
-      test -f libhello/include/libhello/buildfile;
-      test -f libhello/src/libhello/buildfile;
+      test -f libhello/include/libhello/buildfile
+      test -f libhello/src/libhello/buildfile
 
-      $b libhello/ $config_cxx 2>>/~%EOE%;
+      $b libhello/ $config_cxx 2>>/~%EOE%
         %.*
         version libhello/include/libhello/in{version} -> libhello/include/libhello/hxx{version}
         %.*
@@ -2716,7 +2704,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
         %.*
         EOE
 
-      $t libhello/ $config_cxx 2>>~%EOE%;
+      $t libhello/ $config_cxx 2>>~%EOE%
         %test .+%
         EOE
 
@@ -2738,11 +2726,11 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : prefix-no-subdir
     :
     {
-      $* -l c++ -t exe,prefix=src,no-subdir hello 2>>/"EOE" &hello/***;
+      $* -l c++ -t exe,prefix=src,no-subdir hello 2>>/"EOE" &hello/***
         created new executable project hello in $~/hello/
         EOE
 
-      $b hello/ $config_cxx 2>>~%EOE%;
+      $b hello/ $config_cxx 2>>~%EOE%
         %(c\+\+|ld) .+%{2}
         EOE
 
@@ -2754,14 +2742,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : split-no-subdir
     :
     {
-      $* -l c++ -t lib,split,no-subdir,no-version libhello 2>>/"EOE" &libhello/***;
+      $* -l c++ -t lib,split,no-subdir,no-version libhello 2>>/"EOE" &libhello/***
         created new library project libhello in $~/libhello/
         EOE
 
-      test -f libhello/include/buildfile;
-      test -f libhello/src/buildfile;
+      test -f libhello/include/buildfile
+      test -f libhello/src/buildfile
 
-      $b libhello/ $config_cxx 2>>/~%EOE%;
+      $b libhello/ $config_cxx 2>>/~%EOE%
         %.*
         c++ libhello/src/cxx{hello} -> libhello/src/objs{hello}
         %.*
@@ -2769,7 +2757,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
         %.*
         EOE
 
-      $t libhello/ $config_cxx 2>>~%EOE%;
+      $t libhello/ $config_cxx 2>>~%EOE%
         %test .+%
         EOE
 
@@ -2783,14 +2771,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : no-subdir
     :
     {
-      $* -l c++ -t lib,no-subdir,no-version,no-tests libhello 2>>/"EOE" &libhello/***;
+      $* -l c++ -t lib,no-subdir,no-version,no-tests libhello 2>>/"EOE" &libhello/***
         created new library project libhello in $~/libhello/
         EOE
 
-      test -d libhello/libhello/ == 1;
-      test -f libhello/buildfile;
+      test -d libhello/libhello/ == 1
+      test -f libhello/buildfile
 
-      $b libhello/ $config_cxx 2>>/~%EOE%;
+      $b libhello/ $config_cxx 2>>/~%EOE%
         %.*
         c++ libhello/cxx{hello} -> libhello/objs{hello}
         %.*
@@ -2798,7 +2786,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
         %.*
         EOE
 
-      $t libhello/ $config_cxx 2>>EOE != 0;
+      $t libhello/ $config_cxx 2>>EOE != 0
         <buildspec>: error: target libhello/ does not support operation test
         EOE
 
@@ -2812,14 +2800,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : split-no-subdir-source
     :
     {
-      $* -l c++ -t lib,split,subdir=hello,no-subdir-source libhello 2>>/"EOE" &libhello/***;
+      $* -l c++ -t lib,split,subdir=hello,no-subdir-source libhello 2>>/"EOE" &libhello/***
         created new library project libhello in $~/libhello/
         EOE
 
-      test -f libhello/include/hello/buildfile;
-      test -f libhello/src/buildfile;
+      test -f libhello/include/hello/buildfile
+      test -f libhello/src/buildfile
 
-      $b libhello/ $config_cxx 2>>/~%EOE%;
+      $b libhello/ $config_cxx 2>>/~%EOE%
         %.*
         version libhello/include/hello/in{version} -> libhello/include/hello/hxx{version}
         %.*
@@ -2829,7 +2817,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
         %.*
         EOE
 
-      $t libhello/ $config_cxx 2>>~%EOE%;
+      $t libhello/ $config_cxx 2>>~%EOE%
         %test .+%
         EOE
 
@@ -2851,14 +2839,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     : split-no-subdir-include
     :
     {
-      $* -l c++ -t lib,split,subdir=hello,no-subdir-include,no-version libhello 2>>/"EOE" &libhello/***;
+      $* -l c++ -t lib,split,subdir=hello,no-subdir-include,no-version libhello 2>>/"EOE" &libhello/***
         created new library project libhello in $~/libhello/
         EOE
 
-      test -f libhello/include/buildfile;
-      test -f libhello/src/hello/buildfile;
+      test -f libhello/include/buildfile
+      test -f libhello/src/hello/buildfile
 
-      $b libhello/ $config_cxx 2>>/~%EOE%;
+      $b libhello/ $config_cxx 2>>/~%EOE%
         %.*
         c++ libhello/src/hello/cxx{hello} -> libhello/src/hello/objs{hello}
         %.*
@@ -2866,7 +2854,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
         %.*
         EOE
 
-      $t libhello/ $config_cxx 2>>~%EOE%;
+      $t libhello/ $config_cxx 2>>~%EOE%
         %test .+%
         EOE
 
@@ -2882,14 +2870,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     {
       $* -l c++                                                           \
          -t lib,prefix-include=src/include,prefix-source=src,subdir=hello \
-         libhello 2>>/"EOE" &libhello/***;
+         libhello 2>>/"EOE" &libhello/***
         created new library project libhello in $~/libhello/
         EOE
 
-      test -f libhello/src/hello/buildfile;
-      test -f libhello/src/include/hello/buildfile;
+      test -f libhello/src/hello/buildfile
+      test -f libhello/src/include/hello/buildfile
 
-      $b libhello/ $config_cxx 2>>/~%EOE%;
+      $b libhello/ $config_cxx 2>>/~%EOE%
         %.*
         version libhello/src/include/hello/in{version} -> libhello/src/include/hello/hxx{version}
         %.*
@@ -2899,7 +2887,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
         %.*
         EOE
 
-      $t libhello/ $config_cxx 2>>~%EOE%;
+      $t libhello/ $config_cxx 2>>~%EOE%
         %test .+%
         EOE
 
@@ -2924,14 +2912,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
       $* -l c++                                              \
          -t lib,prefix-include=src/include,prefix-source=src,\
 subdir=hello,no-subdir-source                                \
-         libhello 2>>/"EOE" &libhello/***;
+         libhello 2>>/"EOE" &libhello/***
         created new library project libhello in $~/libhello/
         EOE
 
-      test -f libhello/src/buildfile;
-      test -f libhello/src/include/hello/buildfile;
+      test -f libhello/src/buildfile
+      test -f libhello/src/include/hello/buildfile
 
-      $b libhello/ $config_cxx 2>>/~%EOE%;
+      $b libhello/ $config_cxx 2>>/~%EOE%
         %.*
         version libhello/src/include/hello/in{version} -> libhello/src/include/hello/hxx{version}
         %.*
@@ -2941,7 +2929,7 @@ subdir=hello,no-subdir-source                                \
         %.*
         EOE
 
-      $t libhello/ $config_cxx 2>>~%EOE%;
+      $t libhello/ $config_cxx 2>>~%EOE%
         %test .+%
         EOE
 
@@ -2966,14 +2954,14 @@ subdir=hello,no-subdir-source                                \
       $* -l c++                                                     \
          -t lib,prefix-include=include,prefix-source=libs/hello/src,\
 subdir=hello,no-subdir-source                                       \
-         libhello 2>>/"EOE" &libhello/***;
+         libhello 2>>/"EOE" &libhello/***
         created new library project libhello in $~/libhello/
         EOE
 
-      test -f libhello/libs/hello/src/buildfile;
-      test -f libhello/include/hello/buildfile;
+      test -f libhello/libs/hello/src/buildfile
+      test -f libhello/include/hello/buildfile
 
-      $b libhello/ $config_cxx 2>>/~%EOE%;
+      $b libhello/ $config_cxx 2>>/~%EOE%
         %.*
         version libhello/include/hello/in{version} -> libhello/include/hello/hxx{version}
         %.*
@@ -2983,7 +2971,7 @@ subdir=hello,no-subdir-source                                       \
         %.*
         EOE
 
-      $t libhello/ $config_cxx 2>>~%EOE%;
+      $t libhello/ $config_cxx 2>>~%EOE%
         %test .+%
         EOE
 
@@ -3005,7 +2993,7 @@ subdir=hello,no-subdir-source                                       \
     : multiple-components
     :
     {
-      $* -l c++ -t bare hello 2>>/"EOE" &hello/***;
+      $* -l c++ -t bare hello 2>>/"EOE" &hello/***
         created new bare project hello in $~/hello/
         EOE
 
@@ -3014,34 +3002,34 @@ subdir=hello,no-subdir-source                                       \
          -t lib,\
 prefix-include=libhello1/include,prefix-source=libhello1/src,\
 subdir=hello1,no-subdir-source                               \
-         libhello1 2>>/"EOE";
+         libhello1 2>>/"EOE"
         created new library source subdirectory libhello1 in
           $~/hello/libhello1/include/hello1/
           $~/hello/libhello1/src/
         EOE
 
-      test -f hello/libhello1/include/hello1/buildfile;
-      test -f hello/libhello1/src/buildfile;
+      test -f hello/libhello1/include/hello1/buildfile
+      test -f hello/libhello1/src/buildfile
 
       $* -d hello --source                                   \
          -l c++                                              \
          -t lib,\
 prefix-include=libhello2/include,prefix-source=libhello2/src,\
 subdir=hello2,no-subdir-source                               \
-         libhello2 2>>/"EOE";
+         libhello2 2>>/"EOE"
         created new library source subdirectory libhello2 in
           $~/hello/libhello2/include/hello2/
           $~/hello/libhello2/src/
         EOE
 
-      test -f hello/libhello2/include/hello2/buildfile;
-      test -f hello/libhello2/src/buildfile;
+      test -f hello/libhello2/include/hello2/buildfile
+      test -f hello/libhello2/src/buildfile
 
-      $b hello/ $config_cxx 2>>~%EOE%;
+      $b hello/ $config_cxx 2>>~%EOE%
         %(c\+\+|ld|ar) .+%{8}
         EOE
 
-      $t hello/ $config_cxx 2>>/EOE;
+      $t hello/ $config_cxx 2>>/EOE
         info: dir{hello/} has nothing to test
         EOE
 
@@ -3063,7 +3051,7 @@ subdir=hello2,no-subdir-source                               \
     : multiple-components-diff-prefixes
     :
     {
-      $* -l c++ -t bare hello 2>>/"EOE" &hello/***;
+      $* -l c++ -t bare hello 2>>/"EOE" &hello/***
         created new bare project hello in $~/hello/
         EOE
 
@@ -3072,26 +3060,26 @@ subdir=hello2,no-subdir-source                               \
          -t lib,\
 prefix-include=libs/libhello/include,prefix-source=libs/libhello/src,\
 subdir=hello,no-subdir-source                                        \
-         libhello 2>>/"EOE";
+         libhello 2>>/"EOE"
         created new library source subdirectory libhello in
           $~/hello/libs/libhello/include/hello/
           $~/hello/libs/libhello/src/
         EOE
 
-      test -f hello/libs/libhello/include/hello/buildfile;
-      test -f hello/libs/libhello/src/buildfile;
+      test -f hello/libs/libhello/include/hello/buildfile
+      test -f hello/libs/libhello/src/buildfile
 
-      $* -d hello --source -l c++ -t exe,prefix=src hello 2>>/"EOE";
+      $* -d hello --source -l c++ -t exe,prefix=src hello 2>>/"EOE"
         created new executable source subdirectory hello in $~/hello/src/hello/
         EOE
 
-      test -f hello/src/hello/buildfile;
+      test -f hello/src/hello/buildfile
 
-      $b hello/ $config_cxx 2>>~%EOE%;
+      $b hello/ $config_cxx 2>>~%EOE%
         %(c\+\+|ld|ar) .+%{6}
         EOE
 
-      $t hello/ $config_cxx 2>>~%EOE%;
+      $t hello/ $config_cxx 2>>~%EOE%
         %test .+%
         EOE
 
@@ -3113,26 +3101,26 @@ subdir=hello,no-subdir-source                                        \
     : packaging-third-party
     :
     {
-      $* -l c -t empty hello 2>>/"EOE" &hello/***;
+      $* -l c -t empty hello 2>>/"EOE" &hello/***
         created new empty project hello in $~/hello/
         EOE
 
       $* -d hello --package                                                    \
          -l c                                                                  \
          -t lib,split,subdir=hello,no-version,no-symexport,buildfile-in-prefix \
-         libhello 2>>/"EOE";
+         libhello 2>>/"EOE"
         created new library package libhello in $~/hello/libhello/
         EOE
 
-      test -f hello/libhello/include/buildfile;
-      test -f hello/libhello/include/buildfile;
+      test -f hello/libhello/include/buildfile
+      test -f hello/libhello/include/buildfile
 
-      cat <<EOI >=hello/libhello/src/hello.def;
+      cat <<EOI >=hello/libhello/src/hello.def
         EXPORTS
           say_hello
         EOI
 
-      cat <<EOI >+hello/libhello/src/buildfile;
+      cat <<EOI >+hello/libhello/src/buildfile
 
         libs{hello}: def{hello}: include = ($c.target.class == 'windows')
         EOI
@@ -3140,13 +3128,13 @@ subdir=hello,no-subdir-source                                        \
       $* -d hello --package                                     \
          -l c                                                   \
          -t exe,prefix=src,subdir=hello-app,buildfile-in-prefix \
-         hello 2>>/"EOE";
+         hello 2>>/"EOE"
         created new executable package hello in $~/hello/hello/
         EOE
 
-      test -f hello/hello/src/buildfile;
+      test -f hello/hello/src/buildfile
 
-      $b hello/libhello/ $config_c 2>>/~%EOE%;
+      $b hello/libhello/ $config_c 2>>/~%EOE%
         %.*
         c hello/libhello/src/hello/c{hello} -> hello/libhello/src/hello/objs{hello}
         %.*
@@ -3154,12 +3142,12 @@ subdir=hello,no-subdir-source                                        \
         %.*
         EOE
 
-      $b hello/hello/ $config_c 2>>/~%EOE%;
+      $b hello/hello/ $config_c 2>>/~%EOE%
         c hello/hello/src/hello-app/c{hello} -> hello/hello/src/hello-app/obje{hello}
         ld hello/hello/src/exe{hello}
         EOE
 
-      $t hello/libhello/ hello/hello/ $config_c 2>>~%EOE%;
+      $t hello/libhello/ hello/hello/ $config_c 2>>~%EOE%
         %test .+%{2}
         EOE
 
@@ -3169,22 +3157,22 @@ subdir=hello,no-subdir-source                                        \
         %.*
         EOE
     }
-  }
-}
+  }}
+}}
 
 : cfg
-{
+{{
   : dir-and-name
   :
   {
-    $* -C prj-config @cfg prj cc $config_cxx 2>>/~"%EOE%" &prj/*** &prj-config/***;
+    $* -C prj-config @cfg prj cc $config_cxx 2>>/~"%EOE%" &prj/*** &prj-config/***
       created new executable project prj in $~/prj/
       created configuration @cfg $~/prj-config/ 1 target default,forwarded,auto-synchronized
       synchronizing:
       %  new prj.+19700101000000%
       EOE
 
-    $status >'prj configured 0.1.0-a.0.19700101000000';
+    $status >'prj configured 0.1.0-a.0.19700101000000'
 
     $b prj/ 2>>~%EOE%
       %(mkdir|c\+\+|ld|ln) .+%{4}
@@ -3199,14 +3187,14 @@ subdir=hello,no-subdir-source                                        \
   : character is special).
   :
   {
-    $* -C -@cfg prj cc $config_cxx 2>>/~"%EOE%" &prj/*** &prj-cfg/***;
+    $* -C -@cfg prj cc $config_cxx 2>>/~"%EOE%" &prj/*** &prj-cfg/***
       created new executable project prj in $~/prj/
       created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
       synchronizing:
       %  new prj.+19700101000000%
       EOE
 
-    $status >'prj configured 0.1.0-a.0.19700101000000';
+    $status >'prj configured 0.1.0-a.0.19700101000000'
 
     $b prj/ 2>>~%EOE%
       %(mkdir|c\+\+|ld|ln) .+%{4}
@@ -3216,14 +3204,14 @@ subdir=hello,no-subdir-source                                        \
   : no-module
   :
   {
-    $* -C -@cfg prj 2>>EOE != 0;
+    $* -C -@cfg prj 2>>EOE != 0
       error: no build system module(s) specified for configuration to be created
         info: for example, for C/C++ configuration, specify 'cc'
         info: use '--' to create configuration without modules
         info: for example: bdep new -C ... --
       EOE
 
-    $* -C -@cfg prj -- 2>>/~"%EOE%" &prj/*** &prj-cfg/***;
+    $* -C -@cfg prj -- 2>>/~"%EOE%" &prj/*** &prj-cfg/***
       created new executable project prj in $~/prj/
       created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
       synchronizing:
@@ -3232,4 +3220,4 @@ subdir=hello,no-subdir-source                                        \
 
     $status >'prj configured 0.1.0-a.0.19700101000000'
   }
-}
+}}

@@ -9,13 +9,11 @@
 +if! ($git_version_major >  2 || \
       $git_version_major == 2 && $git_version_minor >= 11)
   exit
-end
 
 server = $config.bdep.tests.ci.server
 
 +if ("$server" == '')
   exit
-end
 
 # Create the remote repository.
 #
@@ -66,12 +64,12 @@ windows = ($cxx.target.class == 'windows')
 #
 : single-pkg
 :
-{
+{{
   : single-cfg
   :
   {
-    $clone_root_prj;
-    $init -C @cfg &prj-cfg/***;
+    $clone_root_prj
+    $init -C @cfg &prj-cfg/***
 
     $* --no-progress 2>>~%EOE%
       %CI request is queued.*%
@@ -83,8 +81,8 @@ windows = ($cxx.target.class == 'windows')
   :
   if! $windows
   {
-    $clone_root_prj;
-    $init -C @cfg &prj-cfg/***;
+    $clone_root_prj
+    $init -C @cfg &prj-cfg/***
 
     $* 2>>~"%EOE%"
       submitting to $server
@@ -97,7 +95,7 @@ windows = ($cxx.target.class == 'windows')
   : no-cfg
   :
   {
-    $new prj &prj/***;
+    $new prj &prj/***
 
     $* 2>>~%EOE% != 0
       %error: no default configuration in project .+%
@@ -108,9 +106,9 @@ windows = ($cxx.target.class == 'windows')
   : multi-cfg
   :
   {
-    $clone_root_prj;
-    $init -C @cfg1 &prj-cfg1/***;
-    $init -C @cfg2 &prj-cfg2/***;
+    $clone_root_prj
+    $init -C @cfg1 &prj-cfg1/***
+    $init -C @cfg2 &prj-cfg2/***
 
     $* --all 2>>EOE != 0
       error: package prj is initialized in multiple specified configurations
@@ -122,8 +120,8 @@ windows = ($cxx.target.class == 'windows')
   : no-commits
   :
   {
-    $new prj &prj/***;
-    $init -C @cfg &prj-cfg/***;
+    $new prj &prj/***
+    $init -C @cfg &prj-cfg/***
 
     $* 2>>~%EOE% != 0
       error: no commits in project repository
@@ -136,8 +134,8 @@ windows = ($cxx.target.class == 'windows')
   {
     test.arguments += --repository "$repository#frag"
 
-    $clone_root_prj;
-    $init -C @cfg &prj-cfg/***;
+    $clone_root_prj
+    $init -C @cfg &prj-cfg/***
 
     $* 2>>"EOE" != 0
       error: remote git repository URL '$repository#frag' already has fragment
@@ -146,7 +144,7 @@ windows = ($cxx.target.class == 'windows')
 
   : overrides
   :
-  {
+  {{
     +$clone_root_prj
     +$init -C @cfg &prj-cfg/***
 
@@ -158,9 +156,9 @@ windows = ($cxx.target.class == 'windows')
     : seems to be impossible to verify the submitted overrides manifest.
     :
     {
-      $clone_prj;
+      $clone_prj
 
-      cat <<EOI >=overrides.manifest;
+      cat <<EOI >=overrides.manifest
         : 1
         builds: all
         EOI
@@ -179,7 +177,7 @@ windows = ($cxx.target.class == 'windows')
     : package-build-constraints
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --builds 'default/&gcc' \
          --override 'default-build-include: linux*' \
@@ -192,7 +190,7 @@ windows = ($cxx.target.class == 'windows')
     : build-configs
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --override 'mytest-build-config: config.prj.network=true config.prj.cache=true' \
          --override 'default-build-config: config.prj.network=true' 2>>~%EOE%
@@ -204,7 +202,7 @@ windows = ($cxx.target.class == 'windows')
     : package-build-emails
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --override 'default-build-email: foo@example.com' \
          --override 'default-build-warning-email: bar@example.com' 2>>~%EOE%
@@ -216,7 +214,7 @@ windows = ($cxx.target.class == 'windows')
     : common-package-build-emails
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --build-email 'foo@example.com' \
          --override 'default-build-warning-email: bar@example.com' 2>>EOE != 0
@@ -228,7 +226,7 @@ windows = ($cxx.target.class == 'windows')
     : package-build-common-emails
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --override 'default-build-warning-email: foo@example.com' \
          --override 'build-error-email: bar@example.com' 2>>EOE != 0
@@ -240,7 +238,7 @@ windows = ($cxx.target.class == 'windows')
     : build-configs-constraints
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --override 'mytest-build-config: config.prj.network=true config.prj.cache=true' \
          --build-config 'mytest/linux*-gcc*' \
@@ -254,7 +252,7 @@ windows = ($cxx.target.class == 'windows')
     : build-configs-package-config
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --override 'mytest-build-config: config.prj.network=true config.prj.cache=true' \
          --package-config 'mytest' 2>>~%EOE%
@@ -266,9 +264,9 @@ windows = ($cxx.target.class == 'windows')
     : common-package-build-constraints
     :
     {
-      $clone_prj;
+      $clone_prj
 
-      cat <<EOI >=overrides.manifest;
+      cat <<EOI >=overrides.manifest
         : 1
         builds: all
         EOI
@@ -282,9 +280,9 @@ windows = ($cxx.target.class == 'windows')
     : build-auxiliary
     :
     {
-      $clone_prj;
+      $clone_prj
 
-      $* --override 'build-auxiliary: *-postgresql_16' 2>>~%EOE%;
+      $* --override 'build-auxiliary: *-postgresql_16' 2>>~%EOE%
         %CI request is queued.*%
         %reference: .+%
         EOE
@@ -297,15 +295,15 @@ windows = ($cxx.target.class == 'windows')
 
     : build-bot
     :
-    {
+    {{
       +$clone_prj
 
       : common
       :
       {
-        $clone_prj;
+        $clone_prj
 
-        cat <<EOI >=f;
+        cat <<EOI >=f
           : 1
           build-bot:
           \
@@ -335,9 +333,9 @@ windows = ($cxx.target.class == 'windows')
       : config-specific
       :
       {
-        $clone_prj;
+        $clone_prj
 
-        cat <<EOI >=f;
+        cat <<EOI >=f
           : 1
           network-build-bot:
           \
@@ -367,9 +365,9 @@ windows = ($cxx.target.class == 'windows')
       : common-and-config-specific
       :
       {
-        $clone_prj;
+        $clone_prj
 
-        cat <<EOI >=f;
+        cat <<EOI >=f
           : 1
           build-bot:
           \
@@ -432,9 +430,9 @@ windows = ($cxx.target.class == 'windows')
       : unknown-config
       :
       {
-        $clone_prj;
+        $clone_prj
 
-        cat <<EOI >=f;
+        cat <<EOI >=f
           : 1
           unknown-build-bot:
           \
@@ -476,22 +474,22 @@ windows = ($cxx.target.class == 'windows')
           \
           EOE
       }
-    }
+    }}
 
     : invalid-option
     :
-    {
+    {{
       +$clone_prj
 
       : overrides-file
       :
-      {
+      {{
         +$clone_prj
 
         : reading
         :
         {
-          $clone_prj;
+          $clone_prj
 
           $* --overrides-file overrides.manifest 2>>~%EOE% != 0
             %error: invalid value 'overrides.manifest' for option '--overrides-file': unable to read: .+%
@@ -501,9 +499,9 @@ windows = ($cxx.target.class == 'windows')
         : parsing
         :
         {
-          $clone_prj;
+          $clone_prj
 
-          cat <<EOI >=overrides.manifest;
+          cat <<EOI >=overrides.manifest
             builds: all
             EOI
 
@@ -511,12 +509,12 @@ windows = ($cxx.target.class == 'windows')
             error: invalid value 'overrides.manifest' for option '--overrides-file': unable to parse: 1:1: error: format version pair expected
             EOE
         }
-      }
+      }}
 
       : override
       :
       {
-        $clone_prj;
+        $clone_prj
 
         $* --override 'all' 2>>EOE != 0
           error: invalid value 'all' for option '--override': missing ':'
@@ -529,7 +527,7 @@ windows = ($cxx.target.class == 'windows')
       : manifest is invalid.
       :
       {
-        $clone_prj;
+        $clone_prj
 
         $* --override 'builds: all' --override 'builds: default : &gcc' 2>>EOE != 0
           error: invalid --override option value: invalid package builds: unexpected underlying class set
@@ -542,7 +540,7 @@ windows = ($cxx.target.class == 'windows')
       : This is a fake option (see ci.cli for details).
       :
       {
-        $clone_prj;
+        $clone_prj
 
         $* --overrides 'all' 2>>EOE != 0
           error: unknown option '--overrides'
@@ -552,19 +550,19 @@ windows = ($cxx.target.class == 'windows')
       : target-and-package-configs
       :
       {
-        $clone_prj;
+        $clone_prj
 
         $* --override 'builds: gcc' --override 'network-builds: linux' 2>>EOE != 0
           error: invalid --override option value: 'network-builds' override specified together with 'builds' override
             info: override: network-builds: linux
           EOE
       }
-    }
-  }
+    }}
+  }}
 
   : target-config
   :
-  {
+  {{
     +$clone_root_prj
     +$init -C @cfg &prj-cfg/***
 
@@ -573,7 +571,7 @@ windows = ($cxx.target.class == 'windows')
     : valid
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --target-config 'linux**/x86_64**' --target-config 'freebsd**' 2>>~%EOE%
         %CI request is queued.*%
@@ -584,7 +582,7 @@ windows = ($cxx.target.class == 'windows')
     : empty-config
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --target-config '/x86_64**' 2>>EOE != 0
         error: invalid --target-config option value: empty build configuration name pattern
@@ -595,7 +593,7 @@ windows = ($cxx.target.class == 'windows')
     : empty-target
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --target-config 'linux**/' 2>>EOE != 0
         error: invalid --target-config option value: empty build target pattern
@@ -606,7 +604,7 @@ windows = ($cxx.target.class == 'windows')
     : overrides
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --target-config 'linux_debian_8-gcc_4.9' \
          --override 'build-include: linux_debian_12-gcc_13' 2>>EOE != 0
@@ -618,7 +616,7 @@ windows = ($cxx.target.class == 'windows')
     : builds-overrides
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --target-config 'linux_debian_8-gcc_4.9' --builds '&gcc' 2>>~%EOE%
         %CI request is queued.*%
@@ -629,7 +627,7 @@ windows = ($cxx.target.class == 'windows')
     : interactive
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --target-config 'linux**' --interactive 'linux_debian_8-gcc_4.9' 2>>EOE != 0
         error: --target-config specified together with --interactive|-i
@@ -639,17 +637,17 @@ windows = ($cxx.target.class == 'windows')
     : package-config
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --target-config 'linux**' --package-config 'default' 2>>EOE != 0
         error: --target-config specified together with --package-config
         EOE
     }
-  }
+  }}
 
   : build-config
   :
-  {
+  {{
     +$clone_root_prj
     +$init -C @cfg &prj-cfg/***
 
@@ -658,7 +656,7 @@ windows = ($cxx.target.class == 'windows')
     : multiple
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --build-config 'default/linux**/x86_64**' --build-config 'default/freebsd**' 2>>~%EOE%
         %CI request is queued.*%
@@ -669,7 +667,7 @@ windows = ($cxx.target.class == 'windows')
     : invalid-package-config
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --build-config 'default/linux**/x86_64**' --package-config 'cache' 2>>EOE != 0
         error: invalid --package-config option value: package prj has no build configuration 'cache'
@@ -679,7 +677,7 @@ windows = ($cxx.target.class == 'windows')
     : with-package-config-option
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --build-config 'default/linux**/x86_64**' --package-config 'network' 2>>~%EOE%
         %CI request is queued.*%
@@ -690,7 +688,7 @@ windows = ($cxx.target.class == 'windows')
     : invalid-package-config-option
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --build-config 'default/linux**/x86_64**' --package-config 'default' 2>>EOE != 0
         error: package configuration default is specified using both --package-config and --build-config
@@ -700,7 +698,7 @@ windows = ($cxx.target.class == 'windows')
     : no-target-config
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --build-config 'default' 2>>EOE != 0
         error: invalid --build-config option value: no target configuration in 'default'
@@ -710,7 +708,7 @@ windows = ($cxx.target.class == 'windows')
     : empty-package-config
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --build-config '/linux**/x86_64**' 2>>EOE != 0
         error: invalid --build-config option value: no package configuration in '/linux**/x86_64**'
@@ -720,7 +718,7 @@ windows = ($cxx.target.class == 'windows')
     : empty-target-config
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --build-config 'default//x86_64**' 2>>EOE != 0
         error: invalid --build-config option value: empty build configuration name pattern
@@ -731,7 +729,7 @@ windows = ($cxx.target.class == 'windows')
     : empty-target
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --build-config 'default/linux**/' 2>>EOE != 0
         error: invalid --build-config option value: empty build target pattern
@@ -742,7 +740,7 @@ windows = ($cxx.target.class == 'windows')
     : overrides
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --build-config 'default/linux_debian_8-gcc_4.9' --builds '&gcc' 2>>EOE != 0
         error: invalid --build-config option value: 'default-builds' override specified together with 'builds' override
@@ -753,7 +751,7 @@ windows = ($cxx.target.class == 'windows')
     : interactive
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --build-config 'default/linux**' --interactive 'linux_debian_8-gcc_4.9' 2>>EOE != 0
         error: --build-config specified together with --interactive|-i
@@ -763,17 +761,17 @@ windows = ($cxx.target.class == 'windows')
     : package-config
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --build-config 'linux**' --target-config 'linux_debian_8-gcc_4.9' 2>>EOE != 0
         error: --target-config specified together with --build-config
         EOE
     }
-  }
+  }}
 
   : package-config
   :
-  {
+  {{
     +$clone_root_prj
     +$init -C @cfg &prj-cfg/***
 
@@ -782,7 +780,7 @@ windows = ($cxx.target.class == 'windows')
     : valid
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --package-config 'network' 2>>~%EOE%
         %CI request is queued.*%
@@ -793,17 +791,17 @@ windows = ($cxx.target.class == 'windows')
     : interactive
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --package-config 'default' --interactive 'linux_debian_8-gcc_4.9' 2>>EOE != 0
         error: --package-config specified together with --interactive|-i
         EOE
     }
-  }
+  }}
 
   : interactive
   :
-  {
+  {{
     +$clone_root_prj
     +$init -C @cfg &prj-cfg/***
 
@@ -812,7 +810,7 @@ windows = ($cxx.target.class == 'windows')
     : target-config
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --interactive 'linux_debian_8-gcc_4.9:warning' 2>>~%EOE%
         %CI request is queued.*%
@@ -823,7 +821,7 @@ windows = ($cxx.target.class == 'windows')
     : package-target-config
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --interactive 'network/linux_debian_8-gcc_4.9:warning' 2>>~%EOE%
         %CI request is queued.*%
@@ -834,7 +832,7 @@ windows = ($cxx.target.class == 'windows')
     : package-target-config-target
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --interactive 'network/linux_debian_8-gcc_4.9/aarch64**:warning' 2>>~%EOE%
         %CI request is queued.*%
@@ -845,7 +843,7 @@ windows = ($cxx.target.class == 'windows')
     : def-breakpoint
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --interactive 'linux_debian_8-gcc_4.9' 2>>~%EOE%
         %CI request is queued.*%
@@ -856,7 +854,7 @@ windows = ($cxx.target.class == 'windows')
     : config-empty
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --interactive '/warning' 2>>EOE != 0
         error: invalid --interactive|-i option value '/warning': package configuration name is empty
@@ -866,7 +864,7 @@ windows = ($cxx.target.class == 'windows')
     : overrides
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --interactive 'linux_debian_8-gcc_4.9' \
          --override 'build-include: linux_debian_12-gcc_13' 2>>EOE != 0
@@ -878,14 +876,14 @@ windows = ($cxx.target.class == 'windows')
     : overrides-builds
     :
     {
-      $clone_prj;
+      $clone_prj
 
       $* --interactive 'linux_debian_8-gcc_4.9' --builds '&gcc' 2>>~%EOE%
         %CI request is queued.*%
         %reference: .+%
         EOE
     }
-  }
+  }}
 
   : non-standard-version
   :
@@ -893,24 +891,24 @@ windows = ($cxx.target.class == 'windows')
   : non-bdep-initialized project, using the forwarded build2 configuration.
   :
   {
-    cp --no-cleanup -pr ../../prj ./ &prj/***;
-    rm -r prj/.bdep/;
+    cp --no-cleanup -pr ../../prj ./ &prj/***
+    rm -r prj/.bdep/
 
-    sed -i -e 's/^(version:) .*$/\1 12345/' prj/manifest;
+    sed -i -e 's/^(version:) .*$/\1 12345/' prj/manifest
 
     sed -i \
         -e 's/^(project =.*)$/\1\nversion = 12345/' \
         -e 's/^using version$//' \
-        prj/build/bootstrap.build;
+        prj/build/bootstrap.build
 
-    $g branch non-standard-version;
-    $g checkout non-standard-version;
-    $g -c core.safecrlf=false commit -a -m 'Change version' --no-verify;
-    $g push --set-upstream origin non-standard-version;
+    $g branch non-standard-version
+    $g checkout non-standard-version
+    $g -c core.safecrlf=false commit -a -m 'Change version' --no-verify
+    $g push --set-upstream origin non-standard-version
 
-    $build 'configure:' prj/@prj-cfg/,forward &prj/build/bootstrap/*** 2>!;
+    $build 'configure:' prj/@prj-cfg/,forward &prj/build/bootstrap/*** 2>!
 
-    $* --no-progress --forward 2>>~%EOE%;
+    $* --no-progress --forward 2>>~%EOE%
       %CI request is queued.*%
       %reference: .+%
       EOE
@@ -919,7 +917,7 @@ windows = ($cxx.target.class == 'windows')
     #
     # Suppress the --yes option.
     #
-    test.arguments = $regex.apply($test.arguments, '^--yes$', '');
+    test.arguments = $regex.apply($test.arguments, '^--yes$', '')
 
     $* --no-progress --forward prj <'y' 2>>~"%EOE%"
       submitting:
@@ -931,11 +929,11 @@ windows = ($cxx.target.class == 'windows')
       %reference: .+%
       EOE
   }
-}
+}}
 
 : multi-pkg
 :
-{
+{{
   # Create the remote repository.
   #
   +mkdir --no-cleanup prj.git
@@ -961,8 +959,8 @@ windows = ($cxx.target.class == 'windows')
   : both
   :
   {
-    $clone_prj;
-    $init -C @cfg &prj-cfg/***;
+    $clone_prj
+    $init -C @cfg &prj-cfg/***
 
     $* 2>>~%EOE%
       %CI request is queued.*%
@@ -973,12 +971,12 @@ windows = ($cxx.target.class == 'windows')
   : pkg-by-name
   :
   {
-    $clone_prj;
-    $init -C @cfg &prj-cfg/***;
+    $clone_prj
+    $init -C @cfg &prj-cfg/***
 
     # Suppress the --yes option.
     #
-    test.arguments = $regex.apply($test.arguments, '^--yes$', '');
+    test.arguments = $regex.apply($test.arguments, '^--yes$', '')
 
     $* libprj <'y' 2>>~"%EOE%"
       submitting:
@@ -994,16 +992,16 @@ windows = ($cxx.target.class == 'windows')
   : diff-configs
   :
   {
-    $clone_prj;
-    $init -C @cfg1 -d prj/libprj &prj-cfg1/***;
+    $clone_prj
+    $init -C @cfg1 -d prj/libprj &prj-cfg1/***
 
     # While at it, test that we fail for uninitialized package.
     #
-    $* -d prj/prj 2>>EOE != 0;
+    $* -d prj/prj 2>>EOE != 0
       error: package prj is not initialized in any default configuration(s)
       EOE
 
-    $init -C @cfg2 --config-type host -d prj/prj &prj-cfg2/***;
+    $init -C @cfg2 --config-type host -d prj/prj &prj-cfg2/***
 
     $* 2>>~%EOE%
       %CI request is queued.*%
@@ -1014,12 +1012,12 @@ windows = ($cxx.target.class == 'windows')
   : single
   :
   {
-    $clone_prj;
-    $init -C @cfg &prj-cfg/***;
+    $clone_prj
+    $init -C @cfg &prj-cfg/***
 
     # CI the single libprj package rather than the whole prj project.
     #
-    test.arguments = $regex.apply($test.arguments, '^(prj)$', '\1/libprj');
+    test.arguments = $regex.apply($test.arguments, '^(prj)$', '\1/libprj')
 
     $* 2>>~%EOE%
       %CI request is queued.*%
@@ -1030,8 +1028,8 @@ windows = ($cxx.target.class == 'windows')
   : interactive
   :
   {
-    $clone_prj;
-    $init -C @cfg &prj-cfg/***;
+    $clone_prj
+    $init -C @cfg &prj-cfg/***
 
     $* --interactive 'linux_debian_8-gcc_4.9' 2>>EOE != 0
       error: multiple packages specified with --interactive|-i
@@ -1041,12 +1039,12 @@ windows = ($cxx.target.class == 'windows')
   : prompt
   :
   {
-    $clone_prj;
-    $init -C @cfg &prj-cfg/***;
+    $clone_prj
+    $init -C @cfg &prj-cfg/***
 
     # Suppress the --yes option.
     #
-    test.arguments = $regex.apply($test.arguments, '^--yes$', '');
+    test.arguments = $regex.apply($test.arguments, '^--yes$', '')
 
     $* <'y' 2>>~"%EOE%"
       submitting:
@@ -1062,4 +1060,4 @@ windows = ($cxx.target.class == 'windows')
       %reference: .+%
       EOE
   }
-}
+}}

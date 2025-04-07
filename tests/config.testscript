@@ -15,36 +15,36 @@ deinit += -d prj
 
 : create
 :
-{
+{{
   : name-dir
   :
   {
     # Note: custom cleanup to deal with backlinks.
     #
     #$clone_root_prj
-    cp -pr --no-cleanup ../../prj ./ &prj/***;
+    cp -pr --no-cleanup ../../prj ./ &prj/***
 
-    $* create @cfg cfg-dir $config_cxx 2>>/"EOE" &cfg-dir/***;
+    $* create @cfg cfg-dir $config_cxx 2>>/"EOE" &cfg-dir/***
       created configuration @cfg $~/cfg-dir/ 1 target default,forwarded,auto-synchronized
       EOE
 
-    $status 2>'error: package prj is not initialized in any default configuration(s)' != 0;
+    $status 2>'error: package prj is not initialized in any default configuration(s)' != 0
 
-    $init @cfg 2>>/~"%EOE%";
+    $init @cfg 2>>/~"%EOE%"
       initializing in project $~/prj/
       synchronizing:
       %  new prj.+19700101000000%
       EOE
 
-    $status >'prj configured 0.1.0-a.0.19700101000000';
+    $status >'prj configured 0.1.0-a.0.19700101000000'
 
-    $* list @cfg >>/"EOO";
+    $* list @cfg >>/"EOO"
       @cfg $~/cfg-dir/ 1 target default,forwarded,auto-synchronized
       EOO
 
     # While at it, test printing the configurations list in the JSON format.
     #
-    $* list @cfg --stdout-format 'json' >>~%EOO%;
+    $* list @cfg --stdout-format 'json' >>~%EOO%
       [
         {
           "id": 1,
@@ -63,7 +63,7 @@ deinit += -d prj
       ]
       EOO
 
-    $update @cfg 2>>~%EOE%;
+    $update @cfg 2>>~%EOE%
       %(mkdir|c\+\+|ld|ln) .+%{4}
       EOE
 
@@ -80,25 +80,25 @@ deinit += -d prj
     # Note: custom cleanup to deal with backlinks.
     #
     #$clone_root_prj
-    cp -pr --no-cleanup ../../prj ./ &prj/***;
+    cp -pr --no-cleanup ../../prj ./ &prj/***
 
-    $* create -- @cfg $config_cxx 2>>/"EOE" &prj-cfg/***;
+    $* create -- @cfg $config_cxx 2>>/"EOE" &prj-cfg/***
       created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
       EOE
 
-    $init @cfg 2>>/~"%EOE%";
+    $init @cfg 2>>/~"%EOE%"
       initializing in project $~/prj/
       synchronizing:
       %  new prj.+19700101000000%
       EOE
 
-    $status >'prj configured 0.1.0-a.0.19700101000000';
+    $status >'prj configured 0.1.0-a.0.19700101000000'
 
-    $* list >>/"EOO";
+    $* list >>/"EOO"
       @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
       EOO
 
-    $update @cfg 2>>~%EOE%;
+    $update @cfg 2>>~%EOE%
       %(mkdir|c\+\+|ld|ln) .+%{4}
       EOE
 
@@ -115,25 +115,25 @@ deinit += -d prj
     # Note: custom cleanup to deal with backlinks.
     #
     #$clone_root_prj
-    cp -pr --no-cleanup ../../prj ./ &prj/***;
+    cp -pr --no-cleanup ../../prj ./ &prj/***
 
-    $* create cfg $config_cxx 2>>/"EOE" &cfg/***;
+    $* create cfg $config_cxx 2>>/"EOE" &cfg/***
       created configuration $~/cfg/ 1 target default,forwarded,auto-synchronized
       EOE
 
-    $init -c cfg 2>>/~"%EOE%";
+    $init -c cfg 2>>/~"%EOE%"
       initializing in project $~/prj/
       synchronizing:
       %  new prj.+19700101000000%
       EOE
 
-    $status >'prj configured 0.1.0-a.0.19700101000000';
+    $status >'prj configured 0.1.0-a.0.19700101000000'
 
-    $* list >>/"EOO";
+    $* list >>/"EOO"
       $~/cfg/ 1 target default,forwarded,auto-synchronized
       EOO
 
-    $update -c cfg 2>>~%EOE%;
+    $update -c cfg 2>>~%EOE%
       %(mkdir|c\+\+|ld|ln) .+%{4}
       EOE
 
@@ -150,25 +150,25 @@ deinit += -d prj
     # Note: custom cleanup to deal with backlinks.
     #
     #$clone_root_prj
-    cp -pr --no-cleanup ../../prj ./ &prj/***;
+    cp -pr --no-cleanup ../../prj ./ &prj/***
 
-    $* create --config-type host -- @cfg $config_cxx 2>>/"EOE" &prj-cfg/***;
+    $* create --config-type host -- @cfg $config_cxx 2>>/"EOE" &prj-cfg/***
       created configuration @cfg $~/prj-cfg/ 1 host default,forwarded,auto-synchronized
       EOE
 
-    $init @cfg 2>>/~"%EOE%";
+    $init @cfg 2>>/~"%EOE%"
       initializing in project $~/prj/
       synchronizing:
       %  new prj.+19700101000000%
       EOE
 
-    $status >'prj configured 0.1.0-a.0.19700101000000';
+    $status >'prj configured 0.1.0-a.0.19700101000000'
 
-    $* list @cfg >>/"EOO";
+    $* list @cfg >>/"EOO"
       @cfg $~/prj-cfg/ 1 host default,forwarded,auto-synchronized
       EOO
 
-    $update @cfg 2>>~%EOE%;
+    $update @cfg 2>>~%EOE%
       %(mkdir|c\+\+|ld|ln) .+%{4}
       EOE
 
@@ -182,12 +182,12 @@ deinit += -d prj
   : wipe
   :
   {
-    $clone_root_prj;
+    $clone_root_prj
 
-    mkdir --no-cleanup cfg;
-    touch --no-cleanup cfg/a;
+    mkdir --no-cleanup cfg
+    touch --no-cleanup cfg/a
 
-    $* create cfg $config_cxx 2>>/"EOE" != 0;
+    $* create cfg $config_cxx 2>>/"EOE" != 0
       error: directory $~/cfg/ is not empty
         info: use --wipe to clean it up but be careful
       EOE
@@ -199,9 +199,9 @@ deinit += -d prj
 
   : no-module
   {
-    $clone_root_prj;
+    $clone_root_prj
 
-    $* create @cfg 2>>EOE != 0;
+    $* create @cfg 2>>EOE != 0
       error: no build system module(s) specified for configuration to be created
         info: for example, for C/C++ configuration, specify 'cc'
         info: use '--' to create configuration without modules
@@ -212,7 +212,7 @@ deinit += -d prj
       created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
       EOE
   }
-}
+}}
 
 : add
 :
@@ -220,22 +220,22 @@ deinit += -d prj
   # Note: custom cleanup to deal with backlinks.
   #
   #$clone_root_prj
-  cp -pr --no-cleanup ../prj ./ &prj/***;
+  cp -pr --no-cleanup ../prj ./ &prj/***
 
   # Pre-create configurations.
   #
-  $new -C prj-cfg1 tmp1 $config_cxx 2>! &prj-cfg1/*** &tmp1/***;
-  $new -C prj-cfg2 tmp2 $config_cxx 2>! &prj-cfg2/*** &tmp2/***;
+  $new -C prj-cfg1 tmp1 $config_cxx 2>! &prj-cfg1/*** &tmp1/***
+  $new -C prj-cfg2 tmp2 $config_cxx 2>! &prj-cfg2/*** &tmp2/***
 
-  $* add @cfg1 prj-cfg1 2>>/"EOE";
+  $* add @cfg1 prj-cfg1 2>>/"EOE"
     added configuration @cfg1 $~/prj-cfg1/ 1 target default,forwarded,auto-synchronized
     EOE
 
-  $* add @cfg2 prj-cfg2 2>>/"EOE";
+  $* add @cfg2 prj-cfg2 2>>/"EOE"
     added configuration @cfg2 $~/prj-cfg2/ 2 target auto-synchronized
     EOE
 
-  $init --all 2>>/~"%EOE%";
+  $init --all 2>>/~"%EOE%"
     initializing in project $~/prj/
     in configuration @cfg1:
     synchronizing:
@@ -246,7 +246,7 @@ deinit += -d prj
     %  new prj.+19700101000000%
     EOE
 
-  $status --all >>EOO;
+  $status --all >>EOO
     in configuration @cfg1:
     prj configured 0.1.0-a.0.19700101000000
 
@@ -254,12 +254,12 @@ deinit += -d prj
     prj configured 0.1.0-a.0.19700101000000
     EOO
 
-  $* list >>/"EOO";
+  $* list >>/"EOO"
     @cfg1 $~/prj-cfg1/ 1 target default,forwarded,auto-synchronized
     @cfg2 $~/prj-cfg2/ 2 target auto-synchronized
     EOO
 
-  $update --all 2>>~%EOE%;
+  $update --all 2>>~%EOE%
     in configuration @cfg1:
     %(mkdir|c\+\+|ld|ln) .+%{4}
 
@@ -286,27 +286,27 @@ deinit += -d prj
 : project.
 :
 {
-  $clone_root_prj;
+  $clone_root_prj
 
-  $* create                    @cfg      -- &prj-cfg/***      2>!;
-  $* create --config-type host @host-cfg -- &prj-host-cfg/*** 2>!;
+  $* create                    @cfg      -- &prj-cfg/***      2>!
+  $* create --config-type host @host-cfg -- &prj-host-cfg/*** 2>!
 
-  $* link @cfg @host-cfg 2>!;
+  $* link @cfg @host-cfg 2>!
 
-  $* remove --all 2>!;
+  $* remove --all 2>!
 
-  $* add @cfg 2>>/"EOE";
+  $* add @cfg 2>>/"EOE"
     added configuration @cfg $~/prj-cfg/ 3 target default,forwarded,auto-synchronized
     warning: added configuration @cfg already linked with host configurations
       info: configuration of host type: $~/prj-host-cfg/
       info: consider adding them to this project if it has any build-time dependencies
     EOE
 
-  $* remove --all 2>!;
+  $* remove --all 2>!
 
-  $* add @host-cfg 2>!;
+  $* add @host-cfg 2>!
 
-  $* add @cfg 2>>/"EOE";
+  $* add @cfg 2>>/"EOE"
     added configuration @cfg $~/prj-cfg/ 5 target default,forwarded,auto-synchronized
     EOE
 
@@ -339,26 +339,26 @@ deinit += -d prj
 : move
 :
 {
-  $clone_root_prj;
+  $clone_root_prj
 
-  $* create -- @cfg $config_cxx &prj-cfg/*** 2>>/"EOE";
+  $* create -- @cfg $config_cxx &prj-cfg/*** 2>>/"EOE"
     created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
     EOE
 
-  $init @cfg 2>>/~"%EOE%";
+  $init @cfg 2>>/~"%EOE%"
     initializing in project $~/prj/
     synchronizing:
     %  new prj.+19700101000000%
     EOE
 
-  mv prj-cfg prj-cfg2;
+  mv prj-cfg prj-cfg2
 
-  $* move @cfg prj-cfg2 2>>/"EOE";
+  $* move @cfg prj-cfg2 2>>/"EOE"
     moved configuration @cfg $~/prj-cfg/ 1 target to $~/prj-cfg2/
     info: explicit sync command is required for changes to take effect
     EOE
 
-  $update --all 2>>~%EOE%;
+  $update --all 2>>~%EOE%
     %(mkdir|c\+\+|ld) .+%{3}
     EOE
 
@@ -375,23 +375,23 @@ deinit += -d prj
   # Note: custom cleanup to deal with backlinks.
   #
   #$clone_root_prj
-  cp -pr --no-cleanup ../prj ./ &prj/***;
+  cp -pr --no-cleanup ../prj ./ &prj/***
 
-  $* create -- @cfg $config_cxx 2>>/"EOE" &prj-cfg/***;
+  $* create -- @cfg $config_cxx 2>>/"EOE" &prj-cfg/***
     created configuration @cfg $~/prj-cfg/ 1 target default,forwarded,auto-synchronized
     EOE
 
-  $init @cfg 2>>/~"%EOE%";
+  $init @cfg 2>>/~"%EOE%"
     initializing in project $~/prj/
     synchronizing:
     %  new prj.+19700101000000%
     EOE
 
-  $* rename @cfg cfg2 2>>/"EOE";
+  $* rename @cfg cfg2 2>>/"EOE"
     renamed configuration @cfg $~/prj-cfg/ 1 target to @cfg2
     EOE
 
-  $update @cfg2 2>>~%EOE%;
+  $update @cfg2 2>>~%EOE%
     %(mkdir|c\+\+|ld|ln) .+%{4}
     EOE
 
@@ -407,52 +407,52 @@ deinit += -d prj
 : Here we also test the set sub-command.
 :
 {
-  $clone_root_prj;
+  $clone_root_prj
 
-  $* create -- @cfg1 $config_cxx 2>! &prj-cfg1/***;
-  $* create -- @cfg2 $config_cxx 2>! &prj-cfg2/***;
+  $* create -- @cfg1 $config_cxx 2>! &prj-cfg1/***
+  $* create -- @cfg2 $config_cxx 2>! &prj-cfg2/***
 
-  $init --all 2>!;
+  $init --all 2>!
 
-  $* remove @cfg1 2>>EOE != 0;
+  $* remove @cfg1 2>>EOE != 0
     error: configuration @cfg1 contains initialized packages
       info: use deinit command to deinitialize packages
       info: use status command to list initialized packages
     EOE
 
-  $deinit @cfg1 2>>/"EOE";
+  $deinit @cfg1 2>>/"EOE"
     deinitializing in project $~/prj/
     synchronizing:
       drop prj
     EOE
 
-  $* remove @cfg1 2>>/"EOE";
+  $* remove @cfg1 2>>/"EOE"
     removed configuration @cfg1 $~/prj-cfg1/ 1 target
     EOE
 
-  $status --all >>EOO;
+  $status --all >>EOO
     prj configured 0.1.0-a.0.19700101000000
     EOO
 
-  $* list >>/"EOO";
+  $* list >>/"EOO"
     @cfg2 $~/prj-cfg2/ 2 target auto-synchronized
     EOO
 
-  $update 2>>/"EOE" != 0;
+  $update 2>>/"EOE" != 0
     error: no default configuration in project $~/prj/
       info: use \(@<cfg-name> | --config|-c <cfg-dir> | --all|-a\) to specify configuration explicitly
     EOE
 
-  $* set @cfg2 --default --forward --no-auto-sync 2>>/"EOE";
+  $* set @cfg2 --default --forward --no-auto-sync 2>>/"EOE"
     updated configuration @cfg2 $~/prj-cfg2/ 2 target default,forwarded
     info: explicit sync command is required for changes to take effect
     EOE
 
-  $* list >>/"EOO";
+  $* list >>/"EOO"
     @cfg2 $~/prj-cfg2/ 2 target default,forwarded
     EOO
 
-  $update 2>>~%EOE%;
+  $update 2>>~%EOE%
     %(mkdir|c\+\+|ld) .+%{3}
     EOE
 
@@ -466,22 +466,22 @@ deinit += -d prj
 : link
 :
 {
-  $clone_root_prj;
+  $clone_root_prj
 
-  $* create -- @cfg1 $config_cxx 2>! &prj-cfg1/***;
-  $* create -- @cfg2 $config_cxx 2>! &prj-cfg2/***;
+  $* create -- @cfg1 $config_cxx 2>! &prj-cfg1/***
+  $* create -- @cfg2 $config_cxx 2>! &prj-cfg2/***
 
-  $* link @cfg1 @cfg2 2>>EOE;
+  $* link @cfg1 @cfg2 2>>EOE
     linked configuration @cfg1 (target) with configuration @cfg2 (target)
     EOE
 
-  $* link @cfg1 @cfg2 2>>/~%EOE% != 0;
+  $* link @cfg1 @cfg2 2>>/~%EOE% != 0
     %error: configuration with uuid .{36} is already linked as \.\./prj-cfg2/%
     EOE
 
   # While at it test the config-unlink subcommand.
   #
-  $* unlink @cfg1 @cfg2 2>>EOE;
+  $* unlink @cfg1 @cfg2 2>>EOE
     unlinked configuration @cfg1 from configuration @cfg2
     EOE
 

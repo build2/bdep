@@ -49,7 +49,6 @@ EOI
 
 +if ("$git_version" == "")
   exit "unable to obtain git version from '$git_version_out'"
-end
 
 +echo "$git_version" | sed -e 's/(\d+).*/\1/'      | set git_version_major
 +echo "$git_version" | sed -e 's/\d+\.(\d+).*/\1/' | set git_version_minor
@@ -57,7 +56,6 @@ end
 +if! ($git_version_major >  2 || \
       $git_version_major == 2 && $git_version_minor >= 1)
   exit "minimum supported git version is 2.1.0"
-end
 
 # Helper commands that can be used by tests to prepare the testing environment
 # or validate an outcome of the command being tested. They are likely to get
