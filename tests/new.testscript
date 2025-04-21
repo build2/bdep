@@ -2418,6 +2418,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
       cat prj/libprj.bash/NEWS >'@@TODO'
 
       if $posix
+      {
         cat <<EOI >=hook
           #!/bin/sh
           echo "$(pwd)"
@@ -2433,6 +2434,7 @@ i = [cmdline] $build install: config.install.root=./install &install/***
           EOO
           created new library source subdirectory libprj in $~/prj/prj/src/libprj/
           EOE
+      }
     }
 
     : failure
