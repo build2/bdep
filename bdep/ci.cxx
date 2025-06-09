@@ -378,6 +378,13 @@ namespace bdep
 
       // Add "builds: all", unless the builds value is already overridden.
       //
+      // Note that the whole idea of adding the "builds: all" override is to
+      // make sure that the specified target configuration will be built even
+      // if it doesn't belong to the common build classes. However, if this
+      // target configuration doesn't belong to the 'all' class, it just won't
+      // be built. See the note in the --build-config overrides implementation
+      // for a potential way to fix that.
+      //
       if (!builds_override ())
         override ("builds", "all", origin::target_config);
 
@@ -642,6 +649,20 @@ namespace bdep
         // --build-config <pc>/... option is encountered, unless the
         // "<pc>-builds" value is already overridden.
         //
+        // Note that the whole idea of adding the "<pc>-builds: all" override
+        // is to make sure that the specified target configuration will be
+        // built even if it doesn't belong to the build classes effective for
+        // the specified package configuration. However, if this target
+        // configuration doesn't belong to the 'all' class, it just won't be
+        // built. Thus, what we should probably do is to invent another
+        // "truly-all" predefined class, which all the target configurations
+        // belong to, and use that in the override instead. Let's, however
+        // keep it simple for now, given that the described problem can
+        // normally be sidestepped by, for example, also specifying the class
+        // which the target configuration belongs to by prepending the
+        // `--build-config <pc>/...` option with the `--builds
+        // <pc>/<target-class>` option.
+        //
         if (first && !builds_override (pc))
           override (pc + "-builds", "all", origin::build_config);
 
@@ -868,6 +889,14 @@ namespace bdep
       if (!tg.empty ())
         tg = '/' + tg;
 
+      // Note that the whole idea of adding the "[<pc>-]builds: all" override
+      // is to make sure that the specified target configuration will be built
+      // even if it doesn't belong to the common/configuration-specific build
+      // classes. However, if this target configuration doesn't belong to the
+      // 'all' class, it just won't be built. See the note in the
+      // --build-config overrides implementation for a potential way to fix
+      // that.
+      //
       if (!bo)
         override (pc + "builds", "all", origin::interactive);
 
