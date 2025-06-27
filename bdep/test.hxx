@@ -20,13 +20,13 @@ namespace bdep
   {
     run_bpkg (2,
               o,
-              (o.jobs_specified ()
-               ? strings ({"-j", to_string (o.jobs ())})
-               : strings ()),
               "test",
               "-d", c->path,
               (o.immediate () ? "--immediate" :
                o.recursive () ? "--recursive" : nullptr),
+              (o.jobs_specified ()
+               ? strings ({"-j", to_string (o.jobs ())})
+               : strings ()),
               cfg_vars,
               pkgs);
   }

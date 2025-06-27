@@ -264,6 +264,8 @@ namespace bdep
     }
   }
 
+  string bpkg_fetch_cache_session;
+
   const char*
   name_bpkg (const common_options& co)
   {

@@ -201,6 +201,40 @@ namespace bdep
        invocations provided that curl is used."
     }
 
+    bool --offline
+    {
+      "Do not attempt to download resources (packages, repository metadata,
+       etc), instead taking them from the local fetch cache if available and
+       failing otherwise. See \l{bpkg-common-options(1)} for details on the
+       offline mode."
+    }
+
+    bool --no-fetch-cache
+    {
+      "Disable local caching of download resources (packages, repository
+       metadata, etc). By default these are cached in a permanent local
+       cache. See \l{bpkg-common-options(1)} for details on the fetch cache."
+    }
+
+    string --fetch-cache
+    {
+      "<mode>",
+      "Comma-separated list of local fetch cache modes. See
+       \l{bpkg-common-options(1)} for details on the available modes. Note
+       that the default for \cb{bdep} is to enable sharing of cached source
+       directories for dependencies during the configuration creation."
+    }
+
+    string --fetch-cache-session
+    {
+      "<id>",
+      "The local fetch cache session. Specifying the same session id across
+       multiple \cb{bdep} invocations allows eliminating repeated up-to-date
+       checks of repository metadata. Any value, such as UUID, that is
+       guaranteed not to clash with previous sessions can be used as a session
+       id. See \l{bpkg-common-options(1)} for details on the fetch cache."
+    }
+
     string --pager // String to allow empty value.
     {
       "<path>",
@@ -323,4 +357,16 @@ namespace bdep
     \
     "
   }
+
+  "
+   \h|DEFAULT OPTIONS FILES|
+
+   See \l{bdep-default-options-files(1)} for an overview of the default
+   options files. The following common options cannot be specified in the
+   default options files:
+
+   \
+   --fetch-cache-session
+   \
+  "
 }

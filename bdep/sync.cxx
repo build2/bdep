@@ -40,7 +40,7 @@ namespace bdep
                             co,
                             pipe /* stdout */,
                             2    /* stderr */,
-                            "rep-list",
+                            "list",
                             "-d", cfg));
 
     // Shouldn't throw, unless something is severely damaged.
@@ -282,6 +282,65 @@ namespace bdep
                               true  /* implicit */,
                               true  /* fetch */});
     }
+  }
+
+  // Given the configuration directory, return its fetch cache mode, if any.
+  //
+  static optional<string>
+  find_fetch_cache_mode (const common_options& co, const dir_path& d)
+  {
+    optional<string> r;
+
+    fdpipe pipe (open_pipe ()); // Text mode seems appropriate.
+
+    process pr (start_bpkg (3,
+                            co,
+                            pipe /* stdout */,
+                            2    /* stderr */,
+                            "cfg-info",
+                            "-d", d));
+
+    // Shouldn't throw, unless something is severely damaged.
+    //
+    pipe.out.close ();
+
+    bool io (false);
+    try
+    {
+      ifdstream is (move (pipe.in), fdstream_mode::skip, ifdstream::badbit);
+
+      // Retrieve the configuration mode.
+      //
+      for (string l; !eof (getline (is, l)); )
+      {
+        if (l.compare (0, 6, "mode: ") == 0)
+        {
+          for (size_t b (0), e (0), n; (n = next_word (l, b, e, ' ')) != 0; )
+          {
+            if (n > 12 && l.compare (b, 12, "fetch-cache=") == 0)
+            {
+              r = string (l, b + 12, n - 12);
+              break;
+            }
+          }
+
+          break;
+        }
+      }
+
+      is.close (); // Detect errors.
+    }
+    catch (const io_error&)
+    {
+      // Presumably the child process failed and issued diagnostics so let
+      // finish_bpkg() try to deal with that first.
+      //
+      io = true;
+    }
+
+    finish_bpkg (co, pr, io);
+
+    return r;
   }
 
   // Find/create and link a configuration suitable for build-time dependency.
@@ -658,6 +717,10 @@ namespace bdep
       dep_dir += "-";
       dep_dir += dep_type;
 
+      // Extract the fetch mode from the main configuration.
+      //
+      optional<string> fetch_cache_mode (find_fetch_cache_mode (co, dpt_dir));
+
       strings cfg_args {"cc", "config.config.load=~" + dep_type};
 
       // Unless explicitly allowed via the respective create_*_config
@@ -689,10 +752,12 @@ namespace bdep
 
           dr << "  ";
           cmd_config_create_print (dr,
+                                   co,
                                    src_prj,
                                    dep_dir,
                                    dep_type,
                                    dep_type,
+                                   &fetch_cache_mode,
                                    false, true, true, // See below.
                                    cfg_args);
 
@@ -761,6 +826,7 @@ namespace bdep
                                        dep_dir,
                                        dep_type /* name */,
                                        dep_type,
+                                       &fetch_cache_mode,
                                        false /* default */,
                                        true  /* forward */,
                                        true  /* auto_sync */,
@@ -1650,6 +1716,7 @@ namespace bdep
                 "fetch",
                 "-d", p,
                 (deep_fetch ? nullptr : "--shallow"),
+                "--no-dir-progress",
                 cfg.reps);
     }
 

@@ -68,12 +68,16 @@ namespace bdep
 
   // *_bpkg()
   //
+  extern string bpkg_fetch_cache_session;
+
   template <typename O, typename E, typename... A>
   process
   start_bpkg (uint16_t v,
               const common_options& co,
               O&& out,
               E&& err,
+              const char* const* envvars,
+              const char* cmd,
               A&&... args)
   {
     const char* bpkg (name_bpkg (co));
@@ -143,18 +147,75 @@ namespace bdep
         ops.push_back (o.c_str ());
       }
 
-      // Forward our --curl* options.
+      // Only pass fetch-related options to commands that fetch stuff.
       //
-      if (co.curl_specified ())
+      // Note that we assume that commands that can trigger the sync hook
+      // (like update) had the configurations pre-synced.
+      //
+      // Note also that certain --*fetch-cache* options affect cfg-create, but
+      // those are passed explicitly by create_config() in config.cxx.
+      //
+      if (strcmp (cmd, "fetch") == 0 ||
+          strcmp (cmd, "build") == 0 ||
+          strcmp (cmd, "drop") == 0)
       {
-        ops.push_back ("--curl");
-        ops.push_back (co.curl ().string ().c_str ());
-      }
+        // Forward our --curl* options.
+        //
+        if (co.curl_specified ())
+        {
+          ops.push_back ("--curl");
+          ops.push_back (co.curl ().string ().c_str ());
+        }
 
-      for (const string& o: co.curl_option ())
-      {
-        ops.push_back ("--curl-option");
-        ops.push_back (o.c_str ());
+        for (const string& o: co.curl_option ())
+        {
+          ops.push_back ("--curl-option");
+          ops.push_back (o.c_str ());
+        }
+
+        // Forward our --*fetch-cache* options.
+        //
+        // Note that for simplicity we don't check for BPKG_FETCH_CACHE=0 (in
+        // this case the options we pass will be silently ignored).
+        //
+        if (co.no_fetch_cache ())
+          ops.push_back ("--no-fetch-cache");
+        else
+        {
+          if (co.offline ())
+            ops.push_back ("--offline");
+
+          if (co.fetch_cache_specified ())
+          {
+            ops.push_back ("--fetch-cache");
+            ops.push_back (co.fetch_cache ().c_str ());
+          }
+
+          if (co.fetch_cache_session_specified ())
+          {
+            ops.push_back ("--fetch-cache-session");
+            ops.push_back (co.fetch_cache_session ().c_str ());
+          }
+          else if (!getenv ("BPKG_FETCH_CACHE_SESSION"))
+          {
+            // Pass a bdep invocation-wide session id automatically.
+            //
+            if (bpkg_fetch_cache_session.empty ())
+            {
+              try
+              {
+                bpkg_fetch_cache_session = uuid::generate ().string ();
+              }
+              catch (const system_error& e)
+              {
+                fail << "unable to generate fetch cache session uuid: " << e;
+              }
+            }
+
+            ops.push_back ("--fetch-cache-session");
+            ops.push_back (bpkg_fetch_cache_session.c_str ());
+          }
+        }
       }
 
       return process_start_callback (
@@ -166,9 +227,10 @@ namespace bdep
         0 /* stdin */,
         forward<O> (out),
         forward<E> (err),
-        pp,
+        process_env (pp, envvars),
         ops,
         co.bpkg_option (),
+        cmd,
         forward<A> (args)...);
     }
     catch (const process_error& e)
@@ -177,16 +239,50 @@ namespace bdep
     }
   }
 
+  template <typename O, typename E, typename... A>
+  process
+  start_bpkg (uint16_t v,
+              const common_options& co,
+              O&& out,
+              E&& err,
+              const char* cmd,
+              A&&... args)
+  {
+    const char* const* vars (nullptr);
+
+    return start_bpkg (v,
+                       co,
+                       forward<O> (out),
+                       forward<E> (err),
+                       vars,
+                       cmd,
+                       forward<A> (args)...);
+  }
+
   template <typename... A>
   void
-  run_bpkg (uint16_t v, const common_options& co, A&&... args)
+  run_bpkg (uint16_t v,
+            const common_options& co,
+            const char* const* envvars,
+            const char* cmd,
+            A&&... args)
   {
     process pr (start_bpkg (v,
                             co,
                             1 /* stdout */,
                             2 /* stderr */,
+                            envvars,
+                            cmd,
                             forward<A> (args)...));
     finish_bpkg (co, pr);
+  }
+
+  template <typename... A>
+  void
+  run_bpkg (uint16_t v, const common_options& co, const char* cmd, A&&... args)
+  {
+    const char* const* vars (nullptr);
+    run_bpkg (v, co, vars, cmd, forward<A> (args)...);
   }
 
   // *_b()

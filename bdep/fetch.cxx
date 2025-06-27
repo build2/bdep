@@ -19,11 +19,16 @@ namespace bdep
     // Let's use the repository name rather than the location as a sanity
     // check (the repository must have been added as part of init).
     //
+    // Let's not pass --no-dir-progress in the full mode so that we can see
+    // the whole picture (see the call from deinit, in particular).
+    //
     run_bpkg (2,
               o,
               "fetch",
               "-d", c->path,
-              (full ? nullptr : repository_name (prj).c_str ()));
+              (!full
+               ? cstrings ({"--no-dir-progress", repository_name (prj).c_str ()})
+               : cstrings ()));
   }
 
   int

@@ -87,6 +87,8 @@ namespace bdep
   // that operate on project/packages. Fail if --directory|-d appears in the
   // options file to avoid the chicken and egg problem.
   //
+  // Note: common options should be banned in validate_common_options() below.
+  //
   template <typename O>
   static inline typename enable_if<is_base_of<project_options, O>::value,
                                    O>::type
@@ -158,6 +160,58 @@ prj_dir (const O* o) -> decltype(find_project (*o))
 
 static inline auto
 prj_dir (...) -> const dir_path& {return empty_dir_path;}
+
+// Validate common options.
+//
+// If the second argument is not NULL, then the options come from that
+// options file.
+//
+void
+validate_common_options (const common_options& o, const path* of = nullptr)
+{
+  if (o.progress () && o.no_progress ())
+  {
+    diag_record dr;
+    (of != nullptr ? dr << fail (*of) : dr << fail)
+      << "both --progress and --no-progress specified";
+  }
+
+  if (o.diag_color () && o.no_diag_color ())
+  {
+    diag_record dr;
+    (of != nullptr ? dr << fail (*of) : dr << fail)
+      << "both --diag-color and --no-diag-color specified";
+  }
+
+  // Note that we intentionally allow the --fetch-cache* and related options
+  // to be specified while caching is disabled via BPKG_FETCH_CACHE=0 since
+  // the environment variable would normally be used as some sort of an
+  // external override in situations where passing --no-fetch-cache (and,
+  // thus, dropping other --fetch-cache* options) is not possible or
+  // practical.
+  //
+  if (o.no_fetch_cache ())
+  {
+    if (const char* w = (
+          o.offline ()                       ? "--offline"             :
+          o.fetch_cache_specified ()         ? "--fetch-cache"         :
+          o.fetch_cache_session_specified () ? "--fetch-cache-session" :
+          nullptr))
+    {
+      diag_record dr;
+      (of != nullptr ? dr << fail (*of) : dr << fail)
+        << "both --no-fetch-cache and " << w << " specified";
+    }
+  }
+
+  // Ban certain common options from apperaring in default options files.
+  //
+  if (of != nullptr)
+  {
+    if (o.fetch_cache_session_specified ())
+      fail (*of) << "--fetch-cache-session in default options file";
+  }
+}
 
 template <typename O>
 static O
@@ -255,116 +309,124 @@ init (const common_options& co,
   // Note: don't need to use group_scaner (no arguments in options files).
   //
   if (cmd_def && (!env_def || *env_def == "true" || *env_def == "1"))
-  try
   {
-    optional<dir_path> extra;
-    if (o.default_options_specified ())
+    try
     {
-      extra = o.default_options ();
-
-      // Note that load_default_options() expects absolute and normalized
-      // directory.
-      //
-      try
+      optional<dir_path> extra;
+      if (o.default_options_specified ())
       {
-        if (extra->relative ())
-          extra->complete ();
+        extra = o.default_options ();
 
-        extra->normalize ();
-      }
-      catch (const invalid_path& e)
-      {
-        fail << "invalid --default-options value " << e.path;
-      }
-    }
-
-    default_options<O> dos (
-      load_default_options<O, cli::argv_file_scanner, cli::unknown_mode> (
-        nullopt /* sys_dir */,
-        home_directory (),
-        extra,
-        options_files (cmd, o, args),
-        [&trace, &verbosity] (const path& f, bool r, bool o)
+        // Note that load_default_options() expects absolute and normalized
+        // directory.
+        //
+        try
         {
-          if (verbosity () >= 3)
+          if (extra->relative ())
+            extra->complete ();
+
+          extra->normalize ();
+        }
+        catch (const invalid_path& e)
+        {
+          fail << "invalid --default-options value " << e.path;
+        }
+      }
+
+      default_options<O> dos (
+        load_default_options<O, cli::argv_file_scanner, cli::unknown_mode> (
+          nullopt /* sys_dir */,
+          home_directory (),
+          extra,
+          options_files (cmd, o, args),
+          [&trace, &verbosity] (const path& f, bool r, bool o)
           {
-            if (o)
-              trace << "treating " << f << " as " << (r ? "remote" : "local");
-            else
-              trace << "loading " << (r ? "remote " : "local ") << f;
+            if (verbosity () >= 3)
+            {
+              if (o)
+                trace << "treating " << f << " as " << (r ? "remote" : "local");
+              else
+                trace << "loading " << (r ? "remote " : "local ") << f;
+            }
+          },
+          "--options-file",
+          args_pos,
+          1024));
+
+      // Verify common options.
+      //
+      // Also merge the --*/--no-* options and similar, overriding a less
+      // specific flag with a more specific.
+      //
+      // Note that there is currently no option to re-enable the fetch cache
+      // disabled with --no-fetch-cache.
+      //
+      optional<bool> progress, diag_color;
+      optional<string> fetch_cache (string {});
+      auto merge_no = [&progress, &diag_color, &fetch_cache] (
+        const O& o,
+        const default_options_entry<O>* e = nullptr)
+        {
+          validate_common_options (o, e != nullptr ? &e->file : nullptr);
+
+          if (o.progress ())
+            progress = true;
+          else if (o.no_progress ())
+            progress = false;
+
+          if (o.diag_color ())
+            diag_color = true;
+          else if (o.no_diag_color ())
+            diag_color = false;
+
+          if (o.no_fetch_cache ())
+            fetch_cache = nullopt;
+
+          if (fetch_cache && o.fetch_cache_specified ())
+          {
+            if (!fetch_cache->empty ())
+              *fetch_cache += ',';
+
+            *fetch_cache += o.fetch_cache ();
           }
-        },
-        "--options-file",
-        args_pos,
-        1024));
+        };
 
-    // Verify common options.
-    //
-    // Also merge the --*/--no-* options, overriding a less specific flag with
-    // a more specific.
-    //
-    optional<bool> progress, diag_color;
-    auto merge_no = [&progress, &diag_color] (
-      const O& o,
-      const default_options_entry<O>* e = nullptr)
-    {
+      for (const default_options_entry<O>& e: dos)
+        merge_no (e.options, &e);
+
+      merge_no (o);
+
+      o = merge_options (dos, o);
+
+      if (progress)
       {
-        if (o.progress () && o.no_progress ())
-        {
-          diag_record dr;
-          (e != nullptr ? dr << fail (e->file) : dr << fail)
-          << "both --progress and --no-progress specified";
-        }
-
-        if (o.progress ())
-          progress = true;
-        else if (o.no_progress ())
-          progress = false;
+        o.progress (*progress);
+        o.no_progress (!*progress);
       }
 
+      if (diag_color)
       {
-        if (o.diag_color () && o.no_diag_color ())
-        {
-          diag_record dr;
-          (e != nullptr ? dr << fail (e->file) : dr << fail)
-          << "both --diag-color and --no-diag-color specified";
-        }
-
-        if (o.diag_color ())
-          diag_color = true;
-        else if (o.no_diag_color ())
-          diag_color = false;
+        o.diag_color (*diag_color);
+        o.no_diag_color (!*diag_color);
       }
-    };
 
-    for (const default_options_entry<O>& e: dos)
-      merge_no (e.options, &e);
-
-    merge_no (o);
-
-    o = merge_options (dos, o);
-
-    if (progress)
-    {
-      o.progress (*progress);
-      o.no_progress (!*progress);
+      if (fetch_cache)
+        o.fetch_cache (move (*fetch_cache));
+      else
+        o.fetch_cache_specified (false);
     }
-
-    if (diag_color)
+    catch (const invalid_argument& e)
     {
-      o.diag_color (*diag_color);
-      o.no_diag_color (!*diag_color);
+      fail << "unable to load default options files: " << e;
+    }
+    catch (const pair<path, system_error>& e)
+    {
+      fail << "unable to load default options files: " << e.first << ": "
+           << e.second;
     }
   }
-  catch (const invalid_argument& e)
-  {
-    fail << "unable to load default options files: " << e;
-  }
-  catch (const pair<path, system_error>& e)
-  {
-    fail << "unable to load default options files: " << e.first << ": "
-         << e.second;
-  }
+  else
+    validate_common_options (o);
 
   // Propagate disabling of the default options files to the potential nested
   // invocations.
@@ -605,7 +667,7 @@ try
 
     // Temp dir is initialized manually for these commands.
     //
-    COMMAND_IMPL (new_,    new,     "new",     true, false);
+    COMMAND_IMPL (new_,    new,     "new",     true,  false);
     COMMAND_IMPL (sync,    sync,    "sync",    false, false);
 
     COMMAND_IMPL (init,    init,    "init",    true,  true);

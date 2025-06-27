@@ -20,13 +20,13 @@ namespace bdep
   {
     run_bpkg (2,
               o,
-              (o.jobs_specified ()
-               ? strings ({"-j", to_string (o.jobs ())})
-               : strings ()),
               "clean",
               "-d", c->path,
               (o.immediate () ? "--immediate" :
                o.recursive () ? "--recursive" : nullptr),
+              (o.jobs_specified ()
+               ? strings ({"-j", to_string (o.jobs ())})
+               : strings ()),
               cfg_vars,
               pkgs);
   }
@@ -34,6 +34,9 @@ namespace bdep
   inline int
   cmd_clean (const cmd_clean_options& o, cli::scanner& args)
   {
+    if (o.immediate () && o.recursive ())
+      fail << "both --immediate|-i and --recursive|-r specified";
+
     return cmd_build (o, &cmd_clean, args);
   }
 }
