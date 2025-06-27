@@ -40,7 +40,7 @@ namespace bdep
                             co,
                             pipe /* stdout */,
                             2    /* stderr */,
-                            "rep-list",
+                            "list",
                             "-d", cfg));
 
     // Shouldn't throw, unless something is severely damaged.

@@ -213,6 +213,8 @@ namespace bdep
 
   // Run the bpkg process.
   //
+  // Note that the command should be specified as a short alias, if available.
+  //
   const char*
   name_bpkg (const common_options&);
 
@@ -222,6 +224,7 @@ namespace bdep
               const common_options&,
               O&& out,
               E&& err,
+              const char* cmd,
               A&&... args);
 
   inline void
@@ -232,7 +235,10 @@ namespace bdep
 
   template <typename... A>
   void
-  run_bpkg (uint16_t verbosity, const common_options&, A&&... args);
+  run_bpkg (uint16_t verbosity,
+            const common_options&,
+            const char* cmd,
+            A&&... args);
 
   // Run the b process.
   //

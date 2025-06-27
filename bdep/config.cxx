@@ -639,7 +639,7 @@ namespace bdep
 
     run_bpkg (2,
               o,
-              "cfg-link",
+              "link",
               ld.try_relative (cd) ? "--relative" : nullptr,
               "-d", cd,
               (cn ? "--name" : nullptr), (cn ? cn->c_str () : nullptr),
@@ -868,7 +868,7 @@ namespace bdep
     //
     run_bpkg (2,
               o,
-              "cfg-unlink",
+              "unlink",
               "-d", cfgs[0]->path,
               cfgs[1]->path);
 
