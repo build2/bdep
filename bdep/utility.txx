@@ -151,6 +151,9 @@ namespace bdep
       // Note that we assume that commands that can trigger the sync hook
       // (like update) had the configurations pre-synced.
       //
+      // Note also that certain --*fetch-cache* options affect cfg-create, but
+      // those are passed explicitly by create_config() in config.cxx.
+      //
       if (strcmp (cmd, "fetch") == 0 ||
           strcmp (cmd, "build") == 0 ||
           strcmp (cmd, "drop") == 0)
@@ -187,11 +190,12 @@ namespace bdep
             ops.push_back (co.fetch_cache ().c_str ());
           }
 
-          ops.push_back ("--fetch-cache-session");
-
           if (co.fetch_cache_session_specified ())
+          {
+            ops.push_back ("--fetch-cache-session");
             ops.push_back (co.fetch_cache_session ().c_str ());
-          else
+          }
+          else if (!getenv ("BPKG_FETCH_CACHE_SESSION"))
           {
             // Pass a bdep invocation-wide session id automatically.
             //
@@ -207,6 +211,7 @@ namespace bdep
               }
             }
 
+            ops.push_back ("--fetch-cache-session");
             ops.push_back (bpkg_fetch_cache_session.c_str ());
           }
         }

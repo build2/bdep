@@ -220,7 +220,9 @@ namespace bdep
     {
       "<mode>",
       "Comma-separated list of local fetch cache modes. See
-       \l{bpkg-common-options(1)} for details on the available modes."
+       \l{bpkg-common-options(1)} for details on the available modes. Note
+       that the default for \cb{bdep} is to enable sharing of cached source
+       directories for dependencies during the configuration creation."
     }
 
     string --fetch-cache-session

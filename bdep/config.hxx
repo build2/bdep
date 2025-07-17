@@ -50,7 +50,7 @@ namespace bdep
   void
   cmd_config_add_print (diag_record&,
                         const dir_path&         prj,
-                        const dir_path&,
+                        const dir_path&         path,
                         const optional<string>& name,
                         bool                    default_ = true,
                         bool                    forward = true,
@@ -70,6 +70,9 @@ namespace bdep
 
   // Configuration directory path should be absolute and normalized.
   //
+  // The fetch_cache_mode argument can be used to copy the mode form another
+  // configuration (see configuration::fetch_cache_mode in bpkg).
+  //
   shared_ptr<configuration>
   cmd_config_create (const common_options&,
                      const dir_path&         prj,
@@ -77,6 +80,7 @@ namespace bdep
                      const dir_path&         path,
                      const optional<string>& name,
                      string                  type,
+                     const optional<string>* fetch_cache_mode = nullptr,
                      bool                    default_ = true,
                      bool                    forward = true,
                      bool                    auto_sync = true,
@@ -87,10 +91,12 @@ namespace bdep
 
   void
   cmd_config_create_print (diag_record&,
+                           const common_options&,
                            const dir_path&         prj,
-                           const dir_path&,
+                           const dir_path&         path,
                            const optional<string>& name,
                            const string&           type,
+                           const optional<string>* fetch_cache_mode = nullptr,
                            bool                    default_ = true,
                            bool                    forward = true,
                            bool                    auto_sync = true,

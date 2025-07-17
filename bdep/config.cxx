@@ -474,6 +474,88 @@ namespace bdep
     return r;
   }
 
+  // Figure out which --*fetch-cache* options we should pass, if any, when
+  // creating the configuration.
+  //
+  static strings
+  fetch_cache_options (const common_options& co,
+                       const optional<string>* fc_mode)
+  {
+    strings fc_ops;
+
+    if (fc_mode != nullptr)
+    {
+      // @@ Won't the existing options specified in the bpkg default options
+      //    files as well as in the environment be merged into this value?
+      //    Yes, they will. So for now we assume those values are consistent
+      //    between main configuration creation and this call.
+      //
+      //    @@ We could probably unset the environment variable relatively
+      //    easily, which feels like the more problematic of the two.
+      //
+      if (*fc_mode)
+      {
+        const string& s (**fc_mode);
+
+        if (s == "false")
+          fc_ops.push_back ("--no-fetch-cache");
+        else
+        {
+          fc_ops.push_back ("--fetch-cache");
+          fc_ops.push_back (s);
+        }
+      }
+    }
+    else
+    {
+      if (co.no_fetch_cache ())
+        fc_ops.push_back ("--no-fetch-cache");
+      else
+      {
+        // See if we should enable the shared src mode of the fetch cache. The
+        // semantics is as follows: if shared src is not explicitly disabled
+        // (or enabled) with --fetch-cache or BPKG_FETCH_CACHE, then we enable
+        // it. See fetch-cache.cxx in bpkg for background.
+        //
+        bool no (false);
+        optional<bool> src;
+
+        auto parse = [&src] (const string& s)
+        {
+          for (size_t b (0), e (0), n; (n = next_word (s, b, e, ',')) != 0; )
+          {
+            if      (s.compare (b, n, "src") == 0)    src = true;
+            else if (s.compare (b, n, "no-src") == 0) src = false;
+          }
+        };
+
+        if (optional<string> v = getenv ("BPKG_FETCH_CACHE"))
+        {
+          if (*v == "0" || *v == "false") // Cache is disabled.
+            no = true;
+          else
+            parse (*v);
+        }
+
+        if (!no)
+        {
+          if (co.fetch_cache_specified ())
+            parse (co.fetch_cache ());
+
+          if (!src)
+          {
+            fc_ops.push_back ("--fetch-cache");
+            fc_ops.push_back (co.fetch_cache_specified ()
+                              ? co.fetch_cache () + ",src"
+                              : string ("src"));
+          }
+        }
+      }
+    }
+
+    return fc_ops;
+  }
+
   // Call bpkg to create the configuration.
   //
   static void
@@ -481,10 +563,16 @@ namespace bdep
                  const dir_path&         path,
                  const optional<string>& name,
                  const string&           type,
+                 const optional<string>* fc_mode,
                  bool                    existing,
                  bool                    wipe,
                  const strings&          args)
   {
+    // NOTE: see also cmd_config_create_print() below if changing anything
+    //       here!
+
+    // @@ TODO: unset BPKG_FETCH_CACHE env var if fc_mode != nullptr.
+
     run_bpkg (2,
               co,
               "create",
@@ -493,6 +581,7 @@ namespace bdep
                ? strings ({"--name", *name})
                : strings ()),
               "--type", type,
+              fetch_cache_options (co, fc_mode),
               (existing ? "--existing" : nullptr),
               (wipe     ? "--wipe"     : nullptr),
               "--no-host-config",
@@ -502,10 +591,12 @@ namespace bdep
 
   void
   cmd_config_create_print (diag_record& dr,
+                           const common_options& co,
                            const dir_path& prj,
                            const dir_path& path,
                            const optional<string>& name,
                            const string& type,
+                           const optional<string>* fc_mode,
                            bool def,
                            bool fwd,
                            bool asy,
@@ -518,6 +609,9 @@ namespace bdep
 
     if (type != "target")
       dr << " --type " << type;
+
+    for (const string& o: fetch_cache_options (co, fc_mode))
+      dr << ' ' << o; // Shouldn't require quoting.
 
     dr << (def ? " --default" : " --no-default");
     dr << (fwd ? " --forward" : " --no-forward");
@@ -536,6 +630,7 @@ namespace bdep
                      const dir_path&         path,
                      const optional<string>& name,
                      string                  type,
+                     const optional<string>* fc_mode,
                      bool                    default_,
                      bool                    forward,
                      bool                    auto_sync,
@@ -558,7 +653,7 @@ namespace bdep
                     id,
                     true /* dry_run */);
 
-    create_config (co, path, name, type, existing, wipe, args);
+    create_config (co, path, name, type, fc_mode, existing, wipe, args);
 
     return cmd_config_add (prj,
                            t,
@@ -607,7 +702,11 @@ namespace bdep
                     what,
                     true /* dry_run */);
 
-    create_config (co, path, name, type, ao.existing (), ao.wipe (), args);
+    create_config (co,
+                   path, name, type, nullptr /* fetch_cache_mode */,
+                   ao.existing (),
+                   ao.wipe (),
+                   args);
 
     return cmd_config_add (co,
                            ao,

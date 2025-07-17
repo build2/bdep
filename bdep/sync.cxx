@@ -658,6 +658,11 @@ namespace bdep
       dep_dir += "-";
       dep_dir += dep_type;
 
+      // @@ TODO: extract from bpkg main config (via bpkg-cfg-info, see
+      //    config.cxx for one example -- maybe factor to some utility).
+      //
+      optional<string> fetch_cache_mode;
+
       strings cfg_args {"cc", "config.config.load=~" + dep_type};
 
       // Unless explicitly allowed via the respective create_*_config
@@ -689,10 +694,12 @@ namespace bdep
 
           dr << "  ";
           cmd_config_create_print (dr,
+                                   co,
                                    src_prj,
                                    dep_dir,
                                    dep_type,
                                    dep_type,
+                                   &fetch_cache_mode,
                                    false, true, true, // See below.
                                    cfg_args);
 
@@ -761,6 +768,7 @@ namespace bdep
                                        dep_dir,
                                        dep_type /* name */,
                                        dep_type,
+                                       &fetch_cache_mode,
                                        false /* default */,
                                        true  /* forward */,
                                        true  /* auto_sync */,
