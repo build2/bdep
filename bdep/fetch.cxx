@@ -23,7 +23,9 @@ namespace bdep
               o,
               "fetch",
               "-d", c->path,
-              (full ? nullptr : repository_name (prj).c_str ()));
+              (!full
+               ? cstrings ({"--no-dir-progress", repository_name (prj).c_str ()})
+               : cstrings ()));
   }
 
   int

@@ -374,6 +374,7 @@ status += -d prj
       synchronizing:
       %  replace.downgrade.unhold libprj.0.1.0-a.0.+%
       %  reconfigure prj.0.1.0-a.0.+%
+      %checking out libprj.0.1.0-a.0.+%
       verifying symlinks...
       %fixing up symlinks...%?
       %distributing libprj.0.1.0-a.0.+%
@@ -454,6 +455,7 @@ status += -d prj
       %  drop libprj-extras.0.1.0-a.0.+ \\\(unused\\\)%
       %  replace.downgrade.unhold libprj.0.1.0-a.0.+%
       %  reconfigure prj.0.1.0-a.0.+%
+      %checking out libprj.0.1.0-a.0.+%
       verifying symlinks...
       %fixing up symlinks...%?
       %distributing libprj.0.1.0-a.0.+%
@@ -525,6 +527,7 @@ status += -d prj
       synchronizing:
       %  replace.unhold libprj.0.1.0-a.0.+%
       %  reconfigure prj.0.1.0-a.0.+%
+      %checking out libprj.0.1.0-a.0.+%
       verifying symlinks...
       %fixing up symlinks...%?
       %distributing libprj.0.1.0-a.0.+%

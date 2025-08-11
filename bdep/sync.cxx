@@ -1716,6 +1716,7 @@ namespace bdep
                 "fetch",
                 "-d", p,
                 (deep_fetch ? nullptr : "--shallow"),
+                "--no-dir-progress",
                 cfg.reps);
     }
 

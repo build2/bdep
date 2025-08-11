@@ -62,6 +62,7 @@ namespace bdep
                 "fetch",
                 "-d", cfg,
                 "--shallow",
+                "--no-dir-progress",
                 repository_name (prj));
 
     // Don't show the hold status since the only packages that will normally
