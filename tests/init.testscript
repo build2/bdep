@@ -523,7 +523,7 @@ status += -d prj
       %fetching dir:.+/prj%
       %fetching git:.+/libprj#.+ \\\(prerequisite of dir:.+/prj\\\)%
       querying $~/libprj.git
-      fetching from $~/libprj.git
+      fetching $~/libprj.git
       synchronizing:
       %  replace.unhold libprj.0.1.0-a.0.+%
       %  reconfigure prj.0.1.0-a.0.+%
