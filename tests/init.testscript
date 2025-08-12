@@ -375,8 +375,8 @@ status += -d prj
       %  replace.downgrade.unhold libprj.0.1.0-a.0.+%
       %  reconfigure prj.0.1.0-a.0.+%
       %checking out libprj.0.1.0-a.0.+%
-      verifying symlinks...
-      %fixing up symlinks...%?
+      verifying symlinks
+      %fixing up symlinks%?
       %distributing libprj.0.1.0-a.0.+%
       EOE
 
@@ -456,8 +456,8 @@ status += -d prj
       %  replace.downgrade.unhold libprj.0.1.0-a.0.+%
       %  reconfigure prj.0.1.0-a.0.+%
       %checking out libprj.0.1.0-a.0.+%
-      verifying symlinks...
-      %fixing up symlinks...%?
+      verifying symlinks
+      %fixing up symlinks%?
       %distributing libprj.0.1.0-a.0.+%
       EOE
 
@@ -528,8 +528,8 @@ status += -d prj
       %  replace.unhold libprj.0.1.0-a.0.+%
       %  reconfigure prj.0.1.0-a.0.+%
       %checking out libprj.0.1.0-a.0.+%
-      verifying symlinks...
-      %fixing up symlinks...%?
+      verifying symlinks
+      %fixing up symlinks%?
       %distributing libprj.0.1.0-a.0.+%
       EOE
 
