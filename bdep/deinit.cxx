@@ -176,15 +176,17 @@ namespace bdep
 
       cfgs = move (cs.first);
 
-      // If this is fallback to default configurations, then reverse them:
-      // this adds a bit of magic to typical tool/module development setups
-      // where we normally create/initialize the host/build2 configuration
-      // first and which needs to be deinitialized last.
+      // If this is fallback to default or all configurations, then reverse
+      // them: this adds a bit of magic to typical tool/module development
+      // setups where we normally create/initialize the host/build2
+      // configuration first and which needs to be deinitialized last.
+      //
+      // @@ Why not sort them based on type (target > host > build2)?
       //
       // @@ TODO: maybe we should deinitialize/sync them all at once if they
       //    belong to the same configuration cluster?
       //
-      if (cs.second)
+      if (cs.second || o.all ())
         reverse (cfgs.begin (), cfgs.end ());
     }
 

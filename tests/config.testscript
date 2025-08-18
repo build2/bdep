@@ -269,11 +269,11 @@ deinit += -d prj
 
   $deinit --all 2>>/"EOE"
     deinitializing in project $~/prj/
-    in configuration @cfg1:
+    in configuration @cfg2:
     synchronizing:
       drop prj
 
-    in configuration @cfg2:
+    in configuration @cfg1:
     synchronizing:
       drop prj
     EOE
