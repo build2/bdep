@@ -1859,6 +1859,9 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
           os <<                                                           '\n';
         os << "# Compiler/linker output."                              << '\n'
            << "#"                                                      << '\n'
+           << "# Note that *.exe.dlls directories can be symlinks thus"<< '\n'
+           << "# no trailing /."                                       << '\n'
+           << "#"                                                      << '\n'
            << "*.d"                                                    << '\n'
            << "*.t"                                                    << '\n'
            << "*.i"                                                    << '\n'
@@ -1879,7 +1882,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
            << "*.pdb"                                                  << '\n'
            << "*.ilk"                                                  << '\n'
            << "*.exe"                                                  << '\n'
-           << "*.exe.dlls/"                                            << '\n'
+           << "*.exe.dlls"                                             << '\n'
            << "*.exe.manifest"                                         << '\n'
            << "*.pc"                                                   << '\n';
       }
