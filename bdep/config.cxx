@@ -485,13 +485,14 @@ namespace bdep
 
     if (fc_mode != nullptr)
     {
-      // @@ Won't the existing options specified in the bpkg default options
-      //    files as well as in the environment be merged into this value?
-      //    Yes, they will. So for now we assume those values are consistent
-      //    between main configuration creation and this call.
+      // Note that the existing options specified in the bpkg default options
+      // files as well as in the environment will be merged into this default
+      // value. There is not much we can really do about the default options
+      // file except assume its content is consistent (which is likely to be
+      // true). The more problematic case is the environment variable which we
+      // can unset relatively easily.
       //
-      //    @@ We could probably unset the environment variable relatively
-      //    easily, which feels like the more problematic of the two.
+      // @@ FC: return something to unset BPKG_FETCH_CACHE.
       //
       if (*fc_mode)
       {
@@ -570,8 +571,6 @@ namespace bdep
   {
     // NOTE: see also cmd_config_create_print() below if changing anything
     //       here!
-
-    // @@ TODO: unset BPKG_FETCH_CACHE env var if fc_mode != nullptr.
 
     run_bpkg (2,
               co,
