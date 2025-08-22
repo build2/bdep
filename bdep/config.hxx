@@ -70,7 +70,7 @@ namespace bdep
 
   // Configuration directory path should be absolute and normalized.
   //
-  // The fetch_cache_mode argument can be used to copy the mode form another
+  // The fetch_cache_mode argument can be used to copy the mode from another
   // configuration (see configuration::fetch_cache_mode in bpkg).
   //
   shared_ptr<configuration>

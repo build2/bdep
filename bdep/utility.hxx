@@ -224,6 +224,16 @@ namespace bdep
               const common_options&,
               O&& out,
               E&& err,
+              const char* const* envvars,
+              const char* cmd,
+              A&&... args);
+
+  template <typename O, typename E, typename... A>
+  process
+  start_bpkg (uint16_t verbosity,
+              const common_options&,
+              O&& out,
+              E&& err,
               const char* cmd,
               A&&... args);
 
@@ -232,6 +242,14 @@ namespace bdep
   {
     finish (name_bpkg (co), pr, io_read);
   }
+
+  template <typename... A>
+  void
+  run_bpkg (uint16_t verbosity,
+            const common_options&,
+            const char* const* envvars,
+            const char* cmd,
+            A&&... args);
 
   template <typename... A>
   void

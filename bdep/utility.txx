@@ -76,6 +76,7 @@ namespace bdep
               const common_options& co,
               O&& out,
               E&& err,
+              const char* const* envvars,
               const char* cmd,
               A&&... args)
   {
@@ -226,7 +227,7 @@ namespace bdep
         0 /* stdin */,
         forward<O> (out),
         forward<E> (err),
-        pp,
+        process_env (pp, envvars),
         ops,
         co.bpkg_option (),
         cmd,
@@ -238,17 +239,50 @@ namespace bdep
     }
   }
 
+  template <typename O, typename E, typename... A>
+  process
+  start_bpkg (uint16_t v,
+              const common_options& co,
+              O&& out,
+              E&& err,
+              const char* cmd,
+              A&&... args)
+  {
+    const char* const* vars (nullptr);
+
+    return start_bpkg (v,
+                       co,
+                       forward<O> (out),
+                       forward<E> (err),
+                       vars,
+                       cmd,
+                       forward<A> (args)...);
+  }
+
   template <typename... A>
   void
-  run_bpkg (uint16_t v, const common_options& co, const char* cmd, A&&... args)
+  run_bpkg (uint16_t v,
+            const common_options& co,
+            const char* const* envvars,
+            const char* cmd,
+            A&&... args)
   {
     process pr (start_bpkg (v,
                             co,
                             1 /* stdout */,
                             2 /* stderr */,
+                            envvars,
                             cmd,
                             forward<A> (args)...));
     finish_bpkg (co, pr);
+  }
+
+  template <typename... A>
+  void
+  run_bpkg (uint16_t v, const common_options& co, const char* cmd, A&&... args)
+  {
+    const char* const* vars (nullptr);
+    run_bpkg (v, co, vars, cmd, forward<A> (args)...);
   }
 
   // *_b()

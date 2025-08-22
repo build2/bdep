@@ -474,14 +474,18 @@ namespace bdep
     return r;
   }
 
-  // Figure out which --*fetch-cache* options we should pass, if any, when
-  // creating the configuration.
+  // Figure out which --*fetch-cache* options we should pass (first) and the
+  // environment variables we should (un)set (second), if any, when creating
+  // the configuration.
   //
-  static strings
+  static const char* unset_fetch_cache_var[] = {"BPKG_FETCH_CACHE", nullptr};
+
+  static pair<strings, const char* const*>
   fetch_cache_options (const common_options& co,
                        const optional<string>* fc_mode)
   {
     strings fc_ops;
+    const char* const* envvars (nullptr);
 
     if (fc_mode != nullptr)
     {
@@ -491,8 +495,6 @@ namespace bdep
       // file except assume its content is consistent (which is likely to be
       // true). The more problematic case is the environment variable which we
       // can unset relatively easily.
-      //
-      // @@ FC: return something to unset BPKG_FETCH_CACHE.
       //
       if (*fc_mode)
       {
@@ -506,6 +508,8 @@ namespace bdep
           fc_ops.push_back (s);
         }
       }
+
+      envvars = unset_fetch_cache_var;
     }
     else
     {
@@ -554,7 +558,7 @@ namespace bdep
       }
     }
 
-    return fc_ops;
+    return make_pair (move (fc_ops), envvars);
   }
 
   // Call bpkg to create the configuration.
@@ -572,15 +576,18 @@ namespace bdep
     // NOTE: see also cmd_config_create_print() below if changing anything
     //       here!
 
+    pair<strings, const char* const*> cos (fetch_cache_options (co, fc_mode));
+
     run_bpkg (2,
               co,
+              cos.second,
               "create",
               "-d", path,
               (name
                ? strings ({"--name", *name})
                : strings ()),
               "--type", type,
-              fetch_cache_options (co, fc_mode),
+              cos.first,
               (existing ? "--existing" : nullptr),
               (wipe     ? "--wipe"     : nullptr),
               "--no-host-config",
@@ -609,7 +616,7 @@ namespace bdep
     if (type != "target")
       dr << " --type " << type;
 
-    for (const string& o: fetch_cache_options (co, fc_mode))
+    for (const string& o: fetch_cache_options (co, fc_mode).first)
       dr << ' ' << o; // Shouldn't require quoting.
 
     dr << (def ? " --default" : " --no-default");
