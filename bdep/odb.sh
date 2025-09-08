@@ -18,7 +18,14 @@ sed -r -ne 's#^(@[^ ]+ )?([^ ]+)/ .*default.*$#\2#p')"
 
   # Note: there is nothing generated in libbutl-odb.
   #
-  inc+=("-I../../libbutl/libbutl-odb")
+  if true; then
+    inc+=("-I../../libbutl/libbutl-odb")
+  else
+    inc+=("-I$HOME/work/odb/builds/gcc-sqlite/libodb")
+
+    inc+=("-I$HOME/work/odb/odb/libodb-sqlite")
+    inc+=("-I$HOME/work/odb/odb/libodb")
+  fi
 
   inc+=("-I$cfg/libbutl")
   inc+=("-I../../libbutl")
