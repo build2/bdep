@@ -955,7 +955,7 @@ namespace bdep
     {
       prjs.push_back (sync_project (origin_prj));
 
-      for (sync_config& c: origin_cfgs)
+      for (const sync_config& c: origin_cfgs)
       {
         // If we have origin project then we should have origin config.
         //
@@ -1012,6 +1012,40 @@ namespace bdep
     strings args;
     small_vector<config, 16> cfgs;
 
+    // Return true if the specified package is an origin package, i.e. it is a
+    // part of the list specified explicitly or, if none are specified,
+    // init'ed in the origin project.
+    //
+    auto origin_package = [origin,
+                           &origin_cfgs,
+                           &prj_pkgs] (const package_state& pkg)
+    {
+      auto contains = [] (const auto& pkgs, const package_state& pkg)
+      {
+        return find_if (pkgs.begin (), pkgs.end (),
+                        [&pkg] (const auto& p)
+                        {
+                          return p.name == pkg.name;
+                        }) != pkgs.end ();
+      };
+
+      if (prj_pkgs.empty ())
+      {
+        bool r (false);
+
+        if (origin)
+        {
+          for (const sync_config& cfg: origin_cfgs)
+            if ((r = contains (cfg->packages, pkg)))
+              break;
+        }
+
+        return r;
+      }
+      else
+        return contains (prj_pkgs, pkg);
+    };
+
     // First collect configurations and their repositories. We do it as a
     // separate (from the one below) pass in order to determine how many
     // projects/configurations will be involved. If it's just one, then we
@@ -1043,7 +1077,20 @@ namespace bdep
           }
         }
         else if (!cfg.origin)
+        {
           origin_only = false;
+        }
+        else if (origin_only)
+        {
+          for (const package_state& pkg: cfg->packages)
+          {
+            if (!origin_package (pkg))
+            {
+              origin_only = false;
+              break;
+            }
+          }
+        }
 
         auto i (find_if (cfgs.begin (), cfgs.end (),
                          [&cfg] (const config& c)
@@ -1181,42 +1228,14 @@ namespace bdep
             }
           }
 
-          // Return true if this package is part of the list specified
-          // explicitly or, if none are specified, init'ed in the origin
-          // project.
+          // Return true if this is an origin package.
           //
-          // @@ Feels like cfg.origin should be enough for the latter case?
-          //
-          auto origin_pkg = [origin,
-                             &origin_cfgs,
-                             &prj_pkgs,
-                             &pkg,
+          auto origin_pkg = [&pkg,
+                             &origin_package,
                              r = optional<bool> ()] () mutable
           {
             if (!r)
-            {
-              auto contains = [] (const auto& pkgs, const package_state& pkg)
-              {
-                return find_if (pkgs.begin (), pkgs.end (),
-                                [&pkg] (const auto& p)
-                                {
-                                  return p.name == pkg.name;
-                                }) != pkgs.end ();
-              };
-
-              if (prj_pkgs.empty ())
-              {
-                r = false;
-                if (origin)
-                {
-                  for (const sync_config& cfg: origin_cfgs)
-                    if ((r = contains (cfg->packages, pkg)))
-                      break;
-                }
-              }
-              else
-                r = contains (prj_pkgs, pkg);
-            }
+              r = origin_package (pkg);
 
             return *r;
           };
@@ -2237,7 +2256,7 @@ namespace bdep
 
     finish_bpkg (co, pr, io);
 
-    if (r.empty ()) // We should have at leas the main configuration.
+    if (r.empty ()) // We should have at least the main configuration.
       fail << "invalid bpkg-cfg-info output: missing configuration information";
 
     return r;
@@ -2889,7 +2908,7 @@ namespace bdep
       // configurations that belong to this cluster. While at it also mark the
       // entire cluster as being synced.
       //
-      // Note: we have already deatl with the first configuration in lcfgs.
+      // Note: we have already dealt with the first configuration in lcfgs.
       //
       linked_configs lcfgs (find_config_cluster (o, cd));
 

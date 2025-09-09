@@ -68,7 +68,7 @@ namespace bdep
      as a directory with \c{\b{--directory}|\b{-d}}) belongs to the project
      and is initialized in any of the specified configurations, then it is
      interpreted as <pkg-spec> of the first or second form. Otherwise, it is
-     interpreted as <dep-spec> of the third from of the command line.
+     interpreted as <dep-spec> of the third form of the command line.
 
      Note also that \c{\b{--immediate}|\b{-i}} or \c{\b{--recursive}|\b{-r}}
      can only be specified with an explicit \cb{--upgrade} or \cb{--patch}.
@@ -116,6 +116,19 @@ namespace bdep
      \
      prj/$ cd foo
      foo/$ bdep sync
+     \
+
+     As above but also reconfigure \cb{foo}:
+
+     \
+     prj/$ cd foo
+     foo/$ bdep sync config.foo.bar=true
+     \
+
+     The same (package is specified explicitly):
+
+     \
+     prj/$ bdep sync foo config.foo.bar=true
      \
 
      Add a dependency on \cb{libx} with \cb{sync} fetching and configuring a

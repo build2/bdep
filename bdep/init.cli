@@ -123,8 +123,16 @@ namespace bdep
      prj/$ bdep init -d libfoo @clang
      \
 
+     To additionally configure \cb{libfoo} add configuration variable to the
+     above command line:
+
+     \
+     prj/$ bdep init -d libfoo @clang config.libfoo.bar=true
+     \
+
      The following set of invocations achieves the same end result but using
-     the \l{bdep-config(1)} command to manage configuration.
+     the \l{bdep-config(1)} command to manage configurations and
+     \l{bdep-sync(1)} command to configure a package.
 
      Initialize an empty project database:
 
@@ -139,14 +147,14 @@ namespace bdep
      \
 
      Add existing build configuration in \cb{../prj-clang}, call it
-     \cb{clang}.
+     \cb{clang}:
 
      \
      prj/$ bdep config add ../prj-clang @clang
      \
 
      Initialize project packages \cb{foo} and \cb{libfoo} in build
-     configurations \cb{gcc} and \cb{clang}.
+     configurations \cb{gcc} and \cb{clang}:
 
      \
      prj/$ bdep init @gcc @clang
@@ -158,6 +166,11 @@ namespace bdep
      prj/$ bdep init -a
      \
 
+     Reconfigure \cb{libfoo} in the build configuration \cb{clang}:
+
+     \
+     prj/$ bdep sync libfoo @clang config.libfoo.bar=true
+     \
      "
   }
 
