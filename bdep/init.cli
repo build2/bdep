@@ -123,7 +123,7 @@ namespace bdep
      prj/$ bdep init -d libfoo @clang
      \
 
-     To additionally configure \cb{libfoo} add configuration variable to the
+     To additionally configure \cb{libfoo} add configuration variables to the
      above command line:
 
      \
@@ -132,7 +132,7 @@ namespace bdep
 
      The following set of invocations achieves the same end result but using
      the \l{bdep-config(1)} command to manage configurations and
-     \l{bdep-sync(1)} command to configure a package.
+     \l{bdep-sync(1)} command to reconfigure a package.
 
      Initialize an empty project database:
 
