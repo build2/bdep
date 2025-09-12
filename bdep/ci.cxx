@@ -110,15 +110,28 @@ namespace bdep
         branch.assign (s.upstream, n + 1, string::npos);
       }
 
-      // Note: not forcible (for now). While the use case is valid, the
-      // current and committed package versions are likely to differ (in
-      // snapshot id). Obtaining the committed versions feels too hairy for
-      // now.
+      // Note that the current and committed package versions in the forced
+      // case are likely to differ (in snapshot id). Thus, the subsequent
+      // package_b_info() calls will always query the committed package
+      // version.
       //
-      if (s.staged || s.unstaged)
+      // @@ TODO Add support for the 'committed_version' parameter for the
+      //         'info' meta-operation or some such.
+      //
+      // @@ Note that specifying no package version in the CI request at all
+      //    will also work since there is always a single version of a package
+      //    in a single commit. This approach, however, feels dirty. Also the
+      //    user won't see the being CI-ed package versions, which will be
+      //    confusing.
+      //
+      if ((s.staged || s.unstaged) &&
+          o.force ().find ("uncommitted") == o.force ().end ())
+      {
         fail << "project directory has uncommitted changes" <<
           info << "run 'git status' for details" <<
-          info << "use 'git stash' to temporarily hide the changes";
+          info << "use 'git stash' to temporarily hide the changes" <<
+          info << "use --force=uncommitted to submit anyway";
+      }
 
       // We definitely don't want to be ahead (upstream doesn't have this
       // commit) but there doesn't seem be anything wrong with being behind.
