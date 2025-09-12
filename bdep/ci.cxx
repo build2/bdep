@@ -110,15 +110,20 @@ namespace bdep
         branch.assign (s.upstream, n + 1, string::npos);
       }
 
-      // Note: not forcible (for now). While the use case is valid, the
-      // current and committed package versions are likely to differ (in
-      // snapshot id). Obtaining the committed versions feels too hairy for
-      // now.
+      // Note that the current and committed package versions in the forced
+      // case are likely to differ (in snapshot number and id). Thus, the
+      // subsequent package_b_info() calls will always query the committed
+      // project version.
       //
-      if (s.staged || s.unstaged)
+      if ((s.staged || s.unstaged) &&
+          o.force ().find ("uncommitted") == o.force ().end ())
+      {
         fail << "project directory has uncommitted changes" <<
           info << "run 'git status' for details" <<
-          info << "use 'git stash' to temporarily hide the changes";
+          info << "use 'git stash' to temporarily hide the changes" <<
+          info << "use --force=uncommitted to submit anyway and test latest "
+               << "commit";
+      }
 
       // We definitely don't want to be ahead (upstream doesn't have this
       // commit) but there doesn't seem be anything wrong with being behind.
@@ -487,7 +492,7 @@ namespace bdep
       for (package_location& p: pp.packages)
       {
         dir_path d (pp.project / p.path);
-        package_info pi (package_b_info (o, d, b_info_flags::none));
+        package_info pi (package_b_info (o, d, b_info_flags::committed_version));
 
         if (pi.src_root == pi.out_root)
           fail << "package " << p.name << " source directory is not forwarded" <<
@@ -534,7 +539,7 @@ namespace bdep
 
         package_info pi (package_b_info (o,
                                          dir_path (c->path) /= n.string (),
-                                         b_info_flags::none));
+                                         b_info_flags::committed_version));
 
         verify_package_info (pi, n);
 

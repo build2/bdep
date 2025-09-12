@@ -1,6 +1,8 @@
 // file      : bdep/ci.cli
 // license   : MIT; see accompanying LICENSE file
 
+include <set>;
+
 include <bdep/project.cli>;
 include <bdep/ci-types.hxx>;
 
@@ -282,9 +284,7 @@ namespace bdep
       "<email>",
       "Shortcut for the following option:
 
-       \c{\b{--override\ build-email:}<email>}
-
-      "
+       \c{\b{--override\ build-email:}<email>}"
     }
 
     // All the overrides-related options are handled with a common parser and
@@ -300,6 +300,13 @@ namespace bdep
                     --overrides-file |
                     --builds         |
                     --build-email;
+
+    std::set<string> --force
+    {
+      "<check>",
+      "Force submission, disabling the specified check. Repeat this option to
+       disable multiple checks."
+    }
 
     string --simulate
     {
