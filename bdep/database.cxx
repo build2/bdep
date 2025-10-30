@@ -33,7 +33,7 @@ namespace bdep
 #endif
 
   database
-  open (const dir_path& d, tracer& tr, bool create)
+  open (const dir_path& d, sqlite_synchronous sync, tracer& tr, bool create)
   {
     tracer trace ("open");
 
@@ -71,6 +71,28 @@ namespace bdep
       {
         connection_ptr c (db.connection ());
         c->execute ("PRAGMA locking_mode = EXCLUSIVE");
+
+        // Use the WAL (Write-Ahead Logging) journaling mode and, by default,
+        // the NORMAL synchronization mode to speed up the transaction
+        // commits.
+        //
+        // Note that according to the SQLite documentation, NORMAL should be
+        // safe enough for WAL. In particular, the worst that can happen (in
+        // case of a power loss or operating system crash), is that the last
+        // committed transaction will be rolled back. In our case this
+        // normally translated into loosing the result of the latest user
+        // command, such as creating a configuration, initializing a package,
+        // etc. Given a low probably of such an event happening at just the
+        // wrong time and the fact that the data in the project database stays
+        // consistent, this feels like a reasonable tradeoff. Those who are
+        // uncomfortable with NORMAL can select FULL while we may run tests
+        // with OFF (see GH issue #476 for background). Note that EXTRA is no
+        // different from FULL for WAL, but we keep it for completeness and
+        // for consistency with bpkg.
+        //
+        c->execute ("PRAGMA journal_mode = WAL");
+        c->execute ("PRAGMA main.synchronous = " + to_string (sync));
+
         transaction t (c->begin_exclusive ());
 
         if (create)

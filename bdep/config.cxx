@@ -784,7 +784,7 @@ namespace bdep
     }
 
     dir_path prj (find_project (o));
-    database db (open (prj, trace));
+    database db (open (prj, o.sqlite_synchronous (), trace));
 
     cmd_config_add (o,
                     o,
@@ -858,7 +858,7 @@ namespace bdep
     }
 
     dir_path prj (find_project (o));
-    database db (open (prj, trace));
+    database db (open (prj, o.sqlite_synchronous (), trace));
 
     // Read the configuration arguments.
     //
@@ -917,7 +917,7 @@ namespace bdep
     configurations cfgs;
     {
       dir_path prj (find_project (o));
-      database db (open (prj, trace));
+      database db (open (prj, o.sqlite_synchronous (), trace));
 
       transaction t (db.begin ());
 
@@ -953,7 +953,7 @@ namespace bdep
     configurations cfgs;
     {
       dir_path prj (find_project (o));
-      database db (open (prj, trace));
+      database db (open (prj, o.sqlite_synchronous (), trace));
 
       transaction t (db.begin ());
 
@@ -1054,7 +1054,7 @@ namespace bdep
     tracer trace ("config_list");
 
     dir_path prj (find_project (o));
-    database db (open (prj, trace));
+    database db (open (prj, o.sqlite_synchronous (), trace));
 
     transaction t (db.begin ());
 
@@ -1137,7 +1137,7 @@ namespace bdep
       rel_path = path.try_relative (prj);
     }
 
-    database db (open (prj, trace));
+    database db (open (prj, o.sqlite_synchronous (), trace));
 
     session ses;
     transaction t (db.begin ());
@@ -1228,7 +1228,7 @@ namespace bdep
     }
 
     dir_path prj (find_project (o));
-    database db (open (prj, trace));
+    database db (open (prj, o.sqlite_synchronous (), trace));
 
     session ses;
     transaction t (db.begin ());
@@ -1287,7 +1287,7 @@ namespace bdep
     tracer trace ("config_remove");
 
     dir_path prj (find_project (o));
-    database db (open (prj, trace));
+    database db (open (prj, o.sqlite_synchronous (), trace));
 
     transaction t (db.begin ());
 
@@ -1344,7 +1344,7 @@ namespace bdep
       fail << "nothing to set";
 
     dir_path prj (find_project (o));
-    database db (open (prj, trace));
+    database db (open (prj, o.sqlite_synchronous (), trace));
 
     session ses;
     transaction t (db.begin ());

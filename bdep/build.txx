@@ -53,7 +53,7 @@ namespace bdep
     //
     configurations cfgs;
     {
-      database db (open (prj, trace));
+      database db (open (prj, o.sqlite_synchronous (), trace));
 
       transaction t (db.begin ());
       pair<configurations, bool> cs (find_configurations (o, prj, t));

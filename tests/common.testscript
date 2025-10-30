@@ -28,6 +28,15 @@ options_guard = $~/.build2
 +echo '--no-fetch-cache'     >+$options_guard/bpkg.options
 +echo '--no-default-options' >=$options_guard/bdep.options
 
+# Select the OFF SQLite filesystem synchronization mode to speed up the tests.
+#
+# Note that using BUILD2_SQLITE_SYNCHRONOUS=OFF would be a bad idea (see
+# bpkg's common.testscript for the reasoning).
+#
++export --unset BUILD2_SQLITE_SYNCHRONOUS
++echo '--sqlite-synchronous off' >+$options_guard/bpkg.options
++echo '--sqlite-synchronous off' >+$options_guard/bdep.options
+
 test.options += --default-options $options_guard \
 --build $build --build-option "--default-options=$options_guard" \
 --bpkg-option "--default-options=$options_guard" \

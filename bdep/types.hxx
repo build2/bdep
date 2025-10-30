@@ -131,6 +131,29 @@ namespace bdep
   //
   using butl::semantic_version;
   using butl::standard_version;
+
+  enum class sqlite_synchronous
+  {
+    off,
+    normal,
+    full,
+    extra
+  };
+
+  // Return nullopt if the passed string is not a valid --sqlite-synchronous
+  // option value. Match the argument case-insensitively.
+  //
+  // Note: defined in utility.cxx.
+  //
+  optional<sqlite_synchronous>
+  to_sqlite_synchronous (const string&);
+
+  // Return an upper case representation of the specified value.
+  //
+  // Note: defined in utility.cxx.
+  //
+  string
+  to_string (sqlite_synchronous);
 }
 
 // In order to be found (via ADL) these have to be either in std:: or in

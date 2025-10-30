@@ -56,10 +56,17 @@ namespace bdep
       parse (stdout_format&, bool&, scanner&);
 
       static void
-      merge (stdout_format& b, const stdout_format& a)
-      {
-        b = a;
-      }
+      merge (stdout_format& b, const stdout_format& a) {b = a;}
+    };
+
+    template <>
+    struct parser<sqlite_synchronous>
+    {
+      static void
+      parse (sqlite_synchronous&, bool&, scanner&);
+
+      static void
+      merge (sqlite_synchronous& b, const sqlite_synchronous& a) {b = a;}
     };
   }
 }

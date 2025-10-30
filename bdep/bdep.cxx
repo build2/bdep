@@ -396,7 +396,38 @@ init (const common_options& co,
 
       merge_no (o);
 
+      // The preference order of the BUILD2_SQLITE_SYNCHRONOUS environment
+      // variable over the --sqlite-synchronous option is as follows:
+      //
+      // 1: --sqlite-synchronous option specified on the command line or in
+      //    the file referred to by --options-file option.
+      //
+      // 2: BUILD2_SQLITE_SYNCHRONOUS environment variable.
+      //
+      // 3: --sqlite-synchronous option specified in default option files.
+      //
+      // If BUILD2_SQLITE_SYNCHRONOUS variable needs to be used, then save its
+      // value into the options object, as if --sqlite-synchronous option was
+      // specified on the command line.
+      //
+      bool sqlite_synchronous_env (!o.sqlite_synchronous_specified ());
+
       o = merge_options (dos, o);
+
+      if (sqlite_synchronous_env)
+      {
+        if (optional<string> s = getenv ("BUILD2_SQLITE_SYNCHRONOUS"))
+        {
+          if (optional<sqlite_synchronous> v = to_sqlite_synchronous (*s))
+          {
+            o.sqlite_synchronous (*v);
+            o.sqlite_synchronous_specified (true);
+          }
+          else
+            fail << "invalid value '" << *s << "' for "
+                 << "BUILD2_SQLITE_SYNCHRONOUS environment variable";
+        }
+      }
 
       if (progress)
       {

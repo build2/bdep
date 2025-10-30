@@ -155,7 +155,7 @@ namespace bdep
     if (verb)
       text << "deinitializing in project " << prj;
 
-    database db (open (prj, trace));
+    database db (open (prj, o.sqlite_synchronous (), trace));
 
     configurations cfgs;
     {

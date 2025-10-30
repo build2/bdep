@@ -355,7 +355,7 @@ namespace bdep
 
     auto load_configurations = [&o, json, &trace] (const dir_path& prj)
     {
-      database db (open (prj, trace));
+      database db (open (prj, o.sqlite_synchronous (), trace));
 
       transaction t (db.begin ());
 

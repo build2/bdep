@@ -525,5 +525,11 @@ namespace bdep
   The \cb{BDEP_DEF_OPT} environment variable is used to suppress loading of
   default options files in nested \cb{bdep} invocations. Its values are
   \cb{false} or \cb{0} to suppress and \cb{true} or \cb{1} to load.
+
+  The \cb{BUILD2_SQLITE_SYNCHRONOUS} environment variable can be used to
+  select the filesystem synchronization mode for the project SQLite database.
+  See the description of the \cb{--sqlite-synchronous} option in
+  \l{bdep-common-options(1)} for the list of valid values and details on their
+  semantics.
   "
 }

@@ -24,7 +24,10 @@ namespace bdep
   using odb::session;
 
   database
-  open (const dir_path& project, tracer&, bool create = false);
+  open (const dir_path& project,
+        sqlite_synchronous,
+        tracer&,
+        bool create = false);
 
   struct tracer_guard
   {

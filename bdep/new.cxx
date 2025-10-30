@@ -4104,7 +4104,7 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
 
   // Everything else requires a database.
   //
-  database db (open (prj, trace, true /* create */));
+  database db (open (prj, o.sqlite_synchronous (), trace, true /* create */));
 
   if (ca || cc)
   {

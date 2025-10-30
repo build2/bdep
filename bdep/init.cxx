@@ -355,7 +355,7 @@ namespace bdep
 
     // Open the database creating it if necessary.
     //
-    database db (open (prj, trace, true /* create */));
+    database db (open (prj, o.sqlite_synchronous (), trace, true /* create */));
 
     // --empty
     //

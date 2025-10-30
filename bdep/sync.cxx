@@ -254,7 +254,7 @@ namespace bdep
                                }));
 
           {
-            database db (open (d, trace));
+            database db (open (d, co.sqlite_synchronous (), trace));
             transaction t (db.begin ());
             c = db.query_one<configuration> (q);
             t.commit ();
@@ -490,7 +490,10 @@ namespace bdep
     class database_transaction
     {
     public:
-      database_transaction (transaction* t, const dir_path& prj, tracer& tr)
+      database_transaction (transaction* t,
+                            const dir_path& prj,
+                            sqlite_synchronous sync,
+                            tracer& tr)
           : ct_ (nullptr)
       {
         if (t == nullptr)
@@ -501,7 +504,7 @@ namespace bdep
             transaction::reset_current ();
           }
 
-          db_.reset (new database_type (open (prj, tr)));
+          db_.reset (new database_type (open (prj, sync, tr)));
           t_.reset (db_->begin ());
         }
         else
@@ -606,6 +609,7 @@ namespace bdep
       {
         database_transaction t (prj.path == origin_prj ? origin_tr : nullptr,
                                 prj.path,
+                                co.sqlite_synchronous (),
                                 trace);
 
         database& db (t.database ());
@@ -796,6 +800,7 @@ namespace bdep
       {
         database_transaction t (prj == origin_prj ? origin_tr : nullptr,
                                 prj,
+                                co.sqlite_synchronous (),
                                 trace);
 
         if (create)
@@ -1617,7 +1622,7 @@ namespace bdep
                                        transaction::current (*ct);
                                    }));
 
-              database db (open (pd, trace));
+              database db (open (pd, co.sqlite_synchronous (), trace));
               transaction t (db.begin ());
               lookup (db);
               t.commit ();
@@ -2592,7 +2597,7 @@ namespace bdep
 
     auto load_configurations = [&o, &trace] (const dir_path& prj)
     {
-      database db (open (prj, trace));
+      database db (open (prj, o.sqlite_synchronous (), trace));
 
       transaction t (db.begin ());
       optional<pair<configurations, bool>> r (find_configurations (o, prj, t));

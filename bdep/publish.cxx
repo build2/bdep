@@ -1124,7 +1124,7 @@ namespace bdep
       {
         // Don't keep the database open longer than necessary.
         //
-        database db (open (prj, trace));
+        database db (open (prj, o.sqlite_synchronous (), trace));
 
         transaction t (db.begin ());
         cfgs = find_configurations (o, prj, t);

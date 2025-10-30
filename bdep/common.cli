@@ -235,6 +235,20 @@ namespace bdep
        id. See \l{bpkg-common-options(1)} for details on the fetch cache."
     }
 
+    bdep::sqlite_synchronous --sqlite-synchronous = bdep::sqlite_synchronous::normal
+    {
+      "<mode>",
+      "Filesystem synchronization mode for the project SQLite database. Valid
+       values are \cb{off}, \cb{normal} (default), \cb{full}, and \cb{extra}.
+       See the SQLite documentation on the \cb{synchronous} pragma for
+       details. See also the \cb{BUILD2_SQLITE_SYNCHRONOUS} environment
+       variable.
+
+       Note that WAL (Write-Ahead Logging) journaling mode is used for the
+       project database. Note also that this option is not passed to the
+       underlying \cb{bpkg} commands (use \cb{--bpkg-option} for that)."
+    }
+
     string --pager // String to allow empty value.
     {
       "<path>",
