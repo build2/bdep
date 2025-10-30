@@ -3,6 +3,8 @@
 
 #include <bdep/types-parsers.hxx>
 
+#include <bdep/options-types.hxx> // to_sqlite_synchronous()
+
 #include <bdep/common-options.hxx> // bdep::cli namespace
 
 namespace bdep
@@ -82,6 +84,24 @@ namespace bdep
       if      (v == "lines") r = stdout_format::lines;
       else if (v == "json")  r = stdout_format::json;
       else throw invalid_value (o, v);
+
+      xs = true;
+    }
+
+    void parser<sqlite_synchronous>::
+    parse (sqlite_synchronous& r, bool& xs, scanner& s)
+    {
+      const char* o (s.next ());
+
+      if (!s.more ())
+        throw missing_value (o);
+
+      string v (s.next ());
+
+      if (optional<sqlite_synchronous> sv = to_sqlite_synchronous (v))
+        r = *sv;
+      else
+        throw invalid_value (o, v);
 
       xs = true;
     }

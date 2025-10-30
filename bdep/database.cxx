@@ -10,6 +10,7 @@
 
 #include <bdep/project.hxx>
 #include <bdep/project-odb.hxx>
+#include <bdep/options-types.hxx>      // to_string(sqlite_synchronous)
 #include <bdep/database-views.hxx>
 #include <bdep/database-views-odb.hxx>
 
@@ -33,7 +34,7 @@ namespace bdep
 #endif
 
   database
-  open (const dir_path& d, tracer& tr, bool create)
+  open (const dir_path& d, sqlite_synchronous sync, tracer& tr, bool create)
   {
     tracer trace ("open");
 
@@ -71,6 +72,14 @@ namespace bdep
       {
         connection_ptr c (db.connection ());
         c->execute ("PRAGMA locking_mode = EXCLUSIVE");
+
+        // Use the WAL (Write-Ahead Logging) journaling mode and, by default,
+        // the NORMAL synchronization mode to speed up the transaction commits
+        // (see bpkg's fetch-cache.cxx for the reasoning).
+        //
+        c->execute ("PRAGMA journal_mode = WAL");
+        c->execute ("PRAGMA main.synchronous = " + to_string (sync));
+
         transaction t (c->begin_exclusive ());
 
         if (create)

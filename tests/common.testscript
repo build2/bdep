@@ -84,3 +84,5 @@ release = [cmdline] $* release
 #
 cmd = [string] $@
 test.arguments = $cmd
+
++export BUILD2_SQLITE_SYNCHRONOUS=off
