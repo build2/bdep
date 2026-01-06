@@ -117,7 +117,7 @@ if ($cxx.id == 'clang' && $cxx.target.system == 'win32-msvc')
 
 # Generated options parser.
 #
-if $cli.configured
+if $cli.build.configured
 {
   # General topics and common options.
   #
