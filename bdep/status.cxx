@@ -75,7 +75,7 @@ namespace bdep
                        "status",
                        "-d", cfg,
                        "--no-hold",
-                       "--constraint",
+                       "--version-constraint",
                        (o.old_available () ? "--old-available" : nullptr),
                        (o.immediate () ? "--immediate" :
                         o.recursive () ? "--recursive" : nullptr),
