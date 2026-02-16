@@ -1,7 +1,7 @@
 # file      : tests/publish.testscript
 # license   : MIT; see accompanying LICENSE file
 
-.include common.testscript project.testscript
+.include common.testscript
 
 # bdep-publish requirements for the minimum supported git version are higher
 # then the default 2.1.0 (see bdep/publish.cxx for details).
@@ -21,17 +21,15 @@ test.arguments += --repository "$repository"  --yes \
 config_cxx = [cmdline] cc config.cxx=$quote($recall($cxx.path) $cxx.config.mode, true)
 
 new  += --vcs git,branch=master 2>!
-init += $config_cxx -d prj 2>! &prj/**/bootstrap/***
+init += $config_cxx 2>!
 
 windows = ($cxx.target.class == 'windows')
 
-g = [cmdline] git -C prj >! 2>!
+g = [cmdline] git >! 2>!
 
 # Note that using the same package name and version for tests may result in
-# duplicate submissions. We will use unique version for each test,
-# incrementing the patch version for *.*.X.
-#
-# Next version to use: *.*.29
+# duplicate submissions. We will use unique package name in the 'prj-<uuid>'
+# form for each test.
 #
 
 # Normally we disable the progress indication that complicates stderr output
@@ -44,8 +42,6 @@ g = [cmdline] git -C prj >! 2>!
 {{
   test.arguments += --control 'none'
 
-  +$clone_prj
-
   : single-pkg
   :
   {{
@@ -54,14 +50,16 @@ g = [cmdline] git -C prj >! 2>!
     : single-cfg
     :
     {
-      $clone_root_prj
-      $init -C @cfg &prj-cfg/***
-      sed -i -e 's/^(version:) .*$/\1 1.0.1/' prj/manifest
+      prj = "prj-$generate_uuid()"
 
-      $* --no-progress 2>>~%EOE%
+      $new $prj &$prj/***
+      $init -d $prj -C @cfg &$prj-cfg/*** &$prj/**/bootstrap/***
+      sed -i -e 's/^(version:) .*$/\1 1.0.0/' $prj/manifest
+
+      $* -d $prj --no-progress 2>>~"%EOE%"
         synchronizing:
-          upgrade prj/1.0.1
-        %package submission is queued(: \.*prj/1.0.1)?%d
+          upgrade $prj/1.0.0
+        %package submission is queued\(: \\.*$prj/1.0.0\)?%d
         %reference: .{12}%
         EOE
     }
@@ -70,16 +68,18 @@ g = [cmdline] git -C prj >! 2>!
     :
     if! $windows
     {
-      $clone_root_prj
-      $init -C @cfg &prj-cfg/***
-      sed -i -e 's/^(version:) .*$/\1 1.0.19/' prj/manifest
+      prj = "prj-$generate_uuid()"
 
-      $* 2>>~%EOE%
+      $new $prj &$prj/***
+      $init -d $prj -C @cfg &$prj-cfg/*** &$prj/**/bootstrap/***
+      sed -i -e 's/^(version:) .*$/\1 1.0.0/' $prj/manifest
+
+      $* -d $prj 2>>~"%EOE%"
         synchronizing:
-          upgrade prj/1.0.19
-        submitting prj-1.0.19.tar.gz
+          upgrade $prj/1.0.0
+        submitting $prj-1.0.0.tar.gz
         %.*
-        %package submission is queued(: \.*prj/1.0.19)?%d
+        %package submission is queued\(: \\.*$prj/1.0.0\)?%d
         %reference: .{12}%
         EOE
     }
@@ -87,9 +87,9 @@ g = [cmdline] git -C prj >! 2>!
     : no-cfg
     :
     {
-      $clone_root_prj
+      $new prj &prj/***
 
-      $* 2>>~%EOE% != 0
+      $* -d prj 2>>~%EOE% != 0
         %error: no default configuration in project .+%
           info: use (@<cfg-name> | --config|-c <cfg-dir> | --all|-a) to specify configuration explicitly
         EOE
@@ -98,11 +98,12 @@ g = [cmdline] git -C prj >! 2>!
     : multi-cfg
     :
     {
-      $clone_root_prj
-      $init -C @cfg1 &prj-cfg1/***
-      $init -C @cfg2 &prj-cfg2/***
+      $new prj &prj/***
 
-      $* --all 2>>EOE != 0
+      $init -d prj -C @cfg1 &prj-cfg1/***
+      $init -d prj -C @cfg2 &prj-cfg2/***
+
+      $* -d prj --all 2>>EOE != 0
         error: package prj is initialized in multiple specified configurations
           info: @cfg1
           info: @cfg2
@@ -112,18 +113,19 @@ g = [cmdline] git -C prj >! 2>!
     : snapshot
     :
     {
-      $clone_root_prj
-      $init -C @cfg &prj-cfg/***
-      sed -i -e 's/^(version:) .*$/\1 1.0.15-a.0.z/' prj/manifest
+      $new prj &prj/***
 
-      $* 2>>EOE != 0
+      $init -d prj -C @cfg &prj-cfg/*** &prj/**/bootstrap/***
+      sed -i -e 's/^(version:) .*$/\1 1.0.0-a.0.z/' prj/manifest
+
+      $* -d prj 2>>EOE != 0
         synchronizing:
-          upgrade prj/1.0.15-a.0.19700101000000
-        error: package prj version 1.0.15-a.0.19700101000000 is a snapshot
+          upgrade prj/1.0.0-a.0.19700101000000
+        error: package prj version 1.0.0-a.0.19700101000000 is a snapshot
         EOE
 
-      $* --force=snapshot 2>>~%EOE% != 0
-        error: package prj version 1.0.15-a.0.19700101000000 is a snapshot
+      $* -d prj --force=snapshot 2>>~%EOE% != 0
+        error: package prj version 1.0.0-a.0.19700101000000 is a snapshot
         EOE
     }
 
@@ -133,28 +135,30 @@ g = [cmdline] git -C prj >! 2>!
       : alpha
       :
       {
-        $clone_root_prj
-        $init -C @cfg &prj-cfg/***
-        sed -i -e 's/^(version:) .*$/\1 0.1.27/' prj/manifest
+        prj = "prj-$generate_uuid()"
+
+        $new $prj &$prj/***
+        $init -d $prj -C @cfg &$prj-cfg/*** &$prj/**/bootstrap/***
+        sed -i -e 's/^(version:) .*$/\1 0.1.0/' $prj/manifest
 
         # Suppress the --yes option.
         #
         test.arguments = $regex.apply($test.arguments, '^--yes$', '')
 
-        $* <<EOI 2>>~%EOE%
+        $* -d $prj <<EOI 2>>~"%EOE%"
           y
           y
           EOI
           %.*
-          package prj 0.1.27 has 0 major version component and should be published to alpha section if this version is semver
+          %package $prj 0.1.0 has 0 major version component and should be published to alpha section if this version is semver%d
           publish to alpha as opposed to stable [y/n] publishing:
           %.*
-            package: prj
-            version: 0.1.27
-            project: prj
+            package: $prj
+            version: 0.1.0
+            project: $prj
             section: alpha
           %.*
-          continue? [y/n] submitting prj-0.1.27.tar.gz
+          continue? [y/n] submitting $prj-0.1.0.tar.gz
           %.*
           %package submission is queued.+%
           %reference: .{12}%
@@ -164,28 +168,30 @@ g = [cmdline] git -C prj >! 2>!
       : stable
       :
       {
-        $clone_root_prj
-        $init -C @cfg &prj-cfg/***
-        sed -i -e 's/^(version:) .*$/\1 0.1.28/' prj/manifest
+        prj = "prj-$generate_uuid()"
+
+        $new $prj &$prj/***
+        $init -d $prj -C @cfg &$prj-cfg/*** &$prj/**/bootstrap/***
+        sed -i -e 's/^(version:) .*$/\1 0.1.0/' $prj/manifest
 
         # Suppress the --yes option.
         #
         test.arguments = $regex.apply($test.arguments, '^--yes$', '')
 
-        $* <<EOI 2>>~%EOE%
+        $* -d $prj <<EOI 2>>~"%EOE%"
           n
           y
           EOI
           %.*
-          package prj 0.1.28 has 0 major version component and should be published to alpha section if this version is semver
+          package $prj 0.1.0 has 0 major version component and should be published to alpha section if this version is semver
           publish to alpha as opposed to stable [y/n] publishing:
           %.*
-            package: prj
-            version: 0.1.28
-            project: prj
+            package: $prj
+            version: 0.1.0
+            project: $prj
             section: stable
           %.*
-          continue? [y/n] submitting prj-0.1.28.tar.gz
+          continue? [y/n] submitting $prj-0.1.0.tar.gz
           %.*
           %package submission is queued.+%
           %reference: .{12}%
@@ -199,37 +205,39 @@ g = [cmdline] git -C prj >! 2>!
     : non-bdep-initialized project, using the forwarded build2 configuration.
     :
     {
-      $new --no-init --no-amalgamation prj 2>- &prj/***
-      sed -i -e 's/^(version:) .*$/\1 1.0.22/' prj/manifest
+      prj = "prj-$generate_uuid()"
+
+      $new --no-init --no-amalgamation $prj &$prj/***
+      sed -i -e 's/^(version:) .*$/\1 1.0.0/' $prj/manifest
 
       sed -i \
-          -e 's/^(amalgamation =.*)$/\1\nversion = 1.0.22\ndist.package = $project-$version/' \
+          -e 's/^(amalgamation =.*)$/\1\nversion = 1.0.0\ndist.package = $project-$version/' \
           -e 's/^using version$//' \
-          prj/build/bootstrap.build
+          $prj/build/bootstrap.build
 
-      $build 'configure:' prj/@prj-cfg/,forward &prj/build/bootstrap/*** 2>!
+      $build 'configure:' $prj/@$prj-cfg/,forward &$prj/build/bootstrap/*** 2>!
 
-      $* --no-progress --forward --section alpha 2>>~%EOE%
-        %package submission is queued(: .*prj/1.0.22)?%
+      $* -d $prj --no-progress --forward --section alpha 2>>~"%EOE%"
+        %package submission is queued\(: .*$prj/1.0.0\)?%
         %reference: .{12}%
         EOE
 
       # While at it, test specifying a package name on the command line.
       #
-      sed -i -e 's/^(version:) .*$/\1 1.0.23/'  prj/manifest
-      sed -i -e 's/^(version =) .*$/\1 1.0.23/' prj/build/bootstrap.build
+      sed -i -e 's/^(version:) .*$/\1 1.0.1/'  $prj/manifest
+      sed -i -e 's/^(version =) .*$/\1 1.0.1/' $prj/build/bootstrap.build
 
       # Suppress the --yes option.
       #
       test.arguments = $regex.apply($test.arguments, '^--yes$', '')
 
-      $* --no-progress --forward --section alpha prj <'y' 2>>~"%EOE%"
+      $* -d $prj --no-progress --forward --section alpha $prj <'y' 2>>~"%EOE%"
         publishing:
         %  to:      $repository%
           as:      user <user@example.com>
-          package: prj
-          version: 1.0.23
-          project: prj
+          package: $prj
+          version: 1.0.1
+          project: $prj
           section: alpha
         %.?
         %continue\\?.+ package submission is queued.+%
@@ -244,22 +252,23 @@ g = [cmdline] git -C prj >! 2>!
     test.options += --no-progress
     test.arguments += --force=uncommitted --simulate 'success'
 
-    +$new -t empty prj &prj/***
-    +$new --package -t lib libprj -d prj
-    +$new --package -t exe prj    -d prj
-
     : both
     :
     {
-      $clone_prj
-      sed -i -e 's/^(version:) .*$/\1 1.0.2/' prj/libprj/manifest
-      sed -i -e 's/^(version:) .*$/\1 1.0.2/' prj/prj/manifest
-      $init -C @cfg &prj-cfg/***
+      prj = "prj-$generate_uuid()"
 
-      $* 2>>~%EOE%
-        %package submission is queued(: \.*libprj/1.0.2)?%d
+      $new -t empty $prj &$prj/***
+      $new --package -t lib libprj -d $prj
+      $new --package -t exe prj    -d $prj
+
+      sed -i -e 's/^(version:) .*$/\1 1.0.0/' $prj/libprj/manifest
+      sed -i -e 's/^(version:) .*$/\1 1.0.0/' $prj/prj/manifest
+      $init -d $prj -C @cfg &$prj-cfg/*** &$prj/**/bootstrap/***
+
+      $* -d $prj 2>>~%EOE%
+        %package submission is queued(: \.*libprj/1.0.0)?%d
         %reference: .{12}%
-        %package submission is queued(: \.*prj/1.0.2)?%d
+        %package submission is queued(: \.*prj/1.0.0)?%d
         %reference: .{12}%
         EOE
     }
@@ -267,23 +276,28 @@ g = [cmdline] git -C prj >! 2>!
     : pkg-by-name
     :
     {
-      $clone_prj
-      sed -i -e 's/^(version:) .*$/\1 1.0.24/' prj/libprj/manifest
-      sed -i -e 's/^(version:) .*$/\1 1.0.24/' prj/prj/manifest
-      $init -C @cfg &prj-cfg/***
+      prj = "prj-$generate_uuid()"
+
+      $new -t empty $prj &$prj/***
+      $new --package -t lib libprj -d $prj
+      $new --package -t exe prj    -d $prj
+
+      sed -i -e 's/^(version:) .*$/\1 1.0.0/' $prj/libprj/manifest
+      sed -i -e 's/^(version:) .*$/\1 1.0.0/' $prj/prj/manifest
+      $init -d $prj -C @cfg &$prj-cfg/*** &$prj/**/bootstrap/***
 
       # Suppress the --yes option.
       #
       test.arguments = $regex.apply($test.arguments, '^--yes$', '')
 
-      $* libprj <'y' 2>>~"%EOE%"
+      $* -d $prj libprj <'y' 2>>~"%EOE%"
         warning: following project packages not being published: prj
         publishing:
         %  to:      $repository%
           as:      user <user@example.com>
           package: libprj
-          version: 1.0.24
-          project: prj
+          version: 1.0.0
+          project: $prj
           section: stable
         %.?
         %continue\\?.+ package submission is queued.+%
@@ -294,17 +308,22 @@ g = [cmdline] git -C prj >! 2>!
     : diff-configs
     :
     {
-      $clone_prj
-      sed -i -e 's/^(version:) .*$/\1 1.0.20/' prj/libprj/manifest
-      sed -i -e 's/^(version:) .*$/\1 1.0.20/' prj/prj/manifest
+      prj = "prj-$generate_uuid()"
 
-      $init -C @cfg1                    -d prj/libprj &prj-cfg1/***
-      $init -C @cfg2 --config-type host -d prj/prj    &prj-cfg2/***
+      $new -t empty $prj &$prj/***
+      $new --package -t lib libprj -d $prj
+      $new --package -t exe prj    -d $prj
 
-      $* 2>>~%EOE%
-        %package submission is queued(: \.*libprj/1.0.20)?%d
+      sed -i -e 's/^(version:) .*$/\1 1.0.0/' $prj/libprj/manifest
+      sed -i -e 's/^(version:) .*$/\1 1.0.0/' $prj/prj/manifest
+
+      $init -C @cfg1                    -d $prj/libprj &$prj-cfg1/*** &$prj/libprj/**/bootstrap/***
+      $init -C @cfg2 --config-type host -d $prj/prj    &$prj-cfg2/*** &$prj/prj/**/bootstrap/***
+
+      $* -d $prj 2>>~%EOE%
+        %package submission is queued(: \.*libprj/1.0.0)?%d
         %reference: .{12}%
-        %package submission is queued(: \.*prj/1.0.20)?%d
+        %package submission is queued(: \.*prj/1.0.0)?%d
         %reference: .{12}%
         EOE
     }
@@ -312,17 +331,22 @@ g = [cmdline] git -C prj >! 2>!
     : diff-configs-forward
     :
     {
-      $clone_prj
-      sed -i -e 's/^(version:) .*$/\1 1.0.21/' prj/libprj/manifest
-      sed -i -e 's/^(version:) .*$/\1 1.0.21/' prj/prj/manifest
+      prj = "prj-$generate_uuid()"
 
-      $init -C @cfg1                    --no-default --forward -d prj/libprj &prj-cfg1/***
-      $init -C @cfg2 --config-type host --no-default --forward -d prj/prj    &prj-cfg2/***
+      $new -t empty $prj &$prj/***
+      $new --package -t lib libprj -d $prj
+      $new --package -t exe prj    -d $prj
 
-      $* --forward 2>>~%EOE%
-        %package submission is queued(: \.*libprj/1.0.21)?%d
+      sed -i -e 's/^(version:) .*$/\1 1.0.0/' $prj/libprj/manifest
+      sed -i -e 's/^(version:) .*$/\1 1.0.0/' $prj/prj/manifest
+
+      $init -C @cfg1                    --no-default --forward -d $prj/libprj &$prj-cfg1/*** &$prj/libprj/**/bootstrap/***
+      $init -C @cfg2 --config-type host --no-default --forward -d $prj/prj    &$prj-cfg2/*** &$prj/prj/**/bootstrap/***
+
+      $* -d $prj --forward 2>>~%EOE%
+        %package submission is queued(: \.*libprj/1.0.0)?%d
         %reference: .{12}%
-        %package submission is queued(: \.*prj/1.0.21)?%d
+        %package submission is queued(: \.*prj/1.0.0)?%d
         %reference: .{12}%
         EOE
     }
@@ -330,17 +354,20 @@ g = [cmdline] git -C prj >! 2>!
     : single
     :
     {
-      $clone_prj
-      sed -i -e 's/^(version:) .*$/\1 1.0.3/' prj/libprj/manifest
-      $init -C @cfg &prj-cfg/***
+      prj = "prj-$generate_uuid()"
+
+      $new -t empty $prj &$prj/***
+      $new --package -t lib libprj -d $prj
+      $new --package -t exe prj    -d $prj
+
+      sed -i -e 's/^(version:) .*$/\1 1.0.0/' $prj/libprj/manifest
+      $init -d $prj -C @cfg &$prj-cfg/*** &$prj/**/bootstrap/***
 
       # Publish the single libprj package rather than the whole prj project.
       #
-      test.arguments = $regex.apply($test.arguments, '^(prj)$', '\1/libprj')
-
-      $* 2>>~%EOE%
+      $* -d $prj/libprj 2>>~%EOE%
         warning: following project packages not being published: prj
-        %package submission is queued(: \.*prj/1.0.3)?%d
+        %package submission is queued(: \.*prj/1.0.0)?%d
         %reference: .{12}%
         EOE
     }
@@ -348,17 +375,20 @@ g = [cmdline] git -C prj >! 2>!
     : all
     :
     {
-      $clone_prj
-      sed -i -e 's/^(version:) .*$/\1 1.0.25/' prj/prj/manifest
-      sed -i -e 's/^(version:) .*$/\1 1.0.26/' prj/libprj/manifest
-      $init -C @cfg &prj-cfg/***
+      prj = "prj-$generate_uuid()"
 
-      test.arguments = $regex.apply($test.arguments, '^(-d|prj)$', '')
+      $new -t empty $prj &$prj/***
+      $new --package -t lib libprj -d $prj
+      $new --package -t exe prj    -d $prj
 
-      env -c prj/libprj -- $* 2>>~%EOE%
-        %package submission is queued(: \.*libprj/1.0.26)?%d
+      sed -i -e 's/^(version:) .*$/\1 1.0.0/' $prj/prj/manifest
+      sed -i -e 's/^(version:) .*$/\1 1.0.1/' $prj/libprj/manifest
+      $init -d $prj -C @cfg &$prj-cfg/*** &$prj/**/bootstrap/***
+
+      env -c $prj/libprj -- $* 2>>~%EOE%
+        %package submission is queued(: \.*libprj/1.0.1)?%d
         %reference: .{12}%
-        %package submission is queued(: \.*prj/1.0.25)?%d
+        %package submission is queued(: \.*prj/1.0.0)?%d
         %reference: .{12}%
         EOE
     }
@@ -366,63 +396,69 @@ g = [cmdline] git -C prj >! 2>!
     : prompt
     :
     {
-      $clone_prj
-      sed -i -e 's/^(version:) .*$/\1 1.0.4/' prj/libprj/manifest
-      sed -i -e 's/^(version:) .*$/\1 1.0.4/' prj/prj/manifest
-      $init -C @cfg &prj-cfg/***
+      prj = "prj-$generate_uuid()"
+
+      $new -t empty $prj &$prj/***
+      $new --package -t lib libprj -d $prj
+      $new --package -t exe prj    -d $prj
+
+      sed -i -e 's/^(version:) .*$/\1 1.0.0/' $prj/libprj/manifest
+      sed -i -e 's/^(version:) .*$/\1 1.0.0/' $prj/prj/manifest
+      $init -d $prj -C @cfg &$prj-cfg/*** &$prj/**/bootstrap/***
 
       # Suppress the --yes option.
       #
       test.arguments = $regex.apply($test.arguments, '^--yes$', '')
 
-      $* <'y' 2>>~"%EOE%"
+      $* -d $prj <'y' 2>>~"%EOE%"
         publishing:
           to:      $repository
         %  as:      .+@.+%
 
           package: libprj
-          version: 1.0.4
-          project: prj
+          version: 1.0.0
+          project: $prj
           section: stable
 
           package: prj
-          version: 1.0.4
-          project: prj
+          version: 1.0.0
+          project: $prj
           section: stable
         %warning: publishing using staged build2 toolchain%?
-        %continue\\?\\.+ package submission is queued\(: \\.*libprj/1.0.4\)?%d
+        %continue\\?\\.+ package submission is queued\(: \\.*libprj/1.0.0\)?%d
         %reference: .{12}%
-        %package submission is queued\(: \\.*prj/1.0.4\)?%d
+        %package submission is queued\(: \\.*prj/1.0.0\)?%d
         %reference: .{12}%
         EOE
     }
   }}
 
-  : commited-prj
+  : committed-prj
   :
   {{
     test.options += --no-progress
     test.arguments += --simulate 'success'
 
-    clone_prj = [cmdline] cp --no-cleanup -pr ../prj ./ &prj/***
-
-    +$clone_prj
-
-    +$g config user.name  'Test Script'
-    +$g config user.email 'testscript@example.com'
-    +$g add '*'
-    +$g commit -m 'Create' --no-verify
-
     : final
     :
     {
-      $clone_prj
-      $init -C @cfg &prj-cfg/***
-      sed -i -e 's/^(version:) .*$/\1 1.0.16/' prj/manifest
+      prj = "prj-$generate_uuid()"
 
-      $* 2>>~%EOE% != 0
+      $new $prj &$prj/***
+
+      g += -C $prj
+
+      $g config user.name  'Test Script'
+      $g config user.email 'testscript@example.com'
+      $g add '*'
+      $g commit -m 'Create' --no-verify
+
+      $init -d $prj -C @cfg &$prj-cfg/*** &$prj/**/bootstrap/***
+      sed -i -e 's/^(version:) .*$/\1 1.0.0/' $prj/manifest
+
+      $* -d $prj 2>>~"%EOE%" != 0
         synchronizing:
-          upgrade prj/1.0.16
+          upgrade $prj/1.0.0
         error: project directory has uncommitted changes
           info: run 'git status' for details
           info: use 'git stash' to temporarily hide the changes
@@ -431,8 +467,8 @@ g = [cmdline] git -C prj >! 2>!
 
       $g commit -a -m 'Version' --no-verify
 
-      $* 2>>~%EOE%
-        %package submission is queued(: \.*prj/1.0.16)?%d
+      $* -d $prj 2>>~"%EOE%"
+        %package submission is queued\(: \\.*$prj/1.0.0\)?%d
         %reference: .{12}%
         EOE
     }
@@ -440,13 +476,23 @@ g = [cmdline] git -C prj >! 2>!
     : snapshot
     :
     {
-      $clone_prj
-      $init -C @cfg &prj-cfg/***
-      sed -i -e 's/^(version:) .*$/\1 1.0.17-a.0.z/' prj/manifest
+      prj = "prj-$generate_uuid()"
 
-      $* 2>>~%EOE% != 0
+      $new $prj &$prj/***
+
+      g += -C $prj
+
+      $g config user.name  'Test Script'
+      $g config user.email 'testscript@example.com'
+      $g add '*'
+      $g commit -m 'Create' --no-verify
+
+      $init -d $prj -C @cfg &$prj-cfg/*** &$prj/**/bootstrap/***
+      sed -i -e 's/^(version:) .*$/\1 1.0.0-a.0.z/' $prj/manifest
+
+      $* -d $prj 2>>~"%EOE%" != 0
         synchronizing:
-        %  upgrade prj/1.0.17-a.0.\.+%d
+        %  upgrade $prj/1.0.0-a.0.\\.+%d
         error: project directory has uncommitted changes
           info: run 'git status' for details
           info: use 'git stash' to temporarily hide the changes
@@ -462,15 +508,15 @@ g = [cmdline] git -C prj >! 2>!
 
       $g commit -a -m 'Version' --no-verify
 
-      $* 2>>~%EOE% != 0
+      $* -d $prj 2>>~"%EOE%" != 0
         synchronizing:
-        %  upgrade prj/1.0.17-a.0.\.+%d
-        %error: package prj version 1.0.17-a.0.\.+ is a snapshot%d
+        %  upgrade $prj/1.0.0-a.0.\\.+%d
+        %error: package $prj version 1.0.0-a.0.\\.+ is a snapshot%d
           info: use --force=snapshot to publish anyway
         EOE
 
-      $* --force=snapshot 2>>~%EOE%
-        %package submission is queued(: \.*prj/1.0.17-a.0.\.+)?%d
+      $* -d $prj --force=snapshot 2>>~"%EOE%"
+        %package submission is queued\(: \\.*$prj/1.0.0-a.0.\\.+\)?%d
         %reference: .{12}%
         EOE
     }
@@ -479,21 +525,19 @@ g = [cmdline] git -C prj >! 2>!
   : non-vsc-prj
   :
   {
+    prj = "prj-$generate_uuid()"
+
+    $new --vcs none $prj &$prj/***
+    $init -d $prj -C @cfg &$prj-cfg/*** &$prj/**/bootstrap/***
+    sed -i -e 's/^(version:) .*$/\1 1.0.0/' $prj/manifest
+
     test.options += --no-progress
     test.arguments += --simulate 'success'
 
-    clone_prj = [cmdline] cp --no-cleanup -pr ../prj ./ &prj/***
-
-    $clone_prj
-    rm -rf prj/.git
-
-    $init -C @cfg &prj-cfg/***
-    sed -i -e 's/^(version:) .*$/\1 1.0.18/' prj/manifest
-
-    $* 2>>~%EOE%
+    $* -d $prj 2>>~"%EOE%"
       synchronizing:
-        upgrade prj/1.0.18
-      %package submission is queued(: \.*prj/1.0.18)?%d
+        upgrade $prj/1.0.0
+      %package submission is queued\(: \\.*$prj/1.0.0\)?%d
       %reference: .{12}%
       EOE
   }
@@ -507,15 +551,17 @@ g = [cmdline] git -C prj >! 2>!
     : duplicate-archive
     :
     {
+      prj = "prj-$generate_uuid()"
+
+      $new $prj &$prj/***
+      $init -d $prj -C @cfg &$prj-cfg/*** &$prj/**/bootstrap/***
+      sed -i -e 's/^(version:) .*$/\1 1.0.0/' $prj/manifest
+
       test.arguments += --simulate 'duplicate-archive'
 
-      $clone_root_prj
-      $init -C @cfg &prj-cfg/***
-      sed -i -e 's/^(version:) .*$/\1 1.0.5/' prj/manifest
-
-      $* 2>>~%EOE% != 0
+      $* -d $prj 2>>~"%EOE%" != 0
         synchronizing:
-          upgrade prj/1.0.5
+          upgrade $prj/1.0.0
         error: duplicate submission
         %  info: reference: .{12}%?
         EOE
@@ -524,15 +570,17 @@ g = [cmdline] git -C prj >! 2>!
     : internal-error-text
     :
     {
+      prj = "prj-$generate_uuid()"
+
+      $new $prj &$prj/***
+      $init -d $prj -C @cfg &$prj-cfg/*** &$prj/**/bootstrap/***
+      sed -i -e 's/^(version:) .*$/\1 1.0.0/' $prj/manifest
+
       test.arguments += --simulate 'internal-error-text'
 
-      $clone_root_prj
-      $init -C @cfg &prj-cfg/***
-      sed -i -e 's/^(version:) .*$/\1 1.0.6/' prj/manifest
-
-      $* 2>>~%EOE% != 0
+      $* -d $prj 2>>~"%EOE%" != 0
         synchronizing:
-          upgrade prj/1.0.6
+          upgrade $prj/1.0.0
         error: submission handling failed
         %  info: consider reporting this to .+ maintainers%
         EOE
@@ -541,16 +589,18 @@ g = [cmdline] git -C prj >! 2>!
     : internal-error-html
     :
     {
+      prj = "prj-$generate_uuid()"
+
+      $new $prj &$prj/***
+      $init -d $prj -C @cfg &$prj-cfg/*** &$prj/**/bootstrap/***
+      sed -i -e 's/^(version:) .*$/\1 1.0.0/' $prj/manifest
+
       test.arguments += --simulate 'internal-error-html'
 
-      $clone_root_prj
-      $init -C @cfg &prj-cfg/***
-      sed -i -e 's/^(version:) .*$/\1 1.0.7/' prj/manifest
-
-      $* 2>>~%EOE% != 0
+      $* -d $prj 2>>~"%EOE%" != 0
         synchronizing:
-          upgrade prj/1.0.7
-        error: HTTP status code 500 (internal server error)
+          upgrade $prj/1.0.0
+        error: HTTP status code 500 \(internal server error\)
         %  info: consider reporting this to .+ maintainers%
         EOE
     }
@@ -572,13 +622,7 @@ g = [cmdline] git -C prj >! 2>!
   +mkdir --no-cleanup prj.git
   +git -C prj.git -c init.defaultBranch=master init --bare --quiet &prj.git/***
 
-  +$clone_prj
-
-  +$g config user.name  'Test Script'
-  +$g config user.email 'testscript@example.com'
-
   clone_rep = [cmdline] cp --no-cleanup -r ../prj.git ./ &prj.git/***
-  clone_prj = [cmdline] cp --no-cleanup -r ../prj     ./ &prj/***
 
   : success
   :
@@ -590,21 +634,29 @@ g = [cmdline] git -C prj >! 2>!
 
     # Setup the local repository/project.
     #
-    $clone_prj
-    $init -C @cfg &prj-cfg/***
+    prj = "prj-$generate_uuid()"
+
+    $new $prj &$prj/***
+
+    g += -C $prj
+
+    $g config user.name  'Test Script'
+    $g config user.email 'testscript@example.com'
+
+    $init -d $prj -C @cfg &$prj-cfg/*** &$prj/**/bootstrap/***
     $g remote add origin "$rep"
 
     # Publish when neither local nor remote-tracking build2-control branches
     # are present.
     #
-    sed -i -e 's/^(version:) .*$/\1 1.0.8/' prj/manifest
+    sed -i -e 's/^(version:) .*$/\1 1.0.0/' $prj/manifest
 
-    $* >&2 2>>~%EOE%
+    $* -d $prj >&2 2>>~"%EOE%"
       synchronizing:
-        upgrade prj/1.0.8
+        upgrade $prj/1.0.0
       pushing branch build2-control
       %.*
-      submitting prj-1.0.8.tar.gz
+      submitting $prj-1.0.0.tar.gz
       %.+
       %reference: .{12}%
       EOE
@@ -614,26 +666,26 @@ g = [cmdline] git -C prj >! 2>!
     # Publish when both local and remote-tracking build2-control branches are
     # present.
     #
-    sed -i -e 's/^(version:) .*$/\1 1.0.9/' prj/manifest
+    sed -i -e 's/^(version:) .*$/\1 1.0.1/' $prj/manifest
 
-    $* 2>>~%EOE%
+    $* -d $prj 2>>~"%EOE%"
       synchronizing:
-        upgrade prj/1.0.9
-      %package submission is queued(: \.*prj/1.0.9)?%d
+        upgrade $prj/1.0.1
+      %package submission is queued\(: \\.*$prj/1.0.1\)?%d
       %reference: .{12}%
       EOE
 
     # Publish when the local build2-control branch is not present while the
     # remote-tracking branch is.
     #
-    sed -i -e 's/^(version:) .*$/\1 1.0.10/' prj/manifest
+    sed -i -e 's/^(version:) .*$/\1 1.0.2/' $prj/manifest
 
     $g branch -D build2-control
 
-    $* 2>>~%EOE%
+    $* -d $prj 2>>~"%EOE%"
       synchronizing:
-        upgrade prj/1.0.10
-      %package submission is queued(: \.*prj/1.0.10)?%d
+        upgrade $prj/1.0.2
+      %package submission is queued\(: \\.*$prj/1.0.2\)?%d
       %reference: .{12}%
       EOE
 
@@ -641,14 +693,14 @@ g = [cmdline] git -C prj >! 2>!
     # add.
     #
     $g checkout build2-control
-    $g log --name-only --pretty='format:%s' >>:~%EOO%
-      Add prj/1.0.10 publish authorization
+    $g log --name-only --pretty='format:%s' >>:~"%EOO%"
+      Add $prj/1.0.2 publish authorization
       %submit/.{16}%
 
-      Add prj/1.0.9 publish authorization
+      Add $prj/1.0.1 publish authorization
       %submit/.{16}%
 
-      Add prj/1.0.8 publish authorization
+      Add $prj/1.0.0 publish authorization
       %submit/.{16}%
 
       Start
@@ -658,8 +710,6 @@ g = [cmdline] git -C prj >! 2>!
   : failure
   :
   {
-    g2 = [cmdline] git -C prj2 >! 2>!
-
     # Setup the remote repository.
     #
     rep = "file://($windows ? "$regex.replace($~, '\\', '/')" : "$~")/prj.git"
@@ -667,15 +717,23 @@ g = [cmdline] git -C prj >! 2>!
 
     # Setup the local repository/project.
     #
-    $clone_prj
-    $init -C @cfg &prj-cfg/***
+    prj = "prj-$generate_uuid()"
+
+    $new $prj &$prj/***
+
+    g += -C $prj
+
+    $g config user.name  'Test Script'
+    $g config user.email 'testscript@example.com'
+
+    $init -d $prj -C @cfg &$prj-cfg/*** &$prj/**/bootstrap/***
     $g remote add origin "$rep"
 
     # Publish successfully.
     #
-    sed -i -e 's/^(version:) .*$/\1 1.0.11/' prj/manifest
+    sed -i -e 's/^(version:) .*$/\1 1.0.0/' $prj/manifest
 
-    $* >! 2>!
+    $* -d $prj >! 2>!
 
     # Push into the build2-control branch from another local repository,
     # making the subsequent publish of prj package impossible until the next
@@ -684,8 +742,10 @@ g = [cmdline] git -C prj >! 2>!
     # Convert specific warnings to infos as we expect them to appear. This, in
     # particular, prevents bbot workers to set task result status to warning.
     #
-    git clone "$rep" prj2 &prj2/*** 2>&1 | \
-    sed -e 's/warning: (remote HEAD refers to nonexistent .*)/info: \1/' >&2 2>!
+    git clone "$rep" prj &prj/*** 2>&1 | \
+      sed -e 's/warning: (remote HEAD refers to nonexistent .*)/info: \1/' >&2 2>!
+
+    g2 = [cmdline] git -C prj >! 2>!
 
     $g2 config user.name  'Test Script'
     $g2 config user.email 'testscript@example.com'
@@ -693,13 +753,13 @@ g = [cmdline] git -C prj >! 2>!
     $g2 commit --allow-empty -m 'Dummy1'
     $g2 push
 
-    sed -i -e 's/^(version:) .*$/\1 1.0.12/' prj/manifest
+    sed -i -e 's/^(version:) .*$/\1 1.0.1/' $prj/manifest
 
     # Fail to publish (see above for details).
     #
-    $* 2>>~%EOE% != 0
+    $* -d $prj 2>>~"%EOE%" != 0
       synchronizing:
-        upgrade prj/1.0.12
+        upgrade $prj/1.0.1
       pushing branch build2-control
       %.*
       error: unable to push build2-control branch
@@ -712,12 +772,12 @@ g = [cmdline] git -C prj >! 2>!
     #
     $g fetch
 
-    $* 2>>~%EOE%
-      %package submission is queued(: \.*prj/1.0.12)?%d
+    $* -d $prj 2>>~"%EOE%"
+      %package submission is queued\(: \\.*$prj/1.0.1\)?%d
       %reference: .{12}%
       EOE
 
-    sed -i -e 's/^(version:) .*$/\1 1.0.13/' prj/manifest
+    sed -i -e 's/^(version:) .*$/\1 1.0.2/' $prj/manifest
 
     # Reproduce the situation when the local build2-control branch exists but
     # the remote-tracking one doesn't (see brep/publish.cxx for details).
@@ -727,11 +787,11 @@ g = [cmdline] git -C prj >! 2>!
     # Note that the push operation is fixed in git 2.32.0 not to print "Branch
     # set up to track ..."  in the quiet mode.
     #
-    $* >&2 2>>~%EOE%
+    $* -d $prj >&2 2>>~"%EOE%"
       synchronizing:
-        upgrade prj/1.0.13
+        upgrade $prj/1.0.2
       %Branch '?build2-control'? set up to track remote branch '?build2-control'? from '?origin'?.%d?
-      %package submission is queued(: \.*prj/1.0.13)?%d
+      %package submission is queued\(: \\.*$prj/1.0.2\)?%d
       %reference: .{12}%
       EOE
 
@@ -744,7 +804,7 @@ g = [cmdline] git -C prj >! 2>!
     $g2 commit --allow-empty -m 'Dummy2'
     $g2 push
 
-    sed -i -e 's/^(version:) .*$/\1 1.0.14/' prj/manifest
+    sed -i -e 's/^(version:) .*$/\1 1.0.3/' $prj/manifest
 
     # Note that the prj repository master branch push doesn't implicitly fetch
     # the build2-control branch, so the subsequent publishing fails.
@@ -753,9 +813,9 @@ g = [cmdline] git -C prj >! 2>!
     $g commit -m 'Create' --no-verify
     $g push --set-upstream origin master
 
-    $* 2>>~%EOE% != 0
+    $* -d $prj 2>>~"%EOE%" != 0
       synchronizing:
-        upgrade prj/1.0.14
+        upgrade $prj/1.0.3
       %.*
       error: unable to push build2-control branch
         info: run 'git fetch' and try again
@@ -766,28 +826,28 @@ g = [cmdline] git -C prj >! 2>!
     #
     $g pull --ff-only
 
-    $* 2>>~%EOE%
-      %package submission is queued(: \.*prj/1.0.14)?%d
+    $* -d $prj 2>>~"%EOE%"
+      %package submission is queued\(: \\.*$prj/1.0.3\)?%d
       %reference: .{12}%
       EOE
 
     # Check the build2-control branch commits presence and the files they add.
     #
     $g checkout build2-control
-    $g log --name-only --pretty='format:%s' >>:~%EOO%
+    $g log --name-only --pretty='format:%s' >>:~"%EOO%"
       %.*
-      Add prj/1.0.14 publish authorization
+      Add $prj/1.0.3 publish authorization
       %submit/.{16}%
 
       Dummy2
-      Add prj/1.0.13 publish authorization
+      Add $prj/1.0.2 publish authorization
       %submit/.{16}%
 
-      Add prj/1.0.12 publish authorization
+      Add $prj/1.0.1 publish authorization
       %submit/.{16}%
 
       Dummy1
-      Add prj/1.0.11 publish authorization
+      Add $prj/1.0.0 publish authorization
       %submit/.{16}%
 
       Start
