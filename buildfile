@@ -1,7 +1,7 @@
 # file      : buildfile
 # license   : MIT; see accompanying LICENSE file
 
-./: {*/ -build/}                                          \
+./: {*/ -build/ -doc/}                                          \
     doc{INSTALL NEWS README} legal{LICENSE AUTHORS LEGAL} \
     manifest
 
