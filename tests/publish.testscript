@@ -50,7 +50,8 @@ g = [cmdline] git >! 2>!
     : single-cfg
     :
     {
-      prj = "prj-$generate_uuid()"
+      xxh64sum --sum-only <"$generate_uuid()" | set prj
+      prj = "p$prj"
 
       $new $prj &$prj/***
       $init -d $prj -C @cfg &$prj-cfg/*** &$prj/**/bootstrap/***
@@ -68,7 +69,8 @@ g = [cmdline] git >! 2>!
     :
     if! $windows
     {
-      prj = "prj-$generate_uuid()"
+      xxh64sum --sum-only <"$generate_uuid()" | set prj
+      prj = "p$prj"
 
       $new $prj &$prj/***
       $init -d $prj -C @cfg &$prj-cfg/*** &$prj/**/bootstrap/***
@@ -135,7 +137,8 @@ g = [cmdline] git >! 2>!
       : alpha
       :
       {
-        prj = "prj-$generate_uuid()"
+        xxh64sum --sum-only <"$generate_uuid()" | set prj
+        prj = "p$prj"
 
         $new $prj &$prj/***
         $init -d $prj -C @cfg &$prj-cfg/*** &$prj/**/bootstrap/***
@@ -168,7 +171,8 @@ g = [cmdline] git >! 2>!
       : stable
       :
       {
-        prj = "prj-$generate_uuid()"
+        xxh64sum --sum-only <"$generate_uuid()" | set prj
+        prj = "p$prj"
 
         $new $prj &$prj/***
         $init -d $prj -C @cfg &$prj-cfg/*** &$prj/**/bootstrap/***
@@ -205,7 +209,8 @@ g = [cmdline] git >! 2>!
     : non-bdep-initialized project, using the forwarded build2 configuration.
     :
     {
-      prj = "prj-$generate_uuid()"
+      xxh64sum --sum-only <"$generate_uuid()" | set prj
+      prj = "p$prj"
 
       $new --no-init --no-amalgamation $prj &$prj/***
       sed -i -e 's/^(version:) .*$/\1 1.0.0/' $prj/manifest
@@ -255,7 +260,8 @@ g = [cmdline] git >! 2>!
     : both
     :
     {
-      prj = "prj-$generate_uuid()"
+      xxh64sum --sum-only <"$generate_uuid()" | set prj
+      prj = "p$prj"
 
       $new -t empty $prj &$prj/***
       $new --package -t lib libprj -d $prj
@@ -276,7 +282,8 @@ g = [cmdline] git >! 2>!
     : pkg-by-name
     :
     {
-      prj = "prj-$generate_uuid()"
+      xxh64sum --sum-only <"$generate_uuid()" | set prj
+      prj = "p$prj"
 
       $new -t empty $prj &$prj/***
       $new --package -t lib libprj -d $prj
@@ -308,7 +315,8 @@ g = [cmdline] git >! 2>!
     : diff-configs
     :
     {
-      prj = "prj-$generate_uuid()"
+      xxh64sum --sum-only <"$generate_uuid()" | set prj
+      prj = "p$prj"
 
       $new -t empty $prj &$prj/***
       $new --package -t lib libprj -d $prj
@@ -331,7 +339,8 @@ g = [cmdline] git >! 2>!
     : diff-configs-forward
     :
     {
-      prj = "prj-$generate_uuid()"
+      xxh64sum --sum-only <"$generate_uuid()" | set prj
+      prj = "p$prj"
 
       $new -t empty $prj &$prj/***
       $new --package -t lib libprj -d $prj
@@ -354,7 +363,8 @@ g = [cmdline] git >! 2>!
     : single
     :
     {
-      prj = "prj-$generate_uuid()"
+      xxh64sum --sum-only <"$generate_uuid()" | set prj
+      prj = "p$prj"
 
       $new -t empty $prj &$prj/***
       $new --package -t lib libprj -d $prj
@@ -375,7 +385,8 @@ g = [cmdline] git >! 2>!
     : all
     :
     {
-      prj = "prj-$generate_uuid()"
+      xxh64sum --sum-only <"$generate_uuid()" | set prj
+      prj = "p$prj"
 
       $new -t empty $prj &$prj/***
       $new --package -t lib libprj -d $prj
@@ -396,7 +407,8 @@ g = [cmdline] git >! 2>!
     : prompt
     :
     {
-      prj = "prj-$generate_uuid()"
+      xxh64sum --sum-only <"$generate_uuid()" | set prj
+      prj = "p$prj"
 
       $new -t empty $prj &$prj/***
       $new --package -t lib libprj -d $prj
@@ -442,7 +454,8 @@ g = [cmdline] git >! 2>!
     : final
     :
     {
-      prj = "prj-$generate_uuid()"
+      xxh64sum --sum-only <"$generate_uuid()" | set prj
+      prj = "p$prj"
 
       $new $prj &$prj/***
 
@@ -476,7 +489,8 @@ g = [cmdline] git >! 2>!
     : snapshot
     :
     {
-      prj = "prj-$generate_uuid()"
+      xxh64sum --sum-only <"$generate_uuid()" | set prj
+      prj = "p$prj"
 
       $new $prj &$prj/***
 
@@ -525,7 +539,8 @@ g = [cmdline] git >! 2>!
   : non-vsc-prj
   :
   {
-    prj = "prj-$generate_uuid()"
+      xxh64sum --sum-only <"$generate_uuid()" | set prj
+      prj = "p$prj"
 
     $new --vcs none $prj &$prj/***
     $init -d $prj -C @cfg &$prj-cfg/*** &$prj/**/bootstrap/***
@@ -551,7 +566,8 @@ g = [cmdline] git >! 2>!
     : duplicate-archive
     :
     {
-      prj = "prj-$generate_uuid()"
+      xxh64sum --sum-only <"$generate_uuid()" | set prj
+      prj = "p$prj"
 
       $new $prj &$prj/***
       $init -d $prj -C @cfg &$prj-cfg/*** &$prj/**/bootstrap/***
@@ -570,7 +586,8 @@ g = [cmdline] git >! 2>!
     : internal-error-text
     :
     {
-      prj = "prj-$generate_uuid()"
+      xxh64sum --sum-only <"$generate_uuid()" | set prj
+      prj = "p$prj"
 
       $new $prj &$prj/***
       $init -d $prj -C @cfg &$prj-cfg/*** &$prj/**/bootstrap/***
@@ -589,7 +606,8 @@ g = [cmdline] git >! 2>!
     : internal-error-html
     :
     {
-      prj = "prj-$generate_uuid()"
+      xxh64sum --sum-only <"$generate_uuid()" | set prj
+      prj = "p$prj"
 
       $new $prj &$prj/***
       $init -d $prj -C @cfg &$prj-cfg/*** &$prj/**/bootstrap/***
@@ -634,7 +652,8 @@ g = [cmdline] git >! 2>!
 
     # Setup the local repository/project.
     #
-    prj = "prj-$generate_uuid()"
+    xxh64sum --sum-only <"$generate_uuid()" | set prj
+    prj = "p$prj"
 
     $new $prj &$prj/***
 
@@ -717,7 +736,8 @@ g = [cmdline] git >! 2>!
 
     # Setup the local repository/project.
     #
-    prj = "prj-$generate_uuid()"
+    xxh64sum --sum-only <"$generate_uuid()" | set prj
+    prj = "p$prj"
 
     $new $prj &$prj/***
 
