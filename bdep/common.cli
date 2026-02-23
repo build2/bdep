@@ -86,15 +86,16 @@ namespace bdep
        OUTPUT section below for details on the \cb{json} format."
     }
 
-    size_t --jobs|-j
+    int32_t --jobs|-j
     {
       "<num>",
       "Number of jobs to perform in parallel. If this option is not
        specified or specified with the \c{0} value, then the number of
-       available hardware threads is used. This option is also propagated
-       when executing package manager commands such as \l{bpkg-pkg-update(1)},
-       \l{bpkg-pkg-test(1)}, etc., which in turn propagate it to the build
-       system."
+       available hardware threads is used. If the specified value is negative,
+       then the number of available hardware threads reduced by this value is
+       used. This option is also propagated when executing package manager
+       commands such as \l{bpkg-pkg-update(1)}, \l{bpkg-pkg-test(1)}, etc.,
+       which in turn propagate it to the build system."
     }
 
     // When it comes to external programs (such as curl, git, etc), if stderr
