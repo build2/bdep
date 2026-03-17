@@ -1,3 +1,54 @@
+Version 0.18.0
+
+  * Fetch cache and offline mode.
+
+    The fetch cache stores downloaded resources (repository metadata, package
+    archives, etc) which are then reused whenever appropriate. This can speed
+    up operations like bdep-init substantially. If all the resources are
+    cached, then bdep can now be instructed to run offline without making any
+    network requests.
+
+    Relevant new options:
+
+    --offline
+    --no-fetch-cache
+    --fetch-cache <mode>
+    --fetch-cache-session
+
+    See bdep-common-options(1) for detail.
+
+  * Ability to use package names in addition to package directories in
+    commands other than bdep-init.
+
+    Once a package is initialized, it is now possible to refer to it using
+    its name rather than its directory. For example:
+
+    bdep init @gcc -d libfoo -d foo
+    bdep ci -d libfoo # Old way (package directory).
+    bdep ci libfoo    # New way (package name).
+
+  * Ability to specify negative values for the -j|--jobs option.
+
+    If the value is negative, then the number of available hardware threads
+    is reduced by this value.
+
+  * New bdep-ci command --force option that can be used to force the
+    submission in the presence of uncommitted changes.
+
+  * The bdep-publish command now publishes all project packages if none are
+    specified explicitly.
+
+  * The bdep-publish command now prompts the user to confirm if the alpha
+    section is appropriate for a package version 0.X.Y.
+
+  * New --sqlite-synchronous option and BUILD2_SQLITE_SYNCHRONOUS environment
+    variable.
+
+    These option and environment variable can be used to set the filesystem
+    synchronization mode for the project SQLite database. Note also that the
+    WAL (Write-Ahead Logging) journaling mode is now used for the project
+    database. See bdep-common-options(1) for detail.
+
 Version 0.17.0
 
   * New `third-party` library and executable sub-option in bdep-new.
