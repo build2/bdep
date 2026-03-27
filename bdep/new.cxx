@@ -2141,8 +2141,8 @@ cmd_new (cmd_new_options&& o, cli::group_scanner& args)
            << "package-email: packaging@build2.org ; Mailing list."    << '\n';
       if (!third_party)
         os << "#build-error-email: " << pe                             << '\n';
-      os << "depends: * build2 >= 0.18.0-"                             << '\n'
-         << "depends: * bpkg >= 0.18.0-"                               << '\n';
+      os << "depends: * build2 >= 0.18.0"                              << '\n'
+         << "depends: * bpkg >= 0.18.0"                                << '\n';
       if (!third_party)
         os  << "#depends: libhello ^1.0.0"                             << '\n';
       os.close ();
