@@ -103,7 +103,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
 
     cat <<EOI >=foo/foo/bar.c
       #include <foo/bar.h>
+
       int bar;
+
+      int
+      bar_func ()
+      {
+        return bar;
+      }
       EOI
 
     $b foo/ $config_cxx $config_c 2>>~%EOE%
@@ -169,7 +176,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
 
     cat <<EOI >=libfoo/libfoo/bar.c
       #include <libfoo/bar.h>
+
       int bar;
+
+      int
+      bar_func ()
+      {
+        return bar;
+      }
       EOI
 
     touch libfoo/tests/basics/fox.h
@@ -177,6 +191,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     cat <<EOI >=libfoo/tests/basics/fox.c
       #include <libfoo/bar.h>
       #include "fox.h"
+
+      int fox;
+
+      int
+      fox_func ()
+      {
+        return fox;
+      }
       EOI
 
     $b libfoo/ $config_cxx $config_c 2>>~%EOE%
@@ -378,7 +400,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     cat <<EOI >=libfoo/src/libfoo/bar.c
       #include <libfoo/bar.h>
       #include "baz.h"
+
       int bar;
+
+      int
+      bar_func ()
+      {
+        return bar;
+      }
       EOI
 
     touch libfoo/tests/basics/fox.h
@@ -386,6 +415,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     cat <<EOI >=libfoo/tests/basics/fox.c
       #include <libfoo/bar.h>
       #include "fox.h"
+
+      int fox;
+
+      int
+      fox_func ()
+      {
+        return fox;
+      }
       EOI
 
     $b libfoo/ $config_cxx $config_c 2>>~%EOE%
@@ -470,6 +507,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     cat <<EOI >=libfoo/tests/basics/fox.c
       #include <libfoo/bar.h>
       #include "fox.h"
+
+      int fox;
+
+      int
+      fox_func ()
+      {
+        return fox;
+      }
       EOI
 
     $b libfoo/ $config_cxx $config_c 2>>~%EOE%
@@ -584,7 +629,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
 
     cat <<EOI >=foo/foo/bar.c
       #include <foo/bar.h>
+
       int bar;
+
+      int
+      bar_func ()
+      {
+        return bar;
+      }
       EOI
 
     cat <<EOI >=foo/foo/bar.test.c
@@ -636,7 +688,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
 
     cat <<EOI >=libfoo/libfoo/bar.c
       #include <libfoo/bar.h>
+
       int bar;
+
+      int
+      bar_func ()
+      {
+        return bar;
+      }
       EOI
 
     cat <<EOI >=libfoo/libfoo/bar.test.c
@@ -1363,7 +1422,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
 
     cat <<EOI >=foo/foo/bar.cxx
       #include <foo/bar.hxx>
+
       int bar;
+
+      int
+      bar_func ()
+      {
+        return bar;
+      }
       EOI
 
     $b foo/ $config_c $config_cxx 2>>~%EOE%
@@ -1406,7 +1472,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
 
     cat <<EOI >=foo/foo/bar.cxx
       #include <foo/bar.hxx>
+
       int bar;
+
+      int
+      bar_func ()
+      {
+        return bar;
+      }
       EOI
 
     cat <<EOI >=foo/foo/bar.test.cxx
@@ -1447,7 +1520,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
 
     cat <<EOI >=libfoo/libfoo/bar.cpp
       #include <libfoo/bar.hpp>
+
       int bar;
+
+      int
+      bar_func ()
+      {
+        return bar;
+      }
       EOI
 
     touch libfoo/tests/basics/fox.hpp
@@ -1455,6 +1535,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     cat <<EOI >=libfoo/tests/basics/fox.cpp
       #include <libfoo/bar.hpp>
       #include "fox.hpp"
+
+      int fox;
+
+      int
+      fox_func ()
+      {
+        return fox;
+      }
       EOI
 
     $b libfoo/ $config_c $config_cxx 2>>~%EOE%
@@ -1511,7 +1599,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     cat <<EOI >=libfoo/src/libfoo/bar.cxx
       #include <libfoo/bar.hxx>
       #include "baz.hxx"
+
       int bar;
+
+      int
+      bar_func ()
+      {
+        return bar;
+      }
       EOI
 
     touch libfoo/tests/basics/fox.hxx
@@ -1519,6 +1614,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     cat <<EOI >=libfoo/tests/basics/fox.cxx
       #include <libfoo/bar.hxx>
       #include "fox.hxx"
+
+      int fox;
+
+      int
+      fox_func ()
+      {
+        return fox;
+      }
       EOI
 
     $b libfoo/ $config_c $config_cxx 2>>~%EOE%
@@ -1551,6 +1654,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
     cat <<EOI >=libfoo/tests/basics/fox.cxx
       #include <libfoo/bar.hxx>
       #include "fox.hxx"
+
+      int fox;
+
+      int
+      fox_func ()
+      {
+        return fox;
+      }
       EOI
 
     $b libfoo/ $config_c $config_cxx 2>>~%EOE%
@@ -1593,7 +1704,14 @@ i = [cmdline] $build install: config.install.root=./install &install/***
 
     cat <<EOI >=libfoo/libfoo/bar.cxx
       #include <libfoo/bar.hxx>
+
       int bar;
+
+      int
+      bar_func ()
+      {
+        return bar;
+      }
       EOI
 
     cat <<EOI >=libfoo/libfoo/bar.test.cxx
