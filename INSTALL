@@ -1,6 +1,0 @@
-Unless you specifically only need the build2 project dependency manager and not
-the complete build2 toolchain, you should use the build2-toolchain distribution
-instead.
-
-If you do want just the project manager, then you can build it using the
-standard build2 build system.
