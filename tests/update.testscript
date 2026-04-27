@@ -154,11 +154,7 @@ deinit += -d prj
     %(mkdir|c\+\+|ld|ln) .+%{8}
     EOE
 
-  # @@ TMP Strangely, get re-symlinked on Windows (every time if run this
-  #        command multiple times).
-  #
   $* pkg1 -d prj/ 2>>~%EOE%
-    %ln .+pkg1.+ -> .+pkg1.+%?
     %info: .+pkg1.+ is up to date%
     EOE
 
