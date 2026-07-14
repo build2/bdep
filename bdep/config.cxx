@@ -174,7 +174,7 @@ namespace bdep
            << "in project " << prj <<
         info << "use 'bdep config remove @" << *name << "' to remove";
 
-    if (db.query_value<count> (query::path == path.string ()) != 0)
+    if (db.query_value<count> (query::path == path) != 0)
       fail << "configuration with directory " << path << " already exists "
            << "in project " << prj <<
         info << "use 'bdep config remove --config " << path << "' to remove";
@@ -440,7 +440,7 @@ namespace bdep
       using query = bdep::query<configuration>;
 
       shared_ptr<configuration> c (
-        db.query_one<configuration> (query::path == i->first.string ()));
+        db.query_one<configuration> (query::path == i->first));
 
       if (c != nullptr)
         i = host_configs.erase (i);
@@ -1158,7 +1158,7 @@ namespace bdep
     //
     using query = bdep::query<configuration>;
 
-    if (auto p = db.query_one<configuration> (query::path == path.string ()))
+    if (auto p = db.query_one<configuration> (query::path == path))
     {
       // Note that this also covers the case where p == c.
       //

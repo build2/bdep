@@ -228,7 +228,7 @@ namespace bdep
       {
         using query = bdep::query<configuration>;
 
-        query q (query::path == cfg.string ());
+        query q (query::path == cfg);
 
         // Reuse the transaction (if any) if this is origin project.
         //
@@ -473,7 +473,7 @@ namespace bdep
       }
 
       using query = bdep::query<configuration>;
-      return db.query_one<configuration> (query::path == cfg.string ());
+      return db.query_one<configuration> (query::path == cfg);
     };
 
     // Given that we can potentially be inside a transaction started on the

@@ -92,8 +92,7 @@ namespace bdep
 
           normalize (d, "configuration directory");
 
-          if (auto c = db.query_one<configuration> (query::path ==
-                                                    d.string ()))
+          if (auto c = db.query_one<configuration> (query::path == d))
             add (move (c));
           else
             fail << "no configuration directory " << d << " in project "
