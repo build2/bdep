@@ -45,18 +45,20 @@ else
 fi
 
 $odb "${inc[@]}"                                                      \
-    -DLIBODB_BUILD2 -DLIBODB_SQLITE_BUILD2 --generate-schema          \
-    -d sqlite --std c++14 --generate-query                            \
+    -DLIBODB_BUILD2 -DLIBODB_SQLITE_BUILD2                            \
+    --std c++14 -d sqlite --sqlite-version 3.53.3                     \
+    --generate-query --generate-schema                                \
     --odb-epilogue '#include <bdep/wrapper-traits.hxx>'               \
     --hxx-prologue '#include <bdep/wrapper-traits.hxx>'               \
     --hxx-prologue '#include <bdep/value-traits.hxx>'                 \
     --include-with-brackets --include-prefix bdep --guard-prefix BDEP \
-    --sqlite-override-null project.hxx
+    project.hxx
 
 $odb "${inc[@]}"                                                      \
     -DLIBODB_BUILD2 -DLIBODB_SQLITE_BUILD2                            \
-    -d sqlite --std c++14 --generate-query                            \
+    --std c++14 -d sqlite --sqlite-version 3.53.3                     \
+    --generate-query                                                  \
     --odb-epilogue '#include <bdep/wrapper-traits.hxx>'               \
     --hxx-prologue '#include <bdep/wrapper-traits.hxx>'               \
     --include-with-brackets --include-prefix bdep --guard-prefix BDEP \
-    --sqlite-override-null database-views.hxx
+    database-views.hxx
