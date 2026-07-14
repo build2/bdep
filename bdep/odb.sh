@@ -45,7 +45,6 @@ else
 fi
 
 $odb "${inc[@]}"                                                      \
-    -DLIBODB_BUILD2 -DLIBODB_SQLITE_BUILD2                            \
     --std c++14 -d sqlite --sqlite-version 3.53.3                     \
     --generate-query --generate-schema                                \
     --odb-epilogue '#include <bdep/wrapper-traits.hxx>'               \
@@ -55,7 +54,6 @@ $odb "${inc[@]}"                                                      \
     project.hxx
 
 $odb "${inc[@]}"                                                      \
-    -DLIBODB_BUILD2 -DLIBODB_SQLITE_BUILD2                            \
     --std c++14 -d sqlite --sqlite-version 3.53.3                     \
     --generate-query                                                  \
     --odb-epilogue '#include <bdep/wrapper-traits.hxx>'               \
