@@ -45,7 +45,7 @@ else
 fi
 
 $odb "${inc[@]}"                                                      \
-    --std c++14 -d sqlite --sqlite-version 3.53.3                     \
+    --std c++14 -d sqlite --sqlite-version 3.53.0                     \
     --generate-query --generate-schema                                \
     --odb-epilogue '#include <bdep/wrapper-traits.hxx>'               \
     --hxx-prologue '#include <bdep/wrapper-traits.hxx>'               \
@@ -54,7 +54,7 @@ $odb "${inc[@]}"                                                      \
     project.hxx
 
 $odb "${inc[@]}"                                                      \
-    --std c++14 -d sqlite --sqlite-version 3.53.3                     \
+    --std c++14 -d sqlite --sqlite-version 3.53.0                     \
     --generate-query                                                  \
     --odb-epilogue '#include <bdep/wrapper-traits.hxx>'               \
     --hxx-prologue '#include <bdep/wrapper-traits.hxx>'               \
