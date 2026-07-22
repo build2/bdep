@@ -51,49 +51,61 @@ namespace bdep
       //
       unique_ptr<connection_factory> cf (new single_connection_factory);
 
-      database db (f.string (),
-                   SQLITE_OPEN_READWRITE | (create ? SQLITE_OPEN_CREATE : 0),
-                   true,                  // Enable FKs.
-                   "",                    // Default VFS.
-                   move (cf));
+      database db (
+        f.string (),
+        SQLITE_OPEN_READWRITE | (create ? SQLITE_OPEN_CREATE : 0),
+        [sync] (connection& c)
+        {
+          // Lock the database for as long as the connection is active. First
+          // we set locking_mode to EXCLUSIVE which instructs SQLite not to
+          // release any locks until the connection is closed. Then, after the
+          // database object is created, we force SQLite to acquire the write
+          // lock by starting exclusive transaction. See the locking_mode
+          // pragma documentation for details. This will also fail if the
+          // database is inaccessible (e.g., file does not exist, already used
+          // by another process, etc).
+          //
+          c.execute ("PRAGMA locking_mode = EXCLUSIVE");
+
+          // Use the WAL (Write-Ahead Logging) journaling mode and, by
+          // default, the NORMAL synchronization mode to speed up the
+          // transaction commits.
+          //
+          // Note that according to the SQLite documentation, NORMAL should be
+          // safe enough for WAL. In particular, the worst that can happen (in
+          // case of a power loss or operating system crash), is that the last
+          // committed transaction will be rolled back. In our case this
+          // normally translated into loosing the result of the latest user
+          // command, such as creating a configuration, initializing a
+          // package, etc. Given a low probably of such an event happening at
+          // just the wrong time and the fact that the data in the project
+          // database stays consistent, this feels like a reasonable tradeoff.
+          // Those who are uncomfortable with NORMAL can select FULL while we
+          // may run tests with OFF (see GH issue #476 for background). Note
+          // that EXTRA is no different from FULL for WAL, but we keep it for
+          // completeness and for consistency with bpkg.
+          //
+          // Note: can throw odb::timeout if the database is already locked.
+          //
+          c.execute ("PRAGMA journal_mode = WAL");
+
+          // Note: can throw odb::timeout if the database is already locked.
+          //
+          c.execute ("PRAGMA main.synchronous = " + to_string (sync));
+
+          // Enable FKs.
+          //
+          c.execute ("PRAGMA foreign_keys=ON");
+        },
+        "", // Default VFS.
+        move (cf));
 
       db.tracer (trace);
 
-      // Lock the database for as long as the connection is active. First we
-      // set locking_mode to EXCLUSIVE which instructs SQLite not to release
-      // any locks until the connection is closed. Then we force SQLite to
-      // acquire the write lock by starting exclusive transaction. See the
-      // locking_mode pragma documentation for details. This will also fail if
-      // the database is inaccessible (e.g., file does not exist, already used
-      // by another process, etc).
-      //
-      try
       {
-        connection_ptr c (db.connection ());
-        c->execute ("PRAGMA locking_mode = EXCLUSIVE");
-
-        // Use the WAL (Write-Ahead Logging) journaling mode and, by default,
-        // the NORMAL synchronization mode to speed up the transaction
-        // commits.
+        // Note: can throw odb::timeout if the database is already locked.
         //
-        // Note that according to the SQLite documentation, NORMAL should be
-        // safe enough for WAL. In particular, the worst that can happen (in
-        // case of a power loss or operating system crash), is that the last
-        // committed transaction will be rolled back. In our case this
-        // normally translated into loosing the result of the latest user
-        // command, such as creating a configuration, initializing a package,
-        // etc. Given a low probably of such an event happening at just the
-        // wrong time and the fact that the data in the project database stays
-        // consistent, this feels like a reasonable tradeoff. Those who are
-        // uncomfortable with NORMAL can select FULL while we may run tests
-        // with OFF (see GH issue #476 for background). Note that EXTRA is no
-        // different from FULL for WAL, but we keep it for completeness and
-        // for consistency with bpkg.
-        //
-        c->execute ("PRAGMA journal_mode = WAL");
-        c->execute ("PRAGMA main.synchronous = " + to_string (sync));
-
-        transaction t (c->begin_exclusive ());
+        transaction t (db.begin_exclusive ());
 
         if (create)
         {
@@ -160,13 +172,13 @@ namespace bdep
 
         t.commit ();
       }
-      catch (odb::timeout&)
-      {
-        fail << "project " << d << " is already used by another process";
-      }
 
       db.tracer (tr); // Switch to the caller's tracer.
       return db;
+    }
+    catch (odb::timeout&)
+    {
+      fail << "project " << d << " is already used by another process" << endf;
     }
     catch (const database_exception& e)
     {
