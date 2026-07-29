@@ -717,6 +717,14 @@ namespace bdep
                             fail << n << " manifest value in " << f
                                  << " references empty file " << vf;
 
+                          manifest_parser::validate_value_utf8 (
+                            s,
+                            vf.string (),
+                            1 /* line */,
+                            1 /* column */,
+                            "file referenced by " + n + " manifest value in " +
+                              f.string ());
+
                           return s;
                         }
                         catch (const io_error& e)
@@ -732,8 +740,7 @@ namespace bdep
       }
       catch (const manifest_parsing& e)
       {
-        fail << "invalid package manifest: " << f << ':'
-             << e.line << ':' << e.column << ": " << e.description << endf;
+        fail (e.name, e.line, e.column) << e.description << endf;
       }
       catch (const io_error& e)
       {
