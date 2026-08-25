@@ -366,6 +366,33 @@ namespace bdep
          << "value" << endf;
   }
 
+  // Prevent git commands (fetch, status, etc) from running maintenance tasks,
+  // both in the background and foreground, and starting daemons.
+  //
+  static string git_config_parameters_var;
+
+  const char*
+  git_config_parameters ()
+  {
+    if (git_config_parameters_var.empty ())
+    {
+      // Note that in contrast to the testscripts (see tests/common.testscript
+      // for details), we don't disable the credential caching daemon, if
+      // explicitly enabled by the user in the configuration file, not to
+      // worsen the user experience.
+      //
+      git_config_parameters_var = "GIT_CONFIG_PARAMETERS="
+        "'maintenance.auto=false' 'maintenance.autoDetach=false' "
+        "'gc.auto=0' 'gc.autoDetach=false' "
+        "'core.fsmonitor=false'";
+
+      if (optional<string> v = getenv ("GIT_CONFIG_PARAMETERS"))
+        git_config_parameters_var += ' ' + *v;
+    }
+
+    return git_config_parameters_var.c_str ();
+  }
+
   git_repository_status
   git_status (const dir_path& repo)
   {

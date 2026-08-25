@@ -68,6 +68,24 @@ EOI
       $git_version_major == 2 && $git_version_minor >= 1)
   exit "minimum supported git version is 2.1.0"
 
+# Prevent git commands (fetch, status, etc) from running maintenance tasks,
+# both in the background and foreground, and starting daemons, as we do for
+# bpkg tests (see bpkg/tests/remote-git.testscript for details).
+#
+val = "\
+'maintenance.auto=false' 'maintenance.autoDetach=false' \
+'gc.auto=0' 'gc.autoDetach=false' \
+'core.fsmonitor=false' \
+'credential.helper=' \
+'core.hooksPath='"
+
+v = $getenv('GIT_CONFIG_PARAMETERS')
+
+ife! $v
+  val = "$val $v"
+
++export GIT_CONFIG_PARAMETERS="$val"
+
 # Helper commands that can be used by tests to prepare the testing environment
 # or validate an outcome of the command being tested. They are likely to get
 # additional options and redirects appended prior to use. A common approach

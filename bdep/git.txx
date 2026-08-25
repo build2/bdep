@@ -80,6 +80,9 @@ namespace bdep
   const pair<process_path, optional<string>>&
   git_search (bool system);
 
+  const char*
+  git_config_parameters ();
+
   template <typename I, typename O, typename E, typename... A>
   process
   start_git (const semantic_version& min_ver,
@@ -102,11 +105,11 @@ namespace bdep
       // editor search sequence (GIT_EDITOR, core.editor, VISUAL, EDITOR, vi),
       // unless it is already set.
       //
-      const char* vars[] = {nullptr, nullptr};
+      const char* vars[] = {git_config_parameters (), nullptr, nullptr};
       process_env pe (git.first, vars);
 
       if (ep && !getenv ("EDITOR"))
-        vars[0] = "EDITOR=notepad";
+        vars[1] = "EDITOR=notepad";
 
       return process_start_callback (
         [] (const char* const args[], size_t n)
