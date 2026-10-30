@@ -6,9 +6,11 @@
 #include <map>
 #include <algorithm> // replace()
 
-#include <libbutl/regex.hxx>
 #include <libbutl/command.hxx>
 #include <libbutl/project-name.hxx>
+
+#include <libbutl/regex/regex.hxx>
+#include <libbutl/regex/regex-ex.hxx>
 
 #include <bdep/git.hxx>
 #include <bdep/project.hxx>
@@ -136,6 +138,9 @@ namespace bdep
     string r;
     auto test = [&h, &r] (const string& e, const string& f) -> bool
     {
+      using namespace regex;
+      using butl::regex::regex;
+
       regex re (e, regex::ECMAScript | regex::icase);
 
       pair<string, bool> p (
