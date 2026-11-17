@@ -275,22 +275,21 @@ namespace bdep
       {
         const string& n (nv.name);
 
+        // Check if the name is {*-builds, *-build-{include,exclude}} and
+        // update the pkg_config_ovr flag accordingly if that's the case.
+        //
         // True if the name is *-builds.
         //
         bool cbso (
           n.size () > 7 && n.compare (n.size () - 7, 7, "-builds") == 0);
 
-        // True if the name is one of {*-builds, *-build-{include,exclude}}
-        // and update the pkg_config_ovr flag accordingly if that's the case.
+        // True if the name is {*-builds, *-build-{include,exclude}}.
         //
         bool cbo (cbso                                                    ||
                   (n.size () > 14 &&
                    n.compare (n.size () - 14, 14, "-build-include") == 0) ||
                   (n.size () > 14 &&
                    n.compare (n.size () - 14, 14, "-build-exclude") == 0));
-
-        if (cbo)
-          pkg_config_ovr = true;
 
         // Fail if --{target,build,package}-config or --interactive is
         // combined with a [*-]build-{include,exclude} override (but not with
@@ -307,53 +306,58 @@ namespace bdep
             info << "override: " << n << ": " << nv.value;
         }
 
-        // Check if the name is one of {[*-]build-*email} and update the
-        // pkg_config_ovr and build_email_ovr flags accordingly if that's the
-        // case.
-        //
-        if (!cbo)
+        if (cbo)
         {
-          bool ceo (
-            (n.size () > 12 &&
-             n.compare (n.size () - 12, 12, "-build-email") == 0)         ||
-            (n.size () > 20 &&
-             n.compare (n.size () - 20, 20, "-build-warning-email") == 0) ||
-            (n.size () > 18 &&
-             n.compare (n.size () - 18, 18, "-build-error-email") == 0));
-
-          if (ceo)
-            pkg_config_ovr = true;
-
-          build_email_ovr = (ceo                        ||
-                             n == "build-email"         ||
-                             n == "build-warning-email" ||
-                             n == "build-error-email");
+          pkg_config_ovr = true;
+          continue;               // Proceed to the next override.
         }
 
-        // Check if the name is one of {[*-]build-auxiliary[-*]} and update
-        // the pkg_config_ovr and aux_ovr flags accordingly if that's the
-        // case.
+        // Check if the name is [*-]build-*email and update the pkg_config_ovr
+        // and build_email_ovr flags accordingly if that's the case.
         //
-        if (!cbo && !build_email_ovr)
+        // True if the name is *-build-*email.
+        //
+        bool ceo (
+          (n.size () > 12 &&
+           n.compare (n.size () - 12, 12, "-build-email") == 0)         ||
+          (n.size () > 20 &&
+           n.compare (n.size () - 20, 20, "-build-warning-email") == 0) ||
+          (n.size () > 18 &&
+           n.compare (n.size () - 18, 18, "-build-error-email") == 0));
+
+        if (ceo)
+          pkg_config_ovr = true;
+
+        if (ceo                        ||
+            n == "build-email"         ||
+            n == "build-warning-email" ||
+            n == "build-error-email")
         {
-          if (optional<pair<string, string>> an =
+          build_email_ovr = true;
+          continue;               // Proceed to the next override.
+        }
+
+        // Check if the name is [*-]build-auxiliary[-*] and update the
+        // pkg_config_ovr and aux_ovr flags accordingly if that's the case.
+        //
+        if (optional<pair<string, string>> an =
               bpkg::build_auxiliary::parse_value_name (n))
-          {
-            aux_ovr = true;
+        {
+          if (!an->first.empty ()) // *-build-auxiliary[-*] ?
+            pkg_config_ovr = true;
 
-            if (!an->first.empty ())
-              pkg_config_ovr = true;
-          }
+          aux_ovr = true;
+          continue;               // Proceed to the next override.
         }
 
-        // Check if the name is one of {*-build-bot}and update the
-        // pkg_config_ovr flag accordingly if that's the case.
+        // Check if the name is *-build-bot and update the pkg_config_ovr flag
+        // accordingly if that's the case.
         //
-        if (!cbo && !build_email_ovr && !aux_ovr)
+        if (n.size () > 10 &&
+            n.compare (n.size () - 10, 10, "-build-bot") == 0)
         {
-          if (n.size () > 10 &&
-              n.compare (n.size () - 10, 10, "-build-bot") == 0)
-            pkg_config_ovr = true;
+          pkg_config_ovr = true;
+          continue;               // Proceed to the next override.
         }
       }
 
