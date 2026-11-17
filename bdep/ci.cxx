@@ -280,8 +280,10 @@ namespace bdep
         bool cbso (
           n.size () > 7 && n.compare (n.size () - 7, 7, "-builds") == 0);
 
-        // True if the name is one of {*-builds, *-build-{include,exclude}}
-        // and update the pkg_config_ovr flag accordingly if that's the case.
+        // Check if the name is {*-builds, *-build-{include,exclude}} and
+        // update the pkg_config_ovr flag accordingly if that's the case.
+        //
+        // True if the name is {*-builds, *-build-{include,exclude}}.
         //
         bool cbo (cbso                                                    ||
                   (n.size () > 14 &&
@@ -307,10 +309,10 @@ namespace bdep
             info << "override: " << n << ": " << nv.value;
         }
 
-        // Check if the name is one of {[*-]build-*email} and update the
-        // pkg_config_ovr and build_email_ovr flags accordingly if that's the
-        // case.
+        // Check if the name is [*-]build-*email and update the pkg_config_ovr
+        // and build_email_ovr flags accordingly if that's the case.
         //
+        bool eo (false); // True if the name is [*-]build-*email.
         if (!cbo)
         {
           bool ceo (
@@ -324,21 +326,25 @@ namespace bdep
           if (ceo)
             pkg_config_ovr = true;
 
-          build_email_ovr = (ceo                        ||
-                             n == "build-email"         ||
-                             n == "build-warning-email" ||
-                             n == "build-error-email");
+          eo = (ceo                        ||
+                n == "build-email"         ||
+                n == "build-warning-email" ||
+                n == "build-error-email");
+
+          if (eo)
+            build_email_ovr = true;
         }
 
-        // Check if the name is one of {[*-]build-auxiliary[-*]} and update
-        // the pkg_config_ovr and aux_ovr flags accordingly if that's the
-        // case.
+        // Check if the name is [*-]build-auxiliary[-*] and update the
+        // pkg_config_ovr and aux_ovr flags accordingly if that's the case.
         //
-        if (!cbo && !build_email_ovr)
+        bool ao (false); // True if the name is [*-]build-auxiliary[-*].
+        if (!cbo && !eo)
         {
           if (optional<pair<string, string>> an =
               bpkg::build_auxiliary::parse_value_name (n))
           {
+            ao = true;
             aux_ovr = true;
 
             if (!an->first.empty ())
@@ -346,10 +352,10 @@ namespace bdep
           }
         }
 
-        // Check if the name is one of {*-build-bot}and update the
-        // pkg_config_ovr flag accordingly if that's the case.
+        // Check if the name is *-build-bot and update the pkg_config_ovr flag
+        // accordingly if that's the case.
         //
-        if (!cbo && !build_email_ovr && !aux_ovr)
+        if (!cbo && !eo && !ao)
         {
           if (n.size () > 10 &&
               n.compare (n.size () - 10, 10, "-build-bot") == 0)
