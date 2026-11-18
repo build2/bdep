@@ -26,6 +26,10 @@ namespace bdep
   using bpkg::repository_location;
   using bpkg::package_manifest;
 
+  using bpkg::build_package_config;
+  using bpkg::build_class_expr;
+  using bpkg::build_constraint;
+
   // Note: the git_status() function, that we use, requires git 2.11.0 or
   // higher.
   //
@@ -194,6 +198,52 @@ namespace bdep
         fail << n << " specified together with --forward";
     }
 
+    // Verify steps specified by --build-step and combine them into a single
+    // suffix, which we will append to all the package build configurations
+    // while overriding them.
+    //
+    string build_steps;
+
+    if (o.build_step_specified ())
+    {
+      for (const string& s: o.build_step ())
+      {
+        // Verify that the step id is prefixed with '+' or '-'.
+        //
+        if (s[0] != '+' && s[0] != '-')
+          fail << "invalid --build-step option value '" << s << "': "
+               << "step must be prefixed with '+' or '-'";
+
+        if (!build_steps.empty ())
+          build_steps += ' ';
+
+        build_steps += s;
+
+        // Don't append the trailing ':' if it was (erroneously) specified by
+        // the user.
+        //
+        if (build_steps.back () != ':')
+          build_steps += ':';
+
+        // Verify that the step id doesn't prefix any arguments.
+        //
+        // Note that it can potentially be useful to specify the step together
+        // with an argument. If ever required, we may allow that in the
+        // future.
+        //
+        size_t p (s.find (':'));
+        if (p != string::npos && p != s.size () - 1)
+          fail << "invalid --build-step option value '" << s << "': "
+               << "step should not be followed by argument";
+
+        // Verify that the step id is not empty.
+        //
+        if (s.find_first_not_of (':', 1) == string::npos)
+          fail << "invalid --build-step option value '" << s << "': "
+               << "step is not specified";
+      }
+    }
+
     // Save the package names.
     //
     strings ns;
@@ -224,6 +274,15 @@ namespace bdep
                              0, 0, 0});          // File positions.
     };
 
+    // Return true, if the value is overridden.
+    //
+    auto overridden = [&overrides] (const string& name)
+    {
+      return find_if (overrides.begin (), overrides.end (),
+                      [&name] (const manifest_name_value& nv)
+                      {return nv.name == name;}) != overrides.end ();
+    };
+
     // Append the overrides specified by --override, --overrides-file,
     // --build-email, and --builds which are all handled by
     // cli::parser<cmd_ci_override>. But first verify that they don't clash
@@ -231,36 +290,20 @@ namespace bdep
     // them are build package configuration-specific build constraint
     // overrides.
     //
-    bool pkg_config_ovr (o.build_config_specified ()   ||
-                         o.package_config_specified () ||
+    bool pkg_config_ovr (o.build_config_specified ()                     ||
+                         o.package_config_specified ()                   ||
                          (o.interactive_specified () &&
-                          o.interactive ().find ('/') != string::npos));
+                          o.interactive ().find ('/') != string::npos)   ||
+                         o.build_step_specified ());
 
     bool build_email_ovr (false);
     bool aux_ovr         (false);
 
     // Return true, if the [*-]builds override is specified.
     //
-    auto builds_override = [&overrides] (const string& config = empty_string)
+    auto builds_override = [&overridden] (const string& config = empty_string)
     {
-      if (config.empty ())
-      {
-        return find_if (overrides.begin (), overrides.end (),
-                        [] (const manifest_name_value& v)
-                        {
-                          return v.name == "builds";
-                        }) != overrides.end ();
-      }
-      else
-      {
-        string n (config + "-builds");
-
-        return find_if (overrides.begin (), overrides.end (),
-                        [&n] (const manifest_name_value& v)
-                        {
-                          return v.name == n;
-                        }) != overrides.end ();
-      }
+      return overridden (config.empty () ? "builds" : config + "-builds");
     };
 
     if (o.overrides_specified ())
@@ -595,7 +638,8 @@ namespace bdep
     // If there are any build package configuration-specific overrides or any
     // build auxiliary overrides, then load the package manifests to use them
     // later for validation of the complete override list. Note that we also
-    // need these manifests for producing the --package-config overrides.
+    // need these manifests for producing the --package-config and
+    // --build-step overrides.
     //
     vector<package_manifest> override_manifests;
 
@@ -715,10 +759,6 @@ namespace bdep
         if (builds_override (pc))
           continue;
 
-        using bpkg::build_package_config;
-        using bpkg::build_class_expr;
-        using bpkg::build_constraint;
-
         auto override_builds = [&pc, &override]
                                (const small_vector<build_class_expr, 1>& bs,
                                 const vector<build_constraint>& cs)
@@ -777,11 +817,7 @@ namespace bdep
 
           if (i == cs.end ())
           {
-            string v (pc + "-build-config");
-
-            if(find_if (overrides.begin (), overrides.end (),
-                        [&v] (const manifest_name_value& nv)
-                        {return nv.name == v;}) == overrides.end ())
+            if (!overridden (pc + "-build-config"))
             {
               fail << "invalid --package-config option value: package "
                    << m.name << " has no build configuration '" << pc << '\'';
@@ -920,6 +956,9 @@ namespace bdep
 
     // Verify the collected overrides.
     //
+    // Note that we deliberately verify overrides before we added the
+    // --build-step overrides (see below for the reasoning).
+    //
     if (!overrides.empty ())
     {
       // Let's also save the override value index as a name/value columns
@@ -988,6 +1027,98 @@ namespace bdep
           bad_ovr (e);
         }
       }
+    }
+
+    // Append the overrides specified by --build-step options.
+    //
+    // Note that we do that after the successful validation of the (so far)
+    // collected overrides. On one hand, we may not introduce invalid
+    // overrides anymore nor we could "fix" a potential invalid one, which we
+    // already failed at. On the other hand, the package manifests are
+    // overridden now. For the sake of the overrides manifest size and not to
+    // fail due to some differences in the build configurations of multiple
+    // packages (see below) for configurations which are actually disabled, we
+    // will use these overridden package manifests to determine and skip the
+    // disabled configurations (other than those selected by --package-config,
+    // etc; see package_manifest::override() for the semantics of overrides in
+    // the {*-builds, *-build-{include,exclude}} group).
+    //
+    // Also note that we also need to make sure that we end up with the same
+    // overrides regardless of the package we use to produce them.
+    //
+    if (!build_steps.empty ())
+    {
+      // Generate overrides based on the --build-step options for every package
+      // and verify that we always end up with the same overrides.
+      //
+      optional<vector<manifest_name_value>> overrides_initial;
+      optional<vector<manifest_name_value>> overrides_cache;
+
+      assert (!override_manifests.empty ()); // Wouldn't be here otherwise.
+
+      for (const package_manifest& m: override_manifests)
+      {
+        // Save/restore the initial overrides.
+        //
+        if (overrides_initial)
+          overrides = *overrides_initial;
+        else if (override_manifests.size () > 1) // Will we compare overrides?
+          overrides_initial = overrides;
+
+        // Go through all the package build configurations and, unless this
+        // configuration is already overridden or disabled, create the
+        // override by appending the suffix, combined from all the specified
+        // --build-step options, to the existing configuration arguments.
+        //
+        for (const build_package_config& c: m.build_configs)
+        {
+          string n (c.name + "-build-config");
+
+          if (overridden (n))
+            continue;
+
+          const small_vector<build_class_expr, 1>& exprs (
+            c.effective_builds (m.builds));
+
+          if (exprs.size () == 1                       &&
+              exprs[0].underlying_classes.size () == 1 &&
+              exprs[0].underlying_classes[0] == "none")
+          {
+            continue;
+          }
+
+          string v (c.arguments);
+          if (!v.empty ())
+            v += '\n';
+
+          v += build_steps;
+
+          override (move (n), move (v), origin::build_step);
+        }
+
+        // Save the overrides for the first package and verify they are equal
+        // to the saved one for the remaining packages.
+        //
+        if (!overrides_cache)
+        {
+          overrides_cache = move (overrides);
+        }
+        else if (!equal (overrides.begin (), overrides.end (),
+                         overrides_cache->begin (), overrides_cache->end (),
+                         [] (const auto& x, const auto& y)
+                         {return x.name == y.name && x.value == y.value;}))
+        {
+          fail << "using --build-step is not allowed: some being overridden "
+               << "build configurations differ for packages "
+               << override_manifests[0].name << " and " << m.name <<
+            info << "consider specifying single package or" <<
+            info << "consider specifying build configurations identical across specified packages";
+        }
+      }
+
+      assert (overrides_cache); // Must be at least one package.
+
+      overrides = move (*overrides_cache);
     }
 
     // Get the server and repository URLs.
