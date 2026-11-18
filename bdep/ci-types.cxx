@@ -19,6 +19,7 @@ namespace bdep
     case orig::target_config:  return "--target-config option value";
     case orig::build_config:   return "--build-config option value";
     case orig::package_config: return "--package-config option value";
+    case orig::build_step:     return "--build-step option value";
     case orig::interactive:    return "--interactive|-i option value";
     }
 

@@ -61,9 +61,9 @@ namespace bdep
      Some package manifest values can be overridden as part of the CI request
      submission using the \cb{--override} and \cb{--overrides-file} options as
      well as their \cb{--builds}, \cb{--build-config}, \cb{--target-config},
-     \cb{--package-config}, and \cb{--build-email} shortcuts. This is
-     primarily useful for specifying alternative build configurations and/or
-     build notification emails. For example:
+     \cb{--package-config}, \cb{--build-step}, and \cb{--build-email}
+     shortcuts. This is primarily useful for specifying alternative build
+     configurations and/or build notification emails. For example:
 
      \
      $ bdep ci --builds gcc
@@ -71,6 +71,9 @@ namespace bdep
      $ bdep ci --target-config 'linux*-gcc*'
      $ bdep ci --package-config network
      $ bdep ci --build-config 'network/linux*-gcc*'
+
+     $ bdep ci --build-step +bpkg.configure.out-src \
+       --build-step -bpkg.test
 
      $ bdep ci --override \
        'default-build-config: config.foo.cache=true config.foo.buffer=16'
@@ -188,10 +191,9 @@ namespace bdep
 
        Valid breakpoint values are \cb{none} (don't stop), \cb{error} (stop
        after first error), \cb{warning} (stop after first warning), as well as
-       the CI service-specific step ids in which case the execution stops
-       before performing the specified step (see \l{bbot#arch-worker \cb{bbot}
-       worker step ids}). If no breakpoint is specified, then \cb{error} is
-       assumed."
+       the CI service-specific steps in which case the execution stops before
+       performing the specified step (see \l{bbot#arch-worker \cb{bbot} worker
+       steps}). If no breakpoint is specified, then \cb{error} is assumed."
     }
 
     url --server
@@ -277,6 +279,23 @@ namespace bdep
        build package configuration from the package manifest.
 
        Repeat this option to specify multiple build package configurations."
+    }
+
+    strings --build-step
+    {
+      "(+|-)<step>",
+      "Shortcut for the following options sequence:
+
+       \c{\b{--override\ }'...\b{-build-config:}... (\b{+}|\b{-})<step>\b{:}'}\n
+       \c{...}
+
+       Where the override values are all the being CI-ed package
+       configurations (potentially including \cb{default}) with an appended
+       argument that enables (\cb{+}) or disables (\cb{-}) the specified
+       \cb{bbot} worker step (see the list of \l{bbot#arch-controller worker
+       steps} which can be enabled or disabled).
+
+       Repeat this option to enable and/or disable multiple worker steps."
     }
 
     string --build-email
