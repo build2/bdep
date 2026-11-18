@@ -454,7 +454,7 @@ windows = ($cxx.target.class == 'windows')
           EOI
 
         $* --overrides-file f 2>>EOE != 0
-          error: invalid file referenced by --overrides-file option: cannot override 'unknown-build-bot' value: no build package configuration 'unknown'
+          error: invalid file referenced by --overrides-file option: cannot override 'unknown-build-bot' value: no package build configuration 'unknown'
             info: override: unknown-build-bot:
           \
           -----BEGIN PUBLIC KEY-----
@@ -799,6 +799,95 @@ windows = ($cxx.target.class == 'windows')
     }
   }}
 
+  : build-step
+  :
+  {{
+    +$clone_root_prj
+    +$init -C @cfg &prj-cfg/***
+
+    test.options += --no-progress
+
+    : single
+    :
+    {
+      $clone_prj
+
+      $* --build-step '+bpkg.configure.out-src' 2>>~%EOE%
+        %CI request is queued.*%
+        %reference: .+%
+        EOE
+    }
+
+    : multiple
+    :
+    {
+      $clone_prj
+
+      # While at it, specify one of the step ids with a trailing ':'.
+      #
+      $* --build-step '+bpkg.configure.out-src' --build-step '-bpkg.test:' 2>>~%EOE%
+        %CI request is queued.*%
+        %reference: .+%
+        EOE
+    }
+
+    : no-sign
+    :
+    {
+      $clone_prj
+
+      $* --build-step 'bpkg.configure.out-src' 2>>EOE != 0
+        error: invalid --build-step option value 'bpkg.configure.out-src': step must be prefixed with '+' or '-'
+        EOE
+    }
+
+    : arg
+    :
+    {
+      $clone_prj
+
+      $* --build-step '+bpkg.configure.out-src:a=b' 2>>EOE != 0
+      error: invalid --build-step option value '+bpkg.configure.out-src:a=b': step should not be followed by argument
+      EOE
+    }
+
+    : no-step
+    :
+    {{
+      +$clone_prj
+
+      : empty
+      :
+      {
+        $clone_prj
+
+        $* --build-step '' 2>>EOE != 0
+          error: invalid --build-step option value '': step must be prefixed with '+' or '-'
+          EOE
+      }
+
+      : sign
+      :
+      {
+        $clone_prj
+
+        $* --build-step '-' 2>>EOE != 0
+          error: invalid --build-step option value '-': step is not specified
+          EOE
+      }
+
+      : sign-semicol
+      :
+      {
+        $clone_prj
+
+        $* --build-step '+:' 2>>EOE != 0
+          error: invalid --build-step option value '+:': step is not specified
+          EOE
+      }
+    }}
+  }}
+
   : interactive
   :
   {{
@@ -947,6 +1036,14 @@ windows = ($cxx.target.class == 'windows')
   +sed -i -e 's/^(version:) .*$/\1 1.0.1/' prj/libprj/manifest
   +sed -i -e 's/^(version:) .*$/\1 1.0.1/' prj/prj/manifest
 
+  +cat <<EOI >+prj/prj/build/root.build
+    config [bool] config.prj.network ?= false
+    EOI
+
+  +cat <<EOI >+prj/prj/manifest
+    network-build-config: config.prj.network=true
+    EOI
+
   +$g config user.name 'Test Script'
   +$g config user.email 'testscript@example.com'
   +$g remote add origin $~/prj.git
@@ -1060,4 +1157,89 @@ windows = ($cxx.target.class == 'windows')
       %reference: .+%
       EOE
   }
+
+  : build-step
+  :
+  {{
+    +$clone_prj
+
+    : not-allowed
+    :
+    {
+      $clone_prj
+      $init -C @cfg &prj-cfg/***
+
+      $* --build-step '+bpkg.configure.out-src' 2>>EOE != 0
+        error: --build-step cannot be used: overrides for build configurations differ for packages libprj and prj
+          info: consider specifying single package or
+          info: consider specifying configurations identical across specified packages
+        EOE
+    }
+
+    : allowed
+    :
+    {{
+      +$clone_prj
+
+      : package-config
+      :
+      {
+        $clone_prj
+        $init -C @cfg &prj-cfg/***
+
+        $* --package-config 'default' --build-step '+bpkg.configure.out-src' 2>>~%EOE%
+          %CI request is queued.*%
+          %reference: .+%
+          EOE
+      }
+
+      : build-config
+      :
+      {
+        $clone_prj
+        $init -C @cfg &prj-cfg/***
+
+        $* --build-config 'default/linux_debian_8-gcc_4.9' --build-step '+bpkg.configure.out-src' 2>>~%EOE%
+          %CI request is queued.*%
+          %reference: .+%
+          EOE
+      }
+
+      : builds-none
+      :
+      {
+        $clone_prj
+        $init -C @cfg &prj-cfg/***
+
+        $* --builds 'none' --build-step '+bpkg.configure.out-src' 2>>~%EOE%
+          %CI request is queued.*%
+          %reference: .+%
+          EOE
+      }
+
+      : builds-default-all
+      :
+      {
+        $clone_prj
+        $init -C @cfg &prj-cfg/***
+
+        $* --builds 'default/all' --build-step '+bpkg.configure.out-src' 2>>~%EOE%
+          %CI request is queued.*%
+          %reference: .+%
+          EOE
+      }
+
+      : interactive
+      :
+      {
+        $clone_prj
+        $init -C @cfg &prj-cfg/***
+
+        $* --interactive 'network/linux_debian_8-gcc_4.9:end' --build-step '+bpkg.configure.out-src' prj 2>>~%EOE%
+          %CI request is queued.*%
+          %reference: .+%
+          EOE
+      }
+    }}
+  }}
 }}

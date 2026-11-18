@@ -32,6 +32,7 @@ namespace bdep
     target_config,  // --target-config
     build_config,   // --build-config
     package_config, // --package-config
+    build_step,     // --build-step
     interactive     // --interactive
   };
 
